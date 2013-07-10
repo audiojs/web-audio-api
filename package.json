@@ -1,0 +1,33 @@
+{
+  "name": "web-audio-api",
+  "version": "0.1.0",
+  "author": "Sébastien Piquemal <sebpiq@gmail.com>",
+  "description": "Node.js implementation of Web audio API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sebpiq/node-web-audio-api.git"
+  },
+  "keywords": [
+    "audio",
+    "sound",
+    "music",
+    "web audio",
+    "web audio api",
+    "dsp"
+  ],
+  "dependencies" : {
+    "async": "0.2.x",
+    "underscore": "1.4.x",
+    "fluent-ffmpeg": "1.5.x",
+    "mathjs": "0.9.x",
+    "speaker": "0.0.x"
+  },
+  "analyze": false,
+  "devDependencies": {
+    "mocha": "*"
+  }, 
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.10"
+  }
+}
