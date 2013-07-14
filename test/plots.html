@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <script src="../build/AudioParam-client.js"></script>
+  <style>
+    canvas {
+      background-color: black;
+      display: block;
+      margin-bottom: 1em;
+    }
+    #customContainer, #nativeContainer {
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="customContainer">
+    <h2>RESULT</h2>
+  </div>
+  <div id="nativeContainer">
+    <h2>EXPECTED</h2>
+  </div>
+  <script>
+    var TIME = 3
+      , CANW = 500
+      , CANH = 500
+      , BLOCK = 256
+      , MAXY = 20
+
+    // Creates and inserts a canvas in 'containerId'
+    var getCanvas = function(containerId) {
+      var canvas = document.createElement('canvas')
+      document.getElementById(containerId).insertBefore(canvas)
+      canvas.setAttribute('height', CANH)
+      canvas.setAttribute('width', CANW)
+      return canvas
+    }
+
+    var testCase = function(title, cb) {
+      var local = {}
+        , nativeData = [], customData = []
+        , channel, i
+      local.context = new (window.AudioContext || window.webkitAudioContext)
+
+      var plotFull = function() {
+        return local.context.currentTime > TIME
+      }
+
+      var createScriptProcessor = function() {
+        if (local.context.createScriptProcessor)
+          return local.context.createScriptProcessor(BLOCK, 1, 1)
+        // !!! OLD NAME
+        else return local.context.createJavaScriptNode(BLOCK, 1, 1)
+      }
+
+      var createGain = function() {
+        if (local.context.createGain)
+          return local.context.createGain()
+        // !!! OLD NAME
+        else return local.context.createGainNode()
+      }
+
+      // ---------- Creating scopes
+      var createScopeNodes = function(buffer) {
+        var scopeNode = createScriptProcessor()
+          , muteNode = createGain()
+
+        muteNode.gain.value = 0
+        scopeNode.connect(muteNode)
+        muteNode.connect(local.context.destination)
+        scopeNode.onaudioprocess = function(event) {
+          if (!plotFull()) buffer.push(event.inputBuffer.getChannelData(0)[0])
+        }
+        return scopeNode
+      }
+      local.nativeScope = createScopeNodes(nativeData)
+      local.customScope = createScopeNodes(customData)
+
+      // ---------- Creating the native AudioParam
+      local.nativeAudioParamNode = createGain()
+      local.sig1 = createScriptProcessor()
+      local.sig1.onaudioprocess = function(event) {
+        channel = event.outputBuffer.getChannelData(0)
+        for (i = 0; i < BLOCK; i++) channel[i] = 1
+      }
+      local.sig1.connect(local.nativeAudioParamNode)
+      local.nativeAudioParamNode.connect(local.nativeScope)
+      local.nativeAudioParam = local.nativeAudioParamNode.gain
+
+      // ---------- Creating the custom AudioParam
+      AudioParam.BLOCK_SIZE = 256
+      local.customAudioParam = new AudioParam(local.context, 0, 'a')
+      local.customAudioParamNode = createScriptProcessor()
+      local.customAudioParamNode.onaudioprocess = function(event) {
+        if (!plotFull()) {
+          var block = local.customAudioParam._tick()
+            , array = event.outputBuffer.getChannelData(0)
+          block.forEach(function(val, i) {
+            array[i] = val
+          })
+        }
+      }
+      local.customAudioParamNode.connect(local.customScope)
+
+      // ---------- Canvas rendering
+      var ctxNative = getCanvas('nativeContainer').getContext('2d')
+        , ctxCustom = getCanvas('customContainer').getContext('2d')
+      ctxNative.strokeStyle = 'white'
+      ctxCustom.strokeStyle = 'white'
+      ctxCustom.fillStyle = 'white'
+
+      var coords = function(i, val) {
+        if (isNaN(val)) val = 0
+        return [i / (TIME * local.context.sampleRate / BLOCK) * CANW, CANH - (val * CANH / MAXY)]
+      }
+
+      var update = function(ctx, array) {
+        ctx.clearRect(0, 0, CANW, CANH)
+        ctxCustom.fillText(title, 0, 20)
+        ctx.beginPath()
+        ctx.moveTo(coords(0, array[0]))
+        array.slice(1).forEach(function(val, i) {
+          ctx.lineTo.apply(ctx, coords(i + 1, val))
+        })
+        ctx.stroke()
+        if (!plotFull()) setTimeout(update, 200, ctx, array)
+      }
+
+      setTimeout(update, 200, ctxNative, nativeData)
+      setTimeout(update, 200, ctxCustom, customData)
+
+      cb(local.nativeAudioParam, local.customAudioParam)
+      return local
+    }
+
+    var d = testCase('ExponentialRampToValue, then SetValue, then LinearRampToValue',
+      function(nativeAudioParam, customAudioParam) {
+        nativeAudioParam.setValueAtTime(0.0001, 0)
+        customAudioParam.value = 0.0001
+        nativeAudioParam.exponentialRampToValueAtTime(15, 2)
+        customAudioParam.exponentialRampToValueAtTime(15, 2)
+        nativeAudioParam.setValueAtTime(8, 2.5)
+        customAudioParam.setValueAtTime(8, 2.5)
+        nativeAudioParam.linearRampToValueAtTime(15, 3)
+        customAudioParam.linearRampToValueAtTime(15, 3)
+      }
+    )
+
+    var e = testCase('LinearRampToValue interrupted by setting directly param.value',
+      function(nativeAudioParam, customAudioParam) {
+        nativeAudioParam.setValueAtTime(0, 0)
+        nativeAudioParam.linearRampToValueAtTime(15, 3)
+        customAudioParam.linearRampToValueAtTime(15, 3)
+        setTimeout(function() {
+          nativeAudioParam.value = 2
+          customAudioParam.value = 2
+        }, 1000)
+      }
+    )
+
+    var f = testCase('SetTarget',
+      function(nativeAudioParam, customAudioParam) {
+        nativeAudioParam.setValueAtTime(10, 0)
+        customAudioParam.setValueAtTime(10, 0)
+        nativeAudioParam.setTargetAtTime(2, 1, 0.1)
+        customAudioParam.setTargetAtTime(2, 1, 0.1)
+      }
+    )
+
+    var g = testCase('SetValueCurve',
+      function(nativeAudioParam, customAudioParam) {
+        nativeAudioParam.setValueAtTime(0, 0)
+        customAudioParam.setValueAtTime(0, 0)
+        nativeAudioParam.setValueCurveAtTime(new Float32Array([1, 2, 3, 4, 10]), 0, 2)
+        customAudioParam.setValueCurveAtTime(new Float32Array([1, 2, 3, 4, 10]), 0, 2)
+      }
+    )
+  </script>
+</body>
+
+</html> 
+

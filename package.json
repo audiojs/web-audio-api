@@ -15,7 +15,7 @@
     "web audio api",
     "dsp"
   ],
-  "dependencies" : {
+  "dependencies": {
     "async": "0.2.x",
     "underscore": "1.4.x",
     "fluent-ffmpeg": "1.5.x",
@@ -24,8 +24,11 @@
   },
   "analyze": false,
   "devDependencies": {
-    "mocha": "*"
-  }, 
+    "mocha": "*",
+    "grunt": "0.4.x",
+    "grunt-browserify2": "0.1.x",
+    "grunt-simple-mocha": "0.4.x"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=0.10"
