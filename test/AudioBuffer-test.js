@@ -33,7 +33,7 @@ describe('AudioBuffer', function() {
   describe('zeros', function() {
 
     it('should return a buffer with zeros', function() {
-      var ab = AudioBuffer.zeros(44100, 3, 100)
+      var ab = AudioBuffer.zeros(3, 100, 44100)
         , data1 = ab.getChannelData(0)
         , data2 = ab.getChannelData(1)
         , data3 = ab.getChannelData(2)
@@ -54,7 +54,7 @@ describe('AudioBuffer', function() {
   describe('filledWithVal', function() {
 
     it('should return a buffer with the value given', function() {
-      var ab = AudioBuffer.filledWithVal(111, 44100, 4, 200)
+      var ab = AudioBuffer.filledWithVal(111, 4, 200, 44100)
         , data1 = ab.getChannelData(0)
         , data2 = ab.getChannelData(1)
         , data3 = ab.getChannelData(2)

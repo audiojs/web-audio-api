@@ -1,11 +1,23 @@
 var assert = require('assert')
   , _ = require('underscore')
   , async = require('async')
-  , audionodes = require('../lib/AudioNode')
+  , AudioNode = require('../lib/AudioNode')
 
 describe('AudioNode', function() {
 
   var dummyContext = {}
+
+  it('should create AudioInputs and AudioOutputs', function() {
+    var node = new AudioNode(dummyContext, 1, 2)
+    assert.equal(node._inputs.length, 1)
+    assert.equal(node._outputs.length, 2)
+    assert.equal(node._inputs[0].id, 0)
+    assert.equal(node._inputs[0].node, node)
+    assert.equal(node._outputs[0].id, 0)
+    assert.equal(node._outputs[0].node, node)
+    assert.equal(node._outputs[1].id, 1)
+    assert.equal(node._outputs[1].node, node)
+  })
 
   describe('channelCount', function() {
 
@@ -67,49 +79,75 @@ describe('AudioNode', function() {
   })
 
   describe('connect', function() {
-    var MySourceNode = audionodes.SourceNode.extend({
-      init: function() {
-        this.counter = 0
-      },
-      _onConnected: function() {
-        this.counter++
-      }
-    })
 
-    var MySinkNode = audionodes.SinkNode.extend({
-      init: function() {
-        this.counter = 0
-      },
-      _onConnected: function() {
-        this.counter++
-      }
-    })
+    it('should connect audio ports together', function() {
+      var source = new AudioNode(dummyContext, 0, 3)
+        , sink = new AudioNode(dummyContext, 3, 0)
 
-    it('should connect source->sink', function() {
-    var source = new MySourceNode()
-      , sink = new MySinkNode()
-      sink.connect(source)
       source.connect(sink)
-      sink.connect(source)
-      sink.connect(source)
-      assert.equal(sink.input, source)
-      assert.equal(source.output, sink)
-      assert.equal(source.counter, 1)
-      assert.equal(sink.counter, 1)
+      assert.equal(sink._inputs[0].sources.length, 1)
+      assert.equal(sink._inputs[0].sources[0], source._outputs[0])
+
+      // No change if connection already made
+      source.connect(sink)
+      assert.equal(sink._inputs[0].sources.length, 1)
+      assert.equal(sink._inputs[0].sources[0], source._outputs[0])
+
+      source.connect(sink, 2, 1)
+      assert.equal(sink._inputs[1].sources.length, 1)
+      assert.equal(sink._inputs[1].sources[0], source._outputs[2])
     })
 
-    it('should throw an error with sink->sink and source->source', function() {
-    var source1 = new MySourceNode()
-      , sink1 = new MySinkNode()
-      , source2 = new MySourceNode()
-      , sink2 = new MySinkNode()
-      assert.throws(function() { sink1.connect(sink2) })
-      assert.throws(function() { source1.connect(source2) })
+    it('should throw an error if ouput or input out of bounds', function() {
+      var source = new AudioNode(dummyContext, 0, 3)
+        , sink = new AudioNode(dummyContext, 3, 0)
+      assert.throws(function() { source.connect(source, 0, 5) })
+      assert.throws(function() { source.connect(source, 6) })
     })
+
+  })
+
+  describe('disconnect', function() {
+
+    it('should disconnect all sinks from the ouput', function() {
+      var source = new AudioNode(dummyContext, 0, 3)
+        , sink1 = new AudioNode(dummyContext, 3, 0)
+        , sink2 = new AudioNode(dummyContext, 3, 0)
+
+      source.connect(sink1, 1)
+      source.connect(sink2, 1)
+      source.connect(sink2, 2)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 2)
+      assert.equal(source._outputs[2].sinks.length, 1)
+
+      source.disconnect(1)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 0)
+      assert.equal(source._outputs[2].sinks.length, 1)
+
+      source.disconnect(2)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 0)
+      assert.equal(source._outputs[2].sinks.length, 0)
+
+      source.disconnect(0)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 0)
+      assert.equal(source._outputs[2].sinks.length, 0)
+    })
+
+    it('should throw an error if ouput or input out of bounds', function() {
+      var source = new AudioNode(dummyContext, 0, 3)
+        , sink = new AudioNode(dummyContext, 3, 0)
+      assert.throws(function() { source.disconnect(8) })
+    })
+
   })
 
 })
 
+/*
 describe('SourceNode', function() {
 
   describe('read', function() {
@@ -194,3 +232,4 @@ describe('SourceNode', function() {
   })
 
 })
+*/
