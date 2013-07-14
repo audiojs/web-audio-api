@@ -51,4 +51,25 @@ describe('AudioBuffer', function() {
 
   })
 
+  describe('filledWithVal', function() {
+
+    it('should return a buffer with the value given', function() {
+      var ab = AudioBuffer.filledWithVal(111, 44100, 4, 200)
+        , data1 = ab.getChannelData(0)
+        , data2 = ab.getChannelData(1)
+        , data3 = ab.getChannelData(2)
+
+      assert.equal(ab.sampleRate, 44100)
+      assert.equal(ab.length, 200)
+      assert.equal(ab.numberOfChannels, 4)
+      toArray(data1).forEach(function(val) { assert.equal(val, 111) })
+      toArray(data2).forEach(function(val) { assert.equal(val, 111) })
+      toArray(data3).forEach(function(val) { assert.equal(val, 111) })
+      assert.equal(data1.length, 200)
+      assert.equal(data2.length, 200)
+      assert.equal(data3.length, 200)
+    })
+
+  })
+
 })

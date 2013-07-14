@@ -4,6 +4,9 @@ var assert = require('assert')
   , audioports = require('../lib/audioports')
   , AudioOutput = audioports.AudioOutput
   , AudioInput = audioports.AudioInput
+  , AudioBuffer = require('../lib/AudioBuffer')
+  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
+  , assertAllValuesApprox = require('./helpers').assertAllValuesApprox
 
 
 describe('AudioPort', function() {
@@ -124,6 +127,69 @@ describe('AudioInput', function() {
       var dummyNode1 = {channelCount: 3, channelCountMode: 'max'}
         , input1 = new AudioInput(dummyNode1, 0)
       assert.throws(function() { input1.computedNumberOfChannels })
+    })
+
+  })
+
+  describe('tick', function() {
+
+    it('should up-mix by adding zeros in discrete mode', function() {
+      var sinkNode = {channelCount: 5, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
+        , sourceNode1 = {channelCount: 3}
+        , sourceNode2 = {channelCount: 1}
+        , input = new AudioInput(sinkNode, 0)
+        , output1 = new AudioOutput(sourceNode1, 0)
+        , output2 = new AudioOutput(sourceNode2, 0)
+        , outBuff
+      output1.buffer = new AudioBuffer.filledWithVal(0.1, 44100, 3, BLOCK_SIZE)
+      output2.buffer = new AudioBuffer.filledWithVal(0.2, 44100, 1, BLOCK_SIZE)
+
+      input.connect(output2)
+      assert.equal(input.computedNumberOfChannels, 5)
+
+      outBuff = AudioBuffer.zeros(44100, 5, BLOCK_SIZE)
+      input.tick(outBuff)
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0)
+      assertAllValuesApprox(outBuff.getChannelData(2), 0)
+      assertAllValuesApprox(outBuff.getChannelData(3), 0)
+      assertAllValuesApprox(outBuff.getChannelData(4), 0)
+
+      input.connect(output1)
+      outBuff = AudioBuffer.zeros(44100, 5, BLOCK_SIZE)
+      input.tick(outBuff)
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+      assertAllValuesApprox(outBuff.getChannelData(2), 0.05)
+      assertAllValuesApprox(outBuff.getChannelData(3), 0)
+      assertAllValuesApprox(outBuff.getChannelData(4), 0)
+    })
+
+    it('should down-mix by dropping channels in discrete mode', function() {
+      var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
+        , sourceNode1 = {channelCount: 4}
+        , sourceNode2 = {channelCount: 1}
+        , input = new AudioInput(sinkNode, 0)
+        , output1 = new AudioOutput(sourceNode1, 0)
+        , output2 = new AudioOutput(sourceNode2, 0)
+        , outBuff
+
+      output1.buffer = new AudioBuffer.filledWithVal(0.1, 44100, 4, BLOCK_SIZE)
+      output2.buffer = new AudioBuffer.filledWithVal(0.2, 44100, 1, BLOCK_SIZE)
+
+      input.connect(output2)
+      assert.equal(input.computedNumberOfChannels, 2)
+
+      outBuff = AudioBuffer.zeros(44100, 2, BLOCK_SIZE)
+      input.tick(outBuff)
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0)
+
+      input.connect(output1)
+      outBuff = AudioBuffer.zeros(44100, 2, BLOCK_SIZE)
+      input.tick(outBuff)
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
     })
 
   })
