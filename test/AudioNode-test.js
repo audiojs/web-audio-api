@@ -5,6 +5,67 @@ var assert = require('assert')
 
 describe('AudioNode', function() {
 
+  var dummyContext = {}
+
+  describe('channelCount', function() {
+
+    it('should accept valid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.equal(node.channelCount, 2)
+      node.channelCount = 1
+      assert.equal(node.channelCount, 1)
+      node.channelCount = 109
+      assert.equal(node.channelCount, 109)
+    })
+
+    it('should throw error when setting to unvalid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.throws(function() { node.channelCount = 0 })
+      assert.throws(function() { node.channelCount = -10 })
+    })
+
+  })
+
+  describe('channelCountMode', function() {
+
+    it('should accept valid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.equal(node.channelCountMode, undefined)
+      node.channelCountMode = 'max'
+      assert.equal(node.channelCountMode, 'max')
+      node.channelCountMode = 'clamped-max'
+      assert.equal(node.channelCountMode, 'clamped-max')
+      node.channelCountMode = 'explicit'
+      assert.equal(node.channelCountMode, 'explicit')
+    })
+
+    it('should throw error when setting to unvalid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.throws(function() { node.channelCountMode = 'explicitttt' })
+      assert.throws(function() { node.channelCountMode = 10 })
+    })
+
+  })
+
+  describe('channelInterpretation', function() {
+
+    it('should accept valid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.equal(node.channelInterpretation, undefined)
+      node.channelInterpretation = 'speakers'
+      assert.equal(node.channelInterpretation, 'speakers')
+      node.channelInterpretation = 'discrete'
+      assert.equal(node.channelInterpretation, 'discrete')
+    })
+
+    it('should throw error when setting to unvalid values', function() {
+      var node = new AudioNode(dummyContext, 1, 1)
+      assert.throws(function() { node.channelInterpretation = 'explicitttt' })
+      assert.throws(function() { node.channelInterpretation = 10 })
+    })
+
+  })
+
   describe('connect', function() {
     var MySourceNode = audionodes.SourceNode.extend({
       init: function() {
