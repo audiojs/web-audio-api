@@ -197,6 +197,45 @@ describe('AudioInput', function() {
       })
     })
 
+    it('should return a buffer with channelCount channels, full of zeros if no connection', function() {
+      var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
+        , sourceNode1 = {channelCount: 4}
+        , sourceNode2 = {channelCount: 1}
+        , input = new AudioInput(dummyContext, sinkNode, 0)
+        , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
+        , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
+
+      output1.pullAudio = function(done) {
+        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      }
+      output2.pullAudio = function(done) {
+        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      }
+
+      input.connect(output2)
+
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 2)
+        assert.equal(outBuff.numberOfChannels, 2)
+        assert.equal(outBuff.length, BLOCK_SIZE)
+
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0)
+      })
+
+      input.connect(output1)
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 2)
+        assert.equal(outBuff.numberOfChannels, 2)
+        assert.equal(outBuff.length, BLOCK_SIZE)
+
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+      })
+    })
+
   })
 
 })

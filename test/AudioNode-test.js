@@ -11,12 +11,18 @@ describe('AudioNode', function() {
     var node = new AudioNode(dummyContext, 1, 2)
     assert.equal(node._inputs.length, 1)
     assert.equal(node._outputs.length, 2)
+
     assert.equal(node._inputs[0].id, 0)
     assert.equal(node._inputs[0].node, node)
+    assert.equal(node._inputs[0].context, dummyContext)
+
     assert.equal(node._outputs[0].id, 0)
     assert.equal(node._outputs[0].node, node)
+    assert.equal(node._outputs[0].context, dummyContext)
+
     assert.equal(node._outputs[1].id, 1)
     assert.equal(node._outputs[1].node, node)
+    assert.equal(node._outputs[1].context, dummyContext)
   })
 
   describe('channelCount', function() {
