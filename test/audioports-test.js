@@ -12,6 +12,7 @@ var assert = require('assert')
 describe('AudioPort', function() {
 
   var dummyNode = {}
+    , dummyContext = {sampleRate: 44100}
     , received = []
     , setupInputHandlers = function(audioInput) {
       audioInput.on('connection', function(source) {
@@ -39,8 +40,8 @@ describe('AudioPort', function() {
   describe('connect/disconnect', function() {
 
     it('should connect/disconnect properly', function() {
-      var sink = new AudioInput(dummyNode, 0)
-        , source = new AudioOutput(dummyNode, 1)
+      var sink = new AudioInput(dummyContext, dummyNode, 0)
+        , source = new AudioOutput(dummyContext, dummyNode, 1)
 
       sink.connect(source)
       assert.deepEqual(sink.sources, [source])
@@ -49,8 +50,8 @@ describe('AudioPort', function() {
     })
 
     it('should emit the right events when connecting/disconnecting', function() {
-      var sink = new AudioInput(dummyNode, 0)
-        , source = new AudioOutput(dummyNode, 1)
+      var sink = new AudioInput(dummyContext, dummyNode, 0)
+        , source = new AudioOutput(dummyContext, dummyNode, 1)
       setupInputHandlers(sink)
       setupOutputHandlers(source)
 
@@ -75,121 +76,178 @@ describe('AudioPort', function() {
 
 describe('AudioInput', function() {
 
-  describe('computedNumberOfChannels', function() {
+  var dummyContext = {sampleRate: 44100}
+
+  describe('_computeNumberOfChannels', function() {
 
     it('should get max when channelCountMode is max', function() {
-      var dummyNode1 = {channelCount: 6, channelCountMode: 'max'}
-        , dummyNode2 = {channelCount: 3}
-        , dummyNode3 = {channelCount: 1}
-        , input1 = new AudioInput(dummyNode1, 0)
-        , output1 = new AudioOutput(dummyNode2, 0)
-        , output2 = new AudioOutput(dummyNode3, 0)
-
-      input1.connect(output2)
-      assert.equal(input1.computedNumberOfChannels, 1)
-      input1.connect(output1)
-      assert.equal(input1.computedNumberOfChannels, 3)
-      input1.disconnect(output2)
-      assert.equal(input1.computedNumberOfChannels, 3)
+      var dummyNode = {channelCount: 6, channelCountMode: 'max'}
+        , input = new AudioInput(dummyContext, dummyNode, 0)
+      input._computeNumberOfChannels(13)
+      assert.equal(input.computedNumberOfChannels, 13)
+      input._computeNumberOfChannels(2)
+      assert.equal(input.computedNumberOfChannels, 2)
     })
 
     it('should get max and clamp when channelCountMode is clamped-max', function() {
-      var dummyNode1 = {channelCount: 4, channelCountMode: 'clamped-max'}
-        , dummyNode2 = {channelCount: 6}
-        , dummyNode3 = {channelCount: 1}
-        , input1 = new AudioInput(dummyNode1, 0)
-        , output1 = new AudioOutput(dummyNode2, 0)
-        , output2 = new AudioOutput(dummyNode3, 0)
+      var dummyNode = {channelCount: 4, channelCountMode: 'clamped-max'}
+        , input = new AudioInput(dummyContext, dummyNode, 0)
 
-      input1.connect(output2)
-      assert.equal(input1.computedNumberOfChannels, 1)
-      input1.connect(output1)
-      assert.equal(input1.computedNumberOfChannels, 4)
-      input1.disconnect(output2)
-      assert.equal(input1.computedNumberOfChannels, 4)
+      input._computeNumberOfChannels(1)
+      assert.equal(input.computedNumberOfChannels, 1)
+      input._computeNumberOfChannels(4)
+      assert.equal(input.computedNumberOfChannels, 4)
+      input._computeNumberOfChannels(6)
+      assert.equal(input.computedNumberOfChannels, 4)
     })
 
     it('should get channelCount when channelCountMode is explicit', function() {
-      var dummyNode1 = {channelCount: 5, channelCountMode: 'explicit'}
-        , dummyNode2 = {channelCount: 6}
-        , dummyNode3 = {channelCount: 1}
-        , input1 = new AudioInput(dummyNode1, 0)
-        , output1 = new AudioOutput(dummyNode2, 0)
-        , output2 = new AudioOutput(dummyNode3, 0)
-
-      input1.connect(output2)
-      assert.equal(input1.computedNumberOfChannels, 5)
-      input1.connect(output1)
-      assert.equal(input1.computedNumberOfChannels, 5)
-    })
-
-    it('should throw an error if there\'s no connection', function() {
-      var dummyNode1 = {channelCount: 3, channelCountMode: 'max'}
-        , input1 = new AudioInput(dummyNode1, 0)
-      assert.throws(function() { input1.computedNumberOfChannels })
+      var dummyNode = {channelCount: 5, channelCountMode: 'explicit'}
+        , input = new AudioInput(dummyContext, dummyNode, 0)
+      input._computeNumberOfChannels(15)
+      assert.equal(input.computedNumberOfChannels, 5)
+      input._computeNumberOfChannels(1)
+      assert.equal(input.computedNumberOfChannels, 5)
     })
 
   })
 
-  describe('tick', function() {
+  describe('pullAudio', function() {
 
     it('should up-mix by adding zeros in discrete mode', function() {
       var sinkNode = {channelCount: 5, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
         , sourceNode1 = {channelCount: 3}
         , sourceNode2 = {channelCount: 1}
-        , input = new AudioInput(sinkNode, 0)
-        , output1 = new AudioOutput(sourceNode1, 0)
-        , output2 = new AudioOutput(sourceNode2, 0)
-        , outBuff
-      output1.buffer = new AudioBuffer.filledWithVal(0.1, 44100, 3, BLOCK_SIZE)
-      output2.buffer = new AudioBuffer.filledWithVal(0.2, 44100, 1, BLOCK_SIZE)
+        , input = new AudioInput(dummyContext, sinkNode, 0)
+        , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
+        , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
+
+      output1.pullAudio = function(done) {
+        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      }
+      output2.pullAudio = function(done) {
+        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      }
 
       input.connect(output2)
-      assert.equal(input.computedNumberOfChannels, 5)
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 5)
+        assert.equal(outBuff.numberOfChannels, 5)
+        assert.equal(outBuff.length, BLOCK_SIZE)
 
-      outBuff = AudioBuffer.zeros(44100, 5, BLOCK_SIZE)
-      input.tick(outBuff)
-      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
-      assertAllValuesApprox(outBuff.getChannelData(1), 0)
-      assertAllValuesApprox(outBuff.getChannelData(2), 0)
-      assertAllValuesApprox(outBuff.getChannelData(3), 0)
-      assertAllValuesApprox(outBuff.getChannelData(4), 0)
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0)
+        assertAllValuesApprox(outBuff.getChannelData(2), 0)
+        assertAllValuesApprox(outBuff.getChannelData(3), 0)
+        assertAllValuesApprox(outBuff.getChannelData(4), 0)
+      })
 
       input.connect(output1)
-      outBuff = AudioBuffer.zeros(44100, 5, BLOCK_SIZE)
-      input.tick(outBuff)
-      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
-      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
-      assertAllValuesApprox(outBuff.getChannelData(2), 0.05)
-      assertAllValuesApprox(outBuff.getChannelData(3), 0)
-      assertAllValuesApprox(outBuff.getChannelData(4), 0)
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 5)
+        assert.equal(outBuff.numberOfChannels, 5)
+        assert.equal(outBuff.length, BLOCK_SIZE)
+
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+        assertAllValuesApprox(outBuff.getChannelData(2), 0.05)
+        assertAllValuesApprox(outBuff.getChannelData(3), 0)
+        assertAllValuesApprox(outBuff.getChannelData(4), 0)
+      })
     })
 
     it('should down-mix by dropping channels in discrete mode', function() {
       var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
         , sourceNode1 = {channelCount: 4}
         , sourceNode2 = {channelCount: 1}
-        , input = new AudioInput(sinkNode, 0)
-        , output1 = new AudioOutput(sourceNode1, 0)
-        , output2 = new AudioOutput(sourceNode2, 0)
-        , outBuff
+        , input = new AudioInput(dummyContext, sinkNode, 0)
+        , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
+        , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
 
-      output1.buffer = new AudioBuffer.filledWithVal(0.1, 44100, 4, BLOCK_SIZE)
-      output2.buffer = new AudioBuffer.filledWithVal(0.2, 44100, 1, BLOCK_SIZE)
+      output1.pullAudio = function(done) {
+        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      }
+      output2.pullAudio = function(done) {
+        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      }
 
       input.connect(output2)
-      assert.equal(input.computedNumberOfChannels, 2)
 
-      outBuff = AudioBuffer.zeros(44100, 2, BLOCK_SIZE)
-      input.tick(outBuff)
-      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
-      assertAllValuesApprox(outBuff.getChannelData(1), 0)
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 2)
+        assert.equal(outBuff.numberOfChannels, 2)
+        assert.equal(outBuff.length, BLOCK_SIZE)
+
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0)
+      })
 
       input.connect(output1)
-      outBuff = AudioBuffer.zeros(44100, 2, BLOCK_SIZE)
-      input.tick(outBuff)
-      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
-      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+      input.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(input.computedNumberOfChannels, 2)
+        assert.equal(outBuff.numberOfChannels, 2)
+        assert.equal(outBuff.length, BLOCK_SIZE)
+
+        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+      })
+    })
+
+  })
+
+})
+
+describe('AudioOutput', function() {
+
+  var dummyContext = {sampleRate: 44100, currentTime: 0}
+
+  describe('pullAudio', function() {
+
+    it('should pull the audio once and cache it after', function() {
+      var sourceNode = {channelCount: 3}
+        , output = new AudioOutput(dummyContext, sourceNode, 0)
+        , theBuff = AudioBuffer.filledWithVal(0.24, 1, BLOCK_SIZE, 44100)
+        , pulledCounter = 0
+
+      dummyContext.currentTime = 12
+      sourceNode.pullAudio = function(done) {
+        pulledCounter++
+        done(null, theBuff)
+      }
+      assert.deepEqual(output._cachedBlock, {time: -1, buffer: null})
+
+      // First pullAudio, the block should be cached
+      output.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(outBuff, theBuff)
+        assert.equal(output._cachedBlock.time, 12)
+        assert.equal(output._cachedBlock.buffer, theBuff)
+        assert.equal(pulledCounter, 1)
+      })
+
+      // Second pullAudio, same currentTime, node.pullAudio shouldn't be called again
+      output.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(outBuff, theBuff)
+        assert.equal(output._cachedBlock.time, 12)
+        assert.equal(output._cachedBlock.buffer, theBuff)
+        assert.equal(pulledCounter, 1)
+      })
+
+      // Time moved, now a new block should be returned
+      dummyContext.currentTime = 23
+      output.pullAudio(function(err, outBuff) {
+        assert.ok(!err)
+        assert.equal(outBuff, theBuff)
+        assert.equal(output._cachedBlock.time, 23)
+        assert.equal(output._cachedBlock.buffer, theBuff)
+        assert.equal(pulledCounter, 2)
+      })
+
     })
 
   })
