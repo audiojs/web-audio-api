@@ -2,41 +2,42 @@ var assert = require('assert')
   , async = require('async')
   , AudioBuffer = require('audiobuffer')
   , AudioBufferSourceNode = require('../lib/AudioBufferSourceNode')
+  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
 
 describe('AudioBufferSourceNode', function() {
 
-  describe('pullAudio', function() {
+  // Helper to get a test buffer
+  //  0.1 ... 128 times ...  0.2 ... 128 times ...  0.3 ... 128 times ...  0.4 ... 128 times ...  0.5 ... 64 times
+  // -0.1 ... 128 times ... -0.2 ... 128 times ... -0.3 ... 128 times ... -0.4 ... 128 times ... -0.5 ... 64 times 
+  var getTestBuffer = function() {
+    var audioBuffer = new AudioBuffer(2, 128 * 4 + 64, 44100)
+      , chArray, i, j
+    // Filling in the audio buffer
+    for (i = 0; i < 4; i++) {
+      chArray = audioBuffer.getChannelData(0)
+      for (j = 0; j < 128; j++)
+        chArray[i * BLOCK_SIZE + j] = (i + 1) * 0.1
+      chArray = audioBuffer.getChannelData(1)
+      for (j = 0; j < 128; j++)
+        chArray[i * BLOCK_SIZE + j] = (i + 1) * -0.1
+    }
+    chArray = audioBuffer.getChannelData(0)
+    for (j = 0; j < 64; j++)
+      chArray[4 * BLOCK_SIZE + j] = 0.5
+    chArray = audioBuffer.getChannelData(1)
+    for (j = 0; j < 64; j++)
+      chArray[4 * BLOCK_SIZE + j] = -0.5
+    return audioBuffer
+  }
 
+  describe('pullAudio', function() {
+    
     var helpers = require('./helpers')
       , dummyContext
 
     beforeEach(function() {
-      dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: 128}
+      dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: BLOCK_SIZE}
     })
-
-    // Helper to get a test buffer
-    //  0.1 ... 128 times ...  0.2 ... 128 times ...  0.3 ... 128 times ...  0.4 ... 128 times ...  0.5 ... 64 times
-    // -0.1 ... 128 times ... -0.2 ... 128 times ... -0.3 ... 128 times ... -0.4 ... 128 times ... -0.5 ... 64 times 
-    var getTestBuffer = function() {
-      var audioBuffer = new AudioBuffer(2, 128 * 4 + 64, 44100)
-        , chArray, i, j
-      // Filling in the audio buffer
-      for (i = 0; i < 4; i++) {
-        chArray = audioBuffer.getChannelData(0)
-        for (j = 0; j < 128; j++)
-          chArray[i * dummyContext.BLOCK_SIZE + j] = (i + 1) * 0.1
-        chArray = audioBuffer.getChannelData(1)
-        for (j = 0; j < 128; j++)
-          chArray[i * dummyContext.BLOCK_SIZE + j] = (i + 1) * -0.1
-      }
-      chArray = audioBuffer.getChannelData(0)
-      for (j = 0; j < 64; j++)
-        chArray[4 * dummyContext.BLOCK_SIZE + j] = 0.5
-      chArray = audioBuffer.getChannelData(1)
-      for (j = 0; j < 64; j++)
-        chArray[4 * dummyContext.BLOCK_SIZE + j] = -0.5
-      return audioBuffer
-    }
 
     it('should pull zeros when reading not started', function(done) {
       var node = new AudioBufferSourceNode(dummyContext)
@@ -219,7 +220,7 @@ describe('AudioBufferSourceNode', function() {
       )
     })
 
-    it('should loop the audio from offset to offset + duration', function(done) {
+    it('should loop the audio from loopStart to loopEnd', function(done) {
       var node = new AudioBufferSourceNode(dummyContext)
         , blocks = []
         , audioBuffer = getTestBuffer()
@@ -267,6 +268,44 @@ describe('AudioBufferSourceNode', function() {
           done()
         }
       )
+    })
+
+  })
+
+  describe('stop', function() {
+
+    var helpers = require('./helpers')
+      , dummyContext
+
+    beforeEach(function() {
+      dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: 128}
+    })
+
+    it('should stop the playing', function(done) {
+      var node = new AudioBufferSourceNode(dummyContext)
+        , blocks = []
+        , audioBuffer = getTestBuffer()
+      node.buffer = audioBuffer
+      node.loop = true
+      // 0.1 ... X64 ... 0.2 ... X128 ....
+      node.start(0)
+      node.stop(1)
+
+      node.pullAudio(function(err, audioBuffer) {
+        assert.equal(audioBuffer.length, 128)
+        assert.equal(audioBuffer.numberOfChannels, 2)
+        helpers.assertAllValuesApprox(audioBuffer.getChannelData(0), 0.1)
+        helpers.assertAllValuesApprox(audioBuffer.getChannelData(1), -0.1)
+
+        dummyContext.currentTime += 1
+        node.pullAudio(function(err, audioBuffer) {
+          assert.equal(audioBuffer.length, 128)
+          assert.equal(audioBuffer.numberOfChannels, 1)
+          helpers.assertAllValuesEqual(audioBuffer.getChannelData(0), 0)
+          done()
+        })
+      })
+
     })
 
   })

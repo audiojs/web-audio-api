@@ -1,11 +1,20 @@
-var Listen = require('../lib/Listen')
-  , SoundFile = require('../lib/SoundFile')
-
 if (require.main === module) {
-  var listen = new Listen
-    , soundfile = new SoundFile(__dirname + '/sounds/powerpad.mp3', {loop: true, start: 1, end: 3})
+  var fs = require('fs')
+    , AudioBuffer = require('audiobuffer')
+    , AudioContext = require('../../lib/AudioContext')
+    , AudioBufferSourceNode = require('../../lib/AudioBufferSourceNode')
+    , pcmUtils = require('pcm-boilerplate')
+    , context = new AudioContext
+    , decoder = pcmUtils.BufferDecoder({numberOfChannels: 2, sampleRate: context.sampleRate, bitDepth: 16})
 
-  soundfile.on('ready', function() {
-    soundfile.connect(listen)
+  fs.readFile(__dirname + '/sounds/powerpad.raw', function(err, buffer) {
+    if(err) throw err
+    var bufferNode = new AudioBufferSourceNode(context)
+    bufferNode.connect(context.destination)
+    bufferNode.buffer = AudioBuffer.fromArray(decoder(buffer), context.sampleRate)
+    bufferNode.loop = true
+    bufferNode.loopStart = 1
+    bufferNode.loopEnd = 2
+    bufferNode.start(0)
   })
 }
