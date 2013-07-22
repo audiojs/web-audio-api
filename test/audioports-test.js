@@ -70,6 +70,24 @@ describe('AudioPort', function() {
       ])
     })
 
+    it('should listen to _numberOfChannels event', function() {
+      var sink = new AudioInput(dummyContext, dummyNode, 0)
+        , source = new AudioOutput(dummyContext, dummyNode, 1)
+      sink.computedNumberOfChannels = 2
+
+      source.emit('_numberOfChannels')
+      assert.equal(sink.computedNumberOfChannels, 2)
+
+      source.connect(sink)
+      source.emit('_numberOfChannels')
+      assert.equal(sink.computedNumberOfChannels, null)
+      sink.computedNumberOfChannels = 2
+
+      source.disconnect(sink)
+      source.emit('_numberOfChannels')
+      assert.equal(sink.computedNumberOfChannels, 2)
+    })
+
   })
 
 })
@@ -286,6 +304,52 @@ describe('AudioOutput', function() {
         assert.equal(output._cachedBlock.buffer, theBuff)
         assert.equal(pulledCounter, 2)
       })
+
+    })
+
+    it('should emit event _numberOfChannels when the number of channels changed', function() {
+      var sourceNode = {channelCount: 3}
+        , output = new AudioOutput(dummyContext, sourceNode, 0)
+        , pulledCounter = 0
+        , eventsReceived = []
+
+      dummyContext.currentTime = 12
+      sourceNode.pullAudio = function(done) {
+        if (pulledCounter === 0)
+          done(null, new AudioBuffer(1, BLOCK_SIZE, 44100))
+        else if (pulledCounter === 1)
+          done(null, new AudioBuffer(2, BLOCK_SIZE, 44100))
+        else if (pulledCounter === 2)
+          done(null, new AudioBuffer(2, BLOCK_SIZE, 44100))
+        else if (pulledCounter === 3)
+          done(null, new AudioBuffer(1, BLOCK_SIZE, 44100))
+        pulledCounter++
+      }
+
+      output.on('_numberOfChannels', function() {
+        eventsReceived.push(output._numberOfChannels)
+      })
+
+      dummyContext.currentTime = 1
+      assert.equal(output._numberOfChannels, null)
+      output.pullAudio(function() {})
+      assert.equal(output._numberOfChannels, 1)
+      assert.deepEqual(eventsReceived, [1])
+
+      dummyContext.currentTime = 2
+      output.pullAudio(function() {})
+      assert.equal(output._numberOfChannels, 2)
+      assert.deepEqual(eventsReceived, [1, 2])
+
+      dummyContext.currentTime = 3
+      output.pullAudio(function() {})
+      assert.equal(output._numberOfChannels, 2)
+      assert.deepEqual(eventsReceived, [1, 2])
+
+      dummyContext.currentTime = 4
+      output.pullAudio(function() {})
+      assert.equal(output._numberOfChannels, 1)
+      assert.deepEqual(eventsReceived, [1, 2, 1])
 
     })
 

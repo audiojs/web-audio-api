@@ -15,7 +15,7 @@ describe('AudioParam', function() {
 
   var untilTime = function(audioParam, until, testFunc) {
     var block
-    while(audioParam._context.currentTime < until - 3*Ts/2) {
+    while(audioParam.context.currentTime < until - 3*Ts/2) {
       block = audioParam._tick()
       testFunc(block, dummyContext.currentTime)
       assert.equal(audioParam.value, block[BLOCK_SIZE - 1])
@@ -400,7 +400,7 @@ describe('AudioParam', function() {
         assertAllValuesEqual(block, -1)
       })
 
-      var T0 = audioParam._context.currentTime
+      var T0 = audioParam.context.currentTime
       untilTime(audioParam, 3, function(block, Tb) {
         assertAllValuesFunc(block, Tb, function(t) { return Math.min((t - T0) / (3 - T0), 1) })
       })
