@@ -4,7 +4,7 @@ var assert = require('assert')
   , audioports = require('../lib/audioports')
   , AudioOutput = audioports.AudioOutput
   , AudioInput = audioports.AudioInput
-  , AudioBuffer = require('../lib/AudioBuffer')
+  , AudioBuffer = require('audiobuffer')
   , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
   , assertAllValuesApprox = require('./helpers').assertAllValuesApprox
 

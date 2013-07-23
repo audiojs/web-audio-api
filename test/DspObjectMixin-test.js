@@ -1,9 +1,15 @@
 var assert = require('assert')
-  , DspObject = require('../lib/DspObject')
+  , _ = require('underscore')
+  , DspObjectMixin = require('../lib/DspObjectMixin')
 
-describe('DspObject', function() {
+describe('DspObjectMixin', function() {
 
   var dummyContext
+
+  var DspObject = function(context) {
+    DspObjectMixin.init(this, context)
+  }
+  _.extend(DspObject.prototype, DspObjectMixin)
 
   beforeEach(function() {
     dummyContext = {currentTime: 0}

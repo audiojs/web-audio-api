@@ -25,6 +25,12 @@ describe('AudioNode', function() {
     assert.equal(node._outputs[1].context, dummyContext)
   })
 
+  it('should inherit from EventEmitter', function() {
+    var node = new AudioNode(dummyContext, 1, 2)
+    assert.ok(node.on)
+    assert.ok(node.once)    
+  })
+
   describe('channelCount', function() {
 
     it('should accept valid values', function() {
