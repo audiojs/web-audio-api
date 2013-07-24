@@ -101,6 +101,24 @@ describe('AudioParam', function() {
     
   })
 
+  describe('value', function() {
+
+    it('should go to constant value if there aren\'t automation events', function() {
+      var audioParam = new AudioParam(dummyContext, 44)
+        , block
+
+      block = audioParam._tick()
+      assertValidBlock(block)
+      assertAllValuesEqual(block.getChannelData(0), 44)
+
+      audioParam.value = 99
+      block = audioParam._tick()
+      assertValidBlock(block)
+      assertAllValuesEqual(block.getChannelData(0), 99)      
+    })
+
+  })
+
   describe('setValueAtTime', function() {
 
     it('should set the value at the time specified', function() {
