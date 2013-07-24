@@ -130,7 +130,7 @@ describe('AudioInput', function() {
 
   })
 
-  describe('pullAudio', function() {
+  describe('_tick', function() {
 
     it('should up-mix by adding zeros in discrete mode', function() {
       var sinkNode = {channelCount: 5, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
@@ -139,41 +139,38 @@ describe('AudioInput', function() {
         , input = new AudioInput(dummyContext, sinkNode, 0)
         , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
         , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
+        , outBuff
 
-      output1.pullAudio = function(done) {
-        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      output1._tick = function() {
+        return AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100)
       }
-      output2.pullAudio = function(done) {
-        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      output2._tick = function() {
+        return AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100)
       }
 
       input.connect(output2)
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 5)
-        assert.equal(outBuff.numberOfChannels, 5)
-        assert.equal(outBuff.length, BLOCK_SIZE)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 5)
+      assert.equal(outBuff.numberOfChannels, 5)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0)
-        assertAllValuesApprox(outBuff.getChannelData(2), 0)
-        assertAllValuesApprox(outBuff.getChannelData(3), 0)
-        assertAllValuesApprox(outBuff.getChannelData(4), 0)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0)
+      assertAllValuesApprox(outBuff.getChannelData(2), 0)
+      assertAllValuesApprox(outBuff.getChannelData(3), 0)
+      assertAllValuesApprox(outBuff.getChannelData(4), 0)
 
       input.connect(output1)
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 5)
-        assert.equal(outBuff.numberOfChannels, 5)
-        assert.equal(outBuff.length, BLOCK_SIZE)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 5)
+      assert.equal(outBuff.numberOfChannels, 5)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
-        assertAllValuesApprox(outBuff.getChannelData(2), 0.05)
-        assertAllValuesApprox(outBuff.getChannelData(3), 0)
-        assertAllValuesApprox(outBuff.getChannelData(4), 0)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+      assertAllValuesApprox(outBuff.getChannelData(2), 0.05)
+      assertAllValuesApprox(outBuff.getChannelData(3), 0)
+      assertAllValuesApprox(outBuff.getChannelData(4), 0)
     })
 
     it('should down-mix by dropping channels in discrete mode', function() {
@@ -183,36 +180,32 @@ describe('AudioInput', function() {
         , input = new AudioInput(dummyContext, sinkNode, 0)
         , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
         , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
+        , outBuff
 
-      output1.pullAudio = function(done) {
-        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      output1._tick = function() {
+        return AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100)
       }
-      output2.pullAudio = function(done) {
-        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      output2._tick = function() {
+        return AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100)
       }
 
       input.connect(output2)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 2)
+      assert.equal(outBuff.numberOfChannels, 2)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 2)
-        assert.equal(outBuff.numberOfChannels, 2)
-        assert.equal(outBuff.length, BLOCK_SIZE)
-
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0)
 
       input.connect(output1)
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 2)
-        assert.equal(outBuff.numberOfChannels, 2)
-        assert.equal(outBuff.length, BLOCK_SIZE)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 2)
+      assert.equal(outBuff.numberOfChannels, 2)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
     })
 
     it('should return a buffer with channelCount channels, full of zeros if no connection', function() {
@@ -222,36 +215,32 @@ describe('AudioInput', function() {
         , input = new AudioInput(dummyContext, sinkNode, 0)
         , output1 = new AudioOutput(dummyContext, sourceNode1, 0)
         , output2 = new AudioOutput(dummyContext, sourceNode2, 0)
+        , outBuff
 
-      output1.pullAudio = function(done) {
-        done(null, new AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100))
+      output1._tick = function() {
+        return AudioBuffer.filledWithVal(0.1, 3, BLOCK_SIZE, 44100)
       }
-      output2.pullAudio = function(done) {
-        done(null, AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100))
+      output2._tick = function() {
+        return AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100)
       }
 
       input.connect(output2)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 2)
+      assert.equal(outBuff.numberOfChannels, 2)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 2)
-        assert.equal(outBuff.numberOfChannels, 2)
-        assert.equal(outBuff.length, BLOCK_SIZE)
-
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0)
 
       input.connect(output1)
-      input.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(input.computedNumberOfChannels, 2)
-        assert.equal(outBuff.numberOfChannels, 2)
-        assert.equal(outBuff.length, BLOCK_SIZE)
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 2)
+      assert.equal(outBuff.numberOfChannels, 2)
+      assert.equal(outBuff.length, BLOCK_SIZE)
 
-        assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
-        assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
-      })
+      assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
+      assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
     })
 
   })
@@ -262,48 +251,43 @@ describe('AudioOutput', function() {
 
   var dummyContext = {sampleRate: 44100, currentTime: 0}
 
-  describe('pullAudio', function() {
+  describe('_tick', function() {
 
     it('should pull the audio once and cache it after', function() {
       var sourceNode = {channelCount: 3}
         , output = new AudioOutput(dummyContext, sourceNode, 0)
         , theBuff = AudioBuffer.filledWithVal(0.24, 1, BLOCK_SIZE, 44100)
         , pulledCounter = 0
+        , outBuff
 
       dummyContext.currentTime = 12
-      sourceNode.pullAudio = function(done) {
+      sourceNode._tick = function() {
         pulledCounter++
-        done(null, theBuff)
+        return theBuff
       }
       assert.deepEqual(output._cachedBlock, {time: -1, buffer: null})
 
-      // First pullAudio, the block should be cached
-      output.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(outBuff, theBuff)
-        assert.equal(output._cachedBlock.time, 12)
-        assert.equal(output._cachedBlock.buffer, theBuff)
-        assert.equal(pulledCounter, 1)
-      })
+      // First _tick, the block should be cached
+      outBuff = output._tick()
+      assert.equal(outBuff, theBuff)
+      assert.equal(output._cachedBlock.time, 12)
+      assert.equal(output._cachedBlock.buffer, theBuff)
+      assert.equal(pulledCounter, 1)
 
-      // Second pullAudio, same currentTime, node.pullAudio shouldn't be called again
-      output.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(outBuff, theBuff)
-        assert.equal(output._cachedBlock.time, 12)
-        assert.equal(output._cachedBlock.buffer, theBuff)
-        assert.equal(pulledCounter, 1)
-      })
+      // Second _tick, same currentTime, node._tick shouldn't be called again
+      outBuff = output._tick()
+      assert.equal(outBuff, theBuff)
+      assert.equal(output._cachedBlock.time, 12)
+      assert.equal(output._cachedBlock.buffer, theBuff)
+      assert.equal(pulledCounter, 1)
 
       // Time moved, now a new block should be returned
       dummyContext.currentTime = 23
-      output.pullAudio(function(err, outBuff) {
-        assert.ok(!err)
-        assert.equal(outBuff, theBuff)
-        assert.equal(output._cachedBlock.time, 23)
-        assert.equal(output._cachedBlock.buffer, theBuff)
-        assert.equal(pulledCounter, 2)
-      })
+      outBuff = output._tick()
+      assert.equal(outBuff, theBuff)
+      assert.equal(output._cachedBlock.time, 23)
+      assert.equal(output._cachedBlock.buffer, theBuff)
+      assert.equal(pulledCounter, 2)
 
     })
 
@@ -314,16 +298,18 @@ describe('AudioOutput', function() {
         , eventsReceived = []
 
       dummyContext.currentTime = 12
-      sourceNode.pullAudio = function(done) {
+      sourceNode._tick = function() {
+        var buff
         if (pulledCounter === 0)
-          done(null, new AudioBuffer(1, BLOCK_SIZE, 44100))
+          buff = new AudioBuffer(1, BLOCK_SIZE, 44100)
         else if (pulledCounter === 1)
-          done(null, new AudioBuffer(2, BLOCK_SIZE, 44100))
+          buff = new AudioBuffer(2, BLOCK_SIZE, 44100)
         else if (pulledCounter === 2)
-          done(null, new AudioBuffer(2, BLOCK_SIZE, 44100))
+          buff = new AudioBuffer(2, BLOCK_SIZE, 44100)
         else if (pulledCounter === 3)
-          done(null, new AudioBuffer(1, BLOCK_SIZE, 44100))
+          buff = new AudioBuffer(1, BLOCK_SIZE, 44100)
         pulledCounter++
+        return buff
       }
 
       output.on('_numberOfChannels', function() {
@@ -332,22 +318,22 @@ describe('AudioOutput', function() {
 
       dummyContext.currentTime = 1
       assert.equal(output._numberOfChannels, null)
-      output.pullAudio(function() {})
+      output._tick()
       assert.equal(output._numberOfChannels, 1)
       assert.deepEqual(eventsReceived, [1])
 
       dummyContext.currentTime = 2
-      output.pullAudio(function() {})
+      output._tick()
       assert.equal(output._numberOfChannels, 2)
       assert.deepEqual(eventsReceived, [1, 2])
 
       dummyContext.currentTime = 3
-      output.pullAudio(function() {})
+      output._tick()
       assert.equal(output._numberOfChannels, 2)
       assert.deepEqual(eventsReceived, [1, 2])
 
       dummyContext.currentTime = 4
-      output.pullAudio(function() {})
+      output._tick()
       assert.equal(output._numberOfChannels, 1)
       assert.deepEqual(eventsReceived, [1, 2, 1])
 
