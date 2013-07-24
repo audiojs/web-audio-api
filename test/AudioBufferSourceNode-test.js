@@ -41,13 +41,13 @@ describe('AudioBufferSourceNode', function() {
 
     it('should pull zeros when reading not started', function() {
       var node = new AudioBufferSourceNode(dummyContext)
-        , audioBuffer
+        , block
       while(dummyContext.currentTime < 2) {
         dummyContext.currentTime++
-        audioBuffer = node._tick()
-        assert.equal(audioBuffer.length, 128)
-        assert.equal(audioBuffer.numberOfChannels, 1)
-        helpers.assertAllValuesEqual(audioBuffer.getChannelData(0), 0)
+        block = node._tick()
+        assert.equal(block.length, 128)
+        assert.equal(block.numberOfChannels, 1)
+        helpers.assertAllValuesEqual(block.getChannelData(0), 0)
       }
     })
 
