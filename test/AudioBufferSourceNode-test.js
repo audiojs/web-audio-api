@@ -32,7 +32,7 @@ describe('AudioBufferSourceNode', function() {
 
   describe('_tick', function() {
     
-    var helpers = require('./helpers')
+    var helpers = require('./helpers')()
       , dummyContext
 
     beforeEach(function() {
@@ -226,7 +226,7 @@ describe('AudioBufferSourceNode', function() {
 
   describe('stop', function() {
 
-    var helpers = require('./helpers')
+    var helpers = require('./helpers')()
       , dummyContext
 
     beforeEach(function() {

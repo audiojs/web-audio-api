@@ -20,8 +20,10 @@
     "underscore": "1.4.x",
     "fluent-ffmpeg": "1.5.x",
     "mathjs": "0.9.x",
-    "speaker": "0.0.x",
     "audiobuffer": "*"
+  },
+  "optionalDependencies": {
+    "speaker": "0.0.x"
   },
   "analyze": false,
   "devDependencies": {

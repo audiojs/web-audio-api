@@ -48,7 +48,6 @@ describe('GainNode', function() {
         return new AudioBuffer.filledWithVal(0.5, 3, BLOCK_SIZE, 44100)
       }
       gainNode.gain.value = 0.3
-      debugger
       block = gainNode._tick()
       assert.equal(block.numberOfChannels, 3)
       assert.equal(block.length, BLOCK_SIZE)
