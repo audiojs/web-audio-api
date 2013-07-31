@@ -1,3 +1,82 @@
+Node Web Audio API
+=====================
+
+This library implements the [web audio API specification](https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html) on node.js.
+
+Why the hell doing that??? I know it sounds crazy, so I guess I'll have to build a case for it, and write some blog posts.
+
+And this is not even alpha. Use this library only if you're the adventurous kind.
+
+
+What's implemented
+-------------------
+
+- AudioContext(partially)
+- AudioParam (almost there)
+- AudioBufferSourceNode
+- GainNode
+
+
+What's left to do
+------------------
+
+Most of the AudioNodes ...
+Most of many other things ...
+:(
+
+
+Installation
+--------------
+
+```
+npm install web-audio-api
+```
+
+
+Demo
+------
+
+Get ready, this is going to blow up your mind :
+
+```
+node test/manual-testing/AudioContext-sound-output.js
+```
+
+
+Streaming audio
+-----------------
+
+`AudioContext` just writes PCM data to a node writable stream. The default stream is a stream created with `Speaker`, which plays the audio back to your soundcard. But you can use any writable stream, file, or stream the audio to an external process.
+
+I used this to stream audio to an icecast server :
+
+```
+var spawn = require('child_process').spawn
+  , AudioContext = require('web-audio-api').AudioContext
+  , context = new AudioContext()
+
+var ices = spawn('ices', ['ices.xml'])
+context.outStream = ices.stdin
+``` 
+
+Cool huh?
+
+
+Running the tests
+------------------
+
+Tests are written with mocha. To run them, install mocha with :
+
+```
+npm install -g mocha
+```
+
+And in the root folder run :
+
+```
+mocha
+```
+
 Manual testing
 ----------------
 

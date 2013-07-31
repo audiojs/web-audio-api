@@ -18,8 +18,8 @@
   "dependencies": {
     "async": "0.2.x",
     "underscore": "1.4.x",
-    "fluent-ffmpeg": "1.5.x",
     "mathjs": "0.9.x",
+    "pcm-boilerplate": "*",
     "audiobuffer": "*"
   },
   "optionalDependencies": {
@@ -28,9 +28,6 @@
   "analyze": false,
   "devDependencies": {
     "mocha": "*",
-    "grunt": "0.4.x",
-    "grunt-browserify2": "0.1.x",
-    "grunt-simple-mocha": "0.4.x",
     "chai": "1.7.x"
   },
   "license": "MIT",

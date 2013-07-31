@@ -9,7 +9,7 @@ if (require.main === module) {
 
   fs.readFile(__dirname + '/sounds/powerpad.raw', function(err, buffer) {
     if(err) throw err
-    var bufferNode = new AudioBufferSourceNode(context)
+    var bufferNode = context.createBufferSource()
     bufferNode.connect(context.destination)
     bufferNode.buffer = AudioBuffer.fromArray(decoder(buffer), context.sampleRate)
     bufferNode.loop = true
