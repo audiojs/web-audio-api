@@ -59,7 +59,7 @@ describe('AudioBufferSourceNode', function() {
       node.start(1)
 
       // Runs _tick for a while, saving the returned blocks
-      while(dummyContext.currentTime < 7) {
+      while(dummyContext.currentTime < 6) {
         blocks.push(node._tick())
         dummyContext.currentTime += 1
       }
@@ -92,9 +92,7 @@ describe('AudioBufferSourceNode', function() {
       helpers.assertAllValuesApprox(blocks[5].getChannelData(1).slice(64, 128), 0)
 
       // Playback over
-      assert.equal(blocks[6].numberOfChannels, 1)
-      assert.equal(blocks[6].length, 128)
-      helpers.assertAllValuesEqual(blocks[6].getChannelData(0), 0)
+      assert.throws(function() { node._tick() })
     })
 
     it('should loop the audio from the buffer', function() {
