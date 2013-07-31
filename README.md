@@ -100,7 +100,15 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
-0.1 initial release
+0.1.1
+
+- AudioBufferSourceNode
+  - node is killed once it has finished playing
+  - subsequent calls to `start` have no effect
+
+- AudioContext.collectNodes
+
+0.1.0 initial release
 
 - AudioContext (partial implementation)
 - AudioParam (missing unschedule)
