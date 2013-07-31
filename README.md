@@ -62,6 +62,13 @@ context.outStream = ices.stdin
 Cool huh?
 
 
+Extensions
+-----------
+
+Wow! The whole thing is not even half-done that there's already some extensions for it! See the list in [the wiki](https://github.com/sebpiq/node-web-audio-api/wiki/Extra-AudioNode-libraries-for-node-web-audio-api
+).
+
+
 Running the tests
 ------------------
 
