@@ -90,6 +90,28 @@ describe('AudioPort', function() {
 
   })
 
+  describe('_kill', function() {
+
+    it('should disconnect everything and remove event listeners', function() {
+      var sink1 = new AudioInput(dummyContext, dummyNode, 0)
+        , sink2 = new AudioInput(dummyContext, dummyNode, 0)
+        , source = new AudioOutput(dummyContext, dummyNode, 1)
+
+      sink1.connect(source)
+      sink2.connect(source)
+      source.on('bla', function() {})
+      assert.equal(source.listeners('bla').length, 1)
+      assert.deepEqual(sink1.sources, [source])
+      assert.deepEqual(sink2.sources, [source])
+
+      source._kill()
+      assert.deepEqual(sink1.sources, [])
+      assert.deepEqual(sink2.sources, [])
+      assert.equal(source.listeners('bla').length, 0)
+    })    
+
+  })
+
 })
 
 describe('AudioInput', function() {

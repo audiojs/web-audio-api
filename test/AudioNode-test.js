@@ -157,6 +157,31 @@ describe('AudioNode', function() {
 
   })
 
+  describe('_kill', function() {
+
+    it('should disconnect all connections, and remove listeners', function() {
+      var source = new AudioNode(dummyContext, 0, 3)
+        , sink1 = new AudioNode(dummyContext, 3, 0)
+        , sink2 = new AudioNode(dummyContext, 3, 0)
+
+      source.connect(sink1, 1)
+      source.connect(sink2, 1)
+      source.connect(sink2, 2)
+      source.on('bla', function() {})
+      assert.equal(source.listeners('bla').length, 1)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 2)
+      assert.equal(source._outputs[2].sinks.length, 1)
+
+      source._kill()
+      assert.equal(source.listeners('bla').length, 0)
+      assert.equal(source._outputs[0].sinks.length, 0)
+      assert.equal(source._outputs[1].sinks.length, 0)
+      assert.equal(source._outputs[2].sinks.length, 0)
+    })
+
+  })
+
 })
 
 /*
