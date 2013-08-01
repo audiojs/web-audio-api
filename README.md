@@ -108,6 +108,8 @@ Changelog
 
 - AudioContext.collectNodes
 
+- audioports bug fixes
+
 0.1.0 initial release
 
 - AudioContext (partial implementation)

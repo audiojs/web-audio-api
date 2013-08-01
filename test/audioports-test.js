@@ -141,6 +141,13 @@ describe('AudioInput', function() {
       assert.equal(input.computedNumberOfChannels, 4)
     })
 
+    it('should get 1 when channelCountMode is max or clamped-max and there is no connection', function() {
+      var dummyNode = {channelCount: 6, channelCountMode: 'max'}
+        , input = new AudioInput(dummyContext, dummyNode, 0)
+      input._computeNumberOfChannels(0)
+      assert.equal(input.computedNumberOfChannels, 1)
+    })
+
     it('should get channelCount when channelCountMode is explicit', function() {
       var dummyNode = {channelCount: 5, channelCountMode: 'explicit'}
         , input = new AudioInput(dummyContext, dummyNode, 0)
@@ -246,15 +253,15 @@ describe('AudioInput', function() {
         return AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, 44100)
       }
 
-      input.connect(output2)
       outBuff = input._tick()
       assert.equal(input.computedNumberOfChannels, 2)
       assert.equal(outBuff.numberOfChannels, 2)
       assert.equal(outBuff.length, BLOCK_SIZE)
 
-      assertAllValuesApprox(outBuff.getChannelData(0), 0.2)
+      assertAllValuesApprox(outBuff.getChannelData(0), 0)
       assertAllValuesApprox(outBuff.getChannelData(1), 0)
 
+      input.connect(output2)
       input.connect(output1)
       outBuff = input._tick()
       assert.equal(input.computedNumberOfChannels, 2)
@@ -263,6 +270,19 @@ describe('AudioInput', function() {
 
       assertAllValuesApprox(outBuff.getChannelData(0), 0.15)
       assertAllValuesApprox(outBuff.getChannelData(1), 0.05)
+    })
+
+    it('should return a buffer with 1 channel in (clamped-)max mode, full of zeros if no connection', function() {
+      var sinkNode = {channelCountMode: 'max', channelInterpretation: 'discrete'}
+        , input = new AudioInput(dummyContext, sinkNode, 0)
+        , outBuff
+
+      outBuff = input._tick()
+      assert.equal(input.computedNumberOfChannels, 1)
+      assert.equal(outBuff.numberOfChannels, 1)
+      assert.equal(outBuff.length, BLOCK_SIZE)
+
+      assertAllValuesApprox(outBuff.getChannelData(0), 0)
     })
 
   })
