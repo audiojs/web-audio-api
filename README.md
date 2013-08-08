@@ -102,6 +102,8 @@ Changelog
 
 0.1.1
 
+- ScriptProcessorNode
+
 - AudioBufferSourceNode
   - node is killed once it has finished playing
   - subsequent calls to `start` have no effect
@@ -110,7 +112,7 @@ Changelog
 
 - audioports bug fixes
 
-0.1.0 initial release
+0.1.0
 
 - AudioContext (partial implementation)
 - AudioParam (missing unschedule)
