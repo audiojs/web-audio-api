@@ -55,14 +55,18 @@ describe('AudioBufferSourceNode', function() {
       var node = new AudioBufferSourceNode(dummyContext)
         , blocks = []
         , audioBuffer = getTestBuffer()
+        , onendedCalled = 0
       node.buffer = audioBuffer
       node.start(1)
+      node.onended = function() { onendedCalled = 11 }
 
       // Runs _tick for a while, saving the returned blocks
       while(dummyContext.currentTime < 6) {
+        assert.equal(onendedCalled, 0)
         blocks.push(node._tick())
         dummyContext.currentTime += 1
       }
+      assert.equal(onendedCalled, 11)
 
       // Before playback is started
       assert.equal(blocks[0].numberOfChannels, 1)
