@@ -14,6 +14,7 @@ What's implemented
 - AudioContext(partially)
 - AudioParam (almost there)
 - AudioBufferSourceNode
+- ScriptProcessorNode
 - GainNode
 
 
