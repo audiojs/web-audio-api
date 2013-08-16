@@ -8,7 +8,7 @@ var _ = require('underscore')
 
 describe('utils', function() {
 
-  describe('decodeAudio', function() {
+  describe('decodeAudioData', function() {
       
     var helpers = require('./helpers')({approx: 0.0005})
 
@@ -97,7 +97,7 @@ describe('utils', function() {
     it('should decode a 16b mono wav', function(done) {
       fs.readFile(__dirname + '/sounds/steps-mono-16b-44khz.wav', function(err, buf) {
         if (err) throw err
-        utils.decodeAudio(buf, function(err, audioBuffer) {
+        utils.decodeAudioData(buf, function(err, audioBuffer) {
           if (err) throw err
           assert.equal(audioBuffer.numberOfChannels, 1)
           assert.equal(audioBuffer.length, 21 * 4410)
@@ -111,12 +111,23 @@ describe('utils', function() {
     it('should decode a 16b stereo wav', function(done) {
       fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
         if (err) throw err
-        utils.decodeAudio(buf, function(err, audioBuffer) {
+        utils.decodeAudioData(buf, function(err, audioBuffer) {
           if (err) throw err
           assert.equal(audioBuffer.numberOfChannels, 2)
           assert.equal(audioBuffer.length, 21 * 4410)
           assert.equal(audioBuffer.sampleRate, 44100)
           testStepsStereo(reblock(audioBuffer, 4410), helpers)
+          done()
+        })
+      })
+    })
+
+    it('should return an error if the format couldn\'t be recognized', function(done) {
+      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+        if (err) throw err
+        utils.decodeAudioData(buf, function(err, audioBuffer) {
+          assert.ok(err)
+          assert.ok(!audioBuffer)
           done()
         })
       })

@@ -1,4 +1,5 @@
-var assert = require('assert')
+var fs = require('fs')
+  , assert = require('assert')
   , _ = require('underscore')
   , AudioContext = require('../lib/AudioContext')
   , AudioNode = require('../lib/AudioNode')
@@ -57,6 +58,38 @@ describe('AudioContext', function() {
         [node1a, node1b, node2a, node2b, node3a, node3b, node3c, node3d])
     })
   
+  })
+
+  describe('decodeAudioData', function() {
+
+    it('should decode a 16b stereo wav', function(done) {
+      var context = new AudioContext
+      context._kill()
+      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
+        if (err) throw err
+        context.decodeAudioData(buf, function(audioBuffer) {
+          assert.equal(audioBuffer.numberOfChannels, 2)
+          assert.equal(audioBuffer.length, 21 * 4410)
+          assert.equal(audioBuffer.sampleRate, 44100)
+          done()
+        }, function(err) { throw err })
+      })
+    })
+
+    it('should return an error if the format couldn\'t be recognized', function(done) {
+      var context = new AudioContext
+      context._kill()
+      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+        if (err) throw err
+        context.decodeAudioData(buf, function(audioBuffer) { throw new Error('shoudnt be called') },
+          function(err) {
+            assert.ok(err)
+            done()
+          }
+        )
+      })
+    })
+
   })
 
 })
