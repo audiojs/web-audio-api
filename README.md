@@ -105,16 +105,17 @@ Changelog
 - AudioBufferSourceNode
   - onended
 
+- AudioContext
+  - decodeAudioData, support for wav
+
 0.1.1
 
 - ScriptProcessorNode
-
 - AudioBufferSourceNode
   - node is killed once it has finished playing
   - subsequent calls to `start` have no effect
 
 - AudioContext.collectNodes
-
 - audioports bug fixes
 
 0.1.0
