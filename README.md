@@ -100,6 +100,11 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
+0.1.2
+
+- AudioBufferSourceNode
+  - onended
+
 0.1.1
 
 - ScriptProcessorNode
