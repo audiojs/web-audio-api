@@ -101,20 +101,17 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
-0.1.3
+#### 0.1.3
 
-- AudioContext
-  - decodeAudioData, support for mp3
+- audioports : implemented channelInterpretation 'speakers'
+- AudioContext : decodeAudioData, support for mp3
 
-0.1.2
+#### 0.1.2
 
-- AudioBufferSourceNode
-  - onended
+- AudioBufferSourceNode : onended
+- AudioContext : decodeAudioData, support for wav
 
-- AudioContext
-  - decodeAudioData, support for wav
-
-0.1.1
+#### 0.1.1
 
 - ScriptProcessorNode
 - AudioBufferSourceNode
@@ -124,7 +121,7 @@ Changelog
 - AudioContext.collectNodes
 - audioports bug fixes
 
-0.1.0
+#### 0.1.0
 
 - AudioContext (partial implementation)
 - AudioParam (missing unschedule)
