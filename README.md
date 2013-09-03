@@ -101,6 +101,11 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
+0.1.3
+
+- AudioContext
+  - decodeAudioData, support for mp3
+
 0.1.2
 
 - AudioBufferSourceNode

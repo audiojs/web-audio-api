@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "description": "Node.js implementation of Web audio API",
   "repository": {
