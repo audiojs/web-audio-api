@@ -161,6 +161,9 @@ describe('AudioInput', function() {
 
   describe('_tick', function() {
 
+    // Assert that all values for each channel of `outBuff` are equal to the corresponding
+    // channel in `values`.
+    // e.g. assertChannelsEqual(outBuff, [11, 22, 33])
     var assertChannelsEqual = function(outBuff, values) {
       var ch, numberOfChannels = values.length
       assert.equal(outBuff.numberOfChannels, numberOfChannels)
@@ -170,81 +173,86 @@ describe('AudioInput', function() {
         assertAllValuesApprox(outBuff.getChannelData(ch), values[ch])
     }
 
-    var getOutput = function(node, val) {
-      var output = new AudioOutput(dummyContext, node, 0)
+    // Helper to return an Output which has `channelCount` and whose
+    // values are `values`, one value for each channel
+    var getOutput = function(values) {
+      var channelCount = values.length
+        , output = new AudioOutput(dummyContext, {channelCount: channelCount}, 0)
+        , array = []
+        , ch, i
+
+      for (ch = 0; ch < channelCount; ch++) {
+        array[ch] = []
+        for (i = 0; i < BLOCK_SIZE; i++)
+          array[ch][i] = values[ch]
+      }
+
       output._tick = function() {
-        return AudioBuffer.filledWithVal(val, node.channelCount, BLOCK_SIZE, 44100)
+        return AudioBuffer.fromArray(array, 44100)
       }
       return output
     } 
+
+    it('should just copy if number of channels are the same', function() {
+      var sinkNode = {channelCount: 3, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
+        , input = new AudioInput(dummyContext, sinkNode, 0)
+        , output = getOutput([0.1, 0.2, 0.3])
+
+      input.connect(output)
+      assertChannelsEqual(input._tick(), [0.1, 0.2, 0.3])
+      assert.equal(input.computedNumberOfChannels, 3)
+    })
 
     describe('channelInterpretation: \'discrete\'', function() {
 
       it('should up-mix by adding zeros in discrete mode', function() {
         var sinkNode = {channelCount: 5, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
-          , sourceNode1 = {channelCount: 3}
-          , sourceNode2 = {channelCount: 1}
           , input = new AudioInput(dummyContext, sinkNode, 0)
-          , output1 = getOutput(sourceNode1, 0.1)
-          , output2 = getOutput(sourceNode2, 0.2)
-          , outBuff
+          , output1 = getOutput([0.1, 0.1, 0.1])
+          , output2 = getOutput([0.2])
 
         input.connect(output2)
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0.2, 0, 0, 0, 0])
         assert.equal(input.computedNumberOfChannels, 5)
-        assertChannelsEqual(outBuff, [0.2, 0, 0, 0, 0])
 
         input.connect(output1)
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0.15, 0.05, 0.05, 0, 0])
         assert.equal(input.computedNumberOfChannels, 5)
-        assertChannelsEqual(outBuff, [0.15, 0.05, 0.05, 0, 0])
-
       })
 
       it('should down-mix by dropping channels in discrete mode', function() {
         var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
-          , sourceNode1 = {channelCount: 4}
-          , sourceNode2 = {channelCount: 1}
           , input = new AudioInput(dummyContext, sinkNode, 0)
-          , output1 = getOutput(sourceNode1, 0.1)
-          , output2 = getOutput(sourceNode2, 0.2)
-          , outBuff
+          , output1 = getOutput([0.1, 0.1, 0.1, 0.1])
+          , output2 = getOutput([0.2])
 
         input.connect(output2)
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0.2, 0])
         assert.equal(input.computedNumberOfChannels, 2)
-        assertChannelsEqual(outBuff, [0.2, 0])
 
         input.connect(output1)
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0.15, 0.05])
         assert.equal(input.computedNumberOfChannels, 2)
-        assertChannelsEqual(outBuff, [0.15, 0.05])
       })
 
       it('should return a buffer with channelCount channels, full of zeros if no connection', function() {
         var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
-          , sourceNode1 = {channelCount: 4}
-          , sourceNode2 = {channelCount: 1}
           , input = new AudioInput(dummyContext, sinkNode, 0)
-          , output1 = getOutput(sourceNode1, 0.1)
-          , output2 = getOutput(sourceNode2, 0.2)
-          , outBuff
+          , output1 = getOutput([0.1, 0.1, 0.1, 0.1])
+          , output2 = getOutput([0.2])
 
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0, 0])
         assert.equal(input.computedNumberOfChannels, 2)
-        assertChannelsEqual(outBuff, [0, 0])
 
         input.connect(output2)
         input.connect(output1)
-        outBuff = input._tick()
+        assertChannelsEqual(input._tick(), [0.15, 0.05])
         assert.equal(input.computedNumberOfChannels, 2)
-        assertChannelsEqual(outBuff, [0.15, 0.05])
       })
 
       it('should return a buffer with 1 channel in (clamped-)max mode, full of zeros if no connection', function() {
         var sinkNode = {channelCountMode: 'max', channelInterpretation: 'discrete'}
           , input = new AudioInput(dummyContext, sinkNode, 0)
-          , outBuff
 
         outBuff = input._tick()
         assert.equal(input.computedNumberOfChannels, 1)
@@ -252,6 +260,164 @@ describe('AudioInput', function() {
         assert.equal(outBuff.length, BLOCK_SIZE)
 
         assertAllValuesApprox(outBuff.getChannelData(0), 0)
+      })
+
+    })
+
+    describe('channelInterpretation: \'speakers\'', function() {
+
+      it('should revert from speakers to discrete when the up/down mix doesn\'t correspond to known layout', function() {
+        var sinkNode = {channelCount: 3, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+          , input = new AudioInput(dummyContext, sinkNode, 0)
+          , output = getOutput([0.3])
+
+        input.connect(output)
+        assertChannelsEqual(input._tick(), [0.3, 0, 0])
+        assert.equal(input.computedNumberOfChannels, 3)        
+      })
+
+      describe('mono up-mix', function() {
+
+        it('1 -> 2', function() {
+          var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1, 0.1])
+          assert.equal(input.computedNumberOfChannels, 2)
+        })
+
+        it('1 -> 4', function() {
+          var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1, 0.1, 0, 0])
+          assert.equal(input.computedNumberOfChannels, 4)
+        })
+
+        it('1 -> 5.1', function() {
+          var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0, 0, 0.1, 0, 0, 0])
+          assert.equal(input.computedNumberOfChannels, 6)
+        })
+
+      })
+
+      describe('stereo up-mix', function() {
+
+        it('2 -> 4', function() {
+          var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0])
+          assert.equal(input.computedNumberOfChannels, 4)
+        })
+
+        it('1 -> 5.1', function() {
+          var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0, 0, 0])
+          assert.equal(input.computedNumberOfChannels, 6)
+        })
+
+      })
+
+      describe('quad up-mix', function() {
+
+        it('4 -> 5.1', function() {
+          var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0, 0.3, 0.4])
+          assert.equal(input.computedNumberOfChannels, 6)
+        })
+
+      })
+
+      describe('mono down-mix', function() {
+
+        it('2 -> 1', function() {
+          var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.15])
+          assert.equal(input.computedNumberOfChannels, 1)
+        })
+
+        it('4 -> 1', function() {
+          var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [(0.1 + 0.2 + 0.3 + 0.4) * 0.25])
+          assert.equal(input.computedNumberOfChannels, 1)
+        })
+
+        it('5.1 -> 1', function() {
+          var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.7071 * (0.1 + 0.2) + 0.3 + 0.5 * (0.5 + 0.6)])
+          assert.equal(input.computedNumberOfChannels, 1)
+        })
+
+      })
+
+      describe('stereo down-mix', function() {
+
+        it('4 -> 2', function() {
+          var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.5 * (0.1 + 0.3), 0.5 * (0.2 + 0.4)])
+          assert.equal(input.computedNumberOfChannels, 2)
+        })
+
+        it('5.1 -> 2', function() {
+          var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1 + 0.7071 * (0.3 + 0.5), 0.2 + 0.7071 * (0.3 + 0.6)])
+          assert.equal(input.computedNumberOfChannels, 2)
+        })
+
+      })
+
+      describe('quad down-mix', function() {
+
+        it('5.1 -> 4', function() {
+          var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
+            , input = new AudioInput(dummyContext, sinkNode, 0)
+            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+
+          input.connect(output)
+          assertChannelsEqual(input._tick(), [0.1 + 0.7071 * 0.3, 0.2 + 0.7071 * 0.3, 0.5, 0.6])
+          assert.equal(input.computedNumberOfChannels, 4)
+        })
+
       })
 
     })
