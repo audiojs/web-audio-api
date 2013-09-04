@@ -196,10 +196,12 @@ describe('AudioInput', function() {
     it('should just copy if number of channels are the same', function() {
       var sinkNode = {channelCount: 3, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
         , input = new AudioInput(dummyContext, sinkNode, 0)
-        , output = getOutput([0.1, 0.2, 0.3])
+        , output1 = getOutput([0.1, 0.2, 0.3])
+        , output2 = getOutput([0.01, 0.02, 0.03])
 
-      input.connect(output)
-      assertChannelsEqual(input._tick(), [0.1, 0.2, 0.3])
+      input.connect(output1)
+      input.connect(output2)
+      assertChannelsEqual(input._tick(), [0.11, 0.22, 0.33])
       assert.equal(input.computedNumberOfChannels, 3)
     })
 
@@ -216,7 +218,7 @@ describe('AudioInput', function() {
         assert.equal(input.computedNumberOfChannels, 5)
 
         input.connect(output1)
-        assertChannelsEqual(input._tick(), [0.15, 0.05, 0.05, 0, 0])
+        assertChannelsEqual(input._tick(), [0.3, 0.1, 0.1, 0, 0])
         assert.equal(input.computedNumberOfChannels, 5)
       })
 
@@ -231,7 +233,7 @@ describe('AudioInput', function() {
         assert.equal(input.computedNumberOfChannels, 2)
 
         input.connect(output1)
-        assertChannelsEqual(input._tick(), [0.15, 0.05])
+        assertChannelsEqual(input._tick(), [0.3, 0.1])
         assert.equal(input.computedNumberOfChannels, 2)
       })
 
@@ -246,7 +248,7 @@ describe('AudioInput', function() {
 
         input.connect(output2)
         input.connect(output1)
-        assertChannelsEqual(input._tick(), [0.15, 0.05])
+        assertChannelsEqual(input._tick(), [0.3, 0.1])
         assert.equal(input.computedNumberOfChannels, 2)
       })
 
@@ -276,35 +278,45 @@ describe('AudioInput', function() {
         assert.equal(input.computedNumberOfChannels, 3)        
       })
 
+      describe('same number channels', function() {
+
+      })
+
       describe('mono up-mix', function() {
 
         it('1 -> 2', function() {
           var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1])
+            , output1 = getOutput([0.1])
+            , output2 = getOutput([0.2])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1, 0.1])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.3, 0.3])
           assert.equal(input.computedNumberOfChannels, 2)
         })
 
         it('1 -> 4', function() {
           var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1])
+            , output1 = getOutput([0.1])
+            , output2 = getOutput([0.2])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1, 0.1, 0, 0])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.3, 0.3, 0, 0])
           assert.equal(input.computedNumberOfChannels, 4)
         })
 
         it('1 -> 5.1', function() {
           var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1])
+            , output1 = getOutput([0.1])
+            , output2 = getOutput([0.2])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0, 0, 0.1, 0, 0, 0])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0, 0, 0.3, 0, 0, 0])
           assert.equal(input.computedNumberOfChannels, 6)
         })
 
@@ -315,20 +327,24 @@ describe('AudioInput', function() {
         it('2 -> 4', function() {
           var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2])
+            , output1 = getOutput([0.1, 0.2])
+            , output2 = getOutput([0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.14, 0.24, 0, 0])
           assert.equal(input.computedNumberOfChannels, 4)
         })
 
-        it('1 -> 5.1', function() {
+        it('2 -> 5.1', function() {
           var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2])
+            , output1 = getOutput([0.1, 0.2])
+            , output2 = getOutput([0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0, 0, 0])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.14, 0.24, 0, 0, 0, 0])
           assert.equal(input.computedNumberOfChannels, 6)
         })
 
@@ -339,10 +355,12 @@ describe('AudioInput', function() {
         it('4 -> 5.1', function() {
           var sinkNode = {channelCount: 6, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1, 0.2, 0, 0, 0.3, 0.4])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.14, 0.24, 0, 0, 0.34, 0.44])
           assert.equal(input.computedNumberOfChannels, 6)
         })
 
@@ -353,30 +371,45 @@ describe('AudioInput', function() {
         it('2 -> 1', function() {
           var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2])
+            , output1 = getOutput([0.1, 0.2])
+            , output2 = getOutput([0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.15])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [0.5 * ((0.1 + 0.04) + (0.2 + 0.04))])
           assert.equal(input.computedNumberOfChannels, 1)
         })
 
         it('4 -> 1', function() {
           var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [(0.1 + 0.2 + 0.3 + 0.4) * 0.25])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [(
+            (0.1 + 0.04)
+            + (0.2 + 0.04)
+            + (0.3 + 0.04)
+            + (0.4 + 0.04)
+          ) * 0.25])
           assert.equal(input.computedNumberOfChannels, 1)
         })
 
         it('5.1 -> 1', function() {
           var sinkNode = {channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.7071 * (0.1 + 0.2) + 0.3 + 0.5 * (0.5 + 0.6)])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [
+            0.7071 * ((0.1 + 0.04) + (0.2 + 0.04))
+            + (0.3 + 0.04)
+            + 0.5 * ((0.5 + 0.04) + (0.6 + 0.04))
+          ])
           assert.equal(input.computedNumberOfChannels, 1)
         })
 
@@ -387,20 +420,30 @@ describe('AudioInput', function() {
         it('4 -> 2', function() {
           var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.5 * (0.1 + 0.3), 0.5 * (0.2 + 0.4)])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [
+            0.5 * ((0.1 + 0.04) + (0.3 + 0.04)),
+            0.5 * ((0.2 + 0.04) + (0.4 + 0.04))
+          ])
           assert.equal(input.computedNumberOfChannels, 2)
         })
 
         it('5.1 -> 2', function() {
           var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1 + 0.7071 * (0.3 + 0.5), 0.2 + 0.7071 * (0.3 + 0.6)])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [
+            (0.1 + 0.04) + 0.7071 * ((0.3 + 0.04) + (0.5 + 0.04)),
+            (0.2 + 0.04) + 0.7071 * ((0.3 + 0.04) + (0.6 + 0.04))
+          ])
           assert.equal(input.computedNumberOfChannels, 2)
         })
 
@@ -411,10 +454,17 @@ describe('AudioInput', function() {
         it('5.1 -> 4', function() {
           var sinkNode = {channelCount: 4, channelCountMode: 'explicit', channelInterpretation: 'speakers'}
             , input = new AudioInput(dummyContext, sinkNode, 0)
-            , output = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output1 = getOutput([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+            , output2 = getOutput([0.04, 0.04, 0.04, 0.04, 0.04, 0.04])
 
-          input.connect(output)
-          assertChannelsEqual(input._tick(), [0.1 + 0.7071 * 0.3, 0.2 + 0.7071 * 0.3, 0.5, 0.6])
+          input.connect(output1)
+          input.connect(output2)
+          assertChannelsEqual(input._tick(), [
+            (0.1 + 0.04) + 0.7071 * (0.3 + 0.04),
+            (0.2 + 0.04) + 0.7071 * (0.3 + 0.04),
+            (0.5 + 0.04),
+            (0.6 + 0.04)
+          ])
           assert.equal(input.computedNumberOfChannels, 4)
         })
 
