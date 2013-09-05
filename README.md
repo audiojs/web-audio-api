@@ -101,29 +101,33 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
+#### 0.1.4
+
+- **audioports** : bug fixes
+
 #### 0.1.3
 
-- audioports : implemented channelInterpretation 'speakers'
-- AudioContext : decodeAudioData, support for mp3
+- **audioports** : implemented `channelInterpretation` 'speakers'
+- **AudioContext** : added support for mp3 to `decodeAudioData`
 
 #### 0.1.2
 
-- AudioBufferSourceNode : onended
-- AudioContext : decodeAudioData, support for wav
+- **AudioBufferSourceNode** : handler `onended` implemented
+- **AudioContext** : method `decodeAudioData`, support only for wav
 
 #### 0.1.1
 
-- ScriptProcessorNode
-- AudioBufferSourceNode
+- **ScriptProcessorNode**
+- **AudioBufferSourceNode**
   - node is killed once it has finished playing
   - subsequent calls to `start` have no effect
 
-- AudioContext.collectNodes
-- audioports bug fixes
+- **AudioContext** : method `collectNodes`
+- **audioports** : bug fixes
 
 #### 0.1.0
 
-- AudioContext (partial implementation)
-- AudioParam (missing unschedule)
-- AudioBufferSourceNode
-- GainNode
+- **AudioContext** (partial implementation)
+- **AudioParam** (missing unschedule)
+- **AudioBufferSourceNode** (missing onended)
+- **GainNode**
