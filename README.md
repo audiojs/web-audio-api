@@ -70,6 +70,21 @@ Wow! The whole thing is not even half-done that there's already some extensions 
 ).
 
 
+Running the debugger
+---------------------
+
+Right now everything runs in one process, so if you set a break point in your code, there's going to be a lot of buffer underflows, and you won't be able to debug anything.
+
+One trick is to kill the `AudioContext` right before the break point, like this:
+
+```javascript
+context._kill()
+debugger
+```
+
+that way the audio loop is stopped, and you can inspect your objects in peace.
+
+
 Running the tests
 ------------------
 
