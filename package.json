@@ -20,8 +20,8 @@
     "underscore": "1.4.x",
     "mathjs": "0.9.x",
     "av": "0.2.x",
-    "pcm-boilerplate": "*",
-    "audiobuffer": "*"
+    "pcm-boilerplate": "0.1.x",
+    "audiobuffer": "0.2.x"
   },
   "optionalDependencies": {
     "speaker": "0.0.x"
