@@ -8,7 +8,7 @@ describe('AudioBufferSourceNode', function() {
 
   // Helper to get a test buffer
   //  0.1 ... 128 times ...  0.2 ... 128 times ...  0.3 ... 128 times ...  0.4 ... 128 times ...  0.5 ... 64 times
-  // -0.1 ... 128 times ... -0.2 ... 128 times ... -0.3 ... 128 times ... -0.4 ... 128 times ... -0.5 ... 64 times 
+  // -0.1 ... 128 times ... -0.2 ... 128 times ... -0.3 ... 128 times ... -0.4 ... 128 times ... -0.5 ... 64 times
   var getTestBuffer = function() {
     var audioBuffer = new AudioBuffer(2, 128 * 4 + 64, 44100)
       , chArray, i, j
@@ -31,7 +31,7 @@ describe('AudioBufferSourceNode', function() {
   }
 
   describe('_tick', function() {
-    
+
     var helpers = require('./helpers')()
       , dummyContext
 
@@ -61,7 +61,7 @@ describe('AudioBufferSourceNode', function() {
       node.onended = function() { onendedCalled = 11 }
 
       // Runs _tick for a while, saving the returned blocks
-      while(dummyContext.currentTime < 6) {
+      while(dummyContext.currentTime < 7) {
         assert.equal(onendedCalled, 0)
         blocks.push(node._tick())
         dummyContext.currentTime += 1
