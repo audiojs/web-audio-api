@@ -28,8 +28,10 @@
   },
   "analyze": false,
   "devDependencies": {
-    "mocha": "*",
-    "chai": "1.7.x"
+    "chai": "1.7.x",
+    "gulp": "^3.8.7",
+    "gulp-es6-transpiler": "^1.0.0",
+    "mocha": "*"
   },
   "license": "MIT",
   "engines": {
