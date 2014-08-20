@@ -78,12 +78,14 @@ var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
     source.on('_numberOfChannels', function() {
       self.computedNumberOfChannels = null
     })
-    AudioPort.prototype.connect.call(this, source)
+    //AudioPort.prototype.connect.call(this, source)
+    super$0.prototype.connect.call(this, source)
   }
 
   AudioInput.prototype.disconnect = function(source) {
     source.removeAllListeners('_numberOfChannels')
-    AudioPort.prototype.disconnect.call(this, source)
+    //AudioPort.prototype.disconnect.call(this, source)
+    super$0.prototype.disconnect.call(this, source)
   }
 
   AudioInput.prototype._tick = function() {

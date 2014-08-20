@@ -29,11 +29,12 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
     writable: false,
     get: function() {}
   })*/
-
+/*
     Object.defineProperty(this, 'destination', {
       writable: false,
       value: new AudioDestinationNode(this)
-    })
+    })*/
+    this.destination = new AudioDestinationNode(this);
 
     /*Object.defineProperty(this, 'sampleRate', {
     writable: false,
@@ -154,10 +155,11 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
   }
 
   AudioContext.prototype.collectNodes = function(node, allNodes) {
-    console.log(node, allNodes);
     var self = this
     allNodes = allNodes || []
     node = node || this.destination
+    console.log(this.destination);
+    console.log(">", node._inputs.length);
     _.chain(node._inputs)
       .pluck('sources')
       .reduce(function(all, sources) {

@@ -10,14 +10,14 @@ describe('AudioContext', function() {
 
     it('should count all the nodes connected to the context\'s destination', function() {
       //
-      //    node3a node3b node3c   node3d
-      //                \|/      /  \
-      //                  node2a      node2b
-      //                     |   \    /
+      //    node3a node3b node3c node3d
+      //                \|/     /  \
+      //                  node2a  node2b
+      //                     |     /
       //                     node1a  node1b
       //                           \/
       //                          dest
-      var context = new AudioContext
+      var context = new AudioContext()
         , node1a = new AudioNode(context, 2, 1)
         , node1b = new AudioNode(context, 0, 1)
         , node2a = new AudioNode(context, 2, 2)
