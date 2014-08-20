@@ -6,11 +6,6 @@ describe('DspObject', function() {
 
   var dummyContext
 
-  var DspObject = function(context) {
-    DspObject.init(this, context)
-  }
-  _.extend(DspObject.prototype, DspObject)
-
   beforeEach(function() {
     dummyContext = {currentTime: 0}
   })

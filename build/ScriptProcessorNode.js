@@ -1,76 +1,78 @@
-var inherits = require('util').inherits
-  , _ = require('underscore')
-  , math = require('mathjs')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , AudioNode = require('./AudioNode')
-  , AudioBuffer = require('audiobuffer')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+var inherits = require('util').inherits,
+  _ = require('underscore'),
+  math = require('mathjs'),
+  BLOCK_SIZE = require('./constants').BLOCK_SIZE,
+  AudioNode = require('./AudioNode'),
+  AudioBuffer = require('audiobuffer'),
+  readOnlyAttr = require('./utils').readOnlyAttr
 
-var ScriptProcessorNode = module.exports = function(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
-  if (!_.contains([256, 512, 1024, 2048, 4096, 8192, 16384], bufferSize))
-    throw new Error('invalid bufferSize')
+var ScriptProcessorNode = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(ScriptProcessorNode, super$0);
+  function ScriptProcessorNode(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
+    if (!_.contains([256, 512, 1024, 2048, 4096, 8192, 16384], bufferSize))
+      throw new Error('invalid bufferSize')
 
-  AudioNode.call(this, context, 1, 1)
-  this.channelCountMode = 'explicit'
-  this.channelInterpretation = 'speakers'
-  readOnlyAttr(this, 'channelCount', numberOfInputChannels)
-  readOnlyAttr(this, 'bufferSize', bufferSize)
+    super$0.call(this, context, 1, 1)
+    this.channelCountMode = 'explicit'
+    this.channelInterpretation = 'speakers'
+    readOnlyAttr(this, 'channelCount', numberOfInputChannels)
+    readOnlyAttr(this, 'bufferSize', bufferSize)
 
-  this._processingEvent = function(inBuffer) {
-    return new AudioProcessingEvent(
-      this.context.currentTime,
-      inBuffer,
-      new AudioBuffer(numberOfOutputChannels, bufferSize, context.sampleRate)
-    )
-  }
-
-  this._tick = function() {
-    AudioNode.prototype._tick.apply(this, arguments)
-    return new AudioBuffer(numberOfOutputChannels, BLOCK_SIZE, context.sampleRate)
-  }
-
-  Object.defineProperty(this, 'onaudioprocess', {
-
-    set: function(onaudioprocess) {
-      var inputBuffer = new AudioBuffer(numberOfInputChannels, 0, context.sampleRate)
-        , outputBuffer = new AudioBuffer(numberOfOutputChannels, 0, context.sampleRate)
-
-      this._tick = function() {
-        AudioNode.prototype._tick.apply(this, arguments)
-
-        // Pull some data and add it to `inputBuffer`
-        inputBuffer = inputBuffer.concat(this._inputs[0]._tick())
-
-        // When enough data in `inputBuffer`, we run `onaudioprocess`
-        if (inputBuffer.length === bufferSize) {
-          var audioProcEvent = this._processingEvent(inputBuffer)
-          onaudioprocess(audioProcEvent)
-          inputBuffer = new AudioBuffer(numberOfInputChannels, 0, context.sampleRate)
-          outputBuffer = outputBuffer.concat(audioProcEvent.outputBuffer)
-        } else if (inputBuffer.length >= bufferSize) throw new Error('this shouldnt happen')
-
-        // When data has been processed, we return it
-        if (outputBuffer.length >= BLOCK_SIZE) {
-          var returnedBuffer = outputBuffer.slice(0, BLOCK_SIZE)
-          outputBuffer = outputBuffer.slice(BLOCK_SIZE)
-          return returnedBuffer
-        } else return new AudioBuffer(numberOfOutputChannels, BLOCK_SIZE, context.sampleRate)
-      }
-
+    this._processingEvent = function(inBuffer) {
+      return new AudioProcessingEvent(
+        this.context.currentTime,
+        inBuffer,
+        new AudioBuffer(numberOfOutputChannels, bufferSize, context.sampleRate)
+      )
     }
 
-  })
-}
-inherits(ScriptProcessorNode, AudioNode)
+    this._tick = function() {
+      AudioNode.prototype._tick.apply(this, arguments)
+      return new AudioBuffer(numberOfOutputChannels, BLOCK_SIZE, context.sampleRate)
+    }
 
-_.extend(ScriptProcessorNode.prototype, {
+    Object.defineProperty(this, 'onaudioprocess', {
 
-  onaudioprocess: undefined
+      set: function(onaudioprocess) {
+        var inputBuffer = new AudioBuffer(numberOfInputChannels, 0, context.sampleRate),
+          outputBuffer = new AudioBuffer(numberOfOutputChannels, 0, context.sampleRate)
 
-})
+        this._tick = function() {
+          AudioNode.prototype._tick.apply(this, arguments)
+
+          // Pull some data and add it to `inputBuffer`
+          inputBuffer = inputBuffer.concat(this._inputs[0]._tick())
+
+          // When enough data in `inputBuffer`, we run `onaudioprocess`
+          if (inputBuffer.length === bufferSize) {
+            var audioProcEvent = this._processingEvent(inputBuffer)
+            onaudioprocess(audioProcEvent)
+            inputBuffer = new AudioBuffer(numberOfInputChannels, 0, context.sampleRate)
+            outputBuffer = outputBuffer.concat(audioProcEvent.outputBuffer)
+          } else if (inputBuffer.length >= bufferSize) throw new Error('this shouldnt happen')
+
+          // When data has been processed, we return it
+          if (outputBuffer.length >= BLOCK_SIZE) {
+            var returnedBuffer = outputBuffer.slice(0, BLOCK_SIZE)
+            outputBuffer = outputBuffer.slice(BLOCK_SIZE)
+            return returnedBuffer
+          } else return new AudioBuffer(numberOfOutputChannels, BLOCK_SIZE, context.sampleRate)
+        }
+
+      }
+
+    })
+  }ScriptProcessorNode.prototype = Object.create(super$0.prototype, {"constructor": {"value": ScriptProcessorNode, "configurable": true, "writable": true} });DP$0(ScriptProcessorNode, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+
+  ScriptProcessorNode.prototype.onaudioprocess = function() {}
+
+;return ScriptProcessorNode;})(AudioNode);
+
+
 
 var AudioProcessingEvent = function(playbackTime, inputBuffer, outputBuffer) {
   this.playbackTime = playbackTime
   this.inputBuffer = inputBuffer
   this.outputBuffer = outputBuffer
 }
+
+module.exports = ScriptProcessorNode
