@@ -50,8 +50,8 @@ var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
 ;return AudioPort;})(events.EventEmitter);
 
 var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
-  function AudioInput() {
-    super$0.call(this, arguments)
+  function AudioInput(context, node, id) {
+    super$0.call(this, context, node, id)
     var self = this
 
     // `computedNumberOfChannels` is scheduled to be recalculated everytime a connection
@@ -362,8 +362,8 @@ var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
 ;return AudioInput;})(AudioPort);
 
 var AudioOutput = (function(super$0){"use strict";MIXIN$0(AudioOutput, super$0);
-  function AudioOutput() {
-    super$0.call(this, arguments)
+  function AudioOutput(context, node, id) {
+    super$0.call(this, context, node, id)
 
     // This caches the block fetched from the node.
     this._cachedBlock = {

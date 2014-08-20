@@ -73,7 +73,6 @@ var AudioNode = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 
   AudioNode.prototype.connect = function(destination, output, input) {
     if (_.isUndefined(output)) output = 0
     if (_.isUndefined(input)) input = 0
-    console.log(output, input, this.id)
     if (output >= this.numberOfOutputs)
       throw new Error('output out of bounds ' + output)
     if (input >= destination.numberOfInputs)

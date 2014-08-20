@@ -158,8 +158,6 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
     var self = this
     allNodes = allNodes || []
     node = node || this.destination
-    console.log(this.destination);
-    console.log(">", node._inputs.length);
     _.chain(node._inputs)
       .pluck('sources')
       .reduce(function(all, sources) {
