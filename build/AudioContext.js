@@ -19,9 +19,9 @@ try {
   console.warn('Speaker is not available, fix this if you need sound playback.')
 }
 
-class AudioContext extends events.EventEmitter {
+var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(AudioContext, super$0);
 
-  constructor(opts) {
+  function AudioContext(opts) {
     var self = this,
       outBuff
 
@@ -89,28 +89,28 @@ class AudioContext extends events.EventEmitter {
         }
       )
     })
-  }
+  }AudioContext.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioContext, "configurable": true, "writable": true} });DP$0(AudioContext, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  createBuffer(numberOfChannels, length, sampleRate) {
+  AudioContext.prototype.createBuffer = function(numberOfChannels, length, sampleRate) {
     return new AudioBuffer(numberOfChannels, length, sampleRate)
   }
 
-  decodeAudioData(audioData, successCallback, errorCallback) {
+  AudioContext.prototype.decodeAudioData = function(audioData, successCallback, errorCallback) {
     utils.decodeAudioData(audioData, function(err, audioBuffer) {
       if (err) errorCallback(err)
       else successCallback(audioBuffer)
     })
   }
 
-  createBufferSource() {
+  AudioContext.prototype.createBufferSource = function() {
     return new AudioBufferSourceNode(this)
   }
 
-  createGain() {
+  AudioContext.prototype.createGain = function() {
     return new GainNode(this)
   }
 
-  createScriptProcessor(bufferSize, numberOfInputChannels, numberOfOutputChannels) {
+  AudioContext.prototype.createScriptProcessor = function(bufferSize, numberOfInputChannels, numberOfOutputChannels) {
     return new ScriptProcessorNode(this, bufferSize, numberOfInputChannels, numberOfOutputChannels)
   }
 
@@ -146,14 +146,14 @@ class AudioContext extends events.EventEmitter {
 }
   */
 
-  _kill() {
+  AudioContext.prototype._kill = function() {
     var self = this
     this._playing = false
     if (self.outStream.close) self.outStream.close()
     else self.outStream.end()
   }
 
-  collectNodes(node, allNodes) {
+  AudioContext.prototype.collectNodes = function(node, allNodes) {
     console.log(node, allNodes);
     var self = this
     allNodes = allNodes || []
@@ -173,6 +173,6 @@ class AudioContext extends events.EventEmitter {
     return allNodes
   }
 
-}
+;return AudioContext;})(events.EventEmitter);
 
 module.exports = AudioContext

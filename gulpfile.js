@@ -6,3 +6,7 @@ gulp.task('default', function () {
         .pipe(es6transpiler())
         .pipe(gulp.dest('build'));
 });
+
+gulp.task('watch', function() {
+    gulp.watch('./lib/*.js', ['default']);
+});

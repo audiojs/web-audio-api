@@ -2,7 +2,7 @@ var _ = require('underscore')
   , fs = require('fs')
   , assert = require('assert')
   , AudioBuffer = require('audiobuffer')
-  , utils = require('../lib/utils')
+  , utils = require('../build/utils')
   , assertAllValuesApprox = require('./helpers').assertAllValuesApprox
   , assertApproxEqual = require('./helpers').assertApproxEqual
 
@@ -10,7 +10,7 @@ var _ = require('underscore')
 describe('utils', function() {
 
   describe('decodeAudioData', function() {
-      
+
     var helpers = require('./helpers')({approx: 0.0005})
 
     var reblock = function(audioBuffer, blockSize) {

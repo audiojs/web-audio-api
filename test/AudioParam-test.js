@@ -1,7 +1,7 @@
 var assert = require('assert')
   , _ = require('underscore')
-  , AudioParam = require('../lib/AudioParam')
-  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
+  , AudioParam = require('../build/AudioParam')
+  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
   , SAMPLE_RATE = 44100
   , Ts = 1/SAMPLE_RATE
   , assertAllValuesEqual = require('./helpers')().assertAllValuesEqual
@@ -61,7 +61,7 @@ describe('AudioParam', function() {
     audioParam._schedule('bla', 9)
     assert.equal(audioParam._scheduled.length, 1)
     audioParam.value = 99
-    assert.equal(audioParam._scheduled.length, 0)   
+    assert.equal(audioParam._scheduled.length, 0)
   })
 
   it('should be initialized with constant dsp method', function() {
@@ -98,7 +98,7 @@ describe('AudioParam', function() {
       assert.equal(iter(), 5)
       assert.equal(iter(), 7)
     })
-    
+
   })
 
   describe('value', function() {
@@ -114,7 +114,7 @@ describe('AudioParam', function() {
       audioParam.value = 99
       block = audioParam._tick()
       assertValidBlock(block)
-      assertAllValuesEqual(block.getChannelData(0), 99)      
+      assertAllValuesEqual(block.getChannelData(0), 99)
     })
 
   })
@@ -125,13 +125,13 @@ describe('AudioParam', function() {
       var audioParam = new AudioParam(dummyContext, 6)
         , block
       audioParam.setValueAtTime(55, 1)
-      
+
       // t=0 -> t=~1 / 6
       assert.equal(audioParam.value, 6)
       untilTime(audioParam, 1, function(block) {
         assert.equal(block.length, BLOCK_SIZE)
         assert.equal(block.numberOfChannels, 1)
-        assertAllValuesEqual(block.getChannelData(0), 6)        
+        assertAllValuesEqual(block.getChannelData(0), 6)
       })
 
       // t=1 / 55
@@ -140,7 +140,7 @@ describe('AudioParam', function() {
       assert.equal(block.length, BLOCK_SIZE)
       assert.equal(block.numberOfChannels, 1)
       assertAllValuesEqual(block.getChannelData(0), 55)
-      assert.equal(audioParam.value, 55)   
+      assert.equal(audioParam.value, 55)
     })
 
   })

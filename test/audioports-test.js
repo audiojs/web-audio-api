@@ -1,11 +1,11 @@
 var assert = require('assert')
   , _ = require('underscore')
-  , utils = require('../lib/utils')
-  , audioports = require('../lib/audioports')
+  , utils = require('../build/utils')
+  , audioports = require('../build/audioports')
   , AudioOutput = audioports.AudioOutput
   , AudioInput = audioports.AudioInput
   , AudioBuffer = require('audiobuffer')
-  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
+  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
   , assertAllValuesApprox = require('./helpers')().assertAllValuesApprox
 
 
@@ -108,7 +108,7 @@ describe('AudioPort', function() {
       assert.deepEqual(sink1.sources, [])
       assert.deepEqual(sink2.sources, [])
       assert.equal(source.listeners('bla').length, 0)
-    })    
+    })
 
   })
 
@@ -191,7 +191,7 @@ describe('AudioInput', function() {
         return AudioBuffer.fromArray(array, 44100)
       }
       return output
-    } 
+    }
 
     it('should just copy if number of channels are the same', function() {
       var sinkNode = {channelCount: 3, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
@@ -275,7 +275,7 @@ describe('AudioInput', function() {
 
         input.connect(output)
         assertChannelsEqual(input._tick(), [0.3, 0, 0])
-        assert.equal(input.computedNumberOfChannels, 3)        
+        assert.equal(input.computedNumberOfChannels, 3)
       })
 
       describe('same number channels', function() {

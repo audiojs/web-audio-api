@@ -7,10 +7,10 @@ var _ = require('underscore'),
   readOnlyAttr = require('./utils').readOnlyAttr
 
 
-class AudioBufferSourceNode extends AudioNode {
+var AudioBufferSourceNode = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(AudioBufferSourceNode, super$0);
 
-  constructor(context) {
-    super(context, 0, 1)
+  function AudioBufferSourceNode(context) {
+    super$0.call(this, context, 0, 1)
     this.channelCountMode = 'max'
     this.channelInterpretation = 'speakers'
 
@@ -22,9 +22,9 @@ class AudioBufferSourceNode extends AudioNode {
     readOnlyAttr(this, 'playbackRate', new AudioParam(this.context, 1, 'a'))
 
     this._dsp = this._dspZeros
-  }
+  }AudioBufferSourceNode.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioBufferSourceNode, "configurable": true, "writable": true} });DP$0(AudioBufferSourceNode, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  start(when, offset, duration) {
+  AudioBufferSourceNode.prototype.start = function(when, offset, duration) {
     var self = this
     this._schedule('start', when, function() {
       if (!self.buffer) throw new Error('invalid buffer')
@@ -78,26 +78,26 @@ class AudioBufferSourceNode extends AudioNode {
     })
   }
 
-  stop(when) {
+  AudioBufferSourceNode.prototype.stop = function(when) {
     var self = this
     this._schedule('stop', when, function() {
       self._dsp = self._dspZeros
     })
   }
 
-  onended() {}
+  AudioBufferSourceNode.prototype.onended = function() {}
 
-  _tick() {
+  AudioBufferSourceNode.prototype._tick = function() {
     AudioNode.prototype._tick.apply(this, arguments)
     return this._dsp()
   }
 
-  _dsp() {}
+  AudioBufferSourceNode.prototype._dsp = function() {}
 
-  _dspZeros() {
+  AudioBufferSourceNode.prototype._dspZeros = function() {
     return new AudioBuffer(1, constants.BLOCK_SIZE, this.context.sampleRate)
   }
 
-}
+;return AudioBufferSourceNode;})(AudioNode);
 
 module.exports = AudioBufferSourceNode

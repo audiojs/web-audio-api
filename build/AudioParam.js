@@ -5,10 +5,10 @@ var inherits = require('util').inherits,
   AudioBuffer = require('audiobuffer'),
   BLOCK_SIZE = require('./constants').BLOCK_SIZE
 
-class AudioParam extends DspObject {
+var AudioParam = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(AudioParam, super$0);
 
-  constructor(context, defaultValue, rate) {
-    super(context)
+  function AudioParam(context, defaultValue, rate) {
+    super$0.call(this, context)
 
     if (typeof defaultValue !== 'number')
       throw new Error('defaultValue must be a number')
@@ -44,9 +44,9 @@ class AudioParam extends DspObject {
     this.channelCount = 1
     this.channelCountMode = 'explicit'
     this._input = new AudioInput(this.context, this, 0)
-  }
+  }AudioParam.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioParam, "configurable": true, "writable": true} });DP$0(AudioParam, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  setValueAtTime(value, startTime) {
+  AudioParam.prototype.setValueAtTime = function(value, startTime) {
     var self = this
     this._schedule('SetValue', startTime, function() {
       self._instrinsicValue = value
@@ -54,7 +54,7 @@ class AudioParam extends DspObject {
     })
   }
 
-  linearRampToValueAtTime(value, endTime) {
+  AudioParam.prototype.linearRampToValueAtTime = function(value, endTime) {
     var self = this
     this._schedule('LinearRampToValue', endTime, function() {
       self._instrinsicValue = value
@@ -63,7 +63,7 @@ class AudioParam extends DspObject {
     this._nextEvent()
   }
 
-  exponentialRampToValueAtTime(value, endTime) {
+  AudioParam.prototype.exponentialRampToValueAtTime = function(value, endTime) {
     var self = this
     if (this._instrinsicValue <= 0 || value <= 0)
       throw new Error('cannot create exponential ramp with value <= 0')
@@ -74,7 +74,7 @@ class AudioParam extends DspObject {
     this._nextEvent()
   }
 
-  setTargetAtTime(target, startTime, timeConstant) {
+  AudioParam.prototype.setTargetAtTime = function(target, startTime, timeConstant) {
     var self = this
     this._schedule('SetTarget', startTime, function() {
       self['_to_' + self._rate + 'Rate_setTarget'](target, timeConstant, function() {
@@ -84,7 +84,7 @@ class AudioParam extends DspObject {
     })
   }
 
-  setValueCurveAtTime(values, startTime, duration) {
+  AudioParam.prototype.setValueCurveAtTime = function(values, startTime, duration) {
     var self = this
     this._schedule('SetValueCurve', startTime, function() {
       self['_to_' + self._rate + 'Rate_SetValueCurve'](values, startTime, duration, function() {
@@ -94,7 +94,7 @@ class AudioParam extends DspObject {
     })
   }
 
-  _nextEvent() {
+  AudioParam.prototype._nextEvent = function() {
     var event = this._scheduled[0]
     if (event) {
       if (event.type === 'LinearRampToValue')
@@ -105,19 +105,19 @@ class AudioParam extends DspObject {
     } else this._toConstant()
   }
 
-  _tick() {
+  AudioParam.prototype._tick = function() {
     //DspObjectMixin._tick.apply(this, arguments)
-    super._tick()
+    super$0.prototype._tick.call(this)
     var buffer = new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
     this._dsp(buffer.getChannelData(0))
     return buffer
   }
 
   // This method calculates intrinsic values
-  _dsp() {}
+  AudioParam.prototype._dsp = function() {}
 
   // -------------------- DSP methods -------------------- //
-  _toConstant() {
+  AudioParam.prototype._toConstant = function() {
     var value = this._instrinsicValue,
       i
 
@@ -126,7 +126,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_aRate_linearRamp(target, endTime) {
+  AudioParam.prototype._to_aRate_linearRamp = function(target, endTime) {
     var U0 = this._instrinsicValue,
       Un = U0,
       startTime = this.context.currentTime,
@@ -144,7 +144,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_kRate_linearRamp(target, endTime) {
+  AudioParam.prototype._to_kRate_linearRamp = function(target, endTime) {
     var U0 = this._instrinsicValue,
       Un = U0,
       startTime = this.context.currentTime,
@@ -159,7 +159,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_aRate_exponentialRamp(target, timeEnd) {
+  AudioParam.prototype._to_aRate_exponentialRamp = function(target, timeEnd) {
     var timeStart = this.context.currentTime,
       U0 = this._instrinsicValue,
       Un = U0,
@@ -177,7 +177,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_kRate_exponentialRamp(target, timeEnd) {
+  AudioParam.prototype._to_kRate_exponentialRamp = function(target, timeEnd) {
     var timeStart = this.context.currentTime,
       U0 = this._instrinsicValue,
       Un = U0,
@@ -192,7 +192,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_aRate_setTarget(target, Tc, onended) {
+  AudioParam.prototype._to_aRate_setTarget = function(target, Tc, onended) {
     var timeStart = this.context.currentTime,
       U0 = (this._instrinsicValue - target),
       Un = target + U0,
@@ -211,7 +211,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_kRate_setTarget(target, Tc, onended) {
+  AudioParam.prototype._to_kRate_setTarget = function(target, Tc, onended) {
     var timeStart = this.context.currentTime,
       U0 = this._instrinsicValue - target,
       Un = target + U0,
@@ -226,7 +226,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_aRate_SetValueCurve(values, startTime, duration, onended) {
+  AudioParam.prototype._to_aRate_SetValueCurve = function(values, startTime, duration, onended) {
     var valuesLength = values.length,
       coeff = valuesLength / duration,
       Ts = 1 / this.context.sampleRate,
@@ -243,7 +243,7 @@ class AudioParam extends DspObject {
     }
   }
 
-  _to_kRate_SetValueCurve(values, startTime, duration, onended) {
+  AudioParam.prototype._to_kRate_SetValueCurve = function(values, startTime, duration, onended) {
     var valuesLength = values.length,
       coeff = valuesLength / duration,
       Ts = 1 / this.context.sampleRate,
@@ -256,24 +256,24 @@ class AudioParam extends DspObject {
     }
   }
 
-  _geometricSeries(U0, ratio) {
+  AudioParam.prototype._geometricSeries = function(U0, ratio) {
     var Un = U0
     return function() {
       return Un *= ratio
     }
   }
 
-  _arithmeticSeries(U0, step) {
+  AudioParam.prototype._arithmeticSeries = function(U0, step) {
     var Un = U0
     return function() {
       return Un += step
     }
   }
 
-  cancelScheduledValues(startTime) {
+  AudioParam.prototype.cancelScheduledValues = function(startTime) {
     throw new Error('implement me')
   }
 
-}
+;return AudioParam;})(DspObject);
 
 module.exports = AudioParam

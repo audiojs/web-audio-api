@@ -1,4 +1,4 @@
-var _ = require('underscore'),
+var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};var _ = require('underscore'),
   async = require('async'),
   inherits = require('util').inherits,
   events = require('events'),
@@ -7,19 +7,19 @@ var _ = require('underscore'),
   BLOCK_SIZE = require('./constants').BLOCK_SIZE
 
 
-class AudioPort extends events.EventEmitter {
-  constructor(context, node, id) {
-    super()
+var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
+  function AudioPort(context, node, id) {
+    super$0.call(this)
     this.connections = []
     this.node = node
     this.id = id
     this.context = context
-  }
+  }AudioPort.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioPort, "configurable": true, "writable": true} });DP$0(AudioPort, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
 
   // Generic function for connecting the calling AudioPort
   // with `otherPort`. Returns true if a connection was indeed established
-  connect(otherPort) {
+  AudioPort.prototype.connect = function(otherPort) {
     if (this.connections.indexOf(otherPort) !== -1) return false
     this.connections.push(otherPort)
     otherPort.connect(this)
@@ -29,7 +29,7 @@ class AudioPort extends events.EventEmitter {
 
   // Generic function for disconnecting the calling AudioPort
   // from `otherPort`. Returns true if a disconnection was indeed made
-  disconnect(otherPort) {
+  AudioPort.prototype.disconnect = function(otherPort) {
     var connInd = this.connections.indexOf(otherPort)
     if (connInd === -1) return false
     this.connections.splice(connInd, 1)
@@ -39,7 +39,7 @@ class AudioPort extends events.EventEmitter {
   }
 
   // Called when a node is killed. Removes connections, and event listeners.
-  _kill() {
+  AudioPort.prototype._kill = function() {
     var self = this
     this.connections.slice(0).forEach(function(port) {
       self.disconnect(port)
@@ -47,11 +47,11 @@ class AudioPort extends events.EventEmitter {
     this.removeAllListeners()
   }
 
-}
+;return AudioPort;})(events.EventEmitter);
 
-class AudioInput extends AudioPort {
-  constructor() {
-    super(arguments)
+var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
+  function AudioInput() {
+    super$0.call(this, arguments)
     var self = this
 
     // `computedNumberOfChannels` is scheduled to be recalculated everytime a connection
@@ -70,8 +70,8 @@ class AudioInput extends AudioPort {
         return this.connections
       }
     })
-  }
-  connect(source) {
+  }AudioInput.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioInput, "configurable": true, "writable": true} });DP$0(AudioInput, "prototype", {"configurable": false, "enumerable": false, "writable": false});
+  AudioInput.prototype.connect = function(source) {
     var self = this
       // When the number of channels of the source changes, we trigger
       // computation of `computedNumberOfChannels`
@@ -81,12 +81,12 @@ class AudioInput extends AudioPort {
     AudioPort.prototype.connect.call(this, source)
   }
 
-  disconnect(source) {
+  AudioInput.prototype.disconnect = function(source) {
     source.removeAllListeners('_numberOfChannels')
     AudioPort.prototype.disconnect.call(this, source)
   }
 
-  _tick() {
+  AudioInput.prototype._tick = function() {
     var self = this,
       channelInterpretation = this.node.channelInterpretation,
       i, ch, inNumChannels, inBuffers = this.sources.map(function(source) {
@@ -342,7 +342,7 @@ class AudioInput extends AudioPort {
 
   }
 
-  _computeNumberOfChannels(maxChannelsUpstream) {
+  AudioInput.prototype._computeNumberOfChannels = function(maxChannelsUpstream) {
     var countMode = this.node.channelCountMode,
       channelCount = this.node.channelCount
     maxChannelsUpstream = maxChannelsUpstream || 1
@@ -357,11 +357,11 @@ class AudioInput extends AudioPort {
     else throw new Error('invalid channelCountMode')
   }
 
-}
+;return AudioInput;})(AudioPort);
 
-class AudioOutput extends AudioPort {
-  constructor() {
-    super(arguments)
+var AudioOutput = (function(super$0){"use strict";MIXIN$0(AudioOutput, super$0);
+  function AudioOutput() {
+    super$0.call(this, arguments)
 
     // This caches the block fetched from the node.
     this._cachedBlock = {
@@ -378,11 +378,11 @@ class AudioOutput extends AudioPort {
         return this.connections
       }
     })
-  }
+  }AudioOutput.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioOutput, "configurable": true, "writable": true} });DP$0(AudioOutput, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
   // Pulls the audio from the node only once, and copies it so that several
   // nodes downstream can pull the same block.
-  _tick() {
+  AudioOutput.prototype._tick = function() {
     var self = this
     if (this._cachedBlock.time < this.context.currentTime) {
       var outBuffer = this.node._tick()
@@ -398,7 +398,7 @@ class AudioOutput extends AudioPort {
     } else return this._cachedBlock.buffer
   }
 
-}
+;return AudioOutput;})(AudioPort);
 
 module.exports = {
   AudioOutput: AudioOutput,

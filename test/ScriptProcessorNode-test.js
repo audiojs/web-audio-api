@@ -1,9 +1,9 @@
 var _ = require('underscore')
   , assert = require('assert')
-  , ScriptProcessorNode = require('../lib/ScriptProcessorNode')
-  , AudioNode = require('../lib/AudioNode')
+  , ScriptProcessorNode = require('../build/ScriptProcessorNode')
+  , AudioNode = require('../build/AudioNode')
   , AudioBuffer = require('audiobuffer')
-  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
+  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
 
 describe('ScriptProcessorNode', function() {
 
@@ -103,7 +103,7 @@ describe('ScriptProcessorNode', function() {
 
       sourceNode._tick = function() {
         sourceCounter++
-        var i, ch, length, data = [], chData 
+        var i, ch, length, data = [], chData
         for (ch = 0; ch < 3; ch++) {
           chData = []
           for (i = 0; i < BLOCK_SIZE; i++) chData[i] = sourceCounter + ch

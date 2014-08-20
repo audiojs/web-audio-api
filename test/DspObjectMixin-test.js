@@ -1,15 +1,15 @@
 var assert = require('assert')
   , _ = require('underscore')
-  , DspObjectMixin = require('../lib/DspObjectMixin')
+  , DspObject = require('../build/DspObject')
 
-describe('DspObjectMixin', function() {
+describe('DspObject', function() {
 
   var dummyContext
 
   var DspObject = function(context) {
-    DspObjectMixin.init(this, context)
+    DspObject.init(this, context)
   }
-  _.extend(DspObject.prototype, DspObjectMixin)
+  _.extend(DspObject.prototype, DspObject)
 
   beforeEach(function() {
     dummyContext = {currentTime: 0}
@@ -53,7 +53,7 @@ describe('DspObjectMixin', function() {
 
       dspObj._schedule('blo', 10, cb)
       assert.deepEqual(dspObj._scheduled, [{time: 10, func: cb, type: 'blo'}, {time: 10, func: cb, type: 'bla'}])
-      
+
       dspObj._schedule('bli', 10, cb)
       assert.deepEqual(dspObj._scheduled, [{time: 10, func: cb, type: 'bli'}, {time: 10, func: cb, type: 'blo'},
         {time: 10, func: cb, type: 'bla'}])
@@ -85,7 +85,7 @@ describe('DspObjectMixin', function() {
       dspObj._schedule('a', 9, function() { called.push(1) })
       dspObj._schedule('b', 3.51, function() { called.push(2) })
       dspObj._schedule('c', 2.55, function() { called.push(3) })
-      
+
       // t=0
       dspObj._tick()
       assert.deepEqual(called, [])

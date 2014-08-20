@@ -11,11 +11,11 @@ var inherits = require('util').inherits,
 var ChannelCountMode = ['max', 'clamped-max', 'explicit'],
   ChannelInterpretation = ['speakers', 'discrete']
 
-class AudioNode extends DspObject {
+var AudioNode = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(AudioNode, super$0);
 
-  constructor(context, numberOfInputs, numberOfOutputs) {
+  function AudioNode(context, numberOfInputs, numberOfOutputs) {
 
-    super(context);
+    super$0.call(this, context);
 
     readOnlyAttr(this, 'context', context)
     readOnlyAttr(this, 'numberOfInputs', numberOfInputs)
@@ -68,9 +68,9 @@ class AudioNode extends DspObject {
     for (i = 0; i < this.numberOfOutputs; i++)
       this._outputs.push(new AudioOutput(context, this, i))
 
-  }
+  }AudioNode.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioNode, "configurable": true, "writable": true} });DP$0(AudioNode, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  connect(destination, output, input) {
+  AudioNode.prototype.connect = function(destination, output, input) {
     if (_.isUndefined(output)) output = 0
     if (_.isUndefined(input)) input = 0
     if (output >= this.numberOfOutputs)
@@ -80,7 +80,7 @@ class AudioNode extends DspObject {
     this._outputs[output].connect(destination._inputs[input])
   }
 
-  disconnect(output) {
+  AudioNode.prototype.disconnect = function(output) {
     output = output || 0
     if (output >= this.numberOfOutputs)
       throw new Error('output out of bounds ' + output)
@@ -91,7 +91,7 @@ class AudioNode extends DspObject {
   }
 
   // Disconnects all ports and remove all events listeners
-  _kill() {
+  AudioNode.prototype._kill = function() {
     this._inputs.forEach(function(input) {
       input._kill()
     })
@@ -104,6 +104,6 @@ class AudioNode extends DspObject {
     }
   }
 
-}
+;return AudioNode;})(DspObject);
 
 module.exports = AudioNode
