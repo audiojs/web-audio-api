@@ -40,10 +40,9 @@ var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
   }
 
   // Called when a node is killed. Removes connections, and event listeners.
-  AudioPort.prototype._kill = function() {
-    var self = this
-    this.connections.slice(0).forEach(function(port) {
-      self.disconnect(port)
+  AudioPort.prototype._kill = function() {var this$0 = this;
+    this.connections.slice(0).forEach(function(port)  {
+      this$0.disconnect(port)
     })
     this.removeAllListeners()
   }
@@ -51,33 +50,33 @@ var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
 ;return AudioPort;})(events.EventEmitter);
 
 var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
-  function AudioInput(context, node, id) {
-    super$0.call(this, context, node, id)
-    var self = this
+
+  function AudioInput(context, node, id) {var this$0 = this;
+    super$0.call(this, context, node, id);
 
     // `computedNumberOfChannels` is scheduled to be recalculated everytime a connection
     // or disconnection happens.
-    this.computedNumberOfChannels = null
-    this.on('connected', function() {
-      self.computedNumberOfChannels = null
+    this.computedNumberOfChannels = null;
+    this.on('connected', function()  {
+      this$0.computedNumberOfChannels = null;
     })
-    this.on('disconnected', function() {
-      self.computedNumberOfChannels = null
+    this.on('disconnected', function()  {
+      this$0.computedNumberOfChannels = null;
     })
 
     // Just for code clarity
     Object.defineProperty(this, 'sources', {
       get: function() {
-        return this.connections
+        return this.connections;
       }
-    })
+    });
   }AudioInput.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioInput, "configurable": true, "writable": true} });DP$0(AudioInput, "prototype", {"configurable": false, "enumerable": false, "writable": false});
-  AudioInput.prototype.connect = function(source) {
-    var self = this
-      // When the number of channels of the source changes, we trigger
-      // computation of `computedNumberOfChannels`
-    source.on('_numberOfChannels', function() {
-      self.computedNumberOfChannels = null
+
+  AudioInput.prototype.connect = function(source) {var this$0 = this;
+    // When the number of channels of the source changes, we trigger
+    // computation of `computedNumberOfChannels`
+    source.on('_numberOfChannels', function()  {
+      this$0.computedNumberOfChannels = null
     })
     //AudioPort.prototype.connect.call(this, source)
     super$0.prototype.connect.call(this, source)
@@ -89,29 +88,25 @@ var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
     super$0.prototype.disconnect.call(this, source)
   }
 
-  AudioInput.prototype._tick = function() {
-    var self = this,
-      channelInterpretation = this.node.channelInterpretation,
-      i, ch, inNumChannels, inBuffers = this.sources.map(function(source) {
-        return source._tick()
-      })
+  AudioInput.prototype._tick = function() {var this$0 = this;
+    var i, ch, inNumChannels, inBuffers = this.sources.map(function(source) {
+      return source._tick();
+    });
 
-    if (self.computedNumberOfChannels === null) {
-      var maxChannelsUpstream
+    if (this.computedNumberOfChannels === null) {
+      var maxChannelsUpstream;
       if (this.sources.length) {
-        maxChannelsUpstream = _.chain(inBuffers).pluck('numberOfChannels').max().value()
-      } else maxChannelsUpstream = 0
-      self._computeNumberOfChannels(maxChannelsUpstream)
+        maxChannelsUpstream = _.chain(inBuffers).pluck('numberOfChannels').max().value();
+      } else maxChannelsUpstream = 0;
+      this._computeNumberOfChannels(maxChannelsUpstream);
     }
-    var computedNumberOfChannels = self.computedNumberOfChannels,
-      outBuffer = new AudioBuffer(computedNumberOfChannels, BLOCK_SIZE, self.context.sampleRate)
+    var outBuffer = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate);
 
-    inBuffers.forEach(function(inBuffer) {
-      var ch = new ChannelMixing(inBuffer.numberOfChannels, computedNumberOfChannels, channelInterpretation);
+    inBuffers.forEach(function(inBuffer)  {
+      var ch = new ChannelMixing(inBuffer.numberOfChannels, this$0.computedNumberOfChannels, this$0.node.channelInterpretation);
       ch.process(inBuffer, outBuffer);
-    })
-    return outBuffer
-
+    });
+    return outBuffer;
   }
 
   AudioInput.prototype._computeNumberOfChannels = function(maxChannelsUpstream) {
@@ -155,15 +150,14 @@ var AudioOutput = (function(super$0){"use strict";MIXIN$0(AudioOutput, super$0);
   // Pulls the audio from the node only once, and copies it so that several
   // nodes downstream can pull the same block.
   AudioOutput.prototype._tick = function() {
-    var self = this
     if (this._cachedBlock.time < this.context.currentTime) {
       var outBuffer = this.node._tick()
-      if (self._numberOfChannels !== outBuffer.numberOfChannels) {
-        self._numberOfChannels = outBuffer.numberOfChannels
-        self.emit('_numberOfChannels')
+      if (this._numberOfChannels !== outBuffer.numberOfChannels) {
+        this._numberOfChannels = outBuffer.numberOfChannels
+        this.emit('_numberOfChannels')
       }
-      self._cachedBlock = {
-        time: self.context.currentTime,
+      this._cachedBlock = {
+        time: this.context.currentTime,
         buffer: outBuffer
       }
       return outBuffer

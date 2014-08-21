@@ -21,20 +21,19 @@ try {
 
 var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,Object.getOwnPropertyDescriptor(s,p));}}return t};"use strict";MIXIN$0(AudioContext, super$0);
 
-  function AudioContext(opts) {
-    var self = this,
-      outBuff
+  function AudioContext(opts) {var this$0 = this;
+    var outBuff;
 
     /*Object.defineProperty(this, 'currentTime', {
     writable: false,
     get: function() {}
   })*/
-/*
+
     Object.defineProperty(this, 'destination', {
       writable: false,
       value: new AudioDestinationNode(this)
-    })*/
-    this.destination = new AudioDestinationNode(this);
+    })
+    //this.destination = new AudioDestinationNode(this);
 
     /*Object.defineProperty(this, 'sampleRate', {
     writable: false,
@@ -67,26 +66,26 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
     this._audioOutLoopRunning = false
 
     // When a new connection is established, start to pull audio
-    this.destination._inputs[0].on('connection', function() {
-      if (self._audioOutLoopRunning) return
-      if (!self.outStream) throw new Error('you need to set outStream to send the audio somewhere')
-      self._audioOutLoopRunning = true
+    this.destination._inputs[0].on('connection', function()  {
+      if (this$0._audioOutLoopRunning) return
+      if (!this$0.outStream) throw new Error('you need to set outStream to send the audio somewhere')
+      this$0._audioOutLoopRunning = true;
       async.whilst(
-        function() {
-          return self._playing
+        function()  {
+          return this$0._playing
         },
-        function(next) {
-          outBuff = self.destination._tick()
+        function(next)  {
+          outBuff = this$0.destination._tick()
           // If there is space in the output stream's buffers, we write,
           // otherwise we wait for 'drain'
-          self._frame += BLOCK_SIZE
-          self.currentTime = self._frame * 1 / self.sampleRate
-          if (self.outStream.write(self._encoder(outBuff._data))) next()
-          else self.outStream.once('drain', next)
+          this$0._frame += BLOCK_SIZE
+          this$0.currentTime = this$0._frame * 1 / this$0.sampleRate
+          if (this$0.outStream.write(this$0._encoder(outBuff._data))) next()
+          else this$0.outStream.once('drain', next)
         },
-        function(err) {
-          self._audioOutLoopRunning = false
-          if (err) return self.emit('error', err)
+        function(err)  {
+          this$0._audioOutLoopRunning = false
+          if (err) return this$0.emit('error', err)
         }
       )
     })
@@ -148,14 +147,15 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
   */
 
   AudioContext.prototype._kill = function() {
-    var self = this
-    this._playing = false
-    if (self.outStream.close) self.outStream.close()
-    else self.outStream.end()
+    this._playing = false;
+    if (this.outStream.close) {
+      this.outStream.close();
+    } else {
+      this.outStream.end();
+    }
   }
 
-  AudioContext.prototype.collectNodes = function(node, allNodes) {
-    var self = this
+  AudioContext.prototype.collectNodes = function(node, allNodes) {var this$0 = this;
     allNodes = allNodes || []
     node = node || this.destination
     _.chain(node._inputs)
@@ -164,10 +164,10 @@ var AudioContext = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN
         return all.concat(sources)
       }, [])
       .pluck('node').value()
-      .forEach(function(upstreamNode) {
+      .forEach(function(upstreamNode)  {
         if (!_.contains(allNodes, upstreamNode)) {
           allNodes.push(upstreamNode)
-          self.collectNodes(upstreamNode, allNodes)
+          this$0.collectNodes(upstreamNode, allNodes)
         }
       })
     return allNodes

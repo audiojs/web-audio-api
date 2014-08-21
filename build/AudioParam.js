@@ -46,50 +46,45 @@ var AudioParam = (function(super$0){var DP$0 = Object.defineProperty;var MIXIN$0
     this._input = new AudioInput(this.context, this, 0)
   }AudioParam.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioParam, "configurable": true, "writable": true} });DP$0(AudioParam, "prototype", {"configurable": false, "enumerable": false, "writable": false});
 
-  AudioParam.prototype.setValueAtTime = function(value, startTime) {
-    var self = this
-    this._schedule('SetValue', startTime, function() {
-      self._instrinsicValue = value
-      self._nextEvent()
+  AudioParam.prototype.setValueAtTime = function(value, startTime) {var this$0 = this;
+    this._schedule('SetValue', startTime, function()  {
+      this$0._instrinsicValue = value
+      this$0._nextEvent()
     })
   }
 
-  AudioParam.prototype.linearRampToValueAtTime = function(value, endTime) {
-    var self = this
-    this._schedule('LinearRampToValue', endTime, function() {
-      self._instrinsicValue = value
-      self._nextEvent()
+  AudioParam.prototype.linearRampToValueAtTime = function(value, endTime) {var this$0 = this;
+    this._schedule('LinearRampToValue', endTime, function()  {
+      this$0._instrinsicValue = value
+      this$0._nextEvent()
     }, [value])
     this._nextEvent()
   }
 
-  AudioParam.prototype.exponentialRampToValueAtTime = function(value, endTime) {
-    var self = this
+  AudioParam.prototype.exponentialRampToValueAtTime = function(value, endTime) {var this$0 = this;
     if (this._instrinsicValue <= 0 || value <= 0)
       throw new Error('cannot create exponential ramp with value <= 0')
-    this._schedule('ExponentialRampToValue', endTime, function() {
-      self._instrinsicValue = value
-      self._nextEvent()
+    this._schedule('ExponentialRampToValue', endTime, function()  {
+      this$0._instrinsicValue = value
+      this$0._nextEvent()
     }, [value])
     this._nextEvent()
   }
 
-  AudioParam.prototype.setTargetAtTime = function(target, startTime, timeConstant) {
-    var self = this
-    this._schedule('SetTarget', startTime, function() {
-      self['_to_' + self._rate + 'Rate_setTarget'](target, timeConstant, function() {
-        self._instrinsicValue = target
-        self._nextEvent()
+  AudioParam.prototype.setTargetAtTime = function(target, startTime, timeConstant) {var this$0 = this;
+    this._schedule('SetTarget', startTime, function()  {
+      this$0['_to_' + this$0._rate + 'Rate_setTarget'](target, timeConstant, function()  {
+        this$0._instrinsicValue = target
+        this$0._nextEvent()
       })
     })
   }
 
-  AudioParam.prototype.setValueCurveAtTime = function(values, startTime, duration) {
-    var self = this
-    this._schedule('SetValueCurve', startTime, function() {
-      self['_to_' + self._rate + 'Rate_SetValueCurve'](values, startTime, duration, function() {
-        self._instrinsicValue = values[values.length - 1]
-        self._nextEvent()
+  AudioParam.prototype.setValueCurveAtTime = function(values, startTime, duration) {var this$0 = this;
+    this._schedule('SetValueCurve', startTime, function()  {
+      this$0['_to_' + this$0._rate + 'Rate_SetValueCurve'](values, startTime, duration, function()  {
+        this$0._instrinsicValue = values[values.length - 1]
+        this$0._nextEvent()
       })
     })
   }
