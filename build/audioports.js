@@ -9,6 +9,7 @@ var DP$0 = Object.defineProperty;var MIXIN$0 = function(t,s){for(var p in s){if(
 
 
 var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
+
   function AudioPort(context, node, id) {
     super$0.call(this)
     this.connections = []
@@ -16,7 +17,6 @@ var AudioPort = (function(super$0){"use strict";MIXIN$0(AudioPort, super$0);
     this.id = id
     this.context = context
   }AudioPort.prototype = Object.create(super$0.prototype, {"constructor": {"value": AudioPort, "configurable": true, "writable": true} });DP$0(AudioPort, "prototype", {"configurable": false, "enumerable": false, "writable": false});
-
 
   // Generic function for connecting the calling AudioPort
   // with `otherPort`. Returns true if a connection was indeed established
@@ -127,6 +127,7 @@ var AudioInput = (function(super$0){"use strict";MIXIN$0(AudioInput, super$0);
 ;return AudioInput;})(AudioPort);
 
 var AudioOutput = (function(super$0){"use strict";MIXIN$0(AudioOutput, super$0);
+
   function AudioOutput(context, node, id) {
     super$0.call(this, context, node, id)
 
