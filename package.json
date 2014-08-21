@@ -36,5 +36,10 @@
   "license": "MIT",
   "engines": {
     "node": ">=0.10"
+  },
+  "scripts": {
+    "pretest": "gulp",
+    "test": "mocha",
+    "prepublish": "gulp"
   }
 }
