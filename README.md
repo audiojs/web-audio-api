@@ -1,7 +1,7 @@
 Node Web Audio API
 =====================
 
-This library implements the [web audio API specification](https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html) on node.js.
+This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
 
 Why the hell doing that??? I know it sounds crazy, so I guess I'll have to build a case for it, and write some blog posts.
 
@@ -16,6 +16,18 @@ What's implemented
 - AudioBufferSourceNode
 - ScriptProcessorNode
 - GainNode
+
+
+Overall view of implementation
+------------------------------
+
+Each time you create an ```AudioNode``` (like for instance an ```AudioBufferSourceNode``` or a ```GainNode```), it inherits from ```DspObject``` which is in charge of two things:
+- register schedule events with ```_schedule```
+- compute the appropriate digital signal processing with ```_tick```
+
+Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node the the relevant ```AudioInput``` instance of the ```destination``` node.
+
+To instantiate all of these ```AudioNode```, you needed an overall ```AudioContext``` instance. This latter has a ```destination``` property (where the sound will flow out), instance of ```AudioDestinationNode```, which inherits from ```AudioNode```. The ```AudioContext``` instance keeps track of connections to the ```destination```. When that happens, it triggers the audio loop, calling ```_tick``` infinitely on the ```destination```, which will itself call ```_tick``` on its input ... and so forth go up on the whole audio graph.
 
 
 What's left to do
@@ -58,7 +70,7 @@ var spawn = require('child_process').spawn
 
 var ices = spawn('ices', ['ices.xml'])
 context.outStream = ices.stdin
-``` 
+```
 
 Cool huh?
 
@@ -97,14 +109,14 @@ npm install -g mocha
 And in the root folder run :
 
 ```
-mocha
+npm test
 ```
 
 
 Manual testing
 ----------------
 
-To test the sound output : 
+To test the sound output :
 
 ```
 node test/manual-testing/AudioContext-sound-output.js
