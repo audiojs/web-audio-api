@@ -2,7 +2,7 @@ var _ = require('underscore')
   , assert = require('assert')
   , ScriptProcessorNode = require('../build/ScriptProcessorNode')
   , AudioNode = require('../build/AudioNode')
-  , AudioBuffer = require('audiobuffer')
+  , AudioBuffer = require('../build/AudioBuffer')
   , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
 
 describe('ScriptProcessorNode', function() {

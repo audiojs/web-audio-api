@@ -1,6 +1,6 @@
 var assert = require('assert')
   , async = require('async')
-  , AudioBuffer = require('audiobuffer')
+  , AudioBuffer = require('../build/AudioBuffer')
   , AudioBufferSourceNode = require('../build/AudioBufferSourceNode')
   , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
 

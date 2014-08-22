@@ -1,7 +1,7 @@
 var _ = require('underscore')
   , fs = require('fs')
   , assert = require('assert')
-  , AudioBuffer = require('audiobuffer')
+  , AudioBuffer = require('../build/AudioBuffer')
   , utils = require('../build/utils')
   , assertAllValuesApprox = require('./helpers').assertAllValuesApprox
   , assertApproxEqual = require('./helpers').assertApproxEqual

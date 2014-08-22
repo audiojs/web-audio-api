@@ -1,6 +1,6 @@
 var assert = require('assert')
   , _ = require('underscore')
-  , AudioBuffer = require('audiobuffer')
+  , AudioBuffer = require('../build/AudioBuffer')
   , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
   , GainNode = require('../build/GainNode')
   , AudioNode = require('../build/AudioNode')
