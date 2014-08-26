@@ -3,8 +3,6 @@ Node Web Audio API
 
 This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
 
-Why the hell doing that??? I know it sounds crazy, so I guess I'll have to build a case for it, and write some blog posts.
-
 And this is not even alpha. Use this library only if you're the adventurous kind.
 
 
@@ -73,6 +71,18 @@ context.outStream = ices.stdin
 ```
 
 Cool huh?
+
+
+Using Gibber
+---------------
+
+[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm : 
+
+`npm install gibber.lib`
+
+Then to you can run the following test to see that everything works:
+
+`npm test gibber.lib`
 
 
 Extensions
