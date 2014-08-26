@@ -1,7 +1,7 @@
 var assert = require('assert')
   , _ = require('underscore')
   , async = require('async')
-  , AudioNode = require('../lib/AudioNode')
+  , AudioNode = require('../build/AudioNode')
 
 describe('AudioNode', function() {
 
@@ -28,7 +28,7 @@ describe('AudioNode', function() {
   it('should inherit from EventEmitter', function() {
     var node = new AudioNode(dummyContext, 1, 2)
     assert.ok(node.on)
-    assert.ok(node.once)    
+    assert.ok(node.once)
   })
 
   describe('channelCount', function() {
@@ -165,7 +165,7 @@ describe('AudioNode', function() {
       source.disconnect()
       assert.equal(source._outputs[0].sinks.length, 0)
       assert.equal(source._outputs[1].sinks.length, 1)
-      assert.equal(source._outputs[2].sinks.length, 1)   
+      assert.equal(source._outputs[2].sinks.length, 1)
     })
 
     it('should throw an error if ouput or input out of bounds', function() {
@@ -207,14 +207,14 @@ describe('AudioNode', function() {
 describe('SourceNode', function() {
 
   describe('read', function() {
-    
+
     var MySourceNode = audionodes.SourceNode.extend({
-    
+
       init: function(channels) {
         this.counter = -1
         this.channels = channels || 1
       },
-    
+
       getBlock: function(next) {
         this.counter++
         if (this.counter < 3) {
@@ -231,13 +231,13 @@ describe('SourceNode', function() {
           this.getBlock(next)
         }
       }
-      
+
     })
-    
+
     it('should read the right amount of data and buffer the surplus', function(done) {
       var node = new MySourceNode()
       assert.deepEqual(node._buffers, [[]])
-      
+
       async.waterfall([
         function(next) {
           node.read(5, next)
@@ -259,11 +259,11 @@ describe('SourceNode', function() {
         }
       ])
     })
-    
+
     it('should read the right amount of data and pad the missing data', function(done) {
       var node = new MySourceNode(2)
       assert.deepEqual(node._buffers, [[], []])
-      
+
       async.waterfall([
         function(next) {
           node.read(25, next)
@@ -284,7 +284,7 @@ describe('SourceNode', function() {
         }
       ])
     })
-    
+
   })
 
 })

@@ -1,23 +1,23 @@
 var fs = require('fs')
   , assert = require('assert')
   , _ = require('underscore')
-  , AudioContext = require('../lib/AudioContext')
-  , AudioNode = require('../lib/AudioNode')
+  , AudioContext = require('../build/AudioContext')
+  , AudioNode = require('../build/AudioNode')
 
 describe('AudioContext', function() {
-  
+
   describe('countNodes', function() {
 
     it('should count all the nodes connected to the context\'s destination', function() {
       //
-      //    node3a node3b node3c   node3d
-      //                \|/      /  \
-      //                  node2a      node2b
-      //                     |   \    /
+      //    node3a node3b node3c node3d
+      //                \|/     /  \
+      //                  node2a  node2b
+      //                     |     /
       //                     node1a  node1b
       //                           \/
       //                          dest
-      var context = new AudioContext
+      var context = new AudioContext()
         , node1a = new AudioNode(context, 2, 1)
         , node1b = new AudioNode(context, 0, 1)
         , node2a = new AudioNode(context, 2, 2)
@@ -26,7 +26,7 @@ describe('AudioContext', function() {
         , node3b = new AudioNode(context, 0, 1)
         , node3c = new AudioNode(context, 1, 2)
         , node3d = new AudioNode(context, 2, 1)
-        , collected
+        , collected;
       context._kill()
 
       node1a.id = '1a'
@@ -57,7 +57,7 @@ describe('AudioContext', function() {
         _.sortBy(collected, function(node) { return node.id }),
         [node1a, node1b, node2a, node2b, node3a, node3b, node3c, node3d])
     })
-  
+
   })
 
   describe('decodeAudioData', function() {

@@ -1,13 +1,13 @@
 module.exports = {
-  
-  AudioContext: require('./lib/AudioContext'),
-  AudioParam: require('./lib/AudioParam'),
-  AudioNode: require('./lib/AudioNode'),
-  AudioDestinationNode: require('./lib/AudioDestinationNode'),
 
-  AudioBufferSourceNode: require('./lib/AudioBufferSourceNode'),
-  GainNode: require('./lib/GainNode'),
+  AudioContext: require('./build/AudioContext'),
+  AudioParam: require('./build/AudioParam'),
+  AudioNode: require('./build/AudioNode'),
+  AudioDestinationNode: require('./build/AudioDestinationNode'),
+  AudioBuffer: require('./build/AudioBuffer'),
+  AudioBufferSourceNode: require('./build/AudioBufferSourceNode'),
+  GainNode: require('./build/GainNode'),
 
-  constants: require('./lib/constants')
+  constants: require('./build/constants')
 
 }

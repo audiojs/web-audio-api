@@ -1,8 +1,8 @@
 var assert = require('assert')
   , async = require('async')
-  , AudioBuffer = require('audiobuffer')
-  , AudioBufferSourceNode = require('../lib/AudioBufferSourceNode')
-  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
+  , AudioBuffer = require('../build/AudioBuffer')
+  , AudioBufferSourceNode = require('../build/AudioBufferSourceNode')
+  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
 
 describe('AudioBufferSourceNode', function() {
 

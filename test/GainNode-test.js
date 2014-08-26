@@ -1,9 +1,9 @@
 var assert = require('assert')
   , _ = require('underscore')
-  , AudioBuffer = require('audiobuffer')
-  , BLOCK_SIZE = require('../lib/constants').BLOCK_SIZE
-  , GainNode = require('../lib/GainNode')
-  , AudioNode = require('../lib/AudioNode')
+  , AudioBuffer = require('../build/AudioBuffer')
+  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
+  , GainNode = require('../build/GainNode')
+  , AudioNode = require('../build/AudioNode')
 
 describe('GainNode', function() {
 

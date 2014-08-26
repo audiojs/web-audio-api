@@ -28,11 +28,19 @@
   },
   "analyze": false,
   "devDependencies": {
-    "mocha": "*",
-    "chai": "1.7.x"
+    "chai": "1.7.x",
+    "gulp": "3.8.x",
+    "gulp-util": "3.0.x",
+    "gulp-es6-transpiler": "1.0.x",
+    "mocha": "*"
   },
   "license": "MIT",
   "engines": {
     "node": ">=0.10"
+  },
+  "scripts": {
+    "pretest": "gulp",
+    "test": "mocha",
+    "prepublish": "gulp"
   }
 }
