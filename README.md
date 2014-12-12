@@ -131,6 +131,8 @@ Manual testing
 To test the sound output :
 
 ```
+npm install
+gulp default
 node test/manual-testing/AudioContext-sound-output.js
 ```
 
