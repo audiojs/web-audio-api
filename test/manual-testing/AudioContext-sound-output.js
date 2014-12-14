@@ -1,6 +1,6 @@
 if (require.main === module) {
   var fs = require('fs')
-    , AudioContext = require('../../lib/AudioContext')
+    , AudioContext = require('../../build/AudioContext')
     , context = new AudioContext
 
   fs.readFile(__dirname + '/sounds/powerpad.wav', function(err, buffer) {
