@@ -1,4 +1,4 @@
-if (require.main === module) {
+if (require.main === module) { // Just to avoid mocha running this
   var fs = require('fs')
     , AudioContext = require('../../build/AudioContext')
     , context = new AudioContext

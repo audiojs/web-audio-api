@@ -80,7 +80,7 @@ Using Gibber
 
 [Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm : 
 
-`npm install gibber.lib`
+`npm install gibber.audio.lib`
 
 Then to you can run the following test to see that everything works:
 
