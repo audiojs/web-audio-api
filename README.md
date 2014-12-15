@@ -84,7 +84,7 @@ Using Gibber
 
 Then to you can run the following test to see that everything works:
 
-`npm test gibber.lib`
+`npm test gibber.audio.lib`
 
 
 Extensions
