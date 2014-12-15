@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "description": "Node.js implementation of Web audio API",
   "repository": {
@@ -19,7 +19,6 @@
     "async": "0.2.x",
     "underscore": "1.4.x",
     "mathjs": "0.9.x",
-    "av": "0.2.x",
     "pcm-boilerplate": "0.1.x",
     "audiobuffer": "0.2.x"
   },

@@ -142,6 +142,10 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 Changelog
 -----------
 
+#### 0.2.0
+
+- refactored to ES6
+
 #### 0.1.5
 
 - **AudioNode** and **AudioContext** bug fixes
