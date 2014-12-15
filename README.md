@@ -139,6 +139,17 @@ node test/manual-testing/AudioContext-sound-output.js
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
 
 
+Contributors
+-------------
+
+```
+    61	Sébastien Piquemal
+    16	ouhouhsami
+     4	John Wnek
+     2	anprogrammer
+     1	Andrew Petersen
+```
+
 Changelog
 -----------
 
