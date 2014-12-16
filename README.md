@@ -153,6 +153,10 @@ Contributors
 Changelog
 -----------
 
+#### 0.2.1
+
+- now use aurora installed from npm instead of distributing a built version of it.
+
 #### 0.2.0
 
 - refactored to ES6
