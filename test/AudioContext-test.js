@@ -27,7 +27,7 @@ describe('AudioContext', function() {
         , node3c = new AudioNode(context, 1, 2)
         , node3d = new AudioNode(context, 2, 1)
         , collected
-      context.outStream = 1 // make the context believe it has an out stream
+      context.outStream = {end: function(){}} // make the context believe it has an out stream
       context._kill()
 
       node1a.id = '1a'
