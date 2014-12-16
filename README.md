@@ -1,6 +1,8 @@
 Node Web Audio API
 =====================
 
+[![Build Status](https://travis-ci.org/sebpiq/node-web-audio-api.svg)](https://travis-ci.org/sebpiq/node-web-audio-api)
+
 This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
 
 And this is not even alpha. Use this library only if you're the adventurous kind.
