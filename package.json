@@ -20,10 +20,11 @@
     "audiobuffer": "0.2.x",
     "av": "0.2.x",
     "es6-shim": "^0.16.0",
+    "lodash": "^2.4.1",
     "mathjs": "0.9.x",
     "native-promise-only": "^0.7.6-a",
     "pcm-boilerplate": "0.1.x",
-    "underscore": "1.4.x"
+    "underscore": "^1.7.0"
   },
   "optionalDependencies": {
     "speaker": "0.0.x"
