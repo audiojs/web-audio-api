@@ -58,12 +58,26 @@ node test/manual-testing/AudioContext-sound-output.js
 ```
 
 
-Streaming audio
------------------
+Selecting an audio output
+---------------------------
 
-`AudioContext` just writes PCM data to a node writable stream. The default stream is a stream created with `Speaker`, which plays the audio back to your soundcard. But you can use any writable stream, file, including the `stdin` of a child process.
+`AudioContext` just writes PCM data to a node writable stream. After creating an `AudioContext`, you need to set its output stream like this : `audioContext.outStream = writableStream`.
 
-For example, here is an example for streaming audio to an [icecast](http://www.icecast.org/) server, using [ices](http://www.icecast.org/ices.php) :
+For example, if you want to play back audio the audio generated, you can use `node-speaker`. First install it with `npm install speaker`, then do something like this :
+
+```javascript
+var AudioContext = require('web-audio-api').AudioContext
+  , context = new AudioContext
+  , Speaker = require('speaker')
+
+context.outStream = new Speaker({
+  channels: context.format.numberOfChannels,
+  bitDepth: context.format.bitDepth,
+  sampleRate: context.sampleRate
+})
+```
+
+You can also use the stdin of another process and pipe it sound. For example, here is an example for streaming audio to an [icecast](http://www.icecast.org/) server, using [ices](http://www.icecast.org/ices.php) :
 
 ```
 var spawn = require('child_process').spawn

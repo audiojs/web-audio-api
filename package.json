@@ -26,9 +26,6 @@
     "alac": "0.1.x",
     "aac": "0.1.x"
   },
-  "optionalDependencies": {
-    "speaker": "0.0.x"
-  },
   "analyze": false,
   "devDependencies": {
     "chai": "1.7.x",
