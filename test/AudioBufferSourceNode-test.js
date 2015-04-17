@@ -74,7 +74,7 @@ describe('AudioBufferSourceNode', function() {
       helpers.assertAllValuesEqual(blocks[0].getChannelData(0), 0)
 
       // Full blocks read
-      blocks.subarray(1, 4).forEach(function(audioBuffer, i) {
+      blocks.slice(1, 4).forEach(function(audioBuffer, i) {
         assert.equal(audioBuffer.numberOfChannels, 2)
         assert.equal(audioBuffer.length, 128)
       })
