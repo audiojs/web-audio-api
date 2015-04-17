@@ -16,9 +16,9 @@
     "dsp"
   ],
   "dependencies": {
-    "async": "0.2.x",
-    "underscore": "1.4.x",
-    "mathjs": "0.9.x",
+    "async": "0.9.x",
+    "underscore": "1.8.x",
+    "mathjs": "1.5.x",
     "pcm-boilerplate": "0.1.x",
     "audiobuffer": "0.2.x",
     "av": "0.4.x",
