@@ -17,17 +17,19 @@ describe('AudioContext', function() {
       //                     node1a  node1b
       //                           \/
       //                          dest
-      var context = new AudioContext(),
-        node1a = new AudioNode(context, 2, 1),
-        node1b = new AudioNode(context, 0, 1),
-        node2a = new AudioNode(context, 2, 2),
-        node2b = new AudioNode(context, 1, 1),
-        node3a = new AudioNode(context, 1, 1),
-        node3b = new AudioNode(context, 0, 1),
-        node3c = new AudioNode(context, 1, 2),
-        node3d = new AudioNode(context, 2, 1),
-        collected;
-      context._kill();
+
+      var context = new AudioContext()
+        , node1a = new AudioNode(context, 2, 1)
+        , node1b = new AudioNode(context, 0, 1)
+        , node2a = new AudioNode(context, 2, 2)
+        , node2b = new AudioNode(context, 1, 1)
+        , node3a = new AudioNode(context, 1, 1)
+        , node3b = new AudioNode(context, 0, 1)
+        , node3c = new AudioNode(context, 1, 2)
+        , node3d = new AudioNode(context, 2, 1)
+        , collected
+      context.outStream = {end: function(){}} // make the context believe it has an out stream
+      context._kill()
 
       node1a.id = '1a';
       node1b.id = '1b';

@@ -102,7 +102,6 @@ describe('AudioBuffer', function() {
   })
 
   describe('slice', function() {
-
     it('should slice properly all channels', function() {
       var sliced
         , ab = AudioBuffer.fromArray([

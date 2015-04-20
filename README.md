@@ -1,9 +1,9 @@
 Node Web Audio API
 =====================
 
-This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
+[![Build Status](https://travis-ci.org/sebpiq/node-web-audio-api.svg)](https://travis-ci.org/sebpiq/node-web-audio-api) [![Dependency Status](https://img.shields.io/gemnasium/sebpiq/node-web-audio-api.svg)](https://gemnasium.com/sebpiq/node-web-audio-api)
 
-Why the hell doing that??? I know it sounds crazy, so I guess I'll have to build a case for it, and write some blog posts.
+This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
 
 And this is not even alpha. Use this library only if you're the adventurous kind.
 
@@ -52,16 +52,32 @@ Demo
 Get ready, this is going to blow up your mind :
 
 ```
+npm install
+gulp default
 node test/manual-testing/AudioContext-sound-output.js
 ```
 
 
-Streaming audio
------------------
+Selecting an audio output
+---------------------------
 
-`AudioContext` just writes PCM data to a node writable stream. The default stream is a stream created with `Speaker`, which plays the audio back to your soundcard. But you can use any writable stream, file, including the `stdin` of a child process.
+`AudioContext` just writes PCM data to a node writable stream. After creating an `AudioContext`, you need to set its output stream like this : `audioContext.outStream = writableStream`.
 
-For example, here is an example for streaming audio to an [icecast](http://www.icecast.org/) server, using [ices](http://www.icecast.org/ices.php) :
+For example, if you want to play back audio the audio generated, you can use `node-speaker`. First install it with `npm install speaker`, then do something like this :
+
+```javascript
+var AudioContext = require('web-audio-api').AudioContext
+  , context = new AudioContext
+  , Speaker = require('speaker')
+
+context.outStream = new Speaker({
+  channels: context.format.numberOfChannels,
+  bitDepth: context.format.bitDepth,
+  sampleRate: context.sampleRate
+})
+```
+
+You can also use the stdin of another process and pipe it sound. For example, here is an example for streaming audio to an [icecast](http://www.icecast.org/) server, using [ices](http://www.icecast.org/ices.php) :
 
 ```
 var spawn = require('child_process').spawn
@@ -73,6 +89,18 @@ context.outStream = ices.stdin
 ```
 
 Cool huh?
+
+
+Using Gibber
+---------------
+
+[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm : 
+
+`npm install gibber.audio.lib`
+
+Then to you can run the following test to see that everything works:
+
+`npm test gibber.audio.lib`
 
 
 Extensions
@@ -119,14 +147,35 @@ Manual testing
 To test the sound output :
 
 ```
+npm install
+gulp default
 node test/manual-testing/AudioContext-sound-output.js
 ```
 
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
 
 
+Contributors
+-------------
+
+```
+    61	Sébastien Piquemal
+    16	ouhouhsami
+     4	John Wnek
+     2	anprogrammer
+     1	Andrew Petersen
+```
+
 Changelog
 -----------
+
+#### 0.2.1
+
+- now use aurora installed from npm instead of distributing a built version of it.
+
+#### 0.2.0
+
+- refactored to ES6
 
 #### 0.1.5
 

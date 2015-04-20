@@ -90,10 +90,10 @@ describe('AudioBufferSourceNode', function() {
       // Incomplete block read
       assert.equal(blocks[5].numberOfChannels, 2)
       assert.equal(blocks[5].length, 128)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).slice(0, 63), 0.5)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).slice(64, 128), 0)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).slice(0, 63), -0.5)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).slice(64, 128), 0)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).subarray(0, 63), 0.5)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).subarray(64, 128), 0)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).subarray(0, 63), -0.5)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).subarray(64, 128), 0)
 
       // Playback over
       assert.throws(function() { node._tick() })
@@ -128,20 +128,20 @@ describe('AudioBufferSourceNode', function() {
       helpers.assertAllValuesApprox(blocks[3].getChannelData(1), -0.4)
 
       // Incomplete blocks read
-      helpers.assertAllValuesApprox(blocks[4].getChannelData(0).slice(0, 63), 0.5)
-      helpers.assertAllValuesApprox(blocks[4].getChannelData(1).slice(0, 63), -0.5)
-      helpers.assertAllValuesApprox(blocks[4].getChannelData(0).slice(64, 128), 0.1)
-      helpers.assertAllValuesApprox(blocks[4].getChannelData(1).slice(64, 128), -0.1)
+      helpers.assertAllValuesApprox(blocks[4].getChannelData(0).subarray(0, 63), 0.5)
+      helpers.assertAllValuesApprox(blocks[4].getChannelData(1).subarray(0, 63), -0.5)
+      helpers.assertAllValuesApprox(blocks[4].getChannelData(0).subarray(64, 128), 0.1)
+      helpers.assertAllValuesApprox(blocks[4].getChannelData(1).subarray(64, 128), -0.1)
 
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).slice(0, 63), 0.1)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).slice(0, 63), -0.1)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).slice(64, 128), 0.2)
-      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).slice(64, 128), -0.2)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).subarray(0, 63), 0.1)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).subarray(0, 63), -0.1)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(0).subarray(64, 128), 0.2)
+      helpers.assertAllValuesApprox(blocks[5].getChannelData(1).subarray(64, 128), -0.2)
 
-      helpers.assertAllValuesApprox(blocks[6].getChannelData(0).slice(0, 63), 0.2)
-      helpers.assertAllValuesApprox(blocks[6].getChannelData(1).slice(0, 63), -0.2)
-      helpers.assertAllValuesApprox(blocks[6].getChannelData(0).slice(64, 128), 0.3)
-      helpers.assertAllValuesApprox(blocks[6].getChannelData(1).slice(64, 128), -0.3)
+      helpers.assertAllValuesApprox(blocks[6].getChannelData(0).subarray(0, 63), 0.2)
+      helpers.assertAllValuesApprox(blocks[6].getChannelData(1).subarray(0, 63), -0.2)
+      helpers.assertAllValuesApprox(blocks[6].getChannelData(0).subarray(64, 128), 0.3)
+      helpers.assertAllValuesApprox(blocks[6].getChannelData(1).subarray(64, 128), -0.3)
     })
 
     it('should loop the audio from offset to offset + duration', function() {
@@ -166,20 +166,20 @@ describe('AudioBufferSourceNode', function() {
 
       // The loop is 1.5 blocks, so the offset loop/block resolves every 3 blocks
       for (var i = 0; i < 3; i++) {
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).slice(0, 63), 0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).slice(0, 63), -0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).slice(64, 128), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).slice(64, 128), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).subarray(0, 63), 0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).subarray(0, 63), -0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).subarray(64, 128), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).subarray(64, 128), -0.2)
 
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).slice(0, 63), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).slice(0, 63), -0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).slice(64, 128), 0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).slice(64, 128), -0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).subarray(0, 63), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).subarray(0, 63), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).subarray(64, 128), 0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).subarray(64, 128), -0.1)
 
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).slice(0, 63), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).slice(0, 63), -0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).slice(64, 128), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).slice(64, 128), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).subarray(0, 63), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).subarray(0, 63), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).subarray(64, 128), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).subarray(64, 128), -0.2)
       }
     })
 
@@ -207,20 +207,20 @@ describe('AudioBufferSourceNode', function() {
 
       // The loop is 1.5 blocks, so the offset loop/block resolves every 3 blocks
       for (var i = 0; i < 3; i++) {
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).slice(0, 63), 0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).slice(0, 63), -0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).slice(64, 128), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).slice(64, 128), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).subarray(0, 63), 0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).subarray(0, 63), -0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(0).subarray(64, 128), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 0].getChannelData(1).subarray(64, 128), -0.2)
 
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).slice(0, 63), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).slice(0, 63), -0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).slice(64, 128), 0.1)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).slice(64, 128), -0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).subarray(0, 63), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).subarray(0, 63), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(0).subarray(64, 128), 0.1)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 1].getChannelData(1).subarray(64, 128), -0.1)
 
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).slice(0, 63), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).slice(0, 63), -0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).slice(64, 128), 0.2)
-        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).slice(64, 128), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).subarray(0, 63), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).subarray(0, 63), -0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(0).subarray(64, 128), 0.2)
+        helpers.assertAllValuesApprox(blocks[i * 3 + 2].getChannelData(1).subarray(64, 128), -0.2)
       }
     })
 
