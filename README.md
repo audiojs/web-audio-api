@@ -144,10 +144,11 @@ npm test
 Manual testing
 ----------------
 
-To test the sound output :
+To test the sound output, we need to install `node-speaker` (in addition of all the other dependencies), and build the library :
 
 ```
 npm install
+npm install speaker
 gulp default
 node test/manual-testing/AudioContext-sound-output.js
 ```
