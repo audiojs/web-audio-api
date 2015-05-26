@@ -16,26 +16,8 @@ What's implemented
 - AudioBufferSourceNode
 - ScriptProcessorNode
 - GainNode
-
-
-Overall view of implementation
-------------------------------
-
-Each time you create an ```AudioNode``` (like for instance an ```AudioBufferSourceNode``` or a ```GainNode```), it inherits from ```DspObject``` which is in charge of two things:
-- register schedule events with ```_schedule```
-- compute the appropriate digital signal processing with ```_tick```
-
-Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node the the relevant ```AudioInput``` instance of the ```destination``` node.
-
-To instantiate all of these ```AudioNode```, you needed an overall ```AudioContext``` instance. This latter has a ```destination``` property (where the sound will flow out), instance of ```AudioDestinationNode```, which inherits from ```AudioNode```. The ```AudioContext``` instance keeps track of connections to the ```destination```. When that happens, it triggers the audio loop, calling ```_tick``` infinitely on the ```destination```, which will itself call ```_tick``` on its input ... and so forth go up on the whole audio graph.
-
-
-What's left to do
-------------------
-
-Most of the AudioNodes ...
-Most of many other things ...
-:(
+- OscillatorNode (coming soon)
+- DelayNode (coming soon)
 
 
 Installation
@@ -58,12 +40,14 @@ node test/manual-testing/AudioContext-sound-output.js
 ```
 
 
-Selecting an audio output
----------------------------
+Audio output
+-----------------
 
-`AudioContext` just writes PCM data to a node writable stream. After creating an `AudioContext`, you need to set its output stream like this : `audioContext.outStream = writableStream`.
+By default, **node-web-audio-api** doesn't play back the sound it generates. In fact, an `AudioContext` has no default output, and you need to give it a writable node stream to which it can write raw PCM audio. After creating an `AudioContext`, set its output stream like this : `audioContext.outStream = writableStream`.
 
-For example, if you want to play back audio the audio generated, you can use `node-speaker`. First install it with `npm install speaker`, then do something like this :
+### Example : playing back sound with **node-speaker**
+
+This is probably the simplest way to play back audio. Install **node-speaker** with `npm install speaker`, then do something like this :
 
 ```javascript
 var AudioContext = require('web-audio-api').AudioContext
@@ -75,9 +59,32 @@ context.outStream = new Speaker({
   bitDepth: context.format.bitDepth,
   sampleRate: context.sampleRate
 })
+
+// Create some audio nodes here to make some noise ...
 ```
 
-You can also use the stdin of another process and pipe it sound. For example, here is an example for streaming audio to an [icecast](http://www.icecast.org/) server, using [ices](http://www.icecast.org/ices.php) :
+### Example : playing back sound with **aplay**
+
+Linux users can play back sound from **node-web-audio-api** by piping its output to [aplay](http://alsa.opensrc.org/Aplay). For this, simply send the generated sound straight to `stdout` like this :
+
+```javascript
+var AudioContext = require('web-audio-api').AudioContext
+  , context = new AudioContext
+
+context.outStream = process.stdout
+
+// Create some audio nodes here to make some noise ...
+```
+
+Then start your script, piping it to **aplay** like so :
+
+```
+node myScript.js | aplay -f cd
+```
+
+### Example : creating an audio stream with **icecast2**
+
+[icecast](http://icecast.org/) is a open-source streaming server. It works great, and is very easy to setup. **icecast** accepts connections from [different source clients](http://icecast.org/apps/) which provide the sound to encode and stream. [ices](http://www.icecast.org/ices/) is a client for **icecast** which accepts raw PCM audio from its standard input, and you can send sound from **node-web-audio-api** to **ices** (which will send it to icecast) by simply doing :
 
 ```
 var spawn = require('child_process').spawn
@@ -88,7 +95,7 @@ var ices = spawn('ices', ['ices.xml'])
 context.outStream = ices.stdin
 ```
 
-Cool huh?
+A live example is available on [Sébastien's website](http://funktion.fm/#/projects/versificator-rubbish-stream)
 
 
 Using Gibber
@@ -103,11 +110,17 @@ Then to you can run the following test to see that everything works:
 `npm test gibber.audio.lib`
 
 
-Extensions
------------
 
-Wow! The whole thing is not even half-done that there's already some extensions for it! See the list in [the wiki](https://github.com/sebpiq/node-web-audio-api/wiki/Extra-AudioNode-libraries-for-node-web-audio-api
-).
+Overall view of implementation
+------------------------------
+
+Each time you create an ```AudioNode``` (like for instance an ```AudioBufferSourceNode``` or a ```GainNode```), it inherits from ```DspObject``` which is in charge of two things:
+- register schedule events with ```_schedule```
+- compute the appropriate digital signal processing with ```_tick```
+
+Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node the the relevant ```AudioInput``` instance of the ```destination``` node.
+
+To instantiate all of these ```AudioNode```, you needed an overall ```AudioContext``` instance. This latter has a ```destination``` property (where the sound will flow out), instance of ```AudioDestinationNode```, which inherits from ```AudioNode```. The ```AudioContext``` instance keeps track of connections to the ```destination```. When that happens, it triggers the audio loop, calling ```_tick``` infinitely on the ```destination```, which will itself call ```_tick``` on its input ... and so forth go up on the whole audio graph.
 
 
 Running the debugger
