@@ -183,6 +183,10 @@ Contributors
 Changelog
 -----------
 
+#### 0.2.2
+
+- removed `node-speaker` and `mathjs` dependencies
+
 #### 0.2.1
 
 - now use aurora installed from npm instead of distributing a built version of it.
