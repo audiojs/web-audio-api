@@ -35,7 +35,7 @@ Get ready, this is going to blow up your mind :
 
 ```
 npm install
-npm run test-manual
+npm run test-speaker
 ```
 
 
@@ -153,7 +153,7 @@ Manual testing
 You can test the sound output using `node-speaker`.
 
 ```
-npm run test-manual
+npm run test-speaker
 ```
 
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
