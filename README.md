@@ -35,8 +35,7 @@ Get ready, this is going to blow up your mind :
 
 ```
 npm install
-gulp default
-node test/manual-testing/AudioContext-sound-output.js
+npm run test-manual
 ```
 
 
