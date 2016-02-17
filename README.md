@@ -101,7 +101,7 @@ A live example is available on [Sébastien's website](http://funktion.fm/#/proje
 Using Gibber
 ---------------
 
-[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm : 
+[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm :
 
 `npm install gibber.audio.lib`
 
@@ -141,13 +141,7 @@ that way the audio loop is stopped, and you can inspect your objects in peace.
 Running the tests
 ------------------
 
-Tests are written with mocha. To run them, install mocha with :
-
-```
-npm install -g mocha
-```
-
-And in the root folder run :
+Tests are written with mocha.
 
 ```
 npm test
