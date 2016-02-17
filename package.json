@@ -30,10 +30,11 @@
   "devDependencies": {
     "chai": "1.7.x",
     "gulp": "3.8.x",
-    "gulp-util": "3.0.x",
-    "gulp-es6-transpiler": "1.0.x",
     "gulp-contribs": "0.0.x",
-    "mocha": "*"
+    "gulp-es6-transpiler": "1.0.x",
+    "gulp-util": "3.0.x",
+    "mocha": "*",
+    "speaker": "^0.2.6"
   },
   "license": "MIT",
   "engines": {
@@ -42,6 +43,7 @@
   "scripts": {
     "pretest": "gulp",
     "test": "mocha",
+    "test-manual": "node test/manual-testing/AudioContext-sound-output.js",
     "prepublish": "gulp"
   }
 }

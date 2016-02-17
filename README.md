@@ -151,13 +151,10 @@ npm test
 Manual testing
 ----------------
 
-To test the sound output, we need to install `node-speaker` (in addition of all the other dependencies), and build the library :
+You can test the sound output using `node-speaker`.
 
 ```
-npm install
-npm install speaker
-gulp default
-node test/manual-testing/AudioContext-sound-output.js
+npm run test-manual
 ```
 
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
