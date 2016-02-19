@@ -33,8 +33,7 @@
     "gulp-contribs": "0.0.x",
     "gulp-es6-transpiler": "1.0.x",
     "gulp-util": "3.0.x",
-    "mocha": "*",
-    "speaker": "^0.2.6"
+    "mocha": "*"
   },
   "license": "MIT",
   "engines": {
@@ -44,6 +43,7 @@
     "pretest": "gulp",
     "test": "mocha",
     "test-speaker": "node test/manual-testing/AudioContext-sound-output.js",
+    "pretest-speaker": "npm install speaker",
     "prepublish": "gulp",
     "postinstall": "gulp"
   }
