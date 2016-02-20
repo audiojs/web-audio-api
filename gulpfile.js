@@ -1,11 +1,11 @@
 var gulp = require('gulp')
   , gutil = require('gulp-util')
   , contribs = require('gulp-contribs')
-  , es6transpiler = require('gulp-es6-transpiler')
+  , babel = require('gulp-babel')
 
 gulp.task('default', function () {
     return gulp.src('lib/*.js')
-      .pipe(es6transpiler({ disallowDuplicated: false }))
+      .pipe(babel({ presets: ['es2015'] }))
       .on('error', gutil.log)
       .pipe(gulp.dest('build'))
 })

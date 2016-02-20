@@ -28,11 +28,12 @@
   },
   "analyze": false,
   "devDependencies": {
+    "babel-preset-es2015": "^6.5.0",
     "chai": "1.7.x",
     "gulp": "3.8.x",
-    "gulp-util": "3.0.x",
-    "gulp-es6-transpiler": "1.0.x",
+    "gulp-babel": "^6.1.2",
     "gulp-contribs": "0.0.x",
+    "gulp-util": "3.0.x",
     "mocha": "*"
   },
   "license": "MIT",
