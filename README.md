@@ -163,11 +163,16 @@ Contributors
 -------------
 
 ```
-    61	Sébastien Piquemal
+    64	Sebastien Piquemal
+    21	Sébastien Piquemal
     16	ouhouhsami
+    10	fand
+     6	Hugh Rawlinson
      4	John Wnek
      2	anprogrammer
      1	Andrew Petersen
+     1	The Gitter Badger
+     1	sebpiq
 ```
 
 Changelog
