@@ -43,6 +43,9 @@
   "scripts": {
     "pretest": "gulp",
     "test": "mocha",
-    "prepublish": "gulp"
+    "test-speaker": "node test/manual-testing/AudioContext-sound-output.js",
+    "pretest-speaker": "npm install speaker",
+    "prepublish": "gulp",
+    "postinstall": "gulp"
   }
 }

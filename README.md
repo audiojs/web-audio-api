@@ -35,8 +35,7 @@ Get ready, this is going to blow up your mind :
 
 ```
 npm install
-gulp default
-node test/manual-testing/AudioContext-sound-output.js
+npm run test-speaker
 ```
 
 
@@ -101,7 +100,7 @@ A live example is available on [Sébastien's website](http://funktion.fm/#/proje
 Using Gibber
 ---------------
 
-[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm : 
+[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **node-web-audio-api**. First install gibber with npm :
 
 `npm install gibber.audio.lib`
 
@@ -118,7 +117,7 @@ Each time you create an ```AudioNode``` (like for instance an ```AudioBufferSour
 - register schedule events with ```_schedule```
 - compute the appropriate digital signal processing with ```_tick```
 
-Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node the the relevant ```AudioInput``` instance of the ```destination``` node.
+Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node to the relevant ```AudioInput``` instance of the ```destination``` node.
 
 To instantiate all of these ```AudioNode```, you needed an overall ```AudioContext``` instance. This latter has a ```destination``` property (where the sound will flow out), instance of ```AudioDestinationNode```, which inherits from ```AudioNode```. The ```AudioContext``` instance keeps track of connections to the ```destination```. When that happens, it triggers the audio loop, calling ```_tick``` infinitely on the ```destination```, which will itself call ```_tick``` on its input ... and so forth go up on the whole audio graph.
 
@@ -141,13 +140,7 @@ that way the audio loop is stopped, and you can inspect your objects in peace.
 Running the tests
 ------------------
 
-Tests are written with mocha. To run them, install mocha with :
-
-```
-npm install -g mocha
-```
-
-And in the root folder run :
+Tests are written with mocha.
 
 ```
 npm test
@@ -157,13 +150,10 @@ npm test
 Manual testing
 ----------------
 
-To test the sound output, we need to install `node-speaker` (in addition of all the other dependencies), and build the library :
+You can test the sound output using `node-speaker`.
 
 ```
-npm install
-npm install speaker
-gulp default
-node test/manual-testing/AudioContext-sound-output.js
+npm run test-speaker
 ```
 
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
