@@ -16,6 +16,11 @@
     "dsp"
   ],
   "dependencies": {
+    "audiobuffer": "0.2.x",
+    "es6-shim": "^0.16.0",
+    "lodash": "^2.4.1",
+    "mathjs": "0.9.x",
+    "native-promise-only": "^0.7.6-a",
     "async": "0.9.x",
     "underscore": "1.8.x",
     "pcm-boilerplate": "0.1.x",
