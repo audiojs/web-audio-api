@@ -4,7 +4,7 @@ var gulp = require('gulp')
   , babel = require('gulp-babel')
 
 gulp.task('default', function () {
-    return gulp.src('lib/*.js')
+    return gulp.src('lib/**/*.js')
       .pipe(babel({ presets: ['es2015'] }))
       .on('error', gutil.log)
       .pipe(gulp.dest('build'))
