@@ -77,8 +77,10 @@ describe('PannerNode', function() {
         var pos = c.pos
           , gain = c.gain
 
-        dummyContext.currentTime++
+        pannerNode._resetPanner()
         pannerNode.setPosition(pos[0], pos[1], pos[2])
+
+        dummyContext.currentTime++
         block = pannerNode._tick()
         assert.equal(block.numberOfChannels, 2)
         assert.equal(block.length, BLOCK_SIZE)
