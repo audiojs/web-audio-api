@@ -9,7 +9,12 @@ var assert = require('assert')
 describe('PannerNode', function() {
 
   var helpers = require('./helpers')({ approx : 0.01 })
-    , dummyContext
+    , dummyContext = {
+      sampleRate  : 44100,
+      currentTime : 0,
+      BLOCK_SIZE  : BLOCK_SIZE,
+      listener    : new AudioListener(),
+    }
 
   var testBlockGain = function(block, gainL, gainR) {
     assert.equal(block.numberOfChannels, 2)
@@ -18,16 +23,23 @@ describe('PannerNode', function() {
     helpers.assertAllValuesApprox(block.getChannelData(1), gainR)
   }
 
-  describe('_tick', function() {
-
-    beforeEach(function() {
-      dummyContext = {
-        sampleRate  : 44100,
-        currentTime : 0,
-        BLOCK_SIZE  : BLOCK_SIZE,
-        listener    : new AudioListener(),
-      }
+  describe('constructor', function() {
+    it('sets attributes to default values', function() {
+      var pannerNode = new PannerNode(dummyContext)
+      assert.equal(pannerNode.channelCount, 2)
+      assert.equal(pannerNode.channelCountMode, 'clamped-max')
+      assert.equal(pannerNode.coneInnerAngle, 360)
+      assert.equal(pannerNode.coneOuterAngle, 360)
+      assert.equal(pannerNode.coneOuterGain, 0)
+      assert.equal(pannerNode.distanceModel, 'inverse')
+      assert.equal(pannerNode.maxDistance, 10000)
+      assert.equal(pannerNode.panningModel, 'equalpower')
+      assert.equal(pannerNode.refDistance, 1)
+      assert.equal(pannerNode.rolloffFactor, 1)
     })
+  })
+
+  describe('_tick', function() {
 
     it('should apply the gain for panner position', function() {
       var pannerNode = new PannerNode(dummyContext)
