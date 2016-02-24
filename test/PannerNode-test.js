@@ -130,4 +130,40 @@ describe('PannerNode', function() {
     })
   })
 
+  describe('channelCount', function() {
+    it('throws NotSupportedError for invalid parameter', function() {
+      assert.throws(function() {
+        new PannerNode(dummyContext).channelCount = 0
+      }, 'NotSupportedError')
+      assert.throws(function() {
+        new PannerNode(dummyContext).channelCount = 3
+      }, 'NotSupportedError')
+
+      assert.doesNotThrow(function() {
+        new PannerNode(dummyContext).channelCount = 1
+      }, 'monoral is okay')
+      assert.doesNotThrow(function() {
+        new PannerNode(dummyContext).channelCount = 2
+      }, 'stereo is okay')
+    })
+  })
+
+  describe('channelCountMode', function() {
+    it('throws errors for invalid parameter', function() {
+      assert.throws(function() {
+        new PannerNode(dummyContext).channelCountMode = 'foo'
+      }, 'TypeError')
+      assert.throws(function() {
+        new PannerNode(dummyContext).channelCountMode = 'max'
+      }, 'NotSupportedError', 'PannerNode does not support "clamped-max"')
+
+      assert.doesNotThrow(function() {
+        new PannerNode(dummyContext).channelCountMode = 'clamped-max'
+      }, '"max" is okay')
+      assert.doesNotThrow(function() {
+        new PannerNode(dummyContext).channelCountMode = 'explicit'
+      }, '"explicit" is okay')
+    })
+  })
+
 })
