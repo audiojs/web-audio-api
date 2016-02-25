@@ -1,5 +1,4 @@
 var assert = require('assert')
-  , _ = require('underscore')
   , AudioBuffer = require('../build/AudioBuffer')
   , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
   , PannerNode = require('../build/PannerNode')
@@ -40,16 +39,18 @@ describe('PannerNode', function() {
   })
 
   describe('_tick', function() {
+    var pannerNode, sourceNode
 
-    it('should apply the gain for panner position', function() {
-      var pannerNode = new PannerNode(dummyContext)
-      var sourceNode = new AudioNode(dummyContext, 0, 1)
-
+    beforeEach(function() {
+      pannerNode = new PannerNode(dummyContext)
+      sourceNode = new AudioNode(dummyContext, 0, 1)
       sourceNode.connect(pannerNode)
       sourceNode._tick = function() {
         return AudioBuffer.filledWithVal(1, 2, BLOCK_SIZE, 44100)
       }
+    })
 
+    it('should apply the gain for panner position', function() {
       var cases = {
         center : {
           pos  : [0, 0, 0],
@@ -104,6 +105,46 @@ describe('PannerNode', function() {
       })
     })
 
+    it('should apply the gain for coneEffect parameters', function() {
+      var test = function(innerAngle, outerAngle, outerGain, expectedGain) {
+        pannerNode.coneInnerAngle = innerAngle
+        pannerNode.coneOuterAngle = outerAngle
+        pannerNode.coneOuterGain  = outerGain
+
+        dummyContext.currentTime++
+        var block = pannerNode._tick()
+        testBlockGain(block, expectedGain, expectedGain)
+      }
+
+      pannerNode.setPosition(0, 0, -1)
+
+      // The listener is in front of the speaker
+      pannerNode.setOrientation(0, 0, 1)
+      test(360, 360, 0, 1)
+      test(360, 360, 1, 1)
+      test(0, 360, 0, 1)
+      test(0, 360, 1, 1)
+      test(0, 180, 0, 1)
+      test(0, 180, 1, 1)
+
+      // The listener is behind the speaker
+      pannerNode.setOrientation(0, 0, -1)
+      test(360, 360, 0, 1)
+      test(360, 360, 1, 1)
+      test(0, 360, 0, 0)
+      test(0, 360, 1, 1)
+      test(0, 180, 0, 0)
+      test(0, 180, 1, 1)
+
+      // The listener is on right of the speaker
+      pannerNode.setOrientation(1, 0, 0)
+      test(360, 360, 0, 1)
+      test(360, 360, 1, 1)
+      test(0, 360, 0, 0.5)
+      test(0, 360, 1, 1)
+      test(0, 180, 0, 0)
+      test(0, 180, 1, 1)
+    })
   })
 
   describe('setPosition', function() {
