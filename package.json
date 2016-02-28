@@ -34,7 +34,8 @@
     "gulp-babel": "^6.1.2",
     "gulp-contribs": "0.0.x",
     "gulp-util": "3.0.x",
-    "mocha": "*"
+    "mocha": "*",
+    "sinon": "^1.17.3"
   },
   "license": "MIT",
   "engines": {
