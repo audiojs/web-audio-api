@@ -9,10 +9,10 @@ describe('FloatPoint3D', function() {
   describe('constructor', function() {
     it('has 3 properties', function() {
       const p = new FloatPoint3D(1, 2, 3)
-      assert.deepEqual([p.x, p.y, p.z], [1, 2, 3], 'Properties are initialized with arguments')
+      assert.deepEqual(p.toArray(), [1, 2, 3], 'Properties are initialized with arguments')
 
       const q = new FloatPoint3D()
-      assert.deepEqual([q.x, q.y, q.z], [0, 0, 0], 'Properties are initialized with default value')
+      assert.deepEqual(q.toArray(), [0, 0, 0], 'Properties are initialized with default value')
     })
   })
 
@@ -27,7 +27,7 @@ describe('FloatPoint3D', function() {
     it('divides all properties with its norm', function() {
       const p = new FloatPoint3D()
       p.normalize()
-      assert.deepEqual([p.x, p.y, p.z], [0, 0, 0], 'Zero vector never changes')
+      assert.deepEqual(p.toArray(), [0, 0, 0], 'Zero vector never changes')
 
       const q = new FloatPoint3D(1, 1, 1)
       q.normalize()
@@ -50,7 +50,7 @@ describe('FloatPoint3D', function() {
       const q = new FloatPoint3D(4, 5, 6)
       const r = p.cross(q)
       assert(r instanceof FloatPoint3D, 'It returns new FloatPoint3D instance')
-      assert.deepEqual([r.x, r.y, r.z], [-3, 6, -3], 'The result values are correct')
+      assert.deepEqual(r.toArray(), [-3, 6, -3], 'The result values are correct')
       assert.notDeepEqual(r, q.cross(p), 'The cross product is not commutative')
     })
   })
@@ -82,7 +82,7 @@ describe('FloatPoint3D', function() {
       const p = new FloatPoint3D(1, 2, 3)
       const q = new FloatPoint3D(4, 5, 6)
       const r = p.add(q)
-      assert.deepEqual([r.x, r.y, r.z], [5, 7, 9])
+      assert.deepEqual(r.toArray(), [5, 7, 9])
     })
   })
 
@@ -91,7 +91,7 @@ describe('FloatPoint3D', function() {
       const p = new FloatPoint3D(1, 2, 3)
       const q = new FloatPoint3D(4, 5, 6)
       const r = p.sub(q)
-      assert.deepEqual([r.x, r.y, r.z], [-3, -3, -3])
+      assert.deepEqual(r.toArray(), [-3, -3, -3])
     })
   })
 
@@ -99,7 +99,7 @@ describe('FloatPoint3D', function() {
     it('multiplies each properties', function() {
       const p = new FloatPoint3D(1, 2, 3)
       const q = p.mul(10)
-      assert.deepEqual([q.x, q.y, q.z], [10, 20, 30])
+      assert.deepEqual(q.toArray(), [10, 20, 30])
     })
   })
 
@@ -115,6 +115,13 @@ describe('FloatPoint3D', function() {
         Math.PI / 2,
         'The angle does not change even if the scale of vectors changes'
       )
+    })
+  })
+
+  describe('toArray', function() {
+    it('returns values in Array form', function() {
+      assert.deepEqual(new FloatPoint3D().toArray(), [0, 0, 0])
+      assert.deepEqual(new FloatPoint3D(1, 2, 3).toArray(), [1, 2, 3])
     })
   })
 
