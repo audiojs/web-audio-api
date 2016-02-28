@@ -1,5 +1,5 @@
 var assert = require('assert')
-  , Panner = require('../build/PannerNode/Panner')
+  , Panner = require('../../build/PannerNode/Panner')
 
 describe('Panner', function() {
   it('must not be used directly', function() {

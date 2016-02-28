@@ -1,7 +1,7 @@
 var assert = require('assert')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , PannerProvider = require('../build/PannerNode/PannerProvider')
-  , EqualPowerPanner = require('../build/PannerNode/EqualPowerPanner')
+  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
+  , PannerProvider = require('../../build/PannerNode/PannerProvider')
+  , EqualPowerPanner = require('../../build/PannerNode/EqualPowerPanner')
 
 describe('PannerProvider', function() {
 

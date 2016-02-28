@@ -1,7 +1,7 @@
 var assert = require('assert')
   , sinon = require('sinon')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , DistanceEffect = require('../build/PannerNode/DistanceEffect')
+  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
+  , DistanceEffect = require('../../build/PannerNode/DistanceEffect')
 
 describe('DistanceEffect', function() {
 

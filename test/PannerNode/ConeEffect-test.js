@@ -1,8 +1,8 @@
 var assert = require('assert')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , ConeEffect = require('../build/PannerNode/ConeEffect')
-  , FloatPoint3D = require('../build/FloatPoint3D')
-  , helpers = require('./helpers')()
+  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
+  , ConeEffect = require('../../build/PannerNode/ConeEffect')
+  , FloatPoint3D = require('../../build/FloatPoint3D')
+  , helpers = require('../helpers')()
 
 var assertApproxEqual = helpers.assertApproxEqual
 

@@ -1,8 +1,8 @@
 var assert = require('assert')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , EqualPowerPanner = require('../build/PannerNode/EqualPowerPanner')
-  , helpers = require('./helpers')({ approx : 0.01 })
+  , AudioBuffer = require('../../build/AudioBuffer')
+  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
+  , EqualPowerPanner = require('../../build/PannerNode/EqualPowerPanner')
+  , helpers = require('../helpers')({ approx : 0.01 })
 
 describe('EqualPowerPanner', function() {
 

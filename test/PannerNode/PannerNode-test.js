@@ -1,13 +1,13 @@
 var assert = require('assert')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , PannerNode = require('../build/PannerNode')
-  , AudioNode = require('../build/AudioNode')
-  , AudioListener = require('../build/AudioListener')
+  , AudioBuffer = require('../../build/AudioBuffer')
+  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
+  , PannerNode = require('../../build/PannerNode')
+  , AudioNode = require('../../build/AudioNode')
+  , AudioListener = require('../../build/AudioListener')
 
 describe('PannerNode', function() {
 
-  var helpers = require('./helpers')({ approx : 0.01 })
+  var helpers = require('../helpers')({ approx : 0.01 })
     , dummyContext = {
       sampleRate  : 44100,
       currentTime : 0,
