@@ -1,6 +1,8 @@
 Node Web Audio API
 =====================
 
+**ANNOUNCE : ** This library is not maintained anymore. I am trying to hand it over to someone that has time to maintain it! Send me an email if you are interested (my email is in the LICENSE file)
+
 [![Build Status](https://travis-ci.org/sebpiq/node-web-audio-api.svg)](https://travis-ci.org/sebpiq/node-web-audio-api) [![Dependency Status](https://img.shields.io/gemnasium/sebpiq/node-web-audio-api.svg)](https://gemnasium.com/sebpiq/node-web-audio-api) [![Join the chat at https://gitter.im/sebpiq/node-web-audio-api](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sebpiq/node-web-audio-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This library implements the [web audio API specification](http://webaudio.github.io/web-audio-api/) on node.js.
