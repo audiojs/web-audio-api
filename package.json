@@ -3,16 +3,15 @@
   "version": "0.2.2",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "description": "Node.js implementation of Web audio API",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sebpiq/node-web-audio-api.git"
-  },
+  "repository": "audiojs/web-audio-api",
   "keywords": [
     "audio",
+    "audiojs",
     "sound",
     "music",
     "web audio",
     "web audio api",
+    "waa",
     "dsp"
   ],
   "dependencies": {
@@ -39,7 +38,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=0.10"
+    "node": ">=4"
   },
   "scripts": {
     "pretest": "gulp",
