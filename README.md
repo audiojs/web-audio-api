@@ -167,6 +167,8 @@ Contributors
 ## Alternatives
 
 * [web-audio-engine](https://github.com/mohayonao/web-audio-engine)
+* [lab-sound](https://github.com/LabSound/LabSound)
+* [node-audio](https://ghub.io/node-audio)
 
 ## License
 
