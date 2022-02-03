@@ -171,6 +171,7 @@ Contributors
 * [node-audio](https://ghub.io/node-audio)
 * [web-audio-js](https://github.com/descriptinc/web-audio-js)
 * [WAAPISim](https://github.com/g200kg/WAAPISim)
+* [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)
 
 ## License
 
