@@ -169,6 +169,8 @@ Contributors
 * [web-audio-engine](https://github.com/mohayonao/web-audio-engine)
 * [lab-sound](https://github.com/LabSound/LabSound)
 * [node-audio](https://ghub.io/node-audio)
+* [web-audio-js](https://github.com/descriptinc/web-audio-js)
+* [WAAPISim](https://github.com/g200kg/WAAPISim)
 
 ## License
 
