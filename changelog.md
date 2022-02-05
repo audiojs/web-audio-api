@@ -3,6 +3,7 @@
 #### 1.0.0
 
 - [x] make ESM module
+- [ ] add CI
 - [ ] simplify testing setup, remove outdated dependencies
 - [ ] refactor nodes to follow sense of audio-worklet
 - [ ] implent webassembly DSP
