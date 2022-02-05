@@ -24,25 +24,54 @@ function readOnlyAttr (obj, name, value) {
 function decodeAudioData (buffer, done) {
   var asset = AV.Asset.fromBuffer(buffer)
 
-  asset.on('error', function(err) {
-    done(err)
-  })
+  // Pseudo overload
+  if (arguments.length > 1) {
+    // Callback
+    asset.on('error', function(err) {
+      done(err)
+    })
 
-  asset.decodeToBuffer(function(decoded) {
-    var deinterleaved = []
-      , numberOfChannels = asset.format.channelsPerFrame
-      , length = Math.floor(decoded.length / numberOfChannels)
-      , ch, chArray, i
+    asset.decodeToBuffer(function(decoded) {
+      var deinterleaved = []
+        , numberOfChannels = asset.format.channelsPerFrame
+        , length = Math.floor(decoded.length / numberOfChannels)
+        , ch, chArray, i
 
-    for (ch = 0; ch < numberOfChannels; ch++)
-      deinterleaved.push(new Float32Array(length))
+      for (ch = 0; ch < numberOfChannels; ch++)
+        deinterleaved.push(new Float32Array(length))
 
-    for (ch = 0; ch < numberOfChannels; ch++) {
-      chArray = deinterleaved[ch]
-      for (i = 0; i < length; i++)
-        chArray[i] = decoded[ch + i * numberOfChannels]
-    }
+      for (ch = 0; ch < numberOfChannels; ch++) {
+        chArray = deinterleaved[ch]
+        for (i = 0; i < length; i++)
+          chArray[i] = decoded[ch + i * numberOfChannels]
+      }
 
-    done(null, AudioBuffer.fromArray(deinterleaved, asset.format.sampleRate))
-  })
+      done(null, AudioBuffer.fromArray(deinterleaved, asset.format.sampleRate))
+    })
+  } else {
+    // Promise
+    return new Promise(function(resolve, reject) {
+      asset.on('error', function(err) {
+        reject(err)
+      })
+
+      asset.decodeToBuffer(function(decoded) {
+        var deinterleaved = []
+          , numberOfChannels = asset.format.channelsPerFrame
+          , length = Math.floor(decoded.length / numberOfChannels)
+          , ch, chArray, i
+
+        for (ch = 0; ch < numberOfChannels; ch++)
+          deinterleaved.push(new Float32Array(length))
+
+        for (ch = 0; ch < numberOfChannels; ch++) {
+          chArray = deinterleaved[ch]
+          for (i = 0; i < length; i++)
+            chArray[i] = decoded[ch + i * numberOfChannels]
+        }
+
+        resolve(AudioBuffer.fromArray(deinterleaved, asset.format.sampleRate))
+      })
+    })
+  }
 }

@@ -99,10 +99,17 @@ class AudioContext extends events.EventEmitter {
   }
 
   decodeAudioData(audioData, successCallback, errorCallback) {
-    utils.decodeAudioData(audioData, function(err, audioBuffer) {
-      if (err) errorCallback(err)
-      else successCallback(audioBuffer)
-    })
+    // Pseudo overload
+    if (arguments.length > 1) {
+      // Callback
+      utils.decodeAudioData(audioData, function(err, audioBuffer) {
+        if (err) errorCallback(err)
+        else successCallback(audioBuffer)
+      })
+    } else {
+      // Promise
+      return utils.decodeAudioData(audioData)
+    }
   }
 
   createBufferSource() {
