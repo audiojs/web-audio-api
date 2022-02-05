@@ -2,7 +2,9 @@
   "name": "web-audio-api",
   "version": "0.2.2",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
-  "contributors": ["Dmitry Iv <df.creative@gmail.com>"],
+  "contributors": [
+    "Dmitry Iv <df.creative@gmail.com>"
+  ],
   "description": "Node.js implementation of Web audio API",
   "repository": "audiojs/web-audio-api",
   "type": "module",
@@ -23,7 +25,6 @@
     "av": "0.4.x",
     "flac": "0.3.x",
     "mp3": "0.1.x",
-    "pcm-boilerplate": "0.1.x",
     "underscore": "1.8.x"
   },
   "analyze": false,

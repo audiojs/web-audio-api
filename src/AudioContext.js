@@ -1,7 +1,6 @@
 import _ from 'underscore'
 import events from 'events'
 import async from 'async'
-import pcmUtils from 'pcm-boilerplate'
 import * as utils from './utils.js'
 import * as constants from './constants.js'
 import AudioBuffer from './AudioBuffer.js'
@@ -59,7 +58,7 @@ class AudioContext extends events.EventEmitter {
     if (opts.numBuffers) this.format.numBuffers = opts.numBuffers
 
     this.outStream = null
-    this._encoder = pcmUtils.BufferEncoder(this.format)
+    this._encoder = utils.BufferEncoder(this.format)
     this._frame = 0
     this._playing = true
     this._audioOutLoopRunning = false

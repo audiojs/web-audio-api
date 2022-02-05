@@ -4,7 +4,7 @@ import mp3 from 'mp3'
 import flac from 'flac'
 import alac from 'alac'
 import aac from 'aac'
-
+import assert from 'assert'
 
 export {
   readOnlyAttr,
@@ -74,4 +74,52 @@ function decodeAudioData (buffer, done) {
       })
     })
   }
+}
+
+// stripped out pcm-boilerplate/BufferEncoder
+// Creates and returns a function which encodes an array of Float32Array - each of them
+// a separate channel - to a node `Buffer`.
+// `format` configures the encoder, and should contain `bitDepth` and `numberOfChannels`.
+// !!! This does not check that the data received matches the specified 'format'.
+// TODO : format.signed, pcmMax is different if unsigned
+export function BufferEncoder(format) {
+  format = validateFormat(format)
+  var byteDepth = Math.round(format.bitDepth / 8)
+    , numberOfChannels = format.numberOfChannels
+    , pcmMult = Math.pow(2, format.bitDepth) / 2
+    , pcmMax = pcmMult - 1
+    , pcmMin = -pcmMult
+    , encodeFunc = 'writeInt' + (format.signed ? '' : 'U') + format.bitDepth + format.endianness
+    , i, ch, chArray, buffer, frameCount
+
+  return function(array) {
+    frameCount = array[0].length
+    buffer = new Buffer(frameCount * byteDepth * numberOfChannels)
+    for (ch = 0; ch < numberOfChannels; ch++) {
+      chArray = array[ch]
+      for (i = 0; i < frameCount; i++)
+        buffer[encodeFunc](
+          Math.max(Math.min(Math.round(chArray[i] * pcmMult), pcmMax), pcmMin),
+          byteDepth * (i * numberOfChannels + ch)
+        )
+    }
+    return buffer
+  }
+}
+export function validateFormat(format) {
+  format = Object.assign({
+    bitDepth: 16,
+    endianness: 'LE',
+    signed: true
+  }, format)
+
+  assert(typeof format.bitDepth === 'number')
+  assert([8, 16, 32].includes(format.bitDepth))
+  assert(typeof format.numberOfChannels === 'number')
+  assert(format.numberOfChannels > 0)
+  assert(typeof format.endianness === 'string')
+  assert(['LE', 'BE'].includes(format.endianness))
+  assert(typeof format.signed === 'boolean')
+
+  return format
 }
