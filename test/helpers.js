@@ -1,10 +1,8 @@
 import assert from 'assert'
-import _ from 'underscore'
 
 export default function(opts) {
 
-  opts = opts || {}
-  _.defaults(opts, {approx: 0.0001})
+  opts = Object.assign({approx: 0.0001}, opts || {})
 
   var assertAllValuesEqual = function(array, testVal) {
     for (var i = 0; i < array.length; i++) assert.equal(array[i], testVal)

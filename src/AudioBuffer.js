@@ -1,5 +1,3 @@
-import _ from 'underscore'
-
 class AudioBuffer {
   constructor(numberOfChannels, length, sampleRate) {
     var ch
@@ -18,7 +16,7 @@ class AudioBuffer {
   }
 
   slice() {
-    var sliceArgs = _.toArray(arguments)
+    var sliceArgs = [...arguments]
     var array = this._data.map(function(chArray) {
         return chArray.subarray.apply(chArray, sliceArgs)
       })
