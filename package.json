@@ -19,7 +19,6 @@
     "aac": "0.1.x",
     "alac": "0.1.x",
     "async": "0.9.x",
-    "audiobuffer": "0.2.x",
     "av": "0.4.x",
     "flac": "0.3.x",
     "mp3": "0.1.x",
