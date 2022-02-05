@@ -200,9 +200,10 @@ describe('utils.js', function() {
           audioBuffer = AudioBuffer.fromArray([blockm1, block1], 44100).concat(audioBuffer)
           audioBuffer = audioBuffer.concat(AudioBuffer.fromArray([block1, blockm1], 44100))
 
-          testStepsStereo(reblock(audioBuffer, 4410), require('./helpers')({approx: 0.2}))
+          testStepsStereo(reblock(audioBuffer, 4410), initHelpers({approx: 0.2}))
           done()
         }).catch(function(err) {
+          console.log(err)
         })
       })
     })
