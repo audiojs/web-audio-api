@@ -29,12 +29,7 @@
   "analyze": false,
   "devDependencies": {
     "chai": "1.7.x",
-    "gulp": "3.8.x",
-    "gulp-babel": "^6.1.2",
-    "gulp-contribs": "0.0.x",
-    "gulp-util": "3.0.x",
-    "mocha": "*",
-    "sinon": "^1.17.3"
+    "mocha": "*"
   },
   "license": "MIT",
   "engines": {
