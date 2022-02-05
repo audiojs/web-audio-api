@@ -1,7 +1,7 @@
-var DspObject = require('./DspObject')
-  , AudioInput = require('./audioports').AudioInput
-  , AudioBuffer = require('./AudioBuffer')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
+import DspObject from './DspObject.js'
+import { AudioInput } from './audioports.js'
+import AudioBuffer from './AudioBuffer.js'
+import { BLOCK_SIZE } from './constants.js'
 
 class AudioParam extends DspObject {
 
@@ -268,4 +268,4 @@ class AudioParam extends DspObject {
 
 }
 
-module.exports = AudioParam
+export default AudioParam

@@ -1,12 +1,13 @@
-var assert = require('assert')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , ConeEffect = require('../../build/PannerNode/ConeEffect')
-  , FloatPoint3D = require('../../build/FloatPoint3D')
-  , helpers = require('../helpers')()
+import assert from 'assert'
+import { BLOCK_SIZE } from '../../src/constants.js'
+import ConeEffect from '../../src/PannerNode/ConeEffect.js'
+import FloatPoint3D from '../../src/FloatPoint3D.js'
+import initHelpers from '../helpers.js'
 
+let helpers = initHelpers()
 var assertApproxEqual = helpers.assertApproxEqual
 
-describe('ConeEffect', function() {
+describe('ConeEffect.js', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 
@@ -43,8 +44,8 @@ describe('ConeEffect', function() {
     it('MUST throw InvalidStateError if outerGain is ', function() {
       assert.doesNotThrow(function() { c.outerGain = 0 })
       assert.doesNotThrow(function() { c.outerGain = 1 })
-      assert.throws(function() { c.outerGain = -1 }, 'InvalidStateError')
-      assert.throws(function() { c.outerGain = 2 }, 'InvalidStateError')
+      assert.throws(function() { c.outerGain = -1 }, 'InvalidStateError.js')
+      assert.throws(function() { c.outerGain = 2 }, 'InvalidStateError.js')
     })
   })
 

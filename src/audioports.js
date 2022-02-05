@@ -1,10 +1,10 @@
-var _ = require('underscore')
-  , async = require('async')
-  , events = require('events')
-  , utils = require('./utils')
-  , AudioBuffer = require('./AudioBuffer')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , ChannelMixing = require('./ChannelMixing')
+import _ from 'underscore'
+import async from 'async'
+import events from 'events'
+import * as utils from './utils.js'
+import AudioBuffer from './AudioBuffer.js'
+import { BLOCK_SIZE } from './constants.js'
+import ChannelMixing from './ChannelMixing.js'
 
 
 class AudioPort extends events.EventEmitter {
@@ -166,7 +166,7 @@ class AudioOutput extends AudioPort {
 
 }
 
-module.exports = {
-  AudioOutput: AudioOutput,
-  AudioInput: AudioInput
+export {
+  AudioOutput,
+  AudioInput
 }

@@ -1,7 +1,6 @@
-var _ = require('underscore')
+import _ from 'underscore'
 
 class AudioBuffer {
-
   constructor(numberOfChannels, length, sampleRate) {
     var ch
     this._data = []
@@ -96,4 +95,4 @@ class AudioBuffer {
 
 }
 
-module.exports = AudioBuffer
+export default AudioBuffer

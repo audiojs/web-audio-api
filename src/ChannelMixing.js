@@ -1,4 +1,4 @@
-var BLOCK_SIZE = require('./constants').BLOCK_SIZE
+import { BLOCK_SIZE } from './constants.js'
 
 class ChannelMixing {
 
@@ -214,4 +214,4 @@ class ChannelMixing {
   }
 }
 
-module.exports = ChannelMixing
+export default ChannelMixing

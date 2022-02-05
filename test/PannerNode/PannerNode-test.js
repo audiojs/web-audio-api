@@ -1,14 +1,15 @@
-var assert = require('assert')
-  , AudioBuffer = require('../../build/AudioBuffer')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , PannerNode = require('../../build/PannerNode')
-  , AudioNode = require('../../build/AudioNode')
-  , AudioListener = require('../../build/AudioListener')
+import assert from 'assert'
+import AudioBuffer from '../../src/AudioBuffer.js'
+import {BLOCK_SIZE} from '../../src/constants.js'
+import PannerNode from '../../src/PannerNode.js'
+import AudioNode from '../../src/AudioNode.js'
+import AudioListener from '../../src/AudioListener.js'
+import initHelpers from '../helpers.js'
 
-describe('PannerNode', function() {
+describe('PannerNode.js', function() {
 
-  var helpers = require('../helpers')({ approx : 0.01 })
-    , dummyContext = {
+  var helpers = initHelpers({ approx : 0.01 }),
+  dummyContext = {
       sampleRate  : 44100,
       currentTime : 0,
       BLOCK_SIZE  : BLOCK_SIZE,
@@ -187,10 +188,10 @@ describe('PannerNode', function() {
     it('throws NotSupportedError for invalid parameter', function() {
       assert.throws(function() {
         new PannerNode(dummyContext).channelCount = 0
-      }, 'NotSupportedError')
+      }, 'NotSupportedError.js')
       assert.throws(function() {
         new PannerNode(dummyContext).channelCount = 3
-      }, 'NotSupportedError')
+      }, 'NotSupportedError.js')
 
       assert.doesNotThrow(function() {
         new PannerNode(dummyContext).channelCount = 1
@@ -205,10 +206,10 @@ describe('PannerNode', function() {
     it('throws errors for invalid parameter', function() {
       assert.throws(function() {
         new PannerNode(dummyContext).channelCountMode = 'foo'
-      }, 'TypeError')
+      }, 'TypeError.js')
       assert.throws(function() {
         new PannerNode(dummyContext).channelCountMode = 'max'
-      }, 'NotSupportedError', 'PannerNode does not support "clamped-max"')
+      }, 'NotSupportedError.js', 'PannerNode does not support "clamped-max"')
 
       assert.doesNotThrow(function() {
         new PannerNode(dummyContext).channelCountMode = 'clamped-max'

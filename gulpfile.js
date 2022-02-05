@@ -1,7 +1,7 @@
-var gulp = require('gulp')
-  , gutil = require('gulp-util')
-  , contribs = require('gulp-contribs')
-  , babel = require('gulp-babel')
+import gulp from 'gulp'
+import gutil from 'gulp-util'
+import contribs from 'gulp-contribs'
+import babel from 'gulp-babel'
 
 gulp.task('default', function () {
     return gulp.src('lib/**/*.js')
@@ -18,5 +18,5 @@ gulp.task('contribs', function () {
 
 
 gulp.task('watch', function() {
-    gulp.watch('./lib/*.js', ['default'])
+    gulp.watch('./src/*.js', ['default'])
 })

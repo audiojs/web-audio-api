@@ -1,14 +1,14 @@
-var AudioBuffer = require('./AudioBuffer')
-  , AV = require('av')
-  , mp3 = require('mp3')
-  , flac = require('flac')
-  , alac = require('alac')
-  , aac = require('aac')
+import AudioBuffer from './AudioBuffer.js'
+import AV from 'av'
+import mp3 from 'mp3'
+import flac from 'flac'
+import alac from 'alac'
+import aac from 'aac'
 
 
-module.exports = {
-  readOnlyAttr: readOnlyAttr,
-  decodeAudioData: decodeAudioData
+export {
+  readOnlyAttr,
+  decodeAudioData
 }
 
 // Simple helper to make defining a read-only attribute less verbose

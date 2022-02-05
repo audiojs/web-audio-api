@@ -1,7 +1,7 @@
-var assert = require('assert')
-  , _ = require('underscore')
+import assert from 'assert'
+import _ from 'underscore'
 
-module.exports = function(opts) {
+export default function(opts) {
 
   opts = opts || {}
   _.defaults(opts, {approx: 0.0001})

@@ -1,5 +1,5 @@
-var assert = require('assert')
-  , mathUtils = require('../build/mathUtils')
+import assert from 'assert'
+import * as mathUtils from '../src/mathUtils.js'
 
 describe('mathUtil', function() {
 

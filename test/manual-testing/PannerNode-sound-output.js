@@ -1,8 +1,8 @@
-if (require.main === module) { // Just to avoid mocha running this
-  var fs = require('fs')
-    , AudioContext = require('../../build/AudioContext')
-    , context = new AudioContext
-    , Speaker = require('speaker')
+// if (require.main === module) { // Just to avoid mocha running this
+import fs from 'fs'
+import AudioContext from '../../src/AudioContext'
+import context = new AudioContext
+import Speaker from 'speaker'
 
   console.log('encoding format : '
     + context.format.numberOfChannels + ' channels ; '
@@ -39,4 +39,4 @@ if (require.main === module) { // Just to avoid mocha running this
       bufferNode.start(0)
     })
   })
-}
+

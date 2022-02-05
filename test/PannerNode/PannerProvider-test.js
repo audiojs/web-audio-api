@@ -1,9 +1,9 @@
-var assert = require('assert')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , PannerProvider = require('../../build/PannerNode/PannerProvider')
-  , EqualPowerPanner = require('../../build/PannerNode/EqualPowerPanner')
+import assert from 'assert'
+import {BLOCK_SIZE} from '../../src/constants.js'
+import PannerProvider from '../../src/PannerNode/PannerProvider.js'
+import EqualPowerPanner from '../../src/PannerNode/EqualPowerPanner.js'
 
-describe('PannerProvider', function() {
+describe('PannerProvider.js', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 
@@ -23,7 +23,7 @@ describe('PannerProvider', function() {
 
       assert.throws(function() {
         p.panningModel = 'foo'
-      }, 'invalid panningModel causes TypeError')
+      }, 'invalid panningModel causes TypeError.js')
     })
   })
 

@@ -1,8 +1,8 @@
-var constants = require('./constants')
-  , AudioNode = require('./AudioNode')
-  , AudioParam = require('./AudioParam')
-  , AudioBuffer = require('./AudioBuffer')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import * as constants from './constants.js'
+import AudioNode from './AudioNode.js'
+import AudioParam from './AudioParam.js'
+import AudioBuffer from './AudioBuffer.js'
+import {readOnlyAttr} from './utils.js'
 
 
 class AudioBufferSourceNode extends AudioNode {
@@ -94,4 +94,4 @@ class AudioBufferSourceNode extends AudioNode {
 
 }
 
-module.exports = AudioBufferSourceNode
+export default AudioBufferSourceNode

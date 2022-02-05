@@ -4,6 +4,7 @@
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "description": "Node.js implementation of Web audio API",
   "repository": "audiojs/web-audio-api",
+  "type": "module",
   "keywords": [
     "audio",
     "audiojs",
@@ -15,19 +16,18 @@
     "dsp"
   ],
   "dependencies": {
+    "aac": "0.1.x",
+    "alac": "0.1.x",
     "async": "0.9.x",
-    "underscore": "1.8.x",
-    "pcm-boilerplate": "0.1.x",
     "audiobuffer": "0.2.x",
     "av": "0.4.x",
-    "mp3": "0.1.x",
     "flac": "0.3.x",
-    "alac": "0.1.x",
-    "aac": "0.1.x"
+    "mp3": "0.1.x",
+    "pcm-boilerplate": "0.1.x",
+    "underscore": "1.8.x"
   },
   "analyze": false,
   "devDependencies": {
-    "babel-preset-es2015": "^6.5.0",
     "chai": "1.7.x",
     "gulp": "3.8.x",
     "gulp-babel": "^6.1.2",
@@ -41,11 +41,8 @@
     "node": ">=4"
   },
   "scripts": {
-    "pretest": "gulp",
     "test": "mocha",
     "test-speaker": "node test/manual-testing/AudioContext-sound-output.js",
-    "pretest-speaker": "npm install speaker",
-    "prepublish": "gulp",
-    "postinstall": "gulp"
+    "pretest-speaker": "npm install speaker"
   }
 }

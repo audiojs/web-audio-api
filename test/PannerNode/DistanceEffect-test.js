@@ -1,9 +1,9 @@
-var assert = require('assert')
-  , sinon = require('sinon')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , DistanceEffect = require('../../build/PannerNode/DistanceEffect')
+import assert from 'assert'
+import sinon from 'sinon'
+import { BLOCK_SIZE } from '../../src/constants.js'
+import DistanceEffect from '../../src/PannerNode/DistanceEffect.js'
 
-describe('DistanceEffect', function() {
+describe('DistanceEffect.js', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 

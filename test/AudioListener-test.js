@@ -1,7 +1,7 @@
-var assert = require('assert')
-  , AudioListener = require('../build/AudioListener')
+import assert from 'assert'
+import AudioListener from '../src/AudioListener.js'
 
-describe('AudioListener', function() {
+describe('AudioListener.js', function() {
 
   describe('constructor', function() {
     it('has default properties', function() {

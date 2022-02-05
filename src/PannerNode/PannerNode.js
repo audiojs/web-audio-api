@@ -1,13 +1,13 @@
-var _ = require('underscore')
-  , AudioNode = require('../AudioNode')
-  , AudioBuffer = require('../AudioBuffer')
-  , BLOCK_SIZE = require('../constants').BLOCK_SIZE
-  , FloatPoint3D = require('../FloatPoint3D')
-  , DistanceEffect = require('./DistanceEffect')
-  , ConeEffect = require('./ConeEffect')
-  , PannerProvider = require('./PannerProvider')
-  , mathUtils = require('../mathUtils')
-  , NotSupportedError = require('../NotSupportedError')
+import _ from 'underscore'
+import AudioNode from '../AudioNode.js'
+import AudioBuffer from '../AudioBuffer.js'
+import { BLOCK_SIZE } from '../constants.js'
+import FloatPoint3D from '../FloatPoint3D.js'
+import DistanceEffect from './DistanceEffect.js'
+import ConeEffect from './ConeEffect.js'
+import PannerProvider from './PannerProvider.js'
+import * as mathUtils from '../mathUtils.js'
+import NotSupportedError from '../NotSupportedError.js'
 
 var ChannelCountMode = _.object(['max', 'clamped-max', 'explicit'].map(x => [x, x]))
 
@@ -130,10 +130,10 @@ class PannerNode extends AudioNode {
   setOrientation(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode.js': The provided float value is non-finite.`)
     }
     this._orientation = new FloatPoint3D(x, y, z)
   }
@@ -149,10 +149,10 @@ class PannerNode extends AudioNode {
   setPosition(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode.js': The provided float value is non-finite.`)
     }
     this._position = new FloatPoint3D(x, y, z)
   }
@@ -172,10 +172,10 @@ class PannerNode extends AudioNode {
   setVelocity(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode.js': The provided float value is non-finite.`)
     }
     this._velocity = new FloatPoint3D(x, y, z)
   }
@@ -321,4 +321,4 @@ class PannerNode extends AudioNode {
 
 }
 
-module.exports = PannerNode
+export default PannerNode

@@ -1,9 +1,9 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , async = require('async')
-  , AudioNode = require('../build/AudioNode')
+import assert from 'assert'
+import _ from 'underscore'
+import async from 'async'
+import AudioNode from '../src/AudioNode.js'
 
-describe('AudioNode', function() {
+describe('AudioNode.js', function() {
 
   var dummyContext = {}
 
@@ -204,7 +204,7 @@ describe('AudioNode', function() {
 })
 
 /*
-describe('SourceNode', function() {
+describe('SourceNode.js', function() {
 
   describe('read', function() {
 

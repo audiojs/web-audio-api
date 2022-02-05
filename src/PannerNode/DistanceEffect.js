@@ -106,4 +106,4 @@ class DistanceEffect {
 
 }
 
-module.exports = DistanceEffect
+export default DistanceEffect

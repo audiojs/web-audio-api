@@ -1,8 +1,8 @@
-var _ = require('underscore')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , AudioNode = require('./AudioNode')
-  , AudioBuffer = require('./AudioBuffer')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import _ from 'underscore'
+import { BLOCK_SIZE } from './constants.js'
+import AudioNode from './AudioNode.js'
+import AudioBuffer from './AudioBuffer.js'
+import { readOnlyAttr } from './utils.js'
 
 
 class ScriptProcessorNode extends AudioNode {
@@ -70,4 +70,4 @@ class AudioProcessingEvent {
 
 }
 
-module.exports = ScriptProcessorNode
+export default ScriptProcessorNode

@@ -1,8 +1,8 @@
-var fs = require('fs')
-  , assert = require('assert')
-  , _ = require('underscore')
-  , AudioContext = require('../build/AudioContext')
-  , AudioNode = require('../build/AudioNode')
+import fs from 'fs'
+import assert from 'assert'
+import _ from 'underscore'
+import AudioContext from '../src/AudioContext.js'
+import AudioNode from '../src/AudioNode.js'
 
 describe('AudioContext', function() {
 
@@ -66,7 +66,7 @@ describe('AudioContext', function() {
     it('should decode a 16b stereo wav', function(done) {
       var context = new AudioContext
       context._kill()
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.wav',import.meta.url), function(err, buf) {
         if (err) throw err
         context.decodeAudioData(buf, function(audioBuffer) {
           assert.equal(audioBuffer.numberOfChannels, 2)
@@ -80,7 +80,7 @@ describe('AudioContext', function() {
     it('should return an error if the format couldn\'t be recognized', function(done) {
       var context = new AudioContext
       context._kill()
-      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+      fs.readFile(new URL('./sounds/generateFile.pd', import.meta.url), function(err, buf) {
         if (err) throw err
         context.decodeAudioData(buf, function(audioBuffer) { throw new Error('shoudnt be called') },
           function(err) {

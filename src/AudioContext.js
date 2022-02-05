@@ -1,18 +1,18 @@
-var _ = require('underscore')
-  , events = require('events')
-  , async = require('async')
-  , pcmUtils = require('pcm-boilerplate')
-  , utils = require('./utils')
-  , constants = require('./constants')
-  , BLOCK_SIZE = constants.BLOCK_SIZE
-  , AudioBuffer = require('./AudioBuffer')
-  , AudioListener = require('./AudioListener')
-  , AudioDestinationNode = require('./AudioDestinationNode')
-  , AudioBufferSourceNode = require('./AudioBufferSourceNode')
-  , GainNode = require('./GainNode')
-  , ScriptProcessorNode = require('./ScriptProcessorNode')
-  , PannerNode = require('./PannerNode')
+import _ from 'underscore'
+import events from 'events'
+import async from 'async'
+import pcmUtils from 'pcm-boilerplate'
+import * as utils from './utils.js'
+import * as constants from './constants.js'
+import AudioBuffer from './AudioBuffer.js'
+import AudioListener from './AudioListener.js'
+import AudioDestinationNode from './AudioDestinationNode.js'
+import AudioBufferSourceNode from './AudioBufferSourceNode.js'
+import GainNode from './GainNode.js'
+import ScriptProcessorNode from './ScriptProcessorNode.js'
+import PannerNode from './PannerNode/index.js'
 
+const {BLOCK_SIZE} = constants
 
 class AudioContext extends events.EventEmitter {
 
@@ -184,4 +184,4 @@ class AudioContext extends events.EventEmitter {
 
 }
 
-module.exports = AudioContext
+export default AudioContext

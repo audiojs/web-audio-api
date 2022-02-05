@@ -1,10 +1,12 @@
-var assert = require('assert')
-  , AudioBuffer = require('../../build/AudioBuffer')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , EqualPowerPanner = require('../../build/PannerNode/EqualPowerPanner')
-  , helpers = require('../helpers')({ approx : 0.01 })
+import assert from 'assert'
+import AudioBuffer from '../../src/AudioBuffer.js'
+import {BLOCK_SIZE} from '../../src/constants.js'
+import EqualPowerPanner from '../../src/PannerNode/EqualPowerPanner.js'
+import initHelpers from '../helpers.js'
 
-describe('EqualPowerPanner', function() {
+let helpers = initHelpers({ approx : 0.01 })
+
+describe('EqualPowerPanner.js', function() {
 
   var testBlockGain = function(block, gainL, gainR) {
     assert.equal(block.numberOfChannels, 2)

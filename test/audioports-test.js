@@ -1,13 +1,12 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , utils = require('../build/utils')
-  , audioports = require('../build/audioports')
-  , AudioOutput = audioports.AudioOutput
-  , AudioInput = audioports.AudioInput
-  , AudioBuffer = require('../build/AudioBuffer')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , assertAllValuesApprox = require('./helpers')().assertAllValuesApprox
+import assert from 'assert'
+import _ from 'underscore'
+import * as utils from '../src/utils.js'
+import {AudioInput, AudioOutput} from '../src/audioports.js'
+import AudioBuffer from '../src/AudioBuffer.js'
+import {BLOCK_SIZE} from '../src/constants.js'
+import initHelpers from './helpers.js'
 
+const {assertAllValuesApprox} = initHelpers()
 
 describe('AudioPort', function() {
 
@@ -241,7 +240,8 @@ describe('AudioInput', function() {
         var sinkNode = {channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete'}
           , input = new AudioInput(dummyContext, sinkNode, 0)
           , output1 = getOutput([0.1, 0.1, 0.1, 0.1])
-          , output2 = getOutput([0.2])
+          , output2 = getOutput([0.2]),
+          outBuff
 
         assertChannelsEqual(input._tick(), [0, 0])
         assert.equal(input.computedNumberOfChannels, 2)
@@ -254,7 +254,8 @@ describe('AudioInput', function() {
 
       it('should return a buffer with 1 channel in (clamped-)max mode, full of zeros if no connection', function() {
         var sinkNode = {channelCountMode: 'max', channelInterpretation: 'discrete'}
-          , input = new AudioInput(dummyContext, sinkNode, 0)
+          , input = new AudioInput(dummyContext, sinkNode, 0),
+          outBuff
 
         outBuff = input._tick()
         assert.equal(input.computedNumberOfChannels, 1)

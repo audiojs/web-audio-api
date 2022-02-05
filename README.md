@@ -44,9 +44,9 @@ By default, **web-audio-api** doesn't play back the sound it generates. In fact,
 This is probably the simplest way to play back audio. Install **node-speaker** with `npm install speaker`, then do something like this :
 
 ```javascript
-var AudioContext = require('web-audio-api').AudioContext
+var AudioContext from 'web-audio-api').AudioContext
   , context = new AudioContext
-  , Speaker = require('speaker')
+  , Speaker from 'speaker')
 
 context.outStream = new Speaker({
   channels: context.format.numberOfChannels,
@@ -62,7 +62,7 @@ context.outStream = new Speaker({
 Linux users can play back sound from **web-audio-api** by piping its output to [aplay](http://alsa.opensrc.org/Aplay). For this, simply send the generated sound straight to `stdout` like this :
 
 ```javascript
-var AudioContext = require('web-audio-api').AudioContext
+var AudioContext from 'web-audio-api').AudioContext
   , context = new AudioContext
 
 context.outStream = process.stdout
@@ -81,8 +81,8 @@ node myScript.js | aplay -f cd
 [icecast](http://icecast.org/) is a open-source streaming server. It works great, and is very easy to setup. **icecast** accepts connections from [different source clients](http://icecast.org/apps/) which provide the sound to encode and stream. [ices](http://www.icecast.org/ices/) is a client for **icecast** which accepts raw PCM audio from its standard input, and you can send sound from **web-audio-api** to **ices** (which will send it to icecast) by simply doing :
 
 ```javascript
-var spawn = require('child_process').spawn
-  , AudioContext = require('web-audio-api').AudioContext
+var spawn from 'child_process').spawn
+  , AudioContext from 'web-audio-api').AudioContext
   , context = new AudioContext()
 
 var ices = spawn('ices', ['ices.xml'])

@@ -1,11 +1,10 @@
-var EventEmitter = require('events').EventEmitter
-  , async = require('async')
-  , utils = require('./utils')
-  , readOnlyAttr = utils.readOnlyAttr
-  , DspObject = require('./DspObject')
-  , AudioInput = require('./audioports').AudioInput
-  , AudioOutput = require('./audioports').AudioOutput
+import {EventEmitter} from 'events'
+import async from 'async'
+import * as utils from './utils.js'
+import DspObject from './DspObject.js'
+import {AudioInput, AudioOutput} from './audioports.js'
 
+let readOnlyAttr = utils.readOnlyAttr
 var ChannelCountMode = ['max', 'clamped-max', 'explicit'],
   ChannelInterpretation = ['speakers', 'discrete']
 
@@ -101,4 +100,4 @@ class AudioNode extends DspObject {
 
 }
 
-module.exports = AudioNode
+export default AudioNode

@@ -1,8 +1,8 @@
-var AudioNode = require('./AudioNode')
-  , AudioParam = require('./AudioParam')
-  , AudioBuffer = require('./AudioBuffer')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import AudioNode from './AudioNode.js'
+import AudioParam from './AudioParam.js'
+import AudioBuffer from './AudioBuffer.js'
+import { BLOCK_SIZE } from './constants.js'
+import { readOnlyAttr } from './utils.js'
 
 class GainNode extends AudioNode {
 
@@ -29,4 +29,4 @@ class GainNode extends AudioNode {
 
 }
 
-module.exports = GainNode
+export default GainNode

@@ -1,5 +1,14 @@
 # Changelog
 
+#### 1.0.0
+
+- [x] make ESM module
+- [ ] simplify testing setup, remove outdated dependencies
+- [ ] refactor nodes to follow sense of audio-worklet
+- [ ] implent webassembly DSP
+- [ ] add missing audio nodes
+- [ ] make sure standardized-audio-context works
+
 #### 0.2.2
 
 - removed `node-speaker` and `mathjs` dependencies

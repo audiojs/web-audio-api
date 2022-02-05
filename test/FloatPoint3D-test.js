@@ -1,10 +1,12 @@
-var assert = require('assert')
-  , FloatPoint3D = require('../build/FloatPoint3D')
-  , helpers = require('./helpers')()
+import assert from 'assert'
+import FloatPoint3D from '../src/FloatPoint3D.js'
+import initHelpers from './helpers.js'
+
+const helpers = initHelpers()
 
 var assertApproxEqual = helpers.assertApproxEqual
 
-describe('FloatPoint3D', function() {
+describe('FloatPoint3D.js', function() {
 
   describe('constructor', function() {
     it('has 3 properties', function() {

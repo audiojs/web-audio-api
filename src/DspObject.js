@@ -1,5 +1,5 @@
-var _ = require('underscore')
-  , events = require('events')
+import _ from 'underscore'
+import events from 'events'
 
 class DspObject extends events.EventEmitter {
 
@@ -60,4 +60,4 @@ class DspObject extends events.EventEmitter {
 
 }
 
-module.exports = DspObject
+export default DspObject

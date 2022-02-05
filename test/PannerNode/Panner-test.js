@@ -1,7 +1,7 @@
-var assert = require('assert')
-  , Panner = require('../../build/PannerNode/Panner')
+import assert from 'assert'
+import Panner from '../../src/PannerNode/Panner.js'
 
-describe('Panner', function() {
+describe('Panner.js', function() {
   it('must not be used directly', function() {
     const p = new Panner()
     assert.throws(function() { p.pan() })

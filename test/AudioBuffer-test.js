@@ -1,9 +1,8 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , AudioBuffer = require('../build/AudioBuffer')
+import assert from 'assert'
+import _ from 'underscore'
+import AudioBuffer from '../src/AudioBuffer.js'
 
-describe('AudioBuffer', function() {
-
+describe('AudioBuffer.js', function() {
   it('should be created with the right attributes', function() {
     var ab = new AudioBuffer(3, 100, 44100)
       , data1 = ab.getChannelData(0)
@@ -108,7 +107,9 @@ describe('AudioBuffer', function() {
           [1, 2, 3, 4, 5],
           [11, 22, 33, 44, 55],
           [111, 222, 333, 444, 555]
-        ], 22050)
+        ], 22050),
+        slice
+
       slice = ab.slice(0)
       assert.equal(slice.length, 5)
       assert.equal(slice.numberOfChannels, 3)
@@ -140,7 +141,8 @@ describe('AudioBuffer', function() {
           [1, 2, 3, 4, 5],
           [11, 22, 33, 44, 55],
           [111, 222, 333, 444, 555]
-        ], 22050)
+        ], 22050),
+        slice
 
       slice = ab.slice(3, 10)
       assert.equal(slice.length, 2)
