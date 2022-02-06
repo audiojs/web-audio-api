@@ -1,5 +1,4 @@
 import assert from 'assert'
-import async from 'async'
 import AudioBuffer from '../src/AudioBuffer.js'
 import AudioBufferSourceNode from '../src/AudioBufferSourceNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'

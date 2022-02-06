@@ -1,6 +1,5 @@
 import _ from 'underscore'
 import events from 'events'
-import async from 'async'
 import * as utils from './utils.js'
 import * as constants from './constants.js'
 import AudioBuffer from './AudioBuffer.js'
@@ -14,7 +13,6 @@ import PannerNode from './PannerNode/index.js'
 const {BLOCK_SIZE} = constants
 
 class AudioContext extends events.EventEmitter {
-
   constructor(opts) {
     super();
 
@@ -63,33 +61,31 @@ class AudioContext extends events.EventEmitter {
     this._playing = true
     this._audioOutLoopRunning = false
 
+    const tick = () => {
+      if (!this._playing) return
+      try {
+        outBuff = this.destination._tick()
+        // If there is space in the output stream's buffers, we write,
+        // otherwise we wait for 'drain'
+        this._frame += BLOCK_SIZE
+        this.currentTime = this._frame * 1 / this.sampleRate
+        // TODO setImmediate here is for cases where the outStream won't get
+        // full and we end up with call stack max size reached.
+        // But is it optimal?
+        if (this.outStream.write(this._encoder(outBuff._data))) setImmediate(tick)
+        else this.outStream.once('drain', tick)
+      } catch (e) {
+        this._audioOutLoopRunning = false
+        if (err) return this.emit('error', err)
+      }
+    }
+
     // When a new connection is established, start to pull audio
     this.destination._inputs[0].on('connection', () => {
       if (this._audioOutLoopRunning) return
       if (!this.outStream) throw new Error('you need to set outStream to send the audio somewhere')
       this._audioOutLoopRunning = true
-      async.whilst(
-        () => {
-          return this._playing
-        },
-        (next) => {
-          outBuff = this.destination._tick()
-          // If there is space in the output stream's buffers, we write,
-          // otherwise we wait for 'drain'
-          this._frame += BLOCK_SIZE
-          this.currentTime = this._frame * 1 / this.sampleRate
-          // TODO setImmediate here is for cases where the outStream won't get
-          // full and we end up with call stack max size reached.
-          // But is it optimal?
-          if (this.outStream.write(this._encoder(outBuff._data)))
-            setImmediate(next)
-          else this.outStream.once('drain', next)
-        },
-        (err) => {
-          this._audioOutLoopRunning = false
-          if (err) return this.emit('error', err)
-        }
-      )
+      tick()
     })
   }
 

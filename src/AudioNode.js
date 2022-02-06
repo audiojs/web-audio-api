@@ -1,5 +1,4 @@
 import {EventEmitter} from 'events'
-import async from 'async'
 import * as utils from './utils.js'
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'

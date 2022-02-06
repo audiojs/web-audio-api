@@ -1,6 +1,5 @@
 import assert from 'assert'
 import _ from 'underscore'
-import async from 'async'
 import AudioNode from '../src/AudioNode.js'
 
 describe('AudioNode.js', function() {
