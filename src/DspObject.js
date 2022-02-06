@@ -1,4 +1,3 @@
-import _ from 'underscore'
 import events from 'events'
 
 class DspObject extends events.EventEmitter {
@@ -44,18 +43,16 @@ class DspObject extends events.EventEmitter {
         time: time,
         func: func,
         type: type
-      },
-      ind = _.sortedIndex(this._scheduled, event, function(e) {
-        return e.time
-      })
+      }
     if (args) event.args = args
+
+    let ind = this._scheduled.findIndex(e => e.time >= time)
+    if (ind < 0) ind = this._scheduled.length
     this._scheduled.splice(ind, 0, event)
   }
 
   _unscheduleTypes(types) {
-    this._scheduled = _.reject(this._scheduled, function(event) {
-      return _.contains(types, event.type)
-    })
+    this._scheduled = this._scheduled.filter(event => !types.includes(event.type))
   }
 
 }

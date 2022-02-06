@@ -1,4 +1,3 @@
-import _ from 'underscore'
 import events from 'events'
 import * as utils from './utils.js'
 import * as constants from './constants.js'
@@ -165,25 +164,6 @@ class AudioContext extends events.EventEmitter {
       }
     }
   }
-
-  collectNodes(node, allNodes) {
-    allNodes = allNodes || []
-    node = node || this.destination
-    _.chain(node._inputs)
-      .pluck('sources')
-      .reduce(function(all, sources) {
-        return all.concat(sources)
-      }, [])
-      .pluck('node').value()
-      .forEach((upstreamNode) => {
-        if (!_.contains(allNodes, upstreamNode)) {
-          allNodes.push(upstreamNode)
-          this.collectNodes(upstreamNode, allNodes)
-        }
-      })
-    return allNodes
-  }
-
 }
 
 export default AudioContext

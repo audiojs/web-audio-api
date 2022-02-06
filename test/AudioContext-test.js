@@ -52,7 +52,25 @@ describe('AudioContext', function() {
       node3d.connect(node2a, 0, 1)
       node3d.connect(node2b)
 
-      collected = context.collectNodes()
+
+      const collectNodes = (node=context.destination, allNodes) => {
+        allNodes = allNodes || []
+        _.chain(node._inputs)
+          .pluck('sources')
+          .reduce(function(all, sources) {
+            return all.concat(sources)
+          }, [])
+          .pluck('node').value()
+          .forEach((upstreamNode) => {
+            if (!_.contains(allNodes, upstreamNode)) {
+              allNodes.push(upstreamNode)
+              collectNodes(upstreamNode, allNodes)
+            }
+          })
+        return allNodes
+      }
+      collected = collectNodes()
+
       assert.equal(collected.length, 8)
       assert.deepEqual(
         _.sortBy(collected, function(node) { return node.id }),

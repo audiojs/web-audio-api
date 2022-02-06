@@ -1,4 +1,3 @@
-import _ from 'underscore'
 import AudioNode from '../AudioNode.js'
 import AudioBuffer from '../AudioBuffer.js'
 import { BLOCK_SIZE } from '../constants.js'
@@ -9,7 +8,7 @@ import PannerProvider from './PannerProvider.js'
 import * as mathUtils from '../mathUtils.js'
 import NotSupportedError from '../NotSupportedError.js'
 
-var ChannelCountMode = _.object(['max', 'clamped-max', 'explicit'].map(x => [x, x]))
+var ChannelCountMode = {max:'max', 'clamped-max':'clamped-max', explicit: 'explicit'}
 
 class PannerNode extends AudioNode {
 

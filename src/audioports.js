@@ -1,4 +1,3 @@
-import _ from 'underscore'
 import events from 'events'
 import * as utils from './utils.js'
 import AudioBuffer from './AudioBuffer.js'
@@ -94,7 +93,7 @@ class AudioInput extends AudioPort {
     if (this.computedNumberOfChannels === null) {
       var maxChannelsUpstream
       if (this.sources.length) {
-        maxChannelsUpstream = _.chain(inBuffers).pluck('numberOfChannels').max().value()
+        maxChannelsUpstream = inBuffers.map(buf => buf.numberOfChannels).reduce((a,b) => a>b?a:b)
       } else maxChannelsUpstream = 0
       this._computeNumberOfChannels(maxChannelsUpstream)
     }
