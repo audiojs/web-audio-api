@@ -3,12 +3,12 @@
 #### 1.0.0
 
 - [x] make ESM module
-- [ ] add CI
-- [ ] simplify testing setup, remove outdated dependencies
-- [ ] refactor nodes to follow sense of audio-worklet
+- [x] add CI
+- [x] cleanup deps
+- [ ] implement gain wasm node
 - [ ] implent webassembly DSP
 - [ ] add missing audio nodes
-- [ ] make sure standardized-audio-context works
+- [ ] interop standardized-audio-context
 
 #### 0.2.2
 
