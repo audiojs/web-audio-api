@@ -1,8 +1,6 @@
-# web-audio-api [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+# web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
 > Node.js implementation of Web audio API
-
-[![Build Status](https://travis-ci.org/audiojs/web-audio-api.svg)](https://travis-ci.org/audiojs/web-audio-api) [![Dependency Status](https://img.shields.io/gemnasium/audiojs/web-audio-api.svg)](https://gemnasium.com/audiojs/web-audio-api) [![Join the chat at https://gitter.im/audiojs/web-audio-api](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/audiojs/web-audio-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This library implements the [Web Audio API specification](http://webaudio.github.io/web-audio-api/) (also know as WAA) on Node.js.
 
@@ -176,3 +174,5 @@ Contributors
 ## License
 
 MIT
+
+<p align="center">🕉<p>
