@@ -6,7 +6,7 @@ import AudioNode from '../../src/AudioNode.js'
 import AudioListener from '../../src/AudioListener.js'
 import initHelpers from '../helpers.js'
 
-describe('PannerNode.js', function() {
+describe('PannerNode', function() {
 
   var helpers = initHelpers({ approx : 0.01 }),
   dummyContext = {
@@ -188,10 +188,10 @@ describe('PannerNode.js', function() {
     it('throws NotSupportedError for invalid parameter', function() {
       assert.throws(function() {
         new PannerNode(dummyContext).channelCount = 0
-      }, 'NotSupportedError.js')
+      }, 'NotSupportedError')
       assert.throws(function() {
         new PannerNode(dummyContext).channelCount = 3
-      }, 'NotSupportedError.js')
+      }, 'NotSupportedError')
 
       assert.doesNotThrow(function() {
         new PannerNode(dummyContext).channelCount = 1
@@ -206,10 +206,10 @@ describe('PannerNode.js', function() {
     it('throws errors for invalid parameter', function() {
       assert.throws(function() {
         new PannerNode(dummyContext).channelCountMode = 'foo'
-      }, 'TypeError.js')
+      }, 'TypeError')
       assert.throws(function() {
         new PannerNode(dummyContext).channelCountMode = 'max'
-      }, 'NotSupportedError.js', 'PannerNode does not support "clamped-max"')
+      }, 'NotSupportedError', 'PannerNode does not support "clamped-max"')
 
       assert.doesNotThrow(function() {
         new PannerNode(dummyContext).channelCountMode = 'clamped-max'

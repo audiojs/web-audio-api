@@ -2,7 +2,7 @@ import assert from 'assert'
 import _ from 'underscore'
 import AudioNode from '../src/AudioNode.js'
 
-describe('AudioNode.js', function() {
+describe('AudioNode', function() {
 
   var dummyContext = {}
 
@@ -203,7 +203,7 @@ describe('AudioNode.js', function() {
 })
 
 /*
-describe('SourceNode.js', function() {
+describe('SourceNode', function() {
 
   describe('read', function() {
 

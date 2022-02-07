@@ -1,4 +1,4 @@
-import AudioNode from '../AudioNode.js'
+import AudioNode from '../AudioNode'
 import AudioBuffer from '../AudioBuffer.js'
 import { BLOCK_SIZE } from '../constants.js'
 import FloatPoint3D from '../FloatPoint3D.js'
@@ -129,10 +129,10 @@ class PannerNode extends AudioNode {
   setOrientation(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode.js': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': The provided float value is non-finite.`)
     }
     this._orientation = new FloatPoint3D(x, y, z)
   }
@@ -148,10 +148,10 @@ class PannerNode extends AudioNode {
   setPosition(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode.js': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': The provided float value is non-finite.`)
     }
     this._position = new FloatPoint3D(x, y, z)
   }
@@ -171,10 +171,10 @@ class PannerNode extends AudioNode {
   setVelocity(x, y, z) {
     var args = [].slice.call(arguments);
     if (args.length !== 3) {
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode.js' 3 arguments required, but only ${args.length} present.`)
+      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode' 3 arguments required, but only ${args.length} present.`)
     }
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z))) {
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode.js': The provided float value is non-finite.`)
+      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode': The provided float value is non-finite.`)
     }
     this._velocity = new FloatPoint3D(x, y, z)
   }

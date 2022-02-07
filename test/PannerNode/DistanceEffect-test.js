@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import { BLOCK_SIZE } from '../../src/constants.js'
 import DistanceEffect from '../../src/PannerNode/DistanceEffect.js'
 
-describe('DistanceEffect.js', function() {
+describe('DistanceEffect', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 

@@ -5,14 +5,11 @@ import flac from 'flac'
 import alac from 'alac'
 import aac from 'aac'
 import assert from 'assert'
+import fs from 'fs'
 
-export {
-  readOnlyAttr,
-  decodeAudioData
-}
 
 // Simple helper to make defining a read-only attribute less verbose
-function readOnlyAttr (obj, name, value) {
+export function readOnlyAttr (obj, name, value) {
   Object.defineProperty(obj, name, {
     value: value,
     writable: false
@@ -21,7 +18,7 @@ function readOnlyAttr (obj, name, value) {
 
 // Helper to decode a buffer of encoded audio data.
 // Guesses the format, and decodes to an AudioBuffer accordingly.
-function decodeAudioData (buffer, done) {
+export function decodeAudioData (buffer, done) {
   var asset = AV.Asset.fromBuffer(buffer)
 
   // Pseudo overload
@@ -122,4 +119,11 @@ export function validateFormat(format) {
   assert(typeof format.signed === 'boolean')
 
   return format
+}
+
+export function loadWasm(path) {
+  const buffer = fs.readFileSync('./dsp/gain.wasm')
+  const mod = new WebAssembly.Module(buffer)
+  const instance = new WebAssembly.Instance(mod)
+  return instance
 }

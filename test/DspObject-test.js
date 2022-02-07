@@ -2,7 +2,7 @@ import assert from 'assert'
 import _ from 'underscore'
 import DspObject from '../src/DspObject.js'
 
-describe('DspObject.js', function() {
+describe('DspObject', function() {
 
   var dummyContext
 

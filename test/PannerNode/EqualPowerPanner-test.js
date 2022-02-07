@@ -6,7 +6,7 @@ import initHelpers from '../helpers.js'
 
 let helpers = initHelpers({ approx : 0.01 })
 
-describe('EqualPowerPanner.js', function() {
+describe('EqualPowerPanner', function() {
 
   var testBlockGain = function(block, gainL, gainR) {
     assert.equal(block.numberOfChannels, 2)

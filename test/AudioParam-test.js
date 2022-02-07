@@ -15,7 +15,7 @@ let {
 const SAMPLE_RATE = 44100
 const Ts = 1/SAMPLE_RATE
 
-describe('AudioParam.js', function() {
+describe('AudioParam', function() {
   var dummyContext
 
   var untilTime = function(audioParam, until, testFunc) {

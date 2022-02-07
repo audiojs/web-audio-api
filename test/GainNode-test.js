@@ -8,7 +8,7 @@ import initHelpers from './helpers.js'
 
 const helpers = initHelpers()
 
-describe('GainNode.js', function() {
+describe('GainNode', function() {
 
   describe('_tick', function() {
 

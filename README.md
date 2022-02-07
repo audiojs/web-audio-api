@@ -42,9 +42,10 @@ By default, **web-audio-api** doesn't play back the sound it generates. In fact,
 This is probably the simplest way to play back audio. Install **node-speaker** with `npm install speaker`, then do something like this :
 
 ```javascript
-var AudioContext from 'web-audio-api').AudioContext
-  , context = new AudioContext
-  , Speaker from 'speaker')
+import { AudioContext } from 'web-audio-api'
+import Speaker from 'speaker'
+
+const context = new AudioContext
 
 context.outStream = new Speaker({
   channels: context.format.numberOfChannels,

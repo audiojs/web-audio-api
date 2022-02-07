@@ -7,7 +7,7 @@ import initHelpers from '../helpers.js'
 let helpers = initHelpers()
 var assertApproxEqual = helpers.assertApproxEqual
 
-describe('ConeEffect.js', function() {
+describe('ConeEffect', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 
@@ -44,8 +44,8 @@ describe('ConeEffect.js', function() {
     it('MUST throw InvalidStateError if outerGain is ', function() {
       assert.doesNotThrow(function() { c.outerGain = 0 })
       assert.doesNotThrow(function() { c.outerGain = 1 })
-      assert.throws(function() { c.outerGain = -1 }, 'InvalidStateError.js')
-      assert.throws(function() { c.outerGain = 2 }, 'InvalidStateError.js')
+      assert.throws(function() { c.outerGain = -1 }, 'InvalidStateError')
+      assert.throws(function() { c.outerGain = 2 }, 'InvalidStateError')
     })
   })
 

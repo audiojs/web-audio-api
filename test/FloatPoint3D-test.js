@@ -6,7 +6,7 @@ const helpers = initHelpers()
 
 var assertApproxEqual = helpers.assertApproxEqual
 
-describe('FloatPoint3D.js', function() {
+describe('FloatPoint3D', function() {
 
   describe('constructor', function() {
     it('has 3 properties', function() {

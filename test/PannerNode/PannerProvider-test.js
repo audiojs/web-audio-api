@@ -3,7 +3,7 @@ import {BLOCK_SIZE} from '../../src/constants.js'
 import PannerProvider from '../../src/PannerNode/PannerProvider.js'
 import EqualPowerPanner from '../../src/PannerNode/EqualPowerPanner.js'
 
-describe('PannerProvider.js', function() {
+describe('PannerProvider', function() {
 
   const dummyContext = { sampleRate : 44100, currentTime : 0, BLOCK_SIZE : BLOCK_SIZE }
 
@@ -23,7 +23,7 @@ describe('PannerProvider.js', function() {
 
       assert.throws(function() {
         p.panningModel = 'foo'
-      }, 'invalid panningModel causes TypeError.js')
+      }, 'invalid panningModel causes TypeError')
     })
   })
 

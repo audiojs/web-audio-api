@@ -6,7 +6,7 @@ import initHelpers from './helpers.js'
 
 const helpers = initHelpers()
 
-describe('AudioBufferSourceNode.js', function() {
+describe('AudioBufferSourceNode', function() {
 
   // Helper to get a test buffer
   //  0.1 ... 128 times ...  0.2 ... 128 times ...  0.3 ... 128 times ...  0.4 ... 128 times ...  0.5 ... 64 times

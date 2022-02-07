@@ -8,7 +8,7 @@ import initHelpers from './helpers.js'
 let helpers = initHelpers({approx: 0.0005})
 const {assertAllValuesApprox, assertApproxEqual} = helpers
 
-describe('utils.js', function() {
+describe('utils', function() {
 
   describe('decodeAudioData', function() {
 

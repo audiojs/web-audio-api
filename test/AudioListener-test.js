@@ -1,7 +1,7 @@
 import assert from 'assert'
 import AudioListener from '../src/AudioListener.js'
 
-describe('AudioListener.js', function() {
+describe('AudioListener', function() {
 
   describe('constructor', function() {
     it('has default properties', function() {

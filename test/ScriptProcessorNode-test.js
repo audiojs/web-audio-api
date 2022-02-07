@@ -8,7 +8,7 @@ import initHelpers from './helpers.js'
 
 let helpers = initHelpers()
 
-describe('ScriptProcessorNode.js', function() {
+describe('ScriptProcessorNode', function() {
 
   it('should accept valid bufferSize', function() {
     // valid : 256, 512, 1024, 2048, 4096, 8192, 16384

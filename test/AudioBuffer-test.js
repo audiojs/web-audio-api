@@ -2,7 +2,7 @@ import assert from 'assert'
 import _ from 'underscore'
 import AudioBuffer from '../src/AudioBuffer.js'
 
-describe('AudioBuffer.js', function() {
+describe('AudioBuffer', function() {
   it('should be created with the right attributes', function() {
     var ab = new AudioBuffer(3, 100, 44100)
       , data1 = ab.getChannelData(0)
