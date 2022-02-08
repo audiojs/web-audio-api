@@ -9,7 +9,6 @@ import GainNode from './GainNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
 
-const {BLOCK_SIZE} = constants
 
 class AudioContext extends events.EventEmitter {
   constructor(opts) {
