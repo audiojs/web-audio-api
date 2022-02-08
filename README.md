@@ -127,15 +127,6 @@ debugger
 that way the audio loop is stopped, and you can inspect your objects in peace.
 
 
-## Running the tests
-
-Tests are written with mocha.
-
-```
-npm test
-```
-
-
 ## Manual testing
 
 You can test the sound output using `node-speaker`.
@@ -146,22 +137,6 @@ npm run test-speaker
 
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
 
-
-Contributors
--------------
-
-```
-    64	Sebastien Piquemal
-    21	Sébastien Piquemal
-    16	ouhouhsami
-    10	fand
-     6	Hugh Rawlinson
-     4	John Wnek
-     2	anprogrammer
-     1	Andrew Petersen
-     1	The Gitter Badger
-     1	sebpiq
-```
 
 ## Alternatives
 
