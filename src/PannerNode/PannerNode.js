@@ -1,4 +1,4 @@
-import AudioNode from '../AudioNode'
+import AudioNode from '../AudioNode.js'
 import AudioBuffer from '../AudioBuffer.js'
 import { BLOCK_SIZE } from '../constants.js'
 import FloatPoint3D from '../FloatPoint3D.js'

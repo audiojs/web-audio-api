@@ -63,7 +63,7 @@ class AudioBufferSourceNode extends AudioNode {
             if (this.onended) {
               this._schedule('onended', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this.onended)
             }
-            this._schedule('kill', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this._kill.bind(this))
+            this._schedule('kill', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this[Symbol.dispose].bind(this))
           }
           cursor = cursorNext
           return outBuffer

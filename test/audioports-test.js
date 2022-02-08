@@ -89,7 +89,7 @@ describe('AudioPort', function() {
 
   })
 
-  describe('_kill', function() {
+  describe('[Symbol.dispose]', function() {
 
     it('should disconnect everything and remove event listeners', function() {
       var sink1 = new AudioInput(dummyContext, dummyNode, 0)
@@ -103,7 +103,7 @@ describe('AudioPort', function() {
       assert.deepEqual(sink1.sources, [source])
       assert.deepEqual(sink2.sources, [source])
 
-      source._kill()
+      source[Symbol.dispose]()
       assert.deepEqual(sink1.sources, [])
       assert.deepEqual(sink2.sources, [])
       assert.equal(source.listeners('bla').length, 0)

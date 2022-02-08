@@ -154,7 +154,7 @@ class AudioContext extends events.EventEmitter {
 }
   */
 
-  _kill() {
+  [Symbol.dispose]() {
     this._playing = false
     if (this.outStream) {
       if (this.outStream.close) {

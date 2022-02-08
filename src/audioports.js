@@ -37,7 +37,7 @@ class AudioPort extends events.EventEmitter {
   }
 
   // Called when a node is killed. Removes connections, and event listeners.
-  _kill() {
+  [Symbol.dispose]() {
     this.connections.slice(0).forEach((port) => {
       this.disconnect(port)
     })

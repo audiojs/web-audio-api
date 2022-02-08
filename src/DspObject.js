@@ -1,10 +1,12 @@
 import events from 'events'
 
 class DspObject extends events.EventEmitter {
+  #context
+  get context() {return this.#context}
 
   constructor(context) {
     super()
-    this.context = context
+    this.#context = context
     this._scheduled = []
   }
 
@@ -13,7 +15,7 @@ class DspObject extends events.EventEmitter {
     var event = this._scheduled.shift()
       , eventsSameTime, eventsToExecute = []
       , previousTime
-    
+
     // Gather all events that need to be executed at this tick
     while (event && event.time <= this.context.currentTime) {
       previousTime = event.time
@@ -31,7 +33,7 @@ class DspObject extends events.EventEmitter {
       })
     }
     if (event) this._scheduled.unshift(event)
-    
+
     // And execute
     eventsToExecute.reverse().forEach(function(event) {
       event.func && event.func()

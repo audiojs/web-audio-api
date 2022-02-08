@@ -7,6 +7,8 @@ import aac from 'aac'
 import assert from 'assert'
 import fs from 'fs'
 
+// polyfill Symbol.dispose
+Symbol.dispose ||= Symbol('dispose')
 
 // Simple helper to make defining a read-only attribute less verbose
 export function readOnlyAttr (obj, name, value) {

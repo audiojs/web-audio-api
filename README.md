@@ -120,7 +120,7 @@ Right now everything runs in one process, so if you set a break point in your co
 One trick is to kill the `AudioContext` right before the break point, like this:
 
 ```javascript
-context._kill()
+context[Symbol.dispose]()
 debugger
 ```
 
