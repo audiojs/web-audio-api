@@ -10,37 +10,45 @@ class DspObject extends events.EventEmitter {
     this._scheduled = []
   }
 
+  // load corresponding wasm dsp processor
+  _loadDSP(name) {
+    const memory = new WebAssembly.Memory({initial:1})
+
+    const instance = new WebAssembly.Instance(
+      new WebAssembly.Module(
+        fs.readFileSync(`./dsp/${name}.wasm`)
+      ),
+      {js:{memory}}
+    )
+
+    const input = new Float32Array(memory.buffer)
+  }
+
   _tick() {
-    this._frame++
     var event = this._scheduled.shift()
       , eventsSameTime, eventsToExecute = []
       , previousTime
 
     // Gather all events that need to be executed at this tick
-    while (event && event.time <= this.context.currentTime) {
+    while (event?.time <= this.context.currentTime) {
       previousTime = event.time
       eventsSameTime = []
       // Gather all the events with same time
-      while (event && event.time === previousTime) {
+      while (event?.time === previousTime) {
         // Add the event only if there isn't already events with same type
-        if (eventsSameTime.every(function(other) {
-          return event.type !== other.type
-        })) eventsSameTime.push(event)
+        if (eventsSameTime.every((other) => event.type !== other.type)) eventsSameTime.push(event)
         event = this._scheduled.shift()
       }
-      eventsSameTime.forEach(function(event) {
-        eventsToExecute.push(event)
-      })
+      eventsToExecute.push(...eventsSameTime)
     }
     if (event) this._scheduled.unshift(event)
 
     // And execute
-    eventsToExecute.reverse().forEach(function(event) {
-      event.func && event.func()
-    })
+    while (event = eventsToExecute.pop()) event.func?.()
   }
 
   _schedule(type, time, func, args) {
+    // FIXME: this can be simple array
     var event = {
         time: time,
         func: func,
