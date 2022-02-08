@@ -61,7 +61,7 @@ context.outStream = new Speaker({
 Linux users can play back sound from **web-audio-api** by piping its output to [aplay](http://alsa.opensrc.org/Aplay). For this, simply send the generated sound straight to `stdout` like this :
 
 ```javascript
-var AudioContext from 'web-audio-api').AudioContext
+import { AudioContext } from 'web-audio-api'
   , context = new AudioContext
 
 context.outStream = process.stdout
