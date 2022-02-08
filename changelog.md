@@ -8,7 +8,8 @@
 - [ ] implement gain wasm node
 - [ ] implent webassembly DSP
 - [ ] add missing audio nodes
-- [ ] interop standardized-audio-context
+- [ ] interop with standardized-audio-context
+- [ ] include wasm versions of encoders
 
 #### 0.2.2
 
