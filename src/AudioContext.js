@@ -12,6 +12,8 @@ import PannerNode from './PannerNode/index.js'
 const {BLOCK_SIZE} = constants
 
 class AudioContext extends events.EventEmitter {
+  #playing=true
+
   constructor(opts) {
     super();
 
@@ -55,35 +57,35 @@ class AudioContext extends events.EventEmitter {
     if (opts.numBuffers) this.format.numBuffers = opts.numBuffers
 
     this.outStream = null
-    this._encoder = utils.BufferEncoder(this.format)
-    this._frame = 0
-    this._playing = true
-    this._audioOutLoopRunning = false
+
+    let frame = 0,
+        audioOutLoopRunning = false,
+        encoder = utils.BufferEncoder(this.format)
 
     const tick = () => {
-      if (!this._playing) return
+      if (!this.#playing) return
       try {
         outBuff = this.destination._tick()
         // If there is space in the output stream's buffers, we write,
         // otherwise we wait for 'drain'
-        this._frame += BLOCK_SIZE
-        this.currentTime = this._frame * 1 / this.sampleRate
+        frame += BLOCK_SIZE
+        this.currentTime = frame * 1 / this.sampleRate
         // TODO setImmediate here is for cases where the outStream won't get
         // full and we end up with call stack max size reached.
         // But is it optimal?
-        if (this.outStream.write(this._encoder(outBuff._data))) setImmediate(tick)
+        if (this.outStream.write(encoder(outBuff._data))) setImmediate(tick)
         else this.outStream.once('drain', tick)
       } catch (e) {
-        this._audioOutLoopRunning = false
+        audioOutLoopRunning = false
         if (err) return this.emit('error', err)
       }
     }
 
     // When a new connection is established, start to pull audio
     this.destination._inputs[0].on('connection', () => {
-      if (this._audioOutLoopRunning) return
+      if (audioOutLoopRunning) return
       if (!this.outStream) throw new Error('you need to set outStream to send the audio somewhere')
-      this._audioOutLoopRunning = true
+      audioOutLoopRunning = true
       tick()
     })
   }
@@ -155,14 +157,8 @@ class AudioContext extends events.EventEmitter {
   */
 
   [Symbol.dispose]() {
-    this._playing = false
-    if (this.outStream) {
-      if (this.outStream.close) {
-        this.outStream.close()
-      } else {
-        this.outStream.end()
-      }
-    }
+    this.#playing = false
+    if (this.outStream) this.outStream.close?.() || this.outStream.end?.()
   }
 }
 
