@@ -1,6 +1,6 @@
 import events from 'events'
-import * as utils from './utils.js'
-import * as constants from './constants.js'
+import { BufferEncoder } from './utils.js'
+import { BLOCK_SIZE } from './constants.js'
 import AudioBuffer from './AudioBuffer.js'
 import AudioListener from './AudioListener.js'
 import AudioDestinationNode from './AudioDestinationNode.js'
@@ -9,7 +9,6 @@ import GainNode from './GainNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
 
-const {BLOCK_SIZE} = constants
 
 class AudioContext extends events.EventEmitter {
   #playing=true

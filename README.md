@@ -62,7 +62,7 @@ Linux users can play back sound from **web-audio-api** by piping its output to [
 
 ```javascript
 import { AudioContext } from 'web-audio-api'
-  , context = new AudioContext
+const context = new AudioContext()
 
 context.outStream = process.stdout
 
@@ -82,7 +82,7 @@ node myScript.js | aplay -f cd
 ```javascript
 import { spawn } from 'child_process'
 import { AudioContext } from 'web-audio-api'
-  , context = new AudioContext()
+ const context = new AudioContext()
 
 var ices = spawn('ices', ['ices.xml'])
 context.outStream = ices.stdin
