@@ -80,8 +80,8 @@ node myScript.js | aplay -f cd
 [icecast](http://icecast.org/) is a open-source streaming server. It works great, and is very easy to setup. **icecast** accepts connections from [different source clients](http://icecast.org/apps/) which provide the sound to encode and stream. [ices](http://www.icecast.org/ices/) is a client for **icecast** which accepts raw PCM audio from its standard input, and you can send sound from **web-audio-api** to **ices** (which will send it to icecast) by simply doing :
 
 ```javascript
-var spawn from 'child_process').spawn
-  , AudioContext from 'web-audio-api').AudioContext
+import { spawn } from 'child_process'
+import { AudioContext } from 'web-audio-api'
   , context = new AudioContext()
 
 var ices = spawn('ices', ['ices.xml'])
