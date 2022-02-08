@@ -1,5 +1,5 @@
 import events from 'events'
-import * as utils from './utils.js'
+import { BufferEncoder } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
 import AudioBuffer from './AudioBuffer.js'
 import AudioListener from './AudioListener.js'
