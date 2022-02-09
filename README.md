@@ -7,13 +7,13 @@ This library implements the [Web Audio API specification](http://webaudio.github
 
 ## What's Implemented
 
-- AudioContext (partially)
-- AudioParam (almost there)
-- AudioBufferSourceNode
-- ScriptProcessorNode
-- GainNode
-- OscillatorNode (coming soon)
-- DelayNode (coming soon)
+- [x] AudioContext (partially)
+- [x] AudioParam (almost there)
+- [x] AudioBufferSourceNode
+- [x] ScriptProcessorNode
+- [x] GainNode
+- [ ] OscillatorNode
+- [ ] DelayNode
 
 
 ## Installation
@@ -25,7 +25,7 @@ npm install --save web-audio-api
 
 ## Demo
 
-Get ready, this is going to blow up your mind :
+Get ready, this is going to blow up your mind:
 
 ```
 npm install
@@ -126,7 +126,7 @@ debugger
 
 that way the audio loop is stopped, and you can inspect your objects in peace.
 
-
+<!--
 ## Manual testing
 
 You can test the sound output using `node-speaker`.
@@ -135,15 +135,15 @@ You can test the sound output using `node-speaker`.
 npm run test-speaker
 ```
 
-To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
+To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser. -->
 
 
 ## Alternatives
 
-* [web-audio-engine](https://github.com/mohayonao/web-audio-engine)
+* [web-audio-engine](https://github.com/mohayonao/web-audio-engine) − JS implementation of web-audio-api.
+* [web-audio-js](https://github.com/descriptinc/web-audio-js) − fork of web-audio-engine with extra nodes.
 * [lab-sound](https://github.com/LabSound/LabSound)
 * [node-audio](https://ghub.io/node-audio)
-* [web-audio-js](https://github.com/descriptinc/web-audio-js)
 * [WAAPISim](https://github.com/g200kg/WAAPISim)
 * [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)
 
