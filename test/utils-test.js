@@ -1,17 +1,17 @@
-var _ = require('underscore')
-  , fs = require('fs')
-  , assert = require('assert')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , utils = require('../build/utils')
-  , assertAllValuesApprox = require('./helpers').assertAllValuesApprox
-  , assertApproxEqual = require('./helpers').assertApproxEqual
+import _ from 'underscore'
+import fs from 'fs'
+import assert from 'assert'
+import AudioBuffer from '../src/AudioBuffer.js'
+import * as utils from '../src/utils.js'
+import initHelpers from './helpers.js'
 
+let helpers = initHelpers({approx: 0.0005})
+const {assertAllValuesApprox, assertApproxEqual} = helpers
 
 describe('utils', function() {
 
   describe('decodeAudioData', function() {
 
-    var helpers = require('./helpers')({approx: 0.0005})
 
     var reblock = function(audioBuffer, blockSize) {
       var blocks = []
@@ -96,7 +96,7 @@ describe('utils', function() {
     }
 
     it('should decode a 16b mono wav (by callback)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-mono-16b-44khz.wav', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-mono-16b-44khz.wav', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf, function(err, audioBuffer) {
           if (err) throw err
@@ -110,7 +110,7 @@ describe('utils', function() {
     })
 
     it('should decode a 16b mono wav (by Promise)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-mono-16b-44khz.wav', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-mono-16b-44khz.wav', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf).then(function(audioBuffer) {
           assert.equal(audioBuffer.numberOfChannels, 1)
@@ -124,7 +124,7 @@ describe('utils', function() {
     })
 
     it('should decode a 16b stereo wav (by callback)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.wav', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf, function(err, audioBuffer) {
           if (err) throw err
@@ -138,7 +138,7 @@ describe('utils', function() {
     })
 
     it('should decode a 16b stereo wav (by Promise)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.wav', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf).then(function(audioBuffer) {
           assert.equal(audioBuffer.numberOfChannels, 2)
@@ -152,7 +152,7 @@ describe('utils', function() {
     })
 
     it('should decode a 16b stereo mp3 (by callback)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.mp3', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.mp3', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf, function(err, audioBuffer) {
           if (err) throw err
@@ -173,14 +173,14 @@ describe('utils', function() {
           audioBuffer = AudioBuffer.fromArray([blockm1, block1], 44100).concat(audioBuffer)
           audioBuffer = audioBuffer.concat(AudioBuffer.fromArray([block1, blockm1], 44100))
 
-          testStepsStereo(reblock(audioBuffer, 4410), require('./helpers')({approx: 0.2}))
+          testStepsStereo(reblock(audioBuffer, 4410), initHelpers({approx: 0.2}))
           done()
         })
       })
     })
 
     it('should decode a 16b stereo mp3 (by Promise)', function(done) {
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.mp3', function(err, buf) {
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.mp3', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf).then(function(audioBuffer) {
           var block1 = _.range(4410).map(function() { return 1 })
@@ -200,15 +200,16 @@ describe('utils', function() {
           audioBuffer = AudioBuffer.fromArray([blockm1, block1], 44100).concat(audioBuffer)
           audioBuffer = audioBuffer.concat(AudioBuffer.fromArray([block1, blockm1], 44100))
 
-          testStepsStereo(reblock(audioBuffer, 4410), require('./helpers')({approx: 0.2}))
+          testStepsStereo(reblock(audioBuffer, 4410), initHelpers({approx: 0.2}))
           done()
         }).catch(function(err) {
+          console.log(err)
         })
       })
     })
 
     it('should return an error if the format couldn\'t be recognized (by callback)', function(done) {
-      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+      fs.readFile(new URL('./sounds/generateFile.pd', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf, function(err, audioBuffer) {
           assert.ok(err)
@@ -219,7 +220,7 @@ describe('utils', function() {
     })
 
     it('should return an error if the format couldn\'t be recognized (by Promise)', function(done) {
-      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+      fs.readFile(new URL('./sounds/generateFile.pd', import.meta.url), function(err, buf) {
         if (err) throw err
         utils.decodeAudioData(buf).then(function(audioBuffer) {
         }).catch(function(err) {

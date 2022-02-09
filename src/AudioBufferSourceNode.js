@@ -1,8 +1,8 @@
-var constants = require('./constants')
-  , AudioNode = require('./AudioNode')
-  , AudioParam = require('./AudioParam')
-  , AudioBuffer = require('./AudioBuffer')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import * as constants from './constants.js'
+import AudioNode from './AudioNode.js'
+import AudioParam from './AudioParam.js'
+import AudioBuffer from './AudioBuffer.js'
+import {readOnlyAttr} from './utils.js'
 
 
 class AudioBufferSourceNode extends AudioNode {
@@ -63,7 +63,7 @@ class AudioBufferSourceNode extends AudioNode {
             if (this.onended) {
               this._schedule('onended', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this.onended)
             }
-            this._schedule('kill', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this._kill.bind(this))
+            this._schedule('kill', this.context.currentTime + (cursorNext - cursorEnd) / sampleRate, this[Symbol.dispose].bind(this))
           }
           cursor = cursorNext
           return outBuffer
@@ -94,4 +94,4 @@ class AudioBufferSourceNode extends AudioNode {
 
 }
 
-module.exports = AudioBufferSourceNode
+export default AudioBufferSourceNode

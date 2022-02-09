@@ -1,5 +1,16 @@
 # Changelog
 
+#### 1.0.0
+
+- [x] make ESM module
+- [x] add CI
+- [x] cleanup deps
+- [ ] implement gain wasm node
+- [ ] implent webassembly DSP
+- [ ] add missing audio nodes
+- [ ] interop with standardized-audio-context
+- [ ] include wasm versions of encoders
+
 #### 0.2.2
 
 - removed `node-speaker` and `mathjs` dependencies

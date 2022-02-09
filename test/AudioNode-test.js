@@ -1,7 +1,6 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , async = require('async')
-  , AudioNode = require('../build/AudioNode')
+import assert from 'assert'
+import _ from 'underscore'
+import AudioNode from '../src/AudioNode.js'
 
 describe('AudioNode', function() {
 
@@ -176,7 +175,7 @@ describe('AudioNode', function() {
 
   })
 
-  describe('_kill', function() {
+  describe('[Symbol.dispose]', function() {
 
     it('should disconnect all connections, and remove listeners', function() {
       var source = new AudioNode(dummyContext, 0, 3)
@@ -192,7 +191,7 @@ describe('AudioNode', function() {
       assert.equal(source._outputs[1].sinks.length, 2)
       assert.equal(source._outputs[2].sinks.length, 1)
 
-      source._kill()
+      source[Symbol.dispose]()
       assert.equal(source.listeners('bla').length, 0)
       assert.equal(source._outputs[0].sinks.length, 0)
       assert.equal(source._outputs[1].sinks.length, 0)

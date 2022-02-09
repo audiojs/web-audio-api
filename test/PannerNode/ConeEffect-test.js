@@ -1,9 +1,10 @@
-var assert = require('assert')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , ConeEffect = require('../../build/PannerNode/ConeEffect')
-  , FloatPoint3D = require('../../build/FloatPoint3D')
-  , helpers = require('../helpers')()
+import assert from 'assert'
+import { BLOCK_SIZE } from '../../src/constants.js'
+import ConeEffect from '../../src/PannerNode/ConeEffect.js'
+import FloatPoint3D from '../../src/FloatPoint3D.js'
+import initHelpers from '../helpers.js'
 
+let helpers = initHelpers()
 var assertApproxEqual = helpers.assertApproxEqual
 
 describe('ConeEffect', function() {

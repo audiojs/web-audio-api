@@ -1,9 +1,12 @@
-var _ = require('underscore')
-  , assert = require('assert')
-  , ScriptProcessorNode = require('../build/ScriptProcessorNode')
-  , AudioNode = require('../build/AudioNode')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
+import _ from 'underscore'
+import assert from 'assert'
+import ScriptProcessorNode from '../src/ScriptProcessorNode.js'
+import AudioNode from '../src/AudioNode.js'
+import AudioBuffer from '../src/AudioBuffer.js'
+import { BLOCK_SIZE } from '../src/constants.js'
+import initHelpers from './helpers.js'
+
+let helpers = initHelpers()
 
 describe('ScriptProcessorNode', function() {
 
@@ -30,8 +33,7 @@ describe('ScriptProcessorNode', function() {
 
   describe('onaudioprocess', function() {
 
-    var helpers = require('./helpers')()
-      , dummyContext
+    var dummyContext
 
     beforeEach(function() {
       dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: BLOCK_SIZE}
@@ -71,10 +73,7 @@ describe('ScriptProcessorNode', function() {
   })
 
   describe('_tick', function() {
-
-    var helpers = require('./helpers')()
-      , dummyContext
-
+    let dummyContext
     beforeEach(function() {
       dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: BLOCK_SIZE}
     })
@@ -109,7 +108,7 @@ describe('ScriptProcessorNode', function() {
           for (i = 0; i < BLOCK_SIZE; i++) chData[i] = sourceCounter + ch
           data.push(chData)
         }
-        return new AudioBuffer.fromArray(data, 44100)
+        return AudioBuffer.fromArray(data, 44100)
       }
       sourceNode.connect(scriptNode)
 

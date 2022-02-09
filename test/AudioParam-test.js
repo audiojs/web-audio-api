@@ -1,16 +1,21 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , AudioParam = require('../build/AudioParam')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , SAMPLE_RATE = 44100
-  , Ts = 1/SAMPLE_RATE
-  , assertAllValuesEqual = require('./helpers')().assertAllValuesEqual
-  , assertAllValuesApprox = require('./helpers')().assertAllValuesApprox
-  , assertAllValuesFunc = require('./helpers')().assertAllValuesFunc
-  , assertApproxEqual = require('./helpers')().assertApproxEqual
+import assert from 'assert'
+import _ from 'underscore'
+import AudioParam from '../src/AudioParam.js'
+import {BLOCK_SIZE} from '../src/constants.js'
+import initHelpers from './helpers.js'
+
+const helpers = initHelpers()
+let {
+  assertAllValuesEqual,
+  assertAllValuesApprox,
+  assertAllValuesFunc,
+  assertApproxEqual
+} = helpers
+
+const SAMPLE_RATE = 44100
+const Ts = 1/SAMPLE_RATE
 
 describe('AudioParam', function() {
-
   var dummyContext
 
   var untilTime = function(audioParam, until, testFunc) {
@@ -47,7 +52,8 @@ describe('AudioParam', function() {
     var audioParam = new AudioParam(dummyContext, 98)
     assert.equal(audioParam.defaultValue, 98)
     assert.equal(audioParam.value, 98)
-    audioParam.defaultValue = 77
+
+    assert.throws(() => audioParam.defaultValue = 77)
   })
 
   it('should throw an error if the defaultValue is not a number', function() {

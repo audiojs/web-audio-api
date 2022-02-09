@@ -1,5 +1,5 @@
-var AudioNode = require('./AudioNode')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import AudioNode from './AudioNode.js'
+import {readOnlyAttr} from './utils.js'
 
 
 class AudioDestinationNode extends AudioNode {
@@ -18,4 +18,4 @@ class AudioDestinationNode extends AudioNode {
 }
 
 
-module.exports = AudioDestinationNode
+export default AudioDestinationNode

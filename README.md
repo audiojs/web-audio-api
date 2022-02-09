@@ -1,8 +1,6 @@
-# web-audio-api [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+# web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
 > Node.js implementation of Web audio API
-
-[![Build Status](https://travis-ci.org/audiojs/web-audio-api.svg)](https://travis-ci.org/audiojs/web-audio-api) [![Dependency Status](https://img.shields.io/gemnasium/audiojs/web-audio-api.svg)](https://gemnasium.com/audiojs/web-audio-api) [![Join the chat at https://gitter.im/audiojs/web-audio-api](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/audiojs/web-audio-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This library implements the [Web Audio API specification](http://webaudio.github.io/web-audio-api/) (also know as WAA) on Node.js.
 
@@ -44,9 +42,10 @@ By default, **web-audio-api** doesn't play back the sound it generates. In fact,
 This is probably the simplest way to play back audio. Install **node-speaker** with `npm install speaker`, then do something like this :
 
 ```javascript
-var AudioContext = require('web-audio-api').AudioContext
-  , context = new AudioContext
-  , Speaker = require('speaker')
+import { AudioContext } from 'web-audio-api'
+import Speaker from 'speaker'
+
+const context = new AudioContext
 
 context.outStream = new Speaker({
   channels: context.format.numberOfChannels,
@@ -62,8 +61,8 @@ context.outStream = new Speaker({
 Linux users can play back sound from **web-audio-api** by piping its output to [aplay](http://alsa.opensrc.org/Aplay). For this, simply send the generated sound straight to `stdout` like this :
 
 ```javascript
-var AudioContext = require('web-audio-api').AudioContext
-  , context = new AudioContext
+import { AudioContext } from 'web-audio-api'
+const context = new AudioContext()
 
 context.outStream = process.stdout
 
@@ -81,9 +80,9 @@ node myScript.js | aplay -f cd
 [icecast](http://icecast.org/) is a open-source streaming server. It works great, and is very easy to setup. **icecast** accepts connections from [different source clients](http://icecast.org/apps/) which provide the sound to encode and stream. [ices](http://www.icecast.org/ices/) is a client for **icecast** which accepts raw PCM audio from its standard input, and you can send sound from **web-audio-api** to **ices** (which will send it to icecast) by simply doing :
 
 ```javascript
-var spawn = require('child_process').spawn
-  , AudioContext = require('web-audio-api').AudioContext
-  , context = new AudioContext()
+import { spawn } from 'child_process'
+import { AudioContext } from 'web-audio-api'
+ const context = new AudioContext()
 
 var ices = spawn('ices', ['ices.xml'])
 context.outStream = ices.stdin
@@ -121,20 +120,11 @@ Right now everything runs in one process, so if you set a break point in your co
 One trick is to kill the `AudioContext` right before the break point, like this:
 
 ```javascript
-context._kill()
+context[Symbol.dispose]()
 debugger
 ```
 
 that way the audio loop is stopped, and you can inspect your objects in peace.
-
-
-## Running the tests
-
-Tests are written with mocha.
-
-```
-npm test
-```
 
 
 ## Manual testing
@@ -148,22 +138,6 @@ npm run test-speaker
 To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser.
 
 
-Contributors
--------------
-
-```
-    64	Sebastien Piquemal
-    21	Sébastien Piquemal
-    16	ouhouhsami
-    10	fand
-     6	Hugh Rawlinson
-     4	John Wnek
-     2	anprogrammer
-     1	Andrew Petersen
-     1	The Gitter Badger
-     1	sebpiq
-```
-
 ## Alternatives
 
 * [web-audio-engine](https://github.com/mohayonao/web-audio-engine)
@@ -176,3 +150,5 @@ Contributors
 ## License
 
 MIT
+
+<p align="center">🕉<p>

@@ -1,20 +1,17 @@
-var _ = require('underscore')
-  , events = require('events')
-  , async = require('async')
-  , pcmUtils = require('pcm-boilerplate')
-  , utils = require('./utils')
-  , constants = require('./constants')
-  , BLOCK_SIZE = constants.BLOCK_SIZE
-  , AudioBuffer = require('./AudioBuffer')
-  , AudioListener = require('./AudioListener')
-  , AudioDestinationNode = require('./AudioDestinationNode')
-  , AudioBufferSourceNode = require('./AudioBufferSourceNode')
-  , GainNode = require('./GainNode')
-  , ScriptProcessorNode = require('./ScriptProcessorNode')
-  , PannerNode = require('./PannerNode')
+import events from 'events'
+import { BufferEncoder } from './utils.js'
+import { BLOCK_SIZE } from './constants.js'
+import AudioBuffer from './AudioBuffer.js'
+import AudioListener from './AudioListener.js'
+import AudioDestinationNode from './AudioDestinationNode.js'
+import AudioBufferSourceNode from './AudioBufferSourceNode.js'
+import GainNode from './GainNode.js'
+import ScriptProcessorNode from './ScriptProcessorNode.js'
+import PannerNode from './PannerNode/index.js'
 
 
 class AudioContext extends events.EventEmitter {
+  #playing=true
 
   constructor(opts) {
     super();
@@ -59,38 +56,36 @@ class AudioContext extends events.EventEmitter {
     if (opts.numBuffers) this.format.numBuffers = opts.numBuffers
 
     this.outStream = null
-    this._encoder = pcmUtils.BufferEncoder(this.format)
-    this._frame = 0
-    this._playing = true
-    this._audioOutLoopRunning = false
+
+    let frame = 0,
+        audioOutLoopRunning = false,
+        encoder = utils.BufferEncoder(this.format)
+
+    const tick = () => {
+      if (!this.#playing) return
+      try {
+        outBuff = this.destination._tick()
+        // If there is space in the output stream's buffers, we write,
+        // otherwise we wait for 'drain'
+        frame += BLOCK_SIZE
+        this.currentTime = frame * 1 / this.sampleRate
+        // TODO setImmediate here is for cases where the outStream won't get
+        // full and we end up with call stack max size reached.
+        // But is it optimal?
+        if (this.outStream.write(encoder(outBuff._data))) setImmediate(tick)
+        else this.outStream.once('drain', tick)
+      } catch (e) {
+        audioOutLoopRunning = false
+        if (err) return this.emit('error', err)
+      }
+    }
 
     // When a new connection is established, start to pull audio
     this.destination._inputs[0].on('connection', () => {
-      if (this._audioOutLoopRunning) return
+      if (audioOutLoopRunning) return
       if (!this.outStream) throw new Error('you need to set outStream to send the audio somewhere')
-      this._audioOutLoopRunning = true
-      async.whilst(
-        () => {
-          return this._playing
-        },
-        (next) => {
-          outBuff = this.destination._tick()
-          // If there is space in the output stream's buffers, we write,
-          // otherwise we wait for 'drain'
-          this._frame += BLOCK_SIZE
-          this.currentTime = this._frame * 1 / this.sampleRate
-          // TODO setImmediate here is for cases where the outStream won't get
-          // full and we end up with call stack max size reached.
-          // But is it optimal?
-          if (this.outStream.write(this._encoder(outBuff._data)))
-            setImmediate(next)
-          else this.outStream.once('drain', next)
-        },
-        (err) => {
-          this._audioOutLoopRunning = false
-          if (err) return this.emit('error', err)
-        }
-      )
+      audioOutLoopRunning = true
+      tick()
     })
   }
 
@@ -160,35 +155,10 @@ class AudioContext extends events.EventEmitter {
 }
   */
 
-  _kill() {
-    this._playing = false
-    if (this.outStream) {
-      if (this.outStream.close) {
-        this.outStream.close()
-      } else {
-        this.outStream.end()
-      }
-    }
+  [Symbol.dispose]() {
+    this.#playing = false
+    if (this.outStream) this.outStream.close?.() || this.outStream.end?.()
   }
-
-  collectNodes(node, allNodes) {
-    allNodes = allNodes || []
-    node = node || this.destination
-    _.chain(node._inputs)
-      .pluck('sources')
-      .reduce(function(all, sources) {
-        return all.concat(sources)
-      }, [])
-      .pluck('node').value()
-      .forEach((upstreamNode) => {
-        if (!_.contains(allNodes, upstreamNode)) {
-          allNodes.push(upstreamNode)
-          this.collectNodes(upstreamNode, allNodes)
-        }
-      })
-    return allNodes
-  }
-
 }
 
-module.exports = AudioContext
+export default AudioContext

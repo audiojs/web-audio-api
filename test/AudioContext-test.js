@@ -1,8 +1,8 @@
-var fs = require('fs')
-  , assert = require('assert')
-  , _ = require('underscore')
-  , AudioContext = require('../build/AudioContext')
-  , AudioNode = require('../build/AudioNode')
+import fs from 'fs'
+import assert from 'assert'
+import _ from 'underscore'
+import AudioContext from '../src/AudioContext.js'
+import AudioNode from '../src/AudioNode.js'
 
 describe('AudioContext', function() {
 
@@ -28,7 +28,7 @@ describe('AudioContext', function() {
         , node3d = new AudioNode(context, 2, 1)
         , collected
       context.outStream = {end: function(){}} // make the context believe it has an out stream
-      context._kill()
+      context[Symbol.dispose]()
 
       node1a.id = '1a'
       node1b.id = '1b'
@@ -52,7 +52,25 @@ describe('AudioContext', function() {
       node3d.connect(node2a, 0, 1)
       node3d.connect(node2b)
 
-      collected = context.collectNodes()
+
+      const collectNodes = (node=context.destination, allNodes) => {
+        allNodes = allNodes || []
+        _.chain(node._inputs)
+          .pluck('sources')
+          .reduce(function(all, sources) {
+            return all.concat(sources)
+          }, [])
+          .pluck('node').value()
+          .forEach((upstreamNode) => {
+            if (!_.contains(allNodes, upstreamNode)) {
+              allNodes.push(upstreamNode)
+              collectNodes(upstreamNode, allNodes)
+            }
+          })
+        return allNodes
+      }
+      collected = collectNodes()
+
       assert.equal(collected.length, 8)
       assert.deepEqual(
         _.sortBy(collected, function(node) { return node.id }),
@@ -65,8 +83,8 @@ describe('AudioContext', function() {
 
     it('should decode a 16b stereo wav', function(done) {
       var context = new AudioContext
-      context._kill()
-      fs.readFile(__dirname + '/sounds/steps-stereo-16b-44khz.wav', function(err, buf) {
+      context[Symbol.dispose]()
+      fs.readFile(new URL('./sounds/steps-stereo-16b-44khz.wav',import.meta.url), function(err, buf) {
         if (err) throw err
         context.decodeAudioData(buf, function(audioBuffer) {
           assert.equal(audioBuffer.numberOfChannels, 2)
@@ -79,8 +97,8 @@ describe('AudioContext', function() {
 
     it('should return an error if the format couldn\'t be recognized', function(done) {
       var context = new AudioContext
-      context._kill()
-      fs.readFile(__dirname + '/sounds/generateFile.pd', function(err, buf) {
+      context[Symbol.dispose]()
+      fs.readFile(new URL('./sounds/generateFile.pd', import.meta.url), function(err, buf) {
         if (err) throw err
         context.decodeAudioData(buf, function(audioBuffer) { throw new Error('shoudnt be called') },
           function(err) {

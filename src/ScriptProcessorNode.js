@@ -1,15 +1,13 @@
-var _ = require('underscore')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , AudioNode = require('./AudioNode')
-  , AudioBuffer = require('./AudioBuffer')
-  , readOnlyAttr = require('./utils').readOnlyAttr
+import { BLOCK_SIZE } from './constants.js'
+import AudioNode from './AudioNode.js'
+import AudioBuffer from './AudioBuffer.js'
+import { readOnlyAttr } from './utils.js'
 
 
 class ScriptProcessorNode extends AudioNode {
 
   constructor(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
-    if (!_.contains([256, 512, 1024, 2048, 4096, 8192, 16384], bufferSize))
-      throw new Error('invalid bufferSize')
+    if (![256, 512, 1024, 2048, 4096, 8192, 16384].includes(bufferSize)) throw new Error('invalid bufferSize')
     super(context, 1, 1, numberOfInputChannels, 'explicit', 'speakers')
 
     this.numberOfOutputChannels = numberOfOutputChannels
@@ -70,4 +68,4 @@ class AudioProcessingEvent {
 
 }
 
-module.exports = ScriptProcessorNode
+export default ScriptProcessorNode

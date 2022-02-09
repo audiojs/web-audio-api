@@ -1,16 +1,18 @@
-var assert = require('assert')
-  , _ = require('underscore')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
-  , GainNode = require('../build/GainNode')
-  , AudioNode = require('../build/AudioNode')
+import assert from 'assert'
+import _ from 'underscore'
+import AudioBuffer from '../src/AudioBuffer.js'
+import { BLOCK_SIZE } from '../src/constants.js'
+import GainNode from '../src/GainNode.js'
+import AudioNode from '../src/AudioNode.js'
+import initHelpers from './helpers.js'
+
+const helpers = initHelpers()
 
 describe('GainNode', function() {
 
   describe('_tick', function() {
 
-    var helpers = require('./helpers')()
-      , dummyContext
+    let dummyContext
 
     beforeEach(function() {
       dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: BLOCK_SIZE}
@@ -45,7 +47,7 @@ describe('GainNode', function() {
       // output = 0.5 * 0.3
       dummyContext.currentTime++
       sourceNode._tick = function() {
-        return new AudioBuffer.filledWithVal(0.5, 3, BLOCK_SIZE, 44100)
+        return AudioBuffer.filledWithVal(0.5, 3, BLOCK_SIZE, 44100)
       }
       gainNode.gain.value = 0.3
       block = gainNode._tick()

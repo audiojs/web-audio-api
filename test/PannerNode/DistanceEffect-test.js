@@ -1,7 +1,7 @@
-var assert = require('assert')
-  , sinon = require('sinon')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , DistanceEffect = require('../../build/PannerNode/DistanceEffect')
+import assert from 'assert'
+import sinon from 'sinon'
+import { BLOCK_SIZE } from '../../src/constants.js'
+import DistanceEffect from '../../src/PannerNode/DistanceEffect.js'
 
 describe('DistanceEffect', function() {
 
@@ -50,29 +50,27 @@ describe('DistanceEffect', function() {
     const d = new DistanceEffect()
 
     it('calls relevant gain method for the model', function() {
-      const noop = function() {}
-      const inverseGain     = sinon.stub(DistanceEffect.prototype, 'inverseGain', noop)
-      const linearGain      = sinon.stub(DistanceEffect.prototype, 'linearGain', noop)
-      const exponentialGain = sinon.stub(DistanceEffect.prototype, 'exponentialGain', noop)
+      // stub prototype methods
+      const {inverseGain, linearGain, exponentialGain} = DistanceEffect.prototype
+      let {inverseCall, linearCall, exponentialCall} = DistanceEffect.prototype
+      DistanceEffect.prototype.inverseGain = () => inverseCall++
+      DistanceEffect.prototype.linearGain = () => linearCall++
+      DistanceEffect.prototype.exponentialGain = () => exponentialCall++
 
       d.setModel('inverse', false)
       d.gain(123)
-      assert(inverseGain.calledOnce)
+      assert.equal(inverseCall, 1)
       assert.equal(inverseGain.args[0][0], 123)
 
       d.setModel('linear', false)
       d.gain(456)
-      assert(linearGain.calledOnce)
+      assert.equal(linearCall, 1)
       assert.equal(linearGain.args[0][0], 456)
 
       d.setModel('exponential', false)
       d.gain(789)
-      assert(exponentialGain.calledOnce)
+      assert.equal(exponentialCall, 1)
       assert.equal(exponentialGain.args[0][0], 789)
-
-      inverseGain.restore()
-      linearGain.restore()
-      exponentialGain.restore()
     })
   })
 

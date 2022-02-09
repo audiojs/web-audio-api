@@ -10,4 +10,4 @@ class Panner {
 
 }
 
-module.exports = Panner
+export default Panner

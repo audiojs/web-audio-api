@@ -1,10 +1,8 @@
-var _ = require('underscore')
-  , async = require('async')
-  , events = require('events')
-  , utils = require('./utils')
-  , AudioBuffer = require('./AudioBuffer')
-  , BLOCK_SIZE = require('./constants').BLOCK_SIZE
-  , ChannelMixing = require('./ChannelMixing')
+import events from 'events'
+import * as utils from './utils.js'
+import AudioBuffer from './AudioBuffer.js'
+import { BLOCK_SIZE } from './constants.js'
+import ChannelMixing from './ChannelMixing.js'
 
 
 class AudioPort extends events.EventEmitter {
@@ -39,7 +37,7 @@ class AudioPort extends events.EventEmitter {
   }
 
   // Called when a node is killed. Removes connections, and event listeners.
-  _kill() {
+  [Symbol.dispose]() {
     this.connections.slice(0).forEach((port) => {
       this.disconnect(port)
     })
@@ -95,7 +93,7 @@ class AudioInput extends AudioPort {
     if (this.computedNumberOfChannels === null) {
       var maxChannelsUpstream
       if (this.sources.length) {
-        maxChannelsUpstream = _.chain(inBuffers).pluck('numberOfChannels').max().value()
+        maxChannelsUpstream = inBuffers.map(buf => buf.numberOfChannels).reduce((a,b) => a>b?a:b)
       } else maxChannelsUpstream = 0
       this._computeNumberOfChannels(maxChannelsUpstream)
     }
@@ -166,7 +164,7 @@ class AudioOutput extends AudioPort {
 
 }
 
-module.exports = {
-  AudioOutput: AudioOutput,
-  AudioInput: AudioInput
+export {
+  AudioOutput,
+  AudioInput
 }

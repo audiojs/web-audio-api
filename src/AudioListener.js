@@ -1,4 +1,4 @@
-var FloatPoint3D = require('./FloatPoint3D')
+import FloatPoint3D from './FloatPoint3D.js'
 
 class AudioListener {
 
@@ -56,4 +56,4 @@ class AudioListener {
 
 }
 
-module.exports = AudioListener
+export default AudioListener

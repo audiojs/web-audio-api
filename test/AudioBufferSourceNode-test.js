@@ -1,8 +1,10 @@
-var assert = require('assert')
-  , async = require('async')
-  , AudioBuffer = require('../build/AudioBuffer')
-  , AudioBufferSourceNode = require('../build/AudioBufferSourceNode')
-  , BLOCK_SIZE = require('../build/constants').BLOCK_SIZE
+import assert from 'assert'
+import AudioBuffer from '../src/AudioBuffer.js'
+import AudioBufferSourceNode from '../src/AudioBufferSourceNode.js'
+import { BLOCK_SIZE } from '../src/constants.js'
+import initHelpers from './helpers.js'
+
+const helpers = initHelpers()
 
 describe('AudioBufferSourceNode', function() {
 
@@ -32,8 +34,7 @@ describe('AudioBufferSourceNode', function() {
 
   describe('_tick', function() {
 
-    var helpers = require('./helpers')()
-      , dummyContext
+    var dummyContext
 
     beforeEach(function() {
       dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: BLOCK_SIZE}
@@ -228,8 +229,7 @@ describe('AudioBufferSourceNode', function() {
 
   describe('stop', function() {
 
-    var helpers = require('./helpers')()
-      , dummyContext
+    var dummyContext
 
     beforeEach(function() {
       dummyContext = {sampleRate: 44100, currentTime: 0, BLOCK_SIZE: 128}

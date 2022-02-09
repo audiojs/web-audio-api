@@ -1,4 +1,4 @@
-var mathUtils = require('./mathUtils')
+import * as mathUtils from './mathUtils.js'
 
 /**
  * 3D point class for panner, listener, etc.
@@ -124,4 +124,4 @@ class FloatPoint3D {
   }
 }
 
-module.exports = FloatPoint3D
+export default FloatPoint3D

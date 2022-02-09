@@ -1,10 +1,8 @@
-var assert = require('assert')
-  , _ = require('underscore')
+import assert from 'assert'
 
-module.exports = function(opts) {
+export default function(opts) {
 
-  opts = opts || {}
-  _.defaults(opts, {approx: 0.0001})
+  opts = Object.assign({approx: 0.0001}, opts || {})
 
   var assertAllValuesEqual = function(array, testVal) {
     for (var i = 0; i < array.length; i++) assert.equal(array[i], testVal)

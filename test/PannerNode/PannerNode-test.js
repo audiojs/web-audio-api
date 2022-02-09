@@ -1,14 +1,15 @@
-var assert = require('assert')
-  , AudioBuffer = require('../../build/AudioBuffer')
-  , BLOCK_SIZE = require('../../build/constants').BLOCK_SIZE
-  , PannerNode = require('../../build/PannerNode')
-  , AudioNode = require('../../build/AudioNode')
-  , AudioListener = require('../../build/AudioListener')
+import assert from 'assert'
+import AudioBuffer from '../../src/AudioBuffer.js'
+import {BLOCK_SIZE} from '../../src/constants.js'
+import PannerNode from '../../src/PannerNode.js'
+import AudioNode from '../../src/AudioNode.js'
+import AudioListener from '../../src/AudioListener.js'
+import initHelpers from '../helpers.js'
 
 describe('PannerNode', function() {
 
-  var helpers = require('../helpers')({ approx : 0.01 })
-    , dummyContext = {
+  var helpers = initHelpers({ approx : 0.01 }),
+  dummyContext = {
       sampleRate  : 44100,
       currentTime : 0,
       BLOCK_SIZE  : BLOCK_SIZE,
