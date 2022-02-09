@@ -1,5 +1,5 @@
 import events from 'events'
-import { BufferEncoder } from './utils.js'
+import { BufferEncoder, decodeAudioData } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
 import AudioBuffer from './AudioBuffer.js'
 import AudioListener from './AudioListener.js'
@@ -59,7 +59,7 @@ class AudioContext extends events.EventEmitter {
 
     let frame = 0,
         audioOutLoopRunning = false,
-        encoder = utils.BufferEncoder(this.format)
+        encoder = BufferEncoder(this.format)
 
     const tick = () => {
       if (!this.#playing) return
@@ -97,13 +97,13 @@ class AudioContext extends events.EventEmitter {
     // Pseudo overload
     if (arguments.length > 1) {
       // Callback
-      utils.decodeAudioData(audioData, function(err, audioBuffer) {
+      decodeAudioData(audioData, function(err, audioBuffer) {
         if (err) errorCallback(err)
         else successCallback(audioBuffer)
       })
     } else {
       // Promise
-      return utils.decodeAudioData(audioData)
+      return decodeAudioData(audioData)
     }
   }
 
