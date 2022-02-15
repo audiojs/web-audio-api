@@ -8,8 +8,7 @@ const helpers = initHelpers()
 let {
   assertAllValuesEqual,
   assertAllValuesApprox,
-  assertAllValuesFunc,
-  assertApproxEqual
+  assertAllValuesFunc
 } = helpers
 
 const SAMPLE_RATE = 44100
@@ -62,14 +61,6 @@ describe('AudioParam', function() {
     })
   })
 
-  it('should remove all events when the value is set', function() {
-    var audioParam = new AudioParam(dummyContext, 98)
-    audioParam._schedule('bla', 9)
-    assert.equal(audioParam._scheduled.length, 1)
-    audioParam.value = 99
-    assert.equal(audioParam._scheduled.length, 0)
-  })
-
   it('should be initialized with constant dsp method', function() {
     var audioParam = new AudioParam(dummyContext, 44)
       , block
@@ -81,30 +72,6 @@ describe('AudioParam', function() {
     block = audioParam._tick()
     assertValidBlock(block)
     assertAllValuesEqual(block.getChannelData(0), 44)
-  })
-
-  describe('_geometricSeries', function() {
-
-    it('should progress as expected', function() {
-      var audioParam = new AudioParam(dummyContext, 6)
-        , iter = audioParam._geometricSeries(1, 2)
-      assert.equal(iter(), 2)
-      assert.equal(iter(), 4)
-      assert.equal(iter(), 8)
-    })
-
-  })
-
-  describe('_arithmeticSeries', function() {
-
-    it('should progress as expected', function() {
-      var audioParam = new AudioParam(dummyContext, 6)
-        , iter = audioParam._arithmeticSeries(1, 2)
-      assert.equal(iter(), 3)
-      assert.equal(iter(), 5)
-      assert.equal(iter(), 7)
-    })
-
   })
 
   describe('value', function() {
@@ -167,11 +134,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 25)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 25)
 
       // Ramp t=1 -> t=3 // 25 -> 20
@@ -183,11 +148,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 20)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 20)
     })
 
@@ -204,11 +167,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 25)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 25)
 
       // Ramp t=1 -> t=3 // 25 -> 20
@@ -220,11 +181,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 20)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 20)
     })
 
@@ -261,16 +220,14 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 2)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 2)
 
       // Ramp t=1 -> t=3 // 10 -> 5
-      audioParam.value = 10
       dummyContext.currentTime = 1
+      audioParam.value = 10
       audioParam.exponentialRampToValueAtTime(5, 3)
       untilTime(audioParam, 3, function(block, Tb) {
         assertValidBlock(block)
@@ -278,11 +235,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 5)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 5)
     })
 
@@ -299,16 +254,14 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 2)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 2)
 
       // Ramp t=1 -> t=3 // 10 -> 5
-      audioParam.value = 10
       dummyContext.currentTime = 1
+      audioParam.value = 10
       audioParam.exponentialRampToValueAtTime(5, 3)
       untilTime(audioParam, 3, function(block, Tb) {
         assertValidBlock(block)
@@ -316,11 +269,9 @@ describe('AudioParam', function() {
       })
 
       // Ramp finished, back to constant
-      assert.equal(audioParam._scheduled.length, 1)
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 5)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 5)
     })
 
@@ -348,7 +299,6 @@ describe('AudioParam', function() {
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 2)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 2)
 
       // Ramp t=2 -> ... // 10 -> 5
@@ -380,7 +330,6 @@ describe('AudioParam', function() {
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 2)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 2)
 
       // Ramp t=2 -> ... // 10 -> 5
@@ -400,11 +349,8 @@ describe('AudioParam', function() {
 
     it('should calculate the values for each sample if a-rate', function() {
       var audioParam = new AudioParam(dummyContext, 1, 'a')
-        , t1 = 12800 / 10 * Ts
-        , t2 = t1 + 12800 / 5 * Ts
-        , t3 = t2 + 12800 / 5 * Ts
-        , t4 = t3 + 12800 / 5 * Ts
-        , t5 = t4 + (12800 / 10 + 12800 / 5) * Ts
+        , t1 = 12800 * Ts
+        , t2 = t1 + (12800 / 10) * Ts
         , block
 
       // Ramp t=0
@@ -412,21 +358,9 @@ describe('AudioParam', function() {
       assert.equal(audioParam.value, 1)
       untilTime(audioParam, t1, function(block, Tb) {
         assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 1)
+        assertAllValuesFunc(block.getChannelData(0), Tb, function(t) { return Math.min(1 + 4 * t / (12800 * Ts), 5) })
       })
-      untilTime(audioParam, t2, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 2)
-      })
-      untilTime(audioParam, t3, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 3)
-      })
-      untilTime(audioParam, t4, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 4)
-      })
-      untilTime(audioParam, t5, function(block, Tb) {
+      untilTime(audioParam, t2, function(block) {
         assertValidBlock(block)
         assertAllValuesEqual(block.getChannelData(0), 5)
       })
@@ -435,7 +369,6 @@ describe('AudioParam', function() {
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 5)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 5)
     })
 
@@ -446,23 +379,11 @@ describe('AudioParam', function() {
       // Ramp t=0
       audioParam.setValueCurveAtTime([1, 2, 3, 4, 5], 0, 10000 * Ts)
       assert.equal(audioParam.value, 1)
-      untilTime(audioParam, 1000 * Ts, function(block, Tb) {
+      untilTime(audioParam, 10000 * Ts, function(block, Tb) {
         assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 1)
+        assertAllValuesApprox(block.getChannelData(0), Math.min(1 + 4 * Tb / (10000 * Ts), 5))
       })
-      untilTime(audioParam, 3000 * Ts, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 2)
-      })
-      untilTime(audioParam, 5000 * Ts, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 3)
-      })
-      untilTime(audioParam, 7000 * Ts, function(block, Tb) {
-        assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), 4)
-      })
-      untilTime(audioParam, 1000 * Ts, function(block, Tb) {
+      untilTime(audioParam, 20000 * Ts, function(block, Tb) {
         assertValidBlock(block)
         assertAllValuesEqual(block.getChannelData(0), 5)
       })
@@ -471,7 +392,6 @@ describe('AudioParam', function() {
       block = audioParam._tick()
       assertValidBlock(block)
       assertAllValuesEqual(block.getChannelData(0), 5)
-      assert.equal(audioParam._scheduled.length, 0)
       assert.equal(audioParam.value, 5)
     })
 
@@ -491,11 +411,12 @@ describe('AudioParam', function() {
       // t=2 -> t=3 / 0 -> 1
 
       untilTime(audioParam, 2, function(block) {
+        var end = Math.min(128, Math.round((2 - audioParam.context.currentTime) * audioParam.context.sampleRate))
         assertValidBlock(block)
-        assertAllValuesEqual(block.getChannelData(0), -1)
+        assertAllValuesEqual(block.getChannelData(0).slice(0, end), -1)
       })
 
-      var T0 = audioParam.context.currentTime
+      var T0 = 2
       untilTime(audioParam, 3, function(block, Tb) {
         assertValidBlock(block)
         assertAllValuesFunc(block.getChannelData(0), Tb, function(t) { return Math.min((t - T0) / (3 - T0), 1) })
