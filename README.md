@@ -146,6 +146,7 @@ To test `AudioParam` against `AudioParam` implemented in a browser, open `test/m
 * [node-audio](https://ghub.io/node-audio)
 * [WAAPISim](https://github.com/g200kg/WAAPISim)
 * [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)
+* [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)
 
 ## License
 
