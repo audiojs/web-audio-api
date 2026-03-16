@@ -103,6 +103,9 @@ class PannerNode extends AudioNode {
       return this._outBuf
     }
 
+    outL.fill(0)
+    outR.fill(0)
+
     let inBuff = this._inputs[0]._tick()
     let { azimuth, elevation } = this._calculateAzimuthElevation()
 

@@ -96,7 +96,7 @@ class AudioContext extends EventTarget {
   close() {
     return new Promise(resolve => {
       this.#setState('closed')
-      if (this.outStream) this.outStream.close?.() || this.outStream.end?.()
+      if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
       resolve()
     })
   }
@@ -138,7 +138,7 @@ class AudioContext extends EventTarget {
 
   [Symbol.dispose]() {
     this.#setState('closed')
-    if (this.outStream) this.outStream.close?.() || this.outStream.end?.()
+    if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
   }
 }
 

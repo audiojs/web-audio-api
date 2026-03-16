@@ -30,9 +30,10 @@ export function BufferEncoder(format) {
   let byteDepth = bitDepth >> 3
   let le = endianness === 'LE'
   let method = (signed ? WRITE : WRITE_U)[bitDepth]
-  let pcmMult = (1 << (bitDepth - 1))
+  let pcmMult = 2 ** (bitDepth - 1)
   let pcmMax = pcmMult - 1
   let pcmMin = signed ? -pcmMult : 0
+  let useLE = bitDepth > 8 // 8-bit has no endianness
 
   return function(array) {
     let frameCount = array[0].length
@@ -42,7 +43,8 @@ export function BufferEncoder(format) {
       let chArray = array[ch]
       for (let i = 0; i < frameCount; i++) {
         let val = Math.max(pcmMin, Math.min(pcmMax, Math.round(chArray[i] * pcmMult)))
-        view[method]((i * numberOfChannels + ch) * byteDepth, val, le)
+        let offset = (i * numberOfChannels + ch) * byteDepth
+        useLE ? view[method](offset, val, le) : view[method](offset, val)
       }
     }
     return new Uint8Array(ab)
