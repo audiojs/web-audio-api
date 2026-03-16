@@ -1,21 +1,13 @@
 import { BLOCK_SIZE } from './constants.js'
-import AudioNode from './AudioNode.js'
+import AudioScheduledSourceNode from './AudioScheduledSourceNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 
 
-class AudioBufferSourceNode extends AudioNode {
+class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
   #playbackRate
   get playbackRate() { return this.#playbackRate }
-
-  #onended = null
-  get onended() { return this.#onended }
-  set onended(fn) {
-    if (this.#onended) this.removeEventListener('ended', this.#onended)
-    this.#onended = fn
-    if (fn) this.addEventListener('ended', fn)
-  }
 
   constructor(context) {
     super(context, 0, 1, undefined, 'max', 'speakers')
@@ -29,11 +21,20 @@ class AudioBufferSourceNode extends AudioNode {
 
     this._cursor = 0
     this._cursorEnd = 0
-    this._playing = false
-    this._started = false
     this._offset = 0
     this._duration = 0
-    this._zeroBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
+  }
+
+  start(when, offset, duration) {
+    if (this._started) return
+    this._offset = offset || 0
+    this._duration = duration || 0
+    super.start(when)
+  }
+
+  _onStart() {
+    if (!this.buffer) throw new Error('invalid buffer')
+    this._reinitPlayback()
   }
 
   _reinitPlayback() {
@@ -44,32 +45,7 @@ class AudioBufferSourceNode extends AudioNode {
     else this._cursorEnd = this.buffer.length
   }
 
-  start(when, offset, duration) {
-    if (this._started) return
-    this._started = true
-    this._offset = offset || 0
-    this._duration = duration || 0
-
-    this._schedule('start', when, () => {
-      if (!this.buffer) throw new Error('invalid buffer')
-      this._playing = true
-      this._reinitPlayback()
-    })
-  }
-
-  stop(when) {
-    this._schedule('stop', when, () => {
-      this._playing = false
-    })
-  }
-
-  _tick() {
-    super._tick()
-    if (!this._playing) return this._zeroBuf
-    return this._dspPlayback()
-  }
-
-  _dspPlayback() {
+  _dsp() {
     let cursorNext = this._cursor + BLOCK_SIZE
     let sr = this.context.sampleRate
 
@@ -91,10 +67,7 @@ class AudioBufferSourceNode extends AudioNode {
       out.set(this.buffer.slice(this._cursor, cursorNext), out.length - missing)
     } else {
       let delay = (cursorNext - this._cursorEnd) / sr
-      this._schedule('ended', this.context.currentTime + delay, () => {
-        this.dispatchEvent(new Event('ended'))
-      })
-      this._schedule('kill', this.context.currentTime + delay, this[Symbol.dispose].bind(this))
+      this._scheduleEnded(delay)
     }
 
     this._cursor = cursorNext

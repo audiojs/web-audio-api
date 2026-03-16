@@ -4,7 +4,20 @@ import AudioBuffer from 'audio-buffer'
 import AudioListener from './AudioListener.js'
 import AudioDestinationNode from './AudioDestinationNode.js'
 import AudioBufferSourceNode from './AudioBufferSourceNode.js'
+import ConstantSourceNode from './ConstantSourceNode.js'
+import OscillatorNode from './OscillatorNode.js'
+import PeriodicWave from './PeriodicWave.js'
 import GainNode from './GainNode.js'
+import StereoPannerNode from './StereoPannerNode.js'
+import DelayNode from './DelayNode.js'
+import BiquadFilterNode from './BiquadFilterNode.js'
+import WaveShaperNode from './WaveShaperNode.js'
+import IIRFilterNode from './IIRFilterNode.js'
+import ConvolverNode from './ConvolverNode.js'
+import DynamicsCompressorNode from './DynamicsCompressorNode.js'
+import ChannelSplitterNode from './ChannelSplitterNode.js'
+import ChannelMergerNode from './ChannelMergerNode.js'
+import AnalyserNode from './AnalyserNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
 
@@ -132,7 +145,20 @@ class AudioContext extends EventTarget {
   }
 
   createBufferSource() { return new AudioBufferSourceNode(this) }
+  createConstantSource() { return new ConstantSourceNode(this) }
+  createOscillator() { return new OscillatorNode(this) }
+  createPeriodicWave(real, imag, constraints) { return new PeriodicWave(real, imag, constraints) }
   createGain() { return new GainNode(this) }
+  createStereoPanner() { return new StereoPannerNode(this) }
+  createDelay(maxDelayTime) { return new DelayNode(this, { maxDelayTime }) }
+  createBiquadFilter() { return new BiquadFilterNode(this) }
+  createWaveShaper() { return new WaveShaperNode(this) }
+  createIIRFilter(feedforward, feedback) { return new IIRFilterNode(this, feedforward, feedback) }
+  createConvolver() { return new ConvolverNode(this) }
+  createDynamicsCompressor() { return new DynamicsCompressorNode(this) }
+  createChannelSplitter(numberOfOutputs) { return new ChannelSplitterNode(this, { numberOfOutputs }) }
+  createChannelMerger(numberOfInputs) { return new ChannelMergerNode(this, { numberOfInputs }) }
+  createAnalyser() { return new AnalyserNode(this) }
   createScriptProcessor(bufferSize, inCh, outCh) { return new ScriptProcessorNode(this, bufferSize, inCh, outCh) }
   createPanner() { return new PannerNode(this) }
 
