@@ -28,16 +28,14 @@
   },
   "analyze": false,
   "devDependencies": {
-    "chai": "^4.3.6",
-    "mocha": "^9.2.0",
-    "underscore": "^1.13.2"
+    "tst": "^9.2.2"
   },
   "license": "MIT",
   "engines": {
     "node": ">=4"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "node test/index.js",
     "test-speaker": "node test/manual-testing/AudioContext-sound-output.js",
     "pretest-speaker": "npm install speaker"
   }
