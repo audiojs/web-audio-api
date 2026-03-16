@@ -1,7 +1,7 @@
 import { BLOCK_SIZE } from './constants.js'
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
-import AudioBuffer from './AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 
 
 class AudioBufferSourceNode extends AudioNode {
@@ -74,7 +74,9 @@ class AudioBufferSourceNode extends AudioNode {
     }
 
     let out = new AudioBuffer(this.buffer.numberOfChannels, BLOCK_SIZE, sr)
-    out.set(this.buffer.slice(this._cursor, cursorNext))
+    let remaining = Math.min(cursorNext, this._cursorEnd) - this._cursor
+    if (remaining > 0)
+      out.set(this.buffer.slice(this._cursor, this._cursor + remaining))
 
     if (this.loop) {
       let missing = cursorNext - this._cursorEnd

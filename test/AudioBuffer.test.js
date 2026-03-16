@@ -1,6 +1,6 @@
 import test from 'tst'
 import { is, ok, throws, almost } from 'tst'
-import AudioBuffer from '../src/AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 
 test('AudioBuffer > constructor', () => {
   let buf = new AudioBuffer(3, 100, 44100)

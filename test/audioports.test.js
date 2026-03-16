@@ -1,7 +1,7 @@
 import test from 'tst'
 import { is, ok, almost } from 'tst'
 import { AudioInput, AudioOutput } from '../src/audioports.js'
-import AudioBuffer from '../src/AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../src/constants.js'
 import { allAlmost, channelsEqual, makeOutput } from './helpers.js'
 

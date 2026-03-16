@@ -1,7 +1,7 @@
 import events from 'events'
 import { BufferEncoder, decodeAudioData } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
-import AudioBuffer from './AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import AudioListener from './AudioListener.js'
 import AudioDestinationNode from './AudioDestinationNode.js'
 import AudioBufferSourceNode from './AudioBufferSourceNode.js'
@@ -86,14 +86,9 @@ class AudioContext extends events.EventEmitter {
   }
 
   decodeAudioData(audioData, successCallback, errorCallback) {
-    if (arguments.length > 1) {
-      decodeAudioData(audioData, function(err, audioBuffer) {
-        if (err) errorCallback(err)
-        else successCallback(audioBuffer)
-      })
-    } else {
-      return decodeAudioData(audioData)
-    }
+    let promise = decodeAudioData(audioData)
+    if (successCallback) promise.then(successCallback, errorCallback)
+    return promise
   }
 
   createBufferSource() {

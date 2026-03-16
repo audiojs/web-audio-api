@@ -1,6 +1,6 @@
 import test from 'tst'
 import { is, ok } from 'tst'
-import AudioBuffer from '../src/AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../src/constants.js'
 import GainNode from '../src/GainNode.js'
 import AudioNode from '../src/AudioNode.js'

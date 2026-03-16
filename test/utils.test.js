@@ -1,9 +1,7 @@
 import test from 'tst'
-import { is, ok, throws } from 'tst'
-import { validateFormat } from '../src/utils.js'
-
-// NOTE: decodeAudioData tests moved to Phase 1 (requires audio-decode migration)
-// These tests use fs.readFile which is Node-only. Phase 1 will make decoding cross-platform.
+import { is, ok, throws, rejects } from 'tst'
+import { readFileSync } from 'fs'
+import { validateFormat, decodeAudioData, BufferEncoder } from '../src/utils.js'
 
 test('validateFormat > applies defaults', () => {
   let fmt = validateFormat({ numberOfChannels: 2 })
@@ -22,22 +20,57 @@ test('validateFormat > rejects missing numberOfChannels', () => {
   throws(() => validateFormat({}))
 })
 
-// --- Phase 0 issue tests ---
-
-test('Phase0 > utils > loadWasm removed (was dead code)', () => {
-  import('../src/utils.js').then(utils => {
-    is(typeof utils.loadWasm, 'undefined', 'loadWasm removed')
-  })
+test('BufferEncoder > encodes float to PCM', () => {
+  let encoder = BufferEncoder({ numberOfChannels: 1, bitDepth: 16 })
+  let data = [new Float32Array([0.5, -0.5, 0, 1])]
+  let result = encoder(data)
+  ok(result.length === 8, 'correct byte length (4 samples * 2 bytes)')
 })
 
-test('Phase0 > utils > BufferEncoder uses deprecated new Buffer()', () => {
-  // Issue #6: new Buffer() instead of Buffer.alloc()
-  // In newer Node.js, new Buffer() may be removed
-  // This test just verifies the encoder still works with current runtime
-  import('../src/utils.js').then(utils => {
-    let encoder = utils.BufferEncoder({ numberOfChannels: 1, bitDepth: 16 })
-    let data = [new Float32Array([0.5, -0.5, 0, 1])]
-    let result = encoder(data)
-    ok(result.length > 0, 'encoder produces output')
+// --- decodeAudioData (audio-decode) ---
+
+test('decodeAudioData > decodes 16b mono wav (promise)', async () => {
+  let buf = readFileSync(new URL('./sounds/steps-mono-16b-44khz.wav', import.meta.url))
+  let ab = await decodeAudioData(buf)
+  is(ab.numberOfChannels, 1)
+  is(ab.sampleRate, 44100)
+  ok(ab.length > 0, 'has samples')
+})
+
+test('decodeAudioData > decodes 16b stereo wav (promise)', async () => {
+  let buf = readFileSync(new URL('./sounds/steps-stereo-16b-44khz.wav', import.meta.url))
+  let ab = await decodeAudioData(buf)
+  is(ab.numberOfChannels, 2)
+  is(ab.sampleRate, 44100)
+  is(ab.length, 21 * 4410)
+})
+
+test('decodeAudioData > decodes 16b stereo wav (callback)', async () => {
+  let buf = readFileSync(new URL('./sounds/steps-stereo-16b-44khz.wav', import.meta.url))
+  let result = await new Promise((resolve, reject) => {
+    decodeAudioData(buf, (err, ab) => err ? reject(err) : resolve(ab))
   })
+  is(result.numberOfChannels, 2)
+  is(result.sampleRate, 44100)
+})
+
+test('decodeAudioData > decodes stereo mp3 (promise)', async () => {
+  let buf = readFileSync(new URL('./sounds/steps-stereo-16b-44khz.mp3', import.meta.url))
+  let ab = await decodeAudioData(buf)
+  is(ab.numberOfChannels, 2)
+  is(ab.sampleRate, 44100)
+  ok(ab.length > 0, 'has samples')
+})
+
+test('decodeAudioData > rejects unrecognized format (promise)', async () => {
+  let buf = readFileSync(new URL('./sounds/generateFile.pd', import.meta.url))
+  await rejects(() => decodeAudioData(buf), undefined, 'should reject')
+})
+
+test('decodeAudioData > errors on unrecognized format (callback)', async () => {
+  let buf = readFileSync(new URL('./sounds/generateFile.pd', import.meta.url))
+  let err = await new Promise(resolve => {
+    decodeAudioData(buf, (e) => resolve(e))
+  })
+  ok(err, 'got error')
 })

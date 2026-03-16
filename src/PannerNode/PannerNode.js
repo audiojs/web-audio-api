@@ -1,5 +1,5 @@
 import AudioNode from '../AudioNode.js'
-import AudioBuffer from '../AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../constants.js'
 import FloatPoint3D from '../FloatPoint3D.js'
 import DistanceEffect from './DistanceEffect.js'

@@ -1,6 +1,6 @@
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
-import AudioBuffer from './AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 
 class GainNode extends AudioNode {

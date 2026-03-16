@@ -1,6 +1,6 @@
 import test from 'tst'
 import { is, ok, throws } from 'tst'
-import AudioBuffer from '../src/AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import AudioBufferSourceNode from '../src/AudioBufferSourceNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 import { allEqual, allAlmost } from './helpers.js'

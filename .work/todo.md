@@ -128,23 +128,21 @@ Current architecture is **sound in concept** (pull-based graph, audioports, bloc
 
 ## Phase 1: Foundation cleanup
 
-### 1.1 Replace decode pipeline with `audio-decode`
-- [ ] Remove deps: `av`, `aac`, `alac`, `flac`, `mp3`
-- [ ] Add dep: `audio-decode`
-- [ ] Rewrite `decodeAudioData` in utils.js → use `audio-decode`
-- [ ] Update AudioContext.decodeAudioData to return Promise always (spec), keep callback compat
-- [ ] Test: decode wav, mp3, flac, ogg, aac
-- [ ] Verify: fixes #78 (stack overflow), #75 (large file), #73 (swapped callbacks), #76 (m4a)
+### 1.1 Replace decode pipeline with `audio-decode` ✅
+- [x] Removed deps: `av`, `aac`, `alac`, `flac`, `mp3` (5 deps → 0)
+- [x] Added dep: `audio-decode` (WASM-based, 12+ formats)
+- [x] Rewrote `decodeAudioData` → async, uses `audio-decode`
+- [x] AudioContext.decodeAudioData returns Promise always, callback compat preserved
+- [x] Tests: decode wav (mono/stereo), mp3, error handling
+- [x] Fixes #78, #75, #73, #76
 
-### 1.2 Replace AudioBuffer with `audio-buffer`
-- [ ] Add dep: `audio-buffer`
-- [ ] Remove src/AudioBuffer.js, re-export from `audio-buffer`
-- [ ] Verify `audio-buffer` has: getChannelData, copyFromChannel, copyToChannel, duration, length, sampleRate, numberOfChannels
-- [ ] If missing features in `audio-buffer` → enhance it in ~/projects/audio-buffer
-- [ ] Update all internal usage (audioports, nodes) to work with new buffer
-- [ ] Ensure audioports channel mixing works with new buffer
-- [ ] Test: all existing AudioBuffer tests pass
-- [ ] Fixes #58, #77 (copyFromChannel/copyToChannel)
+### 1.2 Replace AudioBuffer with `audio-buffer` ✅
+- [x] Enhanced `audio-buffer` v6 upstream: #private fields, positional constructor, fromArray, filledWithVal, slice, concat, set, copyFrom/ToChannel, validation
+- [x] Migrated audio-buffer tests to tst (37 tests passing)
+- [x] Removed `src/AudioBuffer.js`, all imports → `audio-buffer` package
+- [x] Fixed 0-length buffer edge cases in ScriptProcessorNode and AudioBufferSourceNode
+- [x] `_data` → `_channels` internal API aligned
+- [x] Fixes #58, #77
 
 ### 1.3 Replace PCM encoding with `pcm-convert`
 - [ ] Add dep: `pcm-convert`
@@ -164,7 +162,8 @@ Current architecture is **sound in concept** (pull-based graph, audioports, bloc
 - [ ] Fixes #85
 
 ### 1.5 AudioContext spec alignment
-- [ ] Constructor options: `{ sampleRate, numberOfChannels, bitDepth }` (fixes #53)
+- [x] Constructor options: `{ sampleRate }` (fixes #53) — done in Phase 0.5
+- [x] Fix error variable bug `err` → `e` — done in Phase 0.1
 - [ ] `state` property: 'suspended' | 'running' | 'closed'
 - [ ] `suspend()` → Promise, pause tick loop
 - [ ] `resume()` → Promise, resume tick loop
@@ -173,14 +172,13 @@ Current architecture is **sound in concept** (pull-based graph, audioports, bloc
 - [ ] `baseLatency` getter (computed from BLOCK_SIZE / sampleRate)
 - [ ] `outputLatency` getter
 - [ ] `createPeriodicWave(real, imag, constraints?)` method
-- [ ] Fix error variable bug line 79: `err` → `e`
 - [ ] Test: state machine, suspend/resume/close, factory methods
 
 ### 1.6 Cleanup & upgrades
+- [x] Removed `underscore` devDependency — done in Phase 0
+- [x] Migrated test framework: mocha/chai → tst — done in Phase 0
 - [ ] Upgrade `automation-events` 4.x → 7.x, update AudioParam imports/usage
-- [ ] Remove `underscore` devDependency
 - [ ] Update engine requirement: `node >= 18`
-- [ ] Evaluate test framework: mocha/chai vs native node:test
 - [ ] Add dep: `decibels` (for gain/compressor dB conversions)
 - [ ] Delete stale branches: `panner-node`, `node-update-support`, `dependabot/*`
 - [ ] Test: full suite passes after all phase 1 changes

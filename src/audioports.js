@@ -1,5 +1,5 @@
 import events from 'events'
-import AudioBuffer from './AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import ChannelMixing from './ChannelMixing.js'
 
