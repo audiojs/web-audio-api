@@ -1,27 +1,30 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
-var ChannelCountMode = ['max', 'clamped-max', 'explicit'],
-  ChannelInterpretation = ['speakers', 'discrete']
+
+const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
+const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
 
 class AudioNode extends DspObject {
   #channelCount
   get channelCount() { return this.#channelCount }
   set channelCount(val) {
     if (val < 1) throw new Error('Invalid number of channels')
+    this._validateChannelCount(val)
     this.#channelCount = val
   }
 
   #channelCountMode
   get channelCountMode() { return this.#channelCountMode }
   set channelCountMode(val) {
-    if (!ChannelCountMode.includes(val)) throw new Error('Unvalid value for channelCountMode : ' + val)
+    if (!CHANNEL_COUNT_MODES.includes(val)) throw new Error('Invalid value for channelCountMode: ' + val)
+    this._validateChannelCountMode(val)
     this.#channelCountMode = val
   }
 
   #channelInterpretation
   get channelInterpretation() { return this.#channelInterpretation }
   set channelInterpretation(val) {
-    if (!ChannelInterpretation.includes(val)) throw new Error('Unvalid value for channelInterpretation : ' + val)
+    if (!CHANNEL_INTERPRETATIONS.includes(val)) throw new Error('Invalid value for channelInterpretation: ' + val)
     this.#channelInterpretation = val
   }
 
@@ -31,8 +34,11 @@ class AudioNode extends DspObject {
   #numberOfOutputs
   get numberOfOutputs() { return this.#numberOfOutputs }
 
-  constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
+  // Validation hooks — subclasses override to add constraints
+  _validateChannelCount(val) {}
+  _validateChannelCountMode(val) {}
 
+  constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
     super(context)
 
     this.#numberOfInputs = numberOfInputs
@@ -41,13 +47,11 @@ class AudioNode extends DspObject {
     this.#channelCountMode = channelCountMode
     this.#channelInterpretation = channelInterpretation
 
-    // Initialize audio ports
-    var i
     this._inputs = []
     this._outputs = []
-    for (i = 0; i < this.numberOfInputs; i++)
+    for (let i = 0; i < this.numberOfInputs; i++)
       this._inputs.push(new AudioInput(context, this, i))
-    for (i = 0; i < this.numberOfOutputs; i++)
+    for (let i = 0; i < this.numberOfOutputs; i++)
       this._outputs.push(new AudioOutput(context, this, i))
   }
 
@@ -57,25 +61,35 @@ class AudioNode extends DspObject {
     if (input >= destination.numberOfInputs)
       throw new Error('input out of bounds ' + input)
     this._outputs[output].connect(destination._inputs[input])
+    return destination
   }
 
-  disconnect(output = 0) {
-    if (output >= this.numberOfOutputs)
-      throw new Error('output out of bounds ' + output)
-    var audioOut = this._outputs[output]
-    audioOut.sinks.slice(0).forEach(function(sink) {
-      audioOut.disconnect(sink)
-    })
-  }
-
-  // Disconnects all ports and remove all events listeners
-  [Symbol.dispose]() {
-    this._inputs.forEach((input) => input[Symbol.dispose]())
-    this._outputs.forEach((output) => output[Symbol.dispose]())
-    this.removeAllListeners()
-    this._tick = () => {
-      throw new Error('this node has been disposed')
+  disconnect(outputOrDest, output, input) {
+    if (outputOrDest === undefined) {
+      for (let o of this._outputs)
+        o.sinks.slice(0).forEach(sink => o.disconnect(sink))
+      return
     }
+    if (typeof outputOrDest === 'number') {
+      if (outputOrDest >= this.numberOfOutputs) throw new Error('output out of bounds ' + outputOrDest)
+      let o = this._outputs[outputOrDest]
+      o.sinks.slice(0).forEach(sink => o.disconnect(sink))
+      return
+    }
+    let dest = outputOrDest
+    output = output ?? 0
+    input = input ?? 0
+    if (output >= this.numberOfOutputs) throw new Error('output out of bounds ' + output)
+    let o = this._outputs[output]
+    let target = dest._inputs[input]
+    if (target && o.sinks.includes(target)) o.disconnect(target)
+  }
+
+  [Symbol.dispose]() {
+    this._inputs.forEach(input => input[Symbol.dispose]())
+    this._outputs.forEach(output => output[Symbol.dispose]())
+    this.removeAllListeners()
+    this._tick = () => { throw new Error('this node has been disposed') }
   }
 
 }

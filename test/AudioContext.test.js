@@ -1,11 +1,17 @@
 import test from 'tst'
-import { is, ok, throws } from 'tst'
+import { is, ok, throws, almost } from 'tst'
 import AudioContext from '../src/AudioContext.js'
 import AudioNode from '../src/AudioNode.js'
+import { BLOCK_SIZE } from '../src/constants.js'
 
-test('AudioContext > graph traversal collects all connected nodes', () => {
+let mkCtx = () => {
   let ctx = new AudioContext()
   ctx.outStream = { end() {} }
+  return ctx
+}
+
+test('AudioContext > graph traversal collects all connected nodes', () => {
+  let ctx = mkCtx()
   ctx[Symbol.dispose]()
 
   let n1a = new AudioNode(ctx, 2, 1)
@@ -27,43 +33,45 @@ test('AudioContext > graph traversal collects all connected nodes', () => {
   n3d.connect(n2a, 0, 1)
   n3d.connect(n2b)
 
-  // Collect all upstream nodes from destination
   let collectNodes = (node = ctx.destination, all = []) => {
-    for (let input of node._inputs) {
-      for (let src of input.sources) {
-        if (!all.includes(src.node)) {
-          all.push(src.node)
-          collectNodes(src.node, all)
-        }
-      }
-    }
+    for (let input of node._inputs)
+      for (let src of input.sources)
+        if (!all.includes(src.node)) { all.push(src.node); collectNodes(src.node, all) }
     return all
   }
-  let collected = collectNodes()
-  is(collected.length, 8)
+  is(collectNodes().length, 8)
 })
 
 test('AudioContext > destination is readonly', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-
-  throws(() => { ctx.destination = 'nope' })
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  throws(() => { ctx.destination = 'x' })
 })
 
 test('AudioContext > listener is readonly', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  throws(() => { ctx.listener = 'x' })
+})
 
-  throws(() => { ctx.listener = 'nope' })
+test('AudioContext > currentTime is computed read-only getter', () => {
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  is(ctx.currentTime, 0)
+  throws(() => { ctx.currentTime = 999 })
+})
+
+test('AudioContext > sampleRate is read-only', () => {
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  is(ctx.sampleRate, 44100)
+  throws(() => { ctx.sampleRate = 999 })
+})
+
+test('AudioContext > sampleRate from constructor option', () => {
+  let ctx = new AudioContext({ sampleRate: 48000 })
+  ctx.outStream = { end() {} }; ctx[Symbol.dispose]()
+  is(ctx.sampleRate, 48000)
 })
 
 test('AudioContext > factory methods', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
   ok(ctx.createBuffer(1, 100, 44100))
   ok(ctx.createBufferSource())
   ok(ctx.createGain())
@@ -71,65 +79,70 @@ test('AudioContext > factory methods', () => {
   ok(ctx.createPanner())
 })
 
-// --- Phase 0 issue tests ---
+// --- state machine ---
 
-test('Phase0 > AudioContext > error variable bug (err vs e)', () => {
-  // Issue #5: catch(e) references `err` (undefined) on line 79
-  // The tick loop catches errors with (e) but references (err)
-  // This means errors in the tick loop are silently swallowed or throw ReferenceError
-
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-
-  // Verify the source code contains the bug
-  // We can't easily trigger the tick loop error in a unit test without an outStream,
-  // but we document the bug exists
-  ok(true, 'error variable mismatch documented — line 79: err should be e')
+test('AudioContext > state starts as running', () => {
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  // dispose sets state to closed, so check before dispose
+  let ctx2 = mkCtx()
+  is(ctx2.state, 'running')
+  ctx2[Symbol.dispose]()
 })
 
-test('Phase0 > AudioContext > _render() is an overridable method', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-
-  is(typeof ctx._render, 'function', '_render is a method')
-  is(typeof ctx._renderLoop, 'function', '_renderLoop is a method')
+test('AudioContext > suspend/resume/close return Promises', async () => {
+  let ctx = mkCtx()
+  ok(ctx.suspend() instanceof Promise)
+  ok(ctx.resume() instanceof Promise)
+  ok(ctx.close() instanceof Promise)
 })
 
-test('Phase0 > AudioContext > currentTime is computed getter', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
+test('AudioContext > suspend sets state to suspended', async () => {
+  let ctx = mkCtx()
+  await ctx.suspend()
+  is(ctx.state, 'suspended')
   ctx[Symbol.dispose]()
-
-  is(ctx.currentTime, 0, 'starts at 0')
-  // attempting to write should have no effect (getter-only)
-  throws(() => { ctx.currentTime = 999 }, undefined, 'currentTime is not writable')
 })
 
-test('Phase0 > AudioContext > sampleRate is read-only getter', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
+test('AudioContext > resume sets state to running', async () => {
+  let ctx = mkCtx()
+  await ctx.suspend()
+  await ctx.resume()
+  is(ctx.state, 'running')
   ctx[Symbol.dispose]()
-
-  is(ctx.sampleRate, 44100)
-  throws(() => { ctx.sampleRate = 999 }, undefined, 'sampleRate is not writable')
 })
 
-test('Phase0 > AudioContext > no state property', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-
-  is(ctx.state, undefined, 'no state property — spec requires suspended/running/closed')
+test('AudioContext > close sets state to closed', async () => {
+  let ctx = mkCtx()
+  await ctx.close()
+  is(ctx.state, 'closed')
 })
 
-test('Phase0 > AudioContext > no suspend/resume/close methods', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
+test('AudioContext > dispose sets state to closed', () => {
+  let ctx = mkCtx()
   ctx[Symbol.dispose]()
+  is(ctx.state, 'closed')
+})
 
-  is(typeof ctx.suspend, 'undefined')
-  is(typeof ctx.resume, 'undefined')
-  is(typeof ctx.close, 'undefined')
+test('AudioContext > onstatechange fires', async () => {
+  let ctx = mkCtx()
+  let states = []
+  ctx.onstatechange = () => states.push(ctx.state)
+  await ctx.suspend()
+  await ctx.resume()
+  await ctx.close()
+  is(states, ['suspended', 'running', 'closed'])
+})
+
+test('AudioContext > baseLatency and outputLatency', () => {
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  almost(ctx.baseLatency, BLOCK_SIZE / 44100, 1e-10)
+  almost(ctx.outputLatency, BLOCK_SIZE / 44100, 1e-10)
+})
+
+// --- render method ---
+
+test('AudioContext > _render is overridable method', () => {
+  let ctx = mkCtx(); ctx[Symbol.dispose]()
+  is(typeof ctx._render, 'function')
+  is(typeof ctx._renderLoop, 'function')
 })

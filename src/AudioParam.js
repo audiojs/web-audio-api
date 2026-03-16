@@ -6,15 +6,15 @@ import { AutomationEventList, createExponentialRampToValueAutomationEvent, creat
 class AudioParam extends DspObject {
 
   #defaultValue
-  #instrinsicValue
+  #intrinsicValue
   #rate
   #automationEventList
 
   get defaultValue() { return this.#defaultValue }
 
-  get value() { return this.#instrinsicValue }
+  get value() { return this.#intrinsicValue }
   set value(newVal) {
-    this.#instrinsicValue = newVal
+    this.#intrinsicValue = newVal
     this.#automationEventList.add(createSetValueAutomationEvent(newVal, this.context.currentTime))
   }
 
@@ -29,7 +29,7 @@ class AudioParam extends DspObject {
       throw new Error('invalid rate, must be a or k')
 
     this.#defaultValue = defaultValue
-    this.#instrinsicValue = defaultValue
+    this.#intrinsicValue = defaultValue
     this.#automationEventList = new AutomationEventList(defaultValue)
 
     // AudioParam can accept node connections as modulation input
@@ -49,7 +49,7 @@ class AudioParam extends DspObject {
   }
 
   exponentialRampToValueAtTime(value, endTime) {
-    if (this.#instrinsicValue <= 0 || value <= 0)
+    if (this.#intrinsicValue <= 0 || value <= 0)
       throw new Error('cannot create exponential ramp with value <= 0')
     this.#automationEventList.add(createExponentialRampToValueAutomationEvent(value, endTime))
   }
@@ -77,11 +77,20 @@ class AudioParam extends DspObject {
       for (let i = 0; i < BLOCK_SIZE; i++)
         array[i] = val
     }
-    this.#instrinsicValue = array[BLOCK_SIZE - 1]
+    this.#intrinsicValue = array[BLOCK_SIZE - 1]
   }
 
   cancelScheduledValues(startTime) {
-    throw new Error('implement me')
+    // Remove all events at or after startTime by rebuilding the list
+    let keep = [...this.#automationEventList].filter(e => e.startTime < startTime)
+    this.#automationEventList = new AutomationEventList(this.#defaultValue)
+    for (let e of keep) this.#automationEventList.add(e)
+  }
+
+  cancelAndHoldAtTime(cancelTime) {
+    let val = this.#automationEventList.getValue(cancelTime)
+    this.cancelScheduledValues(cancelTime)
+    this.setValueAtTime(val, cancelTime)
   }
 
 }

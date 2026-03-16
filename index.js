@@ -1,19 +1,11 @@
-import AudioContext from './src/AudioContext.js'
-import AudioParam from './src/AudioParam.js'
-import AudioNode from './src/AudioNode.js'
-import AudioDestinationNode from './src/AudioDestinationNode.js'
-import AudioBuffer from 'audio-buffer'
-import AudioBufferSourceNode from './src/AudioBufferSourceNode.js'
-import GainNode from './src/GainNode.js'
-import constants from './src/constants.js'
-
-export {
-  AudioContext,
-  AudioParam,
-  AudioNode,
-  AudioDestinationNode,
-  AudioBuffer,
-  AudioBufferSourceNode,
-  GainNode,
-  constants,
-}
+export { default as AudioContext } from './src/AudioContext.js'
+export { default as AudioParam } from './src/AudioParam.js'
+export { default as AudioNode } from './src/AudioNode.js'
+export { default as AudioDestinationNode } from './src/AudioDestinationNode.js'
+export { default as AudioBuffer } from 'audio-buffer'
+export { default as AudioBufferSourceNode } from './src/AudioBufferSourceNode.js'
+export { default as GainNode } from './src/GainNode.js'
+export { default as ScriptProcessorNode } from './src/ScriptProcessorNode.js'
+export { default as PannerNode } from './src/PannerNode/index.js'
+export { default as AudioListener } from './src/AudioListener.js'
+export { BLOCK_SIZE } from './src/constants.js'

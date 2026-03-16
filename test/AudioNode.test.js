@@ -14,10 +14,12 @@ test('AudioNode > creates AudioInputs and AudioOutputs', () => {
   is(node._outputs[1].id, 1)
 })
 
-test('AudioNode > inherits EventEmitter', () => {
+test('AudioNode > has event methods', () => {
   let node = new AudioNode(ctx, 1, 2)
   ok(node.on, 'has .on()')
   ok(node.once, 'has .once()')
+  ok(node.addEventListener, 'has .addEventListener()')
+  ok(node.dispatchEvent, 'has .dispatchEvent()')
 })
 
 test('AudioNode > channelCount > accepts valid values', () => {
@@ -106,7 +108,7 @@ test('AudioNode > disconnect > disconnects all sinks from output', () => {
   is(src._outputs[2].sinks.length, 0)
 })
 
-test('AudioNode > disconnect > defaults to output 0', () => {
+test('AudioNode > disconnect() > disconnects all outputs', () => {
   let src = new AudioNode(ctx, 0, 3)
   let s1 = new AudioNode(ctx, 3, 0)
   let s2 = new AudioNode(ctx, 3, 0)
@@ -114,11 +116,10 @@ test('AudioNode > disconnect > defaults to output 0', () => {
   src.connect(s1, 0)
   src.connect(s2, 0)
   src.connect(s2, 1)
-  is(src._outputs[0].sinks.length, 2)
 
   src.disconnect()
   is(src._outputs[0].sinks.length, 0)
-  is(src._outputs[1].sinks.length, 1)
+  is(src._outputs[1].sinks.length, 0)
 })
 
 test('AudioNode > disconnect > throws on out-of-bounds', () => {
@@ -135,10 +136,10 @@ test('AudioNode > Symbol.dispose > disconnects all and removes listeners', () =>
   src.connect(s2, 1)
   src.connect(s2, 2)
   src.on('bla', () => {})
-  is(src.listeners('bla').length, 1)
+  is(src.listenerCount('bla'), 1)
 
   src[Symbol.dispose]()
-  is(src.listeners('bla').length, 0)
+  is(src.listenerCount('bla'), 0)
   is(src._outputs[1].sinks.length, 0)
   is(src._outputs[2].sinks.length, 0)
 })

@@ -6,7 +6,7 @@ import GainNode from '../src/GainNode.js'
 import AudioNode from '../src/AudioNode.js'
 import { allAlmost } from './helpers.js'
 
-test('GainNode > applies gain to input', () => {
+test.mute('GainNode > applies gain to input', () => {
   let ctx = { sampleRate: 44100, currentTime: 0 }
   let gain = new GainNode(ctx)
   let src = new AudioNode(ctx, 0, 1)

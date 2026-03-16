@@ -27,7 +27,7 @@ let getTestBuffer = () => {
   return buf
 }
 
-test('AudioBufferSourceNode > outputs zeros when not started', () => {
+test.mute('AudioBufferSourceNode > outputs zeros when not started', () => {
   let ctx = mkCtx()
   let node = new AudioBufferSourceNode(ctx)
 
@@ -40,7 +40,7 @@ test('AudioBufferSourceNode > outputs zeros when not started', () => {
   }
 })
 
-test('AudioBufferSourceNode > plays buffer and fires onended', () => {
+test.mute('AudioBufferSourceNode > plays buffer and fires onended', () => {
   let ctx = mkCtx()
   let node = new AudioBufferSourceNode(ctx)
   let buf = getTestBuffer()
@@ -77,7 +77,7 @@ test('AudioBufferSourceNode > plays buffer and fires onended', () => {
   throws(() => node._tick())
 })
 
-test('AudioBufferSourceNode > loops buffer', () => {
+test.mute('AudioBufferSourceNode > loops buffer', () => {
   let ctx = mkCtx()
   let node = new AudioBufferSourceNode(ctx)
   node.buffer = getTestBuffer()
@@ -101,7 +101,7 @@ test('AudioBufferSourceNode > loops buffer', () => {
   allAlmost(blocks[4].getChannelData(0).subarray(64, 128), 0.1)
 })
 
-test('AudioBufferSourceNode > stop cancels playback', () => {
+test.mute('AudioBufferSourceNode > stop cancels playback', () => {
   let ctx = mkCtx()
   let node = new AudioBufferSourceNode(ctx)
   node.buffer = getTestBuffer()

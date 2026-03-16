@@ -9,6 +9,14 @@ class AudioBufferSourceNode extends AudioNode {
   #playbackRate
   get playbackRate() { return this.#playbackRate }
 
+  #onended = null
+  get onended() { return this.#onended }
+  set onended(fn) {
+    if (this.#onended) this.removeEventListener('ended', this.#onended)
+    this.#onended = fn
+    if (fn) this.addEventListener('ended', fn)
+  }
+
   constructor(context) {
     super(context, 0, 1, undefined, 'max', 'speakers')
 
@@ -55,8 +63,6 @@ class AudioBufferSourceNode extends AudioNode {
     })
   }
 
-  onended() {}
-
   _tick() {
     super._tick()
     if (!this._playing) return this._zeroBuf
@@ -84,10 +90,11 @@ class AudioBufferSourceNode extends AudioNode {
       cursorNext = this._cursor + missing
       out.set(this.buffer.slice(this._cursor, cursorNext), out.length - missing)
     } else {
-      if (this.onended) {
-        this._schedule('onended', this.context.currentTime + (cursorNext - this._cursorEnd) / sr, this.onended)
-      }
-      this._schedule('kill', this.context.currentTime + (cursorNext - this._cursorEnd) / sr, this[Symbol.dispose].bind(this))
+      let delay = (cursorNext - this._cursorEnd) / sr
+      this._schedule('ended', this.context.currentTime + delay, () => {
+        this.dispatchEvent(new Event('ended'))
+      })
+      this._schedule('kill', this.context.currentTime + delay, this[Symbol.dispose].bind(this))
     }
 
     this._cursor = cursorNext
