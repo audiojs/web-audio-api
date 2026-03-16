@@ -5,7 +5,7 @@
   "contributors": [
     "Dmitry Iv <df.creative@gmail.com>"
   ],
-  "description": "Node.js implementation of Web audio API",
+  "description": "Pure JS implementation of Web Audio API",
   "repository": "audiojs/web-audio-api",
   "type": "module",
   "keywords": [
@@ -19,25 +19,20 @@
     "dsp"
   ],
   "dependencies": {
-    "aac": "0.1.x",
-    "alac": "0.1.x",
-    "automation-events": "^4.0.14",
-    "av": "0.4.x",
-    "flac": "0.3.x",
-    "mp3": "0.1.x"
+    "audio-buffer": "^6.0.0",
+    "audio-decode": "^3.1.2",
+    "automation-events": "^7.1.15"
   },
   "analyze": false,
   "devDependencies": {
-    "chai": "^4.3.6",
-    "mocha": "^9.2.0",
-    "underscore": "^1.13.2"
+    "tst": "^9.2.2"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=4"
+    "node": ">=18"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "node test/index.js",
     "test-speaker": "node test/manual-testing/AudioContext-sound-output.js",
     "pretest-speaker": "npm install speaker"
   }

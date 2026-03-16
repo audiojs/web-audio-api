@@ -1,11 +1,10 @@
-import events from 'events'
-import * as utils from './utils.js'
-import AudioBuffer from './AudioBuffer.js'
+import Emitter from './Emitter.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import ChannelMixing from './ChannelMixing.js'
 
 
-class AudioPort extends events.EventEmitter {
+class AudioPort extends Emitter() {
 
   constructor(context, node, id) {
     super()
@@ -15,35 +14,27 @@ class AudioPort extends events.EventEmitter {
     this.context = context
   }
 
-  // Generic function for connecting the calling AudioPort
-  // with `otherPort`. Returns true if a connection was indeed established
   connect(otherPort) {
-    if (this.connections.indexOf(otherPort) !== -1) return false
+    if (this.connections.includes(otherPort)) return false
     this.connections.push(otherPort)
     otherPort.connect(this)
-    this.emit('connection', otherPort)
+    this.emit('connection')
     return true
   }
 
-  // Generic function for disconnecting the calling AudioPort
-  // from `otherPort`. Returns true if a disconnection was indeed made
   disconnect(otherPort) {
-    var connInd = this.connections.indexOf(otherPort)
-    if (connInd === -1) return false
-    this.connections.splice(connInd, 1)
+    let idx = this.connections.indexOf(otherPort)
+    if (idx === -1) return false
+    this.connections.splice(idx, 1)
     otherPort.disconnect(this)
-    this.emit('disconnection', otherPort)
+    this.emit('disconnection')
     return true
   }
 
-  // Called when a node is killed. Removes connections, and event listeners.
   [Symbol.dispose]() {
-    this.connections.slice(0).forEach((port) => {
-      this.disconnect(port)
-    })
+    this.connections.slice(0).forEach(port => this.disconnect(port))
     this.removeAllListeners()
   }
-
 }
 
 class AudioInput extends AudioPort {
@@ -51,73 +42,75 @@ class AudioInput extends AudioPort {
   constructor(context, node, id) {
     super(context, node, id)
 
-    // `computedNumberOfChannels` is scheduled to be recalculated everytime a connection
-    // or disconnection happens.
     this.computedNumberOfChannels = null
-    this.on('connected', () => {
+    this.on('connection', () => {
       this.computedNumberOfChannels = null
+      this._mixCache = null
     })
-    this.on('disconnected', () => {
+    this.on('disconnection', () => {
       this.computedNumberOfChannels = null
+      this._mixCache = null
     })
-
-    // Just for code clarity
-    Object.defineProperty(this, 'sources', {
-      get: function() {
-        return this.connections
-      }
-    })
+    this._chHandlers = new WeakMap()
   }
 
+  get sources() { return this.connections }
+
   connect(source) {
-    // When the number of channels of the source changes, we trigger
-    // computation of `computedNumberOfChannels`
-    source.on('_numberOfChannels', () => {
-      this.computedNumberOfChannels = null
-    })
-    //AudioPort.prototype.connect.call(this, source)
+    if (this.connections.includes(source)) return false
+    let handler = () => { this.computedNumberOfChannels = null }
+    this._chHandlers.set(source, handler)
+    source.on('_numberOfChannels', handler)
     super.connect(source)
   }
 
   disconnect(source) {
-    source.removeAllListeners('_numberOfChannels')
-    //AudioPort.prototype.disconnect.call(this, source)
+    let handler = this._chHandlers.get(source)
+    if (handler) { source.off('_numberOfChannels', handler); this._chHandlers.delete(source) }
     super.disconnect(source)
   }
 
   _tick() {
-    var i, ch, inNumChannels, inBuffers = this.sources.map(function(source) {
-      return source._tick()
-    })
+    let inBuffers = this.sources.map(source => source._tick())
 
     if (this.computedNumberOfChannels === null) {
-      var maxChannelsUpstream
-      if (this.sources.length) {
-        maxChannelsUpstream = inBuffers.map(buf => buf.numberOfChannels).reduce((a,b) => a>b?a:b)
-      } else maxChannelsUpstream = 0
-      this._computeNumberOfChannels(maxChannelsUpstream)
+      let maxUp = this.sources.length
+        ? inBuffers.reduce((m, buf) => Math.max(m, buf.numberOfChannels), 0)
+        : 0
+      this._computeNumberOfChannels(maxUp)
     }
-    var outBuffer = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
 
-    inBuffers.forEach((inBuffer) => {
-      var ch = new ChannelMixing(inBuffer.numberOfChannels, this.computedNumberOfChannels, this.node.channelInterpretation)
-      ch.process(inBuffer, outBuffer)
-    })
-    return outBuffer
+    if (!this._mixBuf || this._mixBuf.numberOfChannels !== this.computedNumberOfChannels) {
+      this._mixBuf = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+    } else {
+      for (let ch = 0; ch < this._mixBuf.numberOfChannels; ch++)
+        this._mixBuf.getChannelData(ch).fill(0)
+    }
+
+    let interp = this.node.channelInterpretation
+    let outCh = this.computedNumberOfChannels
+    for (let inBuffer of inBuffers) {
+      let inCh = inBuffer.numberOfChannels
+      let key = (inCh << 16) | (outCh << 8) | (interp === 'speakers' ? 0 : 1)
+      let mix = this._mixCache?.get(key)
+      if (!mix) {
+        mix = new ChannelMixing(inCh, outCh, interp)
+        if (!this._mixCache) this._mixCache = new Map()
+        this._mixCache.set(key, mix)
+      }
+      mix.process(inBuffer, this._mixBuf)
+    }
+    return this._mixBuf
   }
 
   _computeNumberOfChannels(maxChannelsUpstream) {
-    var countMode = this.node.channelCountMode,
-      channelCount = this.node.channelCount
+    let countMode = this.node.channelCountMode
+    let channelCount = this.node.channelCount
     maxChannelsUpstream = maxChannelsUpstream || 1
 
-    if (countMode === 'max') {
-      this.computedNumberOfChannels = maxChannelsUpstream
-    } else if (countMode === 'clamped-max') {
-      this.computedNumberOfChannels = Math.min(maxChannelsUpstream, channelCount)
-    } else if (countMode === 'explicit')
-      this.computedNumberOfChannels = channelCount
-      // this shouldn't happen
+    if (countMode === 'max') this.computedNumberOfChannels = maxChannelsUpstream
+    else if (countMode === 'clamped-max') this.computedNumberOfChannels = Math.min(maxChannelsUpstream, channelCount)
+    else if (countMode === 'explicit') this.computedNumberOfChannels = channelCount
     else throw new Error('invalid channelCountMode')
   }
 
@@ -127,44 +120,26 @@ class AudioOutput extends AudioPort {
 
   constructor(context, node, id) {
     super(context, node, id)
-
-    // This caches the block fetched from the node.
-    this._cachedBlock = {
-      time: -1,
-      buffer: null
-    }
-
-    // This catches the number of channels of the audio going through this output
+    this._cachedBlock = { time: -1, buffer: null }
     this._numberOfChannels = null
-
-    // Just for code clarity
-    Object.defineProperty(this, 'sinks', {
-      get: function() {
-        return this.connections
-      }
-    })
   }
 
-  // Pulls the audio from the node only once, and copies it so that several
-  // nodes downstream can pull the same block.
+  get sinks() { return this.connections }
+
   _tick() {
     if (this._cachedBlock.time < this.context.currentTime) {
-      var outBuffer = this.node._tick()
+      let outBuffer = this.node._tick()
       if (this._numberOfChannels !== outBuffer.numberOfChannels) {
         this._numberOfChannels = outBuffer.numberOfChannels
         this.emit('_numberOfChannels')
       }
-      this._cachedBlock = {
-        time: this.context.currentTime,
-        buffer: outBuffer
-      }
+      this._cachedBlock.time = this.context.currentTime
+      this._cachedBlock.buffer = outBuffer
       return outBuffer
-    } else return this._cachedBlock.buffer
+    }
+    return this._cachedBlock.buffer
   }
 
 }
 
-export {
-  AudioOutput,
-  AudioInput
-}
+export { AudioOutput, AudioInput }

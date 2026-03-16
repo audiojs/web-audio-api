@@ -1,30 +1,43 @@
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
-import AudioBuffer from './AudioBuffer.js'
+import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
-import { readOnlyAttr } from './utils.js'
 
 class GainNode extends AudioNode {
 
+  #gain
+
+  get gain() { return this.#gain }
+
   constructor(context) {
     super(context, 1, 1, undefined, 'max', 'speakers')
-    readOnlyAttr(this, 'gain', new AudioParam(this.context, 1, 'a'))
+    this.#gain = new AudioParam(this.context, 1, 'a')
+    this._outBuf = null
+    this._outCh = 0
   }
 
   _tick() {
-    var outBuff, inBuff, gainArray, i, ch, inChArray, outChArray
-    super._tick(arguments)
-    inBuff = this._inputs[0]._tick()
-    gainArray = this.gain._tick().getChannelData(0)
-    outBuff = new AudioBuffer(inBuff.numberOfChannels, BLOCK_SIZE, this.context.sampleRate)
-    for (ch = 0; ch < inBuff.numberOfChannels; ch++) {
-      inChArray = inBuff.getChannelData(ch)
-      outChArray = outBuff.getChannelData(ch)
-      for (i = 0; i < BLOCK_SIZE; i++) {
-        outChArray[i] = inChArray[i] * gainArray[i]
-      }
+    super._tick()
+    let inBuff = this._inputs[0]._tick()
+    let gainArray = this.#gain._tick()
+    let ch = inBuff.numberOfChannels
+
+    if (ch !== this._outCh) {
+      this._outBuf = new AudioBuffer(ch, BLOCK_SIZE, this.context.sampleRate)
+      this._outCh = ch
     }
-    return outBuff
+
+    GainNode._dsp(inBuff, this._outBuf, gainArray, ch, BLOCK_SIZE)
+    return this._outBuf
+  }
+
+  static _dsp(inBuf, outBuf, gain, channels, blockSize) {
+    for (let c = 0; c < channels; c++) {
+      let inp = inBuf.getChannelData(c)
+      let out = outBuf.getChannelData(c)
+      for (let i = 0; i < blockSize; i++)
+        out[i] = inp[i] * gain[i]
+    }
   }
 
 }

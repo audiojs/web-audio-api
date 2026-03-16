@@ -1,44 +1,44 @@
 import { BLOCK_SIZE } from './constants.js'
 import AudioNode from './AudioNode.js'
-import AudioBuffer from './AudioBuffer.js'
-import { readOnlyAttr } from './utils.js'
+import AudioBuffer from 'audio-buffer'
 
 
 class ScriptProcessorNode extends AudioNode {
+
+  #bufferSize
+  get bufferSize() { return this.#bufferSize }
 
   constructor(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
     if (![256, 512, 1024, 2048, 4096, 8192, 16384].includes(bufferSize)) throw new Error('invalid bufferSize')
     super(context, 1, 1, numberOfInputChannels, 'explicit', 'speakers')
 
     this.numberOfOutputChannels = numberOfOutputChannels
-    readOnlyAttr(this, 'bufferSize', bufferSize)
+    this.#bufferSize = bufferSize
   }
 
   set onaudioprocess(onaudioprocess) {
-
-    var inputBuffer = new AudioBuffer(this.channelCount, 0, this.context.sampleRate)
-      , outputBuffer = new AudioBuffer(this.numberOfOutputChannels, 0, this.context.sampleRate)
+    let inputBuffer = null
+    let outputBuffer = null
 
     this._tick = function() {
-      AudioNode.prototype._tick.apply(this, arguments)
+      AudioNode.prototype._tick.call(this)
 
-      // Pull some data and add it to `inputBuffer`
-      inputBuffer = inputBuffer.concat(this._inputs[0]._tick())
+      let inBlock = this._inputs[0]._tick()
+      inputBuffer = inputBuffer ? inputBuffer.concat(inBlock) : inBlock
 
-      // When enough data in `inputBuffer`, we run `onaudioprocess`
       if (inputBuffer.length === this.bufferSize) {
-        var audioProcEvent = this._processingEvent(inputBuffer)
-        onaudioprocess(audioProcEvent)
-        inputBuffer = new AudioBuffer(this.channelCount, 0, this.context.sampleRate)
-        outputBuffer = outputBuffer.concat(audioProcEvent.outputBuffer)
+        let event = this._processingEvent(inputBuffer)
+        onaudioprocess(event)
+        inputBuffer = null
+        outputBuffer = outputBuffer ? outputBuffer.concat(event.outputBuffer) : event.outputBuffer
       } else if (inputBuffer.length >= this.bufferSize) throw new Error('this shouldnt happen')
 
-      // When data has been processed, we return it
-      if (outputBuffer.length >= BLOCK_SIZE) {
-        var returnedBuffer = outputBuffer.slice(0, BLOCK_SIZE)
-        outputBuffer = outputBuffer.slice(BLOCK_SIZE)
-        return returnedBuffer
-      } else return new AudioBuffer(this.numberOfOutputChannels, BLOCK_SIZE, this.context.sampleRate)
+      if (outputBuffer && outputBuffer.length >= BLOCK_SIZE) {
+        let returned = outputBuffer.slice(0, BLOCK_SIZE)
+        outputBuffer = outputBuffer.length > BLOCK_SIZE ? outputBuffer.slice(BLOCK_SIZE) : null
+        return returned
+      }
+      return new AudioBuffer(this.numberOfOutputChannels, BLOCK_SIZE, this.context.sampleRate)
     }
   }
 
@@ -51,7 +51,7 @@ class ScriptProcessorNode extends AudioNode {
   }
 
   _tick() {
-    super._tick(arguments)
+    super._tick()
     return new AudioBuffer(this.numberOfOutputChannels, BLOCK_SIZE, this.context.sampleRate)
   }
 
