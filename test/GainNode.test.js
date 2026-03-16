@@ -41,8 +41,7 @@ test('GainNode > applies gain to input', () => {
 
 // --- Phase 0 ---
 
-test('Phase0 > GainNode > allocates new AudioBuffer per tick', () => {
-  // Issue #1: new AudioBuffer() in _tick hot path
+test('Phase0 > GainNode > reuses output buffer across ticks', () => {
   let ctx = { sampleRate: 44100, currentTime: 0 }
   let gain = new GainNode(ctx)
   let src = new AudioNode(ctx, 0, 1)
@@ -53,5 +52,5 @@ test('Phase0 > GainNode > allocates new AudioBuffer per tick', () => {
   let b1 = gain._tick()
   ctx.currentTime = 2
   let b2 = gain._tick()
-  ok(b1 !== b2, 'different buffer objects per tick (should reuse)')
+  ok(b1 === b2, 'same buffer reused across ticks')
 })

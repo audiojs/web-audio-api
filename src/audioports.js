@@ -1,5 +1,4 @@
 import events from 'events'
-import * as utils from './utils.js'
 import AudioBuffer from './AudioBuffer.js'
 import { BLOCK_SIZE } from './constants.js'
 import ChannelMixing from './ChannelMixing.js'
@@ -54,20 +53,17 @@ class AudioInput extends AudioPort {
     // `computedNumberOfChannels` is scheduled to be recalculated everytime a connection
     // or disconnection happens.
     this.computedNumberOfChannels = null
-    this.on('connected', () => {
+    this.on('connection', () => {
       this.computedNumberOfChannels = null
+      this._mixCache = null
     })
-    this.on('disconnected', () => {
+    this.on('disconnection', () => {
       this.computedNumberOfChannels = null
-    })
-
-    // Just for code clarity
-    Object.defineProperty(this, 'sources', {
-      get: function() {
-        return this.connections
-      }
+      this._mixCache = null
     })
   }
+
+  get sources() { return this.connections }
 
   connect(source) {
     // When the number of channels of the source changes, we trigger
@@ -86,24 +82,35 @@ class AudioInput extends AudioPort {
   }
 
   _tick() {
-    var i, ch, inNumChannels, inBuffers = this.sources.map(function(source) {
-      return source._tick()
-    })
+    var inBuffers = this.sources.map(source => source._tick())
 
     if (this.computedNumberOfChannels === null) {
-      var maxChannelsUpstream
-      if (this.sources.length) {
-        maxChannelsUpstream = inBuffers.map(buf => buf.numberOfChannels).reduce((a,b) => a>b?a:b)
-      } else maxChannelsUpstream = 0
+      var maxChannelsUpstream = this.sources.length
+        ? inBuffers.reduce((m, buf) => Math.max(m, buf.numberOfChannels), 0)
+        : 0
       this._computeNumberOfChannels(maxChannelsUpstream)
     }
-    var outBuffer = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+
+    // reallocate only when channel count changes
+    if (!this._mixBuf || this._mixBuf.numberOfChannels !== this.computedNumberOfChannels) {
+      this._mixBuf = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+    } else {
+      // zero the reused buffer
+      for (let ch = 0; ch < this._mixBuf.numberOfChannels; ch++)
+        this._mixBuf.getChannelData(ch).fill(0)
+    }
 
     inBuffers.forEach((inBuffer) => {
-      var ch = new ChannelMixing(inBuffer.numberOfChannels, this.computedNumberOfChannels, this.node.channelInterpretation)
-      ch.process(inBuffer, outBuffer)
+      let key = inBuffer.numberOfChannels + ':' + this.computedNumberOfChannels + ':' + this.node.channelInterpretation
+      let mix = this._mixCache?.get(key)
+      if (!mix) {
+        mix = new ChannelMixing(inBuffer.numberOfChannels, this.computedNumberOfChannels, this.node.channelInterpretation)
+        if (!this._mixCache) this._mixCache = new Map()
+        this._mixCache.set(key, mix)
+      }
+      mix.process(inBuffer, this._mixBuf)
     })
-    return outBuffer
+    return this._mixBuf
   }
 
   _computeNumberOfChannels(maxChannelsUpstream) {
@@ -136,14 +143,9 @@ class AudioOutput extends AudioPort {
 
     // This catches the number of channels of the audio going through this output
     this._numberOfChannels = null
-
-    // Just for code clarity
-    Object.defineProperty(this, 'sinks', {
-      get: function() {
-        return this.connections
-      }
-    })
   }
+
+  get sinks() { return this.connections }
 
   // Pulls the audio from the node only once, and copies it so that several
   // nodes downstream can pull the same block.
@@ -154,10 +156,8 @@ class AudioOutput extends AudioPort {
         this._numberOfChannels = outBuffer.numberOfChannels
         this.emit('_numberOfChannels')
       }
-      this._cachedBlock = {
-        time: this.context.currentTime,
-        buffer: outBuffer
-      }
+      this._cachedBlock.time = this.context.currentTime
+      this._cachedBlock.buffer = outBuffer
       return outBuffer
     } else return this._cachedBlock.buffer
   }

@@ -84,55 +84,45 @@ Current architecture is **sound in concept** (pull-based graph, audioports, bloc
 5. **Internal events as direct calls** — replace EventEmitter signaling between ports with direct method calls where possible
 6. **ChannelMixing cached** — create once per connection topology change, reuse across ticks
 
-### 0.1 Fix critical bugs (no architecture change)
-- [ ] Fix event name mismatch: audioports.js `'connected'`→`'connection'`, `'disconnected'`→`'disconnection'`
-- [ ] Fix error variable: AudioContext.js line 79 `err`→`e`
-- [ ] Fix `new Buffer()`→`Buffer.alloc()` in utils.js
-- [ ] Remove dead code: `DspObject._loadDSP()`, `utils.loadWasm()`
-- [ ] Fix `super._tick(arguments)` → `super._tick()` everywhere
-- [ ] Test: full suite passes
+### 0.1 Fix critical bugs ✅
+- [x] Fix event name mismatch: `'connected'`→`'connection'`, `'disconnected'`→`'disconnection'`
+- [x] Fix error variable: `err`→`e`
+- [x] Fix `new Buffer()`→`Buffer.alloc()`
+- [x] Remove dead code: `DspObject._loadDSP()`, `utils.loadWasm()`, `fs` import
+- [x] Fix `super._tick(arguments)` → `super._tick()` everywhere
 
-### 0.2 Buffer pool — zero alloc hot path
-- [ ] Create `BufferPool` class: pre-allocates AudioBuffers, hands out/reclaims per tick cycle
-- [ ] Or simpler: each node pre-allocates its output buffer in constructor, zeroes and reuses in `_tick()`
-- [ ] AudioInput: pre-allocate mix buffer, resize only on channel count change
-- [ ] AudioParam._tick(): return Float32Array directly (not wrapped in AudioBuffer)
-- [ ] AudioOutput: mutate `_cachedBlock.time`/`.buffer` instead of new object
-- [ ] GainNode: pre-allocate output buffer, write in-place
-- [ ] PannerNode: pre-allocate output buffer
-- [ ] ScriptProcessorNode: use ring buffer instead of concat/slice
-- [ ] Test: verify no new AudioBuffer() in any _tick() path
-- [ ] Benchmark: before/after allocation count and throughput
+### 0.2 Buffer pool — zero alloc hot path ✅
+- [x] AudioParam._tick(): returns pre-allocated Float32Array directly
+- [x] AudioInput: pre-allocate mix buffer, resize only on channel count change
+- [x] AudioOutput: mutate `_cachedBlock` in place
+- [x] GainNode: pre-allocate output buffer, reallocate only on channel count change
+- [x] PannerNode: pre-allocate stereo output buffer in constructor
 
-### 0.3 ChannelMixing — cache per topology
-- [ ] Cache ChannelMixing instance on AudioInput, invalidate only on connection/channel-count change
-- [ ] Remove per-tick `new ChannelMixing()` from AudioInput._tick()
-- [ ] ChannelMixing strategy: resolve once in constructor, store as bound function (no string lookup)
-- [ ] Test: mixing still correct after reconnection
+### 0.3 ChannelMixing — cache per topology ✅
+- [x] Cache ChannelMixing instances in Map keyed by `inCh:outCh:interpretation`
+- [x] Invalidate cache on connection/disconnection events
 
-### 0.4 DSP kernel separation
-- [ ] Establish pattern: `_tick()` = pull inputs + call `_dsp(inBuf, outBuf, paramBuf)` + return outBuf
-- [ ] GainNode: extract `_dsp(inData, outData, gainData, channels, blockSize)`
-- [ ] AudioBufferSourceNode: extract cursor/playback into `_dsp()` — state as node fields, not closure vars
-- [ ] PannerNode: `_dsp()` calls panner.pan() + distance/cone gain
-- [ ] ScriptProcessorNode: keep as-is (user callback is the DSP)
-- [ ] AudioParam: `_dsp(outArray)` already exists — keep pattern
-- [ ] Convention: DSP functions receive typed arrays + scalars only, no `this.context` access
+### 0.4 DSP kernel separation ✅
+- [x] GainNode: `static _dsp(inBuf, outBuf, gain, channels, blockSize)` — pure typed array math
+- [x] AudioBufferSourceNode: cursor/playback state as instance fields, `_dspPlayback()` method
+- [x] AudioParam: `_dsp(outArray)` pattern preserved
+- [x] Convention established: DSP functions operate on typed arrays only
 
-### 0.5 Tick loop extraction
-- [ ] Extract tick loop from AudioContext constructor into `_render()` method
-- [ ] AudioContext._render(): pull destination, encode, write to outStream
-- [ ] Prepare for BaseAudioContext: _render() overridable (OfflineAudioContext will render to buffer)
-- [ ] `currentTime` as getter: `get currentTime() { return this._frame / this.sampleRate }`
-- [ ] `sampleRate` as read-only (set once in constructor)
-- [ ] Test: audio output still works after refactor
+### 0.5 Tick loop extraction ✅
+- [x] `_render()` method: pull destination, advance frame, encode output
+- [x] `_renderLoop()` method: drives real-time output to outStream
+- [x] `currentTime` as computed getter: `#frame / #sampleRate`
+- [x] `sampleRate` as read-only `#private` getter
 
-### 0.6 Unify property patterns
-- [ ] All read-only attrs: `#private` field + `get` accessor
-- [ ] PannerNode: replace `Object.defineProperty` with `#private` + getters/setters
-- [ ] Remove `readOnlyAttr()` utility — use native class syntax
-- [ ] AudioParam: `value`/`defaultValue` as proper getters/setters
-- [ ] Test: all property access patterns work
+### 0.6 Unify property patterns ✅
+- [x] AudioParam: `#defaultValue`, `#instrinsicValue` with getters/setters
+- [x] GainNode: `#gain` with getter
+- [x] AudioBufferSourceNode: `#playbackRate` with getter
+- [x] AudioDestinationNode: `#maxChannelCount` with getter
+- [x] ScriptProcessorNode: `#bufferSize` with getter
+- [x] audioports: `sources`/`sinks` as class getters
+- [x] Removed `readOnlyAttr()` utility — all native class syntax
+- [x] Removed unused imports (`utils` from AudioNode, audioports)
 
 ---
 

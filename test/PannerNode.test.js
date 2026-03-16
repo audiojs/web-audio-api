@@ -138,7 +138,6 @@ test('PannerNode > _tick outputs stereo', () => {
   src.connect(p)
   src._tick = () => AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, 44100)
 
-  ctx.currentTime = 1
   let block = p._tick()
   is(block.numberOfChannels, 2)
   is(block.length, BLOCK_SIZE)

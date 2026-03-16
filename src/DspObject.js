@@ -10,20 +10,6 @@ class DspObject extends events.EventEmitter {
     this._scheduled = []
   }
 
-  // load corresponding wasm dsp processor
-  _loadDSP(name) {
-    const memory = new WebAssembly.Memory({initial:1})
-
-    const instance = new WebAssembly.Instance(
-      new WebAssembly.Module(
-        fs.readFileSync(`./dsp/${name}.wasm`)
-      ),
-      {js:{memory}}
-    )
-
-    const input = new Float32Array(memory.buffer)
-  }
-
   _tick() {
     var event = this._scheduled.shift()
       , eventsSameTime, eventsToExecute = []

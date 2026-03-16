@@ -1,17 +1,19 @@
 import { BLOCK_SIZE } from './constants.js'
 import AudioNode from './AudioNode.js'
 import AudioBuffer from './AudioBuffer.js'
-import { readOnlyAttr } from './utils.js'
 
 
 class ScriptProcessorNode extends AudioNode {
+
+  #bufferSize
+  get bufferSize() { return this.#bufferSize }
 
   constructor(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
     if (![256, 512, 1024, 2048, 4096, 8192, 16384].includes(bufferSize)) throw new Error('invalid bufferSize')
     super(context, 1, 1, numberOfInputChannels, 'explicit', 'speakers')
 
     this.numberOfOutputChannels = numberOfOutputChannels
-    readOnlyAttr(this, 'bufferSize', bufferSize)
+    this.#bufferSize = bufferSize
   }
 
   set onaudioprocess(onaudioprocess) {
@@ -20,12 +22,10 @@ class ScriptProcessorNode extends AudioNode {
       , outputBuffer = new AudioBuffer(this.numberOfOutputChannels, 0, this.context.sampleRate)
 
     this._tick = function() {
-      AudioNode.prototype._tick.apply(this, arguments)
+      AudioNode.prototype._tick.call(this)
 
-      // Pull some data and add it to `inputBuffer`
       inputBuffer = inputBuffer.concat(this._inputs[0]._tick())
 
-      // When enough data in `inputBuffer`, we run `onaudioprocess`
       if (inputBuffer.length === this.bufferSize) {
         var audioProcEvent = this._processingEvent(inputBuffer)
         onaudioprocess(audioProcEvent)
@@ -33,7 +33,6 @@ class ScriptProcessorNode extends AudioNode {
         outputBuffer = outputBuffer.concat(audioProcEvent.outputBuffer)
       } else if (inputBuffer.length >= this.bufferSize) throw new Error('this shouldnt happen')
 
-      // When data has been processed, we return it
       if (outputBuffer.length >= BLOCK_SIZE) {
         var returnedBuffer = outputBuffer.slice(0, BLOCK_SIZE)
         outputBuffer = outputBuffer.slice(BLOCK_SIZE)
@@ -51,7 +50,7 @@ class ScriptProcessorNode extends AudioNode {
   }
 
   _tick() {
-    super._tick(arguments)
+    super._tick()
     return new AudioBuffer(this.numberOfOutputChannels, BLOCK_SIZE, this.context.sampleRate)
   }
 

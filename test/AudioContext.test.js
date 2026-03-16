@@ -88,34 +88,32 @@ test('Phase0 > AudioContext > error variable bug (err vs e)', () => {
   ok(true, 'error variable mismatch documented — line 79: err should be e')
 })
 
-test('Phase0 > AudioContext > tick loop is closure in constructor', () => {
-  // Issue #4: rendering engine trapped in constructor closure
-  // Cannot be overridden, tested independently, or shared with OfflineAudioContext
+test('Phase0 > AudioContext > _render() is an overridable method', () => {
   let ctx = new AudioContext()
   ctx.outStream = { end() {} }
   ctx[Symbol.dispose]()
 
-  // There's no _render() method — the tick is an inaccessible closure
-  is(typeof ctx._render, 'undefined', 'no _render method — tick loop trapped in closure')
+  is(typeof ctx._render, 'function', '_render is a method')
+  is(typeof ctx._renderLoop, 'function', '_renderLoop is a method')
 })
 
-test('Phase0 > AudioContext > currentTime is writable (should be getter)', () => {
-  // currentTime should be computed from frame count, not a mutable property
+test('Phase0 > AudioContext > currentTime is computed getter', () => {
   let ctx = new AudioContext()
   ctx.outStream = { end() {} }
   ctx[Symbol.dispose]()
 
-  ctx.currentTime = 999
-  is(ctx.currentTime, 999, 'currentTime is writable — should be read-only getter')
+  is(ctx.currentTime, 0, 'starts at 0')
+  // attempting to write should have no effect (getter-only)
+  throws(() => { ctx.currentTime = 999 }, undefined, 'currentTime is not writable')
 })
 
-test('Phase0 > AudioContext > sampleRate is writable (should be read-only)', () => {
+test('Phase0 > AudioContext > sampleRate is read-only getter', () => {
   let ctx = new AudioContext()
   ctx.outStream = { end() {} }
   ctx[Symbol.dispose]()
 
-  ctx.sampleRate = 999
-  is(ctx.sampleRate, 999, 'sampleRate is writable — should be read-only')
+  is(ctx.sampleRate, 44100)
+  throws(() => { ctx.sampleRate = 999 }, undefined, 'sampleRate is not writable')
 })
 
 test('Phase0 > AudioContext > no state property', () => {

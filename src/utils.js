@@ -5,18 +5,9 @@ import flac from 'flac'
 import alac from 'alac'
 import aac from 'aac'
 import assert from 'assert'
-import fs from 'fs'
 
 // polyfill Symbol.dispose
 Symbol.dispose ||= Symbol('dispose')
-
-// Simple helper to make defining a read-only attribute less verbose
-export function readOnlyAttr (obj, name, value) {
-  Object.defineProperty(obj, name, {
-    value: value,
-    writable: false
-  })
-}
 
 // Helper to decode a buffer of encoded audio data.
 // Guesses the format, and decodes to an AudioBuffer accordingly.
@@ -93,7 +84,7 @@ export function BufferEncoder(format) {
 
   return function(array) {
     frameCount = array[0].length
-    buffer = new Buffer(frameCount * byteDepth * numberOfChannels)
+    buffer = Buffer.alloc(frameCount * byteDepth * numberOfChannels)
     for (ch = 0; ch < numberOfChannels; ch++) {
       chArray = array[ch]
       for (i = 0; i < frameCount; i++)
@@ -123,9 +114,3 @@ export function validateFormat(format) {
   return format
 }
 
-export function loadWasm(path) {
-  const buffer = fs.readFileSync('./dsp/gain.wasm')
-  const mod = new WebAssembly.Module(buffer)
-  const instance = new WebAssembly.Instance(mod)
-  return instance
-}

@@ -51,9 +51,13 @@ test('AudioPort > _numberOfChannels event invalidates computedNumberOfChannels',
   src.emit('_numberOfChannels')
   is(sink.computedNumberOfChannels, null)
 
-  // after disconnection: event has no effect again
+  // disconnect invalidates too (correct behavior after fix)
   sink.computedNumberOfChannels = 2
   src.disconnect(sink)
+  is(sink.computedNumberOfChannels, null, 'invalidated on disconnect')
+
+  // after disconnection: _numberOfChannels event from old source has no effect
+  sink.computedNumberOfChannels = 2
   src.emit('_numberOfChannels')
   is(sink.computedNumberOfChannels, 2)
 })
@@ -250,28 +254,19 @@ test('AudioOutput > _tick > emits _numberOfChannels on channel count change', ()
 
 // --- Phase 0 issue tests ---
 
-test('Phase0 > audioports > event name mismatch — connected vs connection', () => {
-  // Issue #2: AudioInput listens for 'connected'/'disconnected' (lines 57-62)
-  // but AudioPort emits 'connection'/'disconnection' (lines 24/36)
-  // This means computedNumberOfChannels never gets invalidated on connect/disconnect
+test('Phase0 > audioports > connection event invalidates computedNumberOfChannels', () => {
+  // Issue #2 FIXED: AudioInput now listens for 'connection'/'disconnection'
   let node = { channelCount: 2, channelCountMode: 'max', channelInterpretation: 'discrete' }
   let input = new AudioInput(ctx, node, 0)
   let src = new AudioOutput(ctx, dummyNode, 0)
 
-  // Set a known computed value
   input.computedNumberOfChannels = 5
-
-  // Connect — should invalidate computedNumberOfChannels to null
   input.connect(src)
+  is(input.computedNumberOfChannels, null, 'computedNumberOfChannels invalidated on connect')
 
-  // BUG: if event names mismatch, this will still be 5 instead of null
-  // After fix, this should be null
-  // For now, document the bug exists:
-  let invalidated = input.computedNumberOfChannels === null
-  // This test documents the bug — it passes only after the fix
-  // ok(invalidated, 'computedNumberOfChannels invalidated on connect')
-  // For now, just verify the event IS emitted (the handler name is wrong)
-  ok(true, 'event name mismatch documented — connected vs connection')
+  input.computedNumberOfChannels = 5
+  input.disconnect(src)
+  is(input.computedNumberOfChannels, null, 'computedNumberOfChannels invalidated on disconnect')
 })
 
 test('Phase0 > audioports > ChannelMixing created per tick (perf issue)', () => {

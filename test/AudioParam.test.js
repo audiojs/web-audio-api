@@ -10,14 +10,13 @@ let mkCtx = () => ({ currentTime: 0, sampleRate: SR })
 
 let validBlock = (block) => {
   is(block.length, BLOCK_SIZE)
-  is(block.numberOfChannels, 1)
 }
 
 let untilTime = (p, ctx, until, fn) => {
   while (ctx.currentTime < until - 3 * Ts / 2) {
     let block = p._tick()
     fn(block, ctx.currentTime)
-    is(p.value, block.getChannelData(0)[BLOCK_SIZE - 1])
+    is(p.value, block[BLOCK_SIZE - 1])
     ctx.currentTime += Ts * BLOCK_SIZE
   }
 }
@@ -39,7 +38,7 @@ test('AudioParam > outputs constant default value', () => {
   let p = new AudioParam(ctx, 44)
   let block = p._tick()
   validBlock(block)
-  allEqual(block.getChannelData(0), 44)
+  allEqual(block, 44)
 })
 
 test('AudioParam > value setter updates output', () => {
@@ -48,7 +47,7 @@ test('AudioParam > value setter updates output', () => {
   p._tick()
   p.value = 99
   let block = p._tick()
-  allEqual(block.getChannelData(0), 99)
+  allEqual(block, 99)
 })
 
 test('AudioParam > setValueAtTime', () => {
@@ -58,12 +57,12 @@ test('AudioParam > setValueAtTime', () => {
 
   untilTime(p, ctx, 1, (block) => {
     validBlock(block)
-    allEqual(block.getChannelData(0), 6)
+    allEqual(block, 6)
   })
 
   ctx.currentTime += Ts
   let block = p._tick()
-  allEqual(block.getChannelData(0), 55)
+  allEqual(block, 55)
   is(p.value, 55)
 })
 
@@ -74,11 +73,11 @@ test('AudioParam > linearRampToValueAtTime (a-rate)', () => {
   p.linearRampToValueAtTime(25, 1)
   untilTime(p, ctx, 1, (block, Tb) => {
     validBlock(block)
-    allFunc(block.getChannelData(0), Tb, t => Math.min(15 + 10 * t, 25))
+    allFunc(block, Tb, t => Math.min(15 + 10 * t, 25))
   })
 
   let block = p._tick()
-  allEqual(block.getChannelData(0), 25)
+  allEqual(block, 25)
 })
 
 test('AudioParam > linearRampToValueAtTime (k-rate)', () => {
@@ -88,11 +87,11 @@ test('AudioParam > linearRampToValueAtTime (k-rate)', () => {
   p.linearRampToValueAtTime(25, 1)
   untilTime(p, ctx, 1 - 3 * Ts / 2, (block, Tb) => {
     validBlock(block)
-    allAlmost(block.getChannelData(0), 15 + 10 * Tb)
+    allAlmost(block, 15 + 10 * Tb)
   })
 
   let block = p._tick()
-  allEqual(block.getChannelData(0), 25)
+  allEqual(block, 25)
 })
 
 test('AudioParam > exponentialRampToValueAtTime > rejects non-positive values', () => {
@@ -111,11 +110,11 @@ test('AudioParam > exponentialRampToValueAtTime (a-rate)', () => {
   p.exponentialRampToValueAtTime(2, 1)
   untilTime(p, ctx, 1, (block, Tb) => {
     validBlock(block)
-    allFunc(block.getChannelData(0), Tb, t => Math.min(Math.pow(2, t), 2))
+    allFunc(block, Tb, t => Math.min(Math.pow(2, t), 2))
   })
 
   let block = p._tick()
-  allEqual(block.getChannelData(0), 2)
+  allEqual(block, 2)
 })
 
 test('AudioParam > setTargetAtTime (a-rate)', () => {
@@ -157,29 +156,26 @@ test('AudioParam > events sequence: setValue before ramp', () => {
   // t=0..2: should be -1
   untilTime(p, ctx, 2, (block) => {
     let end = Math.min(128, Math.round((2 - p.context.currentTime) * SR))
-    allEqual(block.getChannelData(0).subarray(0, end), -1)
+    allEqual(block.subarray(0, end), -1)
   })
 
   // t=2..3: ramp 0→1
   untilTime(p, ctx, 3, (block, Tb) => {
     validBlock(block)
-    allFunc(block.getChannelData(0), Tb, t => Math.min((t - 2) / (3 - 2), 1))
+    allFunc(block, Tb, t => Math.min((t - 2) / (3 - 2), 1))
   })
 })
 
 // --- Phase 0 issue tests ---
 
-test('Phase0 > AudioParam > allocates AudioBuffer per _tick (perf issue)', () => {
-  // Issue #7: AudioParam._tick() creates new AudioBuffer(1, BLOCK_SIZE, sampleRate)
-  // every call. Should return Float32Array directly.
+test('Phase0 > AudioParam > returns reused Float32Array (no alloc per tick)', () => {
   let ctx = mkCtx()
   let p = new AudioParam(ctx, 1)
 
   let b1 = p._tick()
   let b2 = p._tick()
-  // Currently these are different objects (new AudioBuffer each time)
-  ok(b1 !== b2, 'creates new AudioBuffer per tick (perf issue to fix)')
-  is(b1.numberOfChannels, 1)
+  ok(b1 instanceof Float32Array, 'returns Float32Array directly')
+  ok(b1 === b2, 'same array reused across ticks')
   is(b1.length, BLOCK_SIZE)
 })
 

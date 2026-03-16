@@ -24,12 +24,9 @@ test('validateFormat > rejects missing numberOfChannels', () => {
 
 // --- Phase 0 issue tests ---
 
-test('Phase0 > utils > loadWasm is dead code with hardcoded path', () => {
-  // Issue #10: loadWasm references './dsp/gain.wasm' hardcoded
-  // It's dead code that should be removed
+test('Phase0 > utils > loadWasm removed (was dead code)', () => {
   import('../src/utils.js').then(utils => {
-    ok(typeof utils.loadWasm === 'function', 'loadWasm exists')
-    throws(() => utils.loadWasm(), undefined, 'loadWasm throws (dead code)')
+    is(typeof utils.loadWasm, 'undefined', 'loadWasm removed')
   })
 })
 

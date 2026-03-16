@@ -115,6 +115,7 @@ class PannerNode extends AudioNode {
     // Remember gain in last `_tick` to dezipper.
     // -1 means it is the first time `_tick` run.
     this._lastGain = -1
+    this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
   }
 
   /**
@@ -279,18 +280,16 @@ class PannerNode extends AudioNode {
    * @return {AudioBuffer}
    */
   _tick() {
-    super._tick(arguments)
+    super._tick()
 
-    // AudioBus* destination = output(0).bus();
-    var outBuff = new AudioBuffer(2, BLOCK_SIZE, this.context.sampleRate)
-    const outL = outBuff.getChannelData(0)
-    const outR = outBuff.getChannelData(1)
+    const outL = this._outBuf.getChannelData(0)
+    const outR = this._outBuf.getChannelData(1)
 
     if (!this.panningModel) {
       for (let i = 0; i < BLOCK_SIZE; i++) {
         outL[i] = outR[i] = 0
       }
-      return outBuff
+      return this._outBuf
     }
 
     var inBuff = this._inputs[0]._tick() // AudioBuffer
@@ -298,7 +297,7 @@ class PannerNode extends AudioNode {
     // Apply the panning effect.
     const { azimuth, elevation } = this._azimuthElevation()
 
-    this._pannerProvider.panner.pan(azimuth, elevation, inBuff, outBuff, BLOCK_SIZE)
+    this._pannerProvider.panner.pan(azimuth, elevation, inBuff, this._outBuf, BLOCK_SIZE)
 
     // Get the distance and cone gain.
     const totalGain = this._distanceConeGain() // float
@@ -309,13 +308,12 @@ class PannerNode extends AudioNode {
     }
 
     // Apply gain in-place with de-zippering.
-    // outBuff.copyWithGainFrom(outBuff, this._lastGain, totalGain)
     for (let i = 0; i < BLOCK_SIZE; i++) {
       outL[i] *= totalGain
       outR[i] *= totalGain
     }
 
-    return outBuff
+    return this._outBuf
   }
 
 }

@@ -120,19 +120,19 @@ test('AudioBufferSourceNode > stop cancels playback', () => {
 
 // --- Phase 0 ---
 
-test('Phase0 > AudioBufferSourceNode > DSP is closure (not separable)', () => {
-  // Issue #14: start() replaces _dsp with closure capturing cursor state
-  // DSP kernel not separable for WASM swap
+test('Phase0 > AudioBufferSourceNode > DSP state is instance fields (not closure)', () => {
   let ctx = mkCtx()
   let node = new AudioBufferSourceNode(ctx)
   node.buffer = getTestBuffer()
 
-  // Before start: _dsp is _dspZeros
-  is(node._dsp, node._dspZeros)
+  // Playback state is on instance, not captured in closure
+  ok('_cursor' in node, 'cursor is instance field')
+  ok('_playing' in node, 'playing is instance field')
+  is(node._playing, false)
 
-  // After start: _dsp is replaced with closure
   node.start(0)
   ctx.currentTime = 0
   node._tick()
-  ok(node._dsp !== node._dspZeros, '_dsp replaced with closure after start')
+  is(node._playing, true)
+  ok(node._cursor > 0, 'cursor advanced')
 })

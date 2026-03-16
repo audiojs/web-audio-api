@@ -142,11 +142,8 @@ test('Phase0 > DspObject > _tick ignores arguments (no arguments needed)', () =>
   ok(called, 'event executed without arguments')
 })
 
-test('Phase0 > DspObject > _loadDSP is dead code', () => {
-  // Issue #10: _loadDSP references fs.readFileSync which doesn't exist in browser
+test('Phase0 > DspObject > _loadDSP removed (was dead code)', () => {
   let ctx = { currentTime: 0 }
   let obj = new DspObject(ctx)
-  // _loadDSP exists but would throw because it references undeclared `fs`
-  ok(typeof obj._loadDSP === 'function', '_loadDSP exists')
-  throws(() => obj._loadDSP('test'), undefined, '_loadDSP throws because fs is not imported')
+  is(typeof obj._loadDSP, 'undefined', '_loadDSP removed')
 })
