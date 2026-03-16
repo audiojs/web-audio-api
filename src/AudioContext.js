@@ -126,7 +126,8 @@ class AudioContext extends EventTarget {
     if (this.#state !== 'running') { this.#loopRunning = false; return }
     try {
       let encoded = this._render()
-      if (this.outStream.write(encoded)) setTimeout(() => this._renderLoop(), 0)
+      let ok = this.outStream.write(encoded)
+      if (ok || !this.outStream.once) setTimeout(() => this._renderLoop(), 0)
       else this.outStream.once('drain', () => this._renderLoop())
     } catch (e) {
       this.#loopRunning = false

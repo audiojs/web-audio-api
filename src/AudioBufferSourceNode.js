@@ -26,7 +26,6 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
   }
 
   start(when, offset, duration) {
-    if (this._started) return
     this._offset = offset || 0
     this._duration = duration || 0
     super.start(when)

@@ -7,10 +7,10 @@ import { BLOCK_SIZE } from './constants.js'
 // For mono input:  outputL = input * cos(x), outputR = input * sin(x)
 //   where x = (pan + 1) / 2 * π/2
 // For stereo input:
-//   If pan <= 0: outputL = inputL + inputR * sin(x), outputR = inputR * cos(x)
+//   If pan < 0:  outputL = inputL + inputR * sin(x), outputR = inputR * cos(x)
 //     where x = (pan + 1) * π/2
-//   If pan > 0:  outputL = inputL * cos(x), outputR = inputR + inputL * sin(x)
-//     where x = pan * π/2
+//   If pan >= 0: outputL = inputL * cos(x), outputR = inputR + inputL * sin(x)
+//     where x = pan * π/2  (at pan=0: cos(0)=1, sin(0)=0 → identity passthrough)
 
 class StereoPannerNode extends AudioNode {
 

@@ -11,7 +11,7 @@ class DynamicsCompressorNode extends AudioNode {
   #attack
   #release
   #reduction = 0
-  #envelope = 0
+  #envelope = -120 // start at silence floor, not 0dB
 
   get threshold() { return this.#threshold }
   get knee() { return this.#knee }

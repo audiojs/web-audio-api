@@ -284,8 +284,9 @@ test.mute('DynamicsCompressorNode > compresses loud signal', () => {
   src.connect(node)
   // feed loud signal (amplitude 1.0 = 0dB, above threshold of -24dB)
   src._tick = () => AudioBuffer.filledWithVal(1.0, 1, BLOCK_SIZE, 44100)
-  c.currentTime = 1
-  let buf = node._tick()
+  // run enough blocks for envelope to rise from -120dB and settle
+  let buf
+  for (let t = 0; t < 20; t++) { c.currentTime = t; buf = node._tick() }
   let peak = 0
   let data = buf.getChannelData(0)
   for (let i = 0; i < BLOCK_SIZE; i++) peak = Math.max(peak, Math.abs(data[i]))
@@ -545,9 +546,8 @@ test.mute('ChannelSplitterNode > splits stereo input to mono outputs', () => {
   }
 
   c.currentTime = 1
-  node._tick()
-  let ch0 = node._getOutputBuffer(0)
-  let ch1 = node._getOutputBuffer(1)
+  let ch0 = node._tickOutput(0)
+  let ch1 = node._tickOutput(1)
   is(ch0.numberOfChannels, 1, 'output 0 is mono')
   is(ch1.numberOfChannels, 1, 'output 1 is mono')
   almost(ch0.getChannelData(0)[0], 0.3, 1e-6, 'output 0 = left channel')

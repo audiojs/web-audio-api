@@ -10,6 +10,9 @@ class AnalyserNode extends AudioNode {
   #timeBuf       // circular time-domain buffer
   #writePos = 0
   #prevSpectrum  // smoothed magnitude spectrum
+  #fftReal       // pre-allocated FFT working arrays
+  #fftImag
+  #spectrum
 
   get fftSize() { return this.#fftSize }
   set fftSize(val) {
@@ -18,6 +21,9 @@ class AnalyserNode extends AudioNode {
     this.#fftSize = val
     this.#timeBuf = new Float32Array(val)
     this.#prevSpectrum = new Float32Array(val / 2)
+    this.#fftReal = new Float32Array(val)
+    this.#fftImag = new Float32Array(val)
+    this.#spectrum = new Float32Array(val / 2)
     this.#writePos = 0
   }
 
@@ -36,6 +42,9 @@ class AnalyserNode extends AudioNode {
     super(context, 1, 1, undefined, 'max', 'speakers')
     this.#timeBuf = new Float32Array(this.#fftSize)
     this.#prevSpectrum = new Float32Array(this.#fftSize / 2)
+    this.#fftReal = new Float32Array(this.#fftSize)
+    this.#fftImag = new Float32Array(this.#fftSize)
+    this.#spectrum = new Float32Array(this.#fftSize / 2)
   }
 
   _tick() {
@@ -86,27 +95,22 @@ class AnalyserNode extends AudioNode {
   _computeSpectrum() {
     let n = this.#fftSize
     let bins = n / 2
+    let real = this.#fftReal
+    let imag = this.#fftImag
 
-    // get ordered time-domain data
-    let data = new Float32Array(n)
-    for (let i = 0; i < n; i++)
-      data[i] = this.#timeBuf[(this.#writePos + i) % n]
-
-    // apply Blackman window
+    // copy ordered time-domain data + apply Blackman window
     for (let i = 0; i < n; i++) {
       let w = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / n) + 0.08 * Math.cos(4 * Math.PI * i / n)
-      data[i] *= w
+      real[i] = this.#timeBuf[(this.#writePos + i) % n] * w
+      imag[i] = 0
     }
 
-    // radix-2 FFT
-    let real = data
-    let imag = new Float32Array(n)
     fft(real, imag, n)
 
-    // compute magnitude spectrum with smoothing
+    // compute magnitude spectrum with smoothing (reuse pre-allocated array)
     let smooth = this.#smoothingTimeConstant
     let prev = this.#prevSpectrum
-    let spectrum = new Float32Array(bins)
+    let spectrum = this.#spectrum
     for (let i = 0; i < bins; i++) {
       let mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]) / n
       spectrum[i] = smooth * prev[i] + (1 - smooth) * mag

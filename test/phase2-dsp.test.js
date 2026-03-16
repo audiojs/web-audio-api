@@ -383,6 +383,6 @@ test.mute('Integration > splitter → separate gains → merger', () => {
   splitter._tick()
 
   // verify split
-  almost(splitter._getOutputBuffer(0).getChannelData(0)[0], 0.8, 1e-6, 'split L')
-  almost(splitter._getOutputBuffer(1).getChannelData(0)[0], 0.2, 1e-6, 'split R')
+  almost(splitter._tickOutput(0).getChannelData(0)[0], 0.8, 1e-6, 'split L')
+  almost(splitter._tickOutput(1).getChannelData(0)[0], 0.2, 1e-6, 'split R')
 })

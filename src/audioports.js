@@ -128,7 +128,8 @@ class AudioOutput extends AudioPort {
 
   _tick() {
     if (this._cachedBlock.time < this.context.currentTime) {
-      let outBuffer = this.node._tick()
+      // _tickOutput allows nodes like ChannelSplitterNode to return different buffers per output
+      let outBuffer = this.node._tickOutput ? this.node._tickOutput(this.id) : this.node._tick()
       if (this._numberOfChannels !== outBuffer.numberOfChannels) {
         this._numberOfChannels = outBuffer.numberOfChannels
         this.emit('_numberOfChannels')

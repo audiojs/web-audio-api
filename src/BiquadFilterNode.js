@@ -80,19 +80,35 @@ class BiquadFilterNode extends AudioNode {
       this.#state = Array.from({ length: ch }, () => ({ x1: 0, x2: 0, y1: 0, y2: 0 }))
     }
 
-    for (let c = 0; c < ch; c++) {
-      let inp = inBuf.getChannelData(c)
-      let out = this._outBuf.getChannelData(c)
-      let s = this.#state[c]
+    // fast path: if params are constant across block, compute coefficients once
+    let isConst = freqArr[0] === freqArr[BLOCK_SIZE - 1]
+      && detuneArr[0] === detuneArr[BLOCK_SIZE - 1]
+      && qArr[0] === qArr[BLOCK_SIZE - 1]
+      && gainArr[0] === gainArr[BLOCK_SIZE - 1]
 
-      for (let i = 0; i < BLOCK_SIZE; i++) {
-        let freq = freqArr[i] * (2 ** (detuneArr[i] / 1200))
-        let { b0, b1, b2, a1, a2 } = BiquadFilterNode._coefficients(this.#type, freq, sr, qArr[i], gainArr[i])
-        let x = inp[i]
-        let y = b0 * x + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2
-        s.x2 = s.x1; s.x1 = x
-        s.y2 = s.y1; s.y1 = y
-        out[i] = y
+    if (isConst) {
+      let freq = freqArr[0] * (2 ** (detuneArr[0] / 1200))
+      let { b0, b1, b2, a1, a2 } = BiquadFilterNode._coefficients(this.#type, freq, sr, qArr[0], gainArr[0])
+      for (let c = 0; c < ch; c++) {
+        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c), s = this.#state[c]
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          let x = inp[i]
+          let y = b0 * x + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2
+          s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y
+          out[i] = y
+        }
+      }
+    } else {
+      for (let c = 0; c < ch; c++) {
+        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c), s = this.#state[c]
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          let freq = freqArr[i] * (2 ** (detuneArr[i] / 1200))
+          let { b0, b1, b2, a1, a2 } = BiquadFilterNode._coefficients(this.#type, freq, sr, qArr[i], gainArr[i])
+          let x = inp[i]
+          let y = b0 * x + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2
+          s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y
+          out[i] = y
+        }
       }
     }
 

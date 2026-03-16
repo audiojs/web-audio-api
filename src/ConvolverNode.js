@@ -56,7 +56,7 @@ class ConvolverNode extends AudioNode {
 
     let irCh = this.#irChannels.length
     let irLen = this.#irChannels[0].length
-    // output channels: max(inCh, irCh) capped at 2 for stereo convolution
+    // output channels: max(inCh, irCh)
     let outCh = Math.max(inCh, irCh)
 
     if (outCh !== this._outCh) {
