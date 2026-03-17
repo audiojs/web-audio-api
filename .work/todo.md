@@ -6,7 +6,7 @@ Complete canonical pure-JS Web Audio API: elegant, performant, flexible, robust.
 
 | Implementation | Lang | Nodes | Tests | Runtime | Status |
 |---|---|---|---|---|---|
-| **this** (audiojs/web-audio-api) | JS | ~8/26 | 120 mocha | Node/Deno/Bun/edge/serverless | active |
+| **this** (audiojs/web-audio-api) | JS | 21/26 | 202 tst | Node/Deno/Bun/edge/serverless | active |
 | node-web-audio-api (ircam) | Rust+JS | ~20/26 | WPT tracked | Node only (native addon) | active |
 | web-audio-api-rs (orottier) | Rust | ~18/26 | WPT tracked | Rust/WASM | active |
 | web-audio-engine (mohayonao) | JS | ~15/26 | minimal | Node | archived 2019 |

@@ -2,6 +2,10 @@
   "name": "web-audio-api",
   "version": "1.0.0",
   "description": "Pure JS implementation of Web Audio API",
+  "author": "Sébastien Piquemal <sebpiq@gmail.com>",
+  "contributors": [
+    "Dmitry Iv <df.creative@gmail.com>"
+  ],
   "repository": "audiojs/web-audio-api",
   "type": "module",
   "exports": "./index.js",
