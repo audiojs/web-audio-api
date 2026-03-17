@@ -4,9 +4,12 @@ import AudioContext from '../src/AudioContext.js'
 import OfflineAudioContext from '../src/OfflineAudioContext.js'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import AudioBufferSourceNode from '../src/AudioBufferSourceNode.js'
+import AudioParam from '../src/AudioParam.js'
 import GainNode from '../src/GainNode.js'
 import OscillatorNode from '../src/OscillatorNode.js'
 import DelayNode from '../src/DelayNode.js'
+import WaveShaperNode from '../src/WaveShaperNode.js'
 import AnalyserNode from '../src/AnalyserNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -165,6 +168,65 @@ test('OfflineAudioContext > non-block-aligned length renders correctly', async (
   let buf = await ctx.startRendering()
   is(buf.length, 200)
   almost(ctx.currentTime, 200 / 44100, 1e-6, 'currentTime correct for partial block')
+})
+
+// --- zero-length / short buffers ---
+
+test('AudioBuffer > rejects zero length', () => {
+  throws(() => new AudioBuffer(1, 0, 44100))
+})
+
+test('AudioBufferSourceNode > handles 1-sample buffer', () => {
+  let c = { sampleRate: 44100, currentTime: 0 }
+  let src = new AudioBufferSourceNode(c)
+  let buf = new AudioBuffer(1, 1, 44100)
+  buf.getChannelData(0)[0] = 0.9
+  src.buffer = buf
+  src.start(0)
+  c.currentTime = 0
+  let out = src._tick() // start fires + dsp runs in same tick
+  almost(out.getChannelData(0)[0], 0.9, 0.01, 'single sample played')
+  is(out.getChannelData(0)[1], 0, 'rest is zero')
+})
+
+test('WaveShaperNode > rejects length-1 curve', () => {
+  let ws = new WaveShaperNode({ sampleRate: 44100, currentTime: 0 })
+  throws(() => { ws.curve = new Float32Array(1) })
+})
+
+// --- automation event ordering ---
+
+test('AudioParam > overlapping automations: later event wins', () => {
+  let c = { sampleRate: 44100, currentTime: 0 }
+  let p = new AudioParam(c, 0, 'a')
+  p.setValueAtTime(1, 0)
+  p.setValueAtTime(5, 0) // same time — should replace
+  c.currentTime = 0
+  let buf = p._tick()
+  is(buf[0], 5, 'later setValue at same time wins')
+})
+
+test('AudioParam > cancelScheduledValues clears future, keeps past', () => {
+  let c = { sampleRate: 44100, currentTime: 0 }
+  let p = new AudioParam(c, 0, 'a')
+  p.setValueAtTime(1, 0)
+  p.setValueAtTime(10, 1)
+  p.setValueAtTime(20, 2)
+  p.cancelScheduledValues(1) // remove events at t>=1
+  c.currentTime = 2
+  let buf = p._tick()
+  is(buf[0], 1, 'value stays at 1 after cancel')
+})
+
+test('AudioParam > ramp without prior setValue uses current value', () => {
+  let c = { sampleRate: 44100, currentTime: 0 }
+  let p = new AudioParam(c, 5, 'a')
+  // linear ramp from current value (5) to 10 over 1 second
+  p.linearRampToValueAtTime(10, 1)
+  c.currentTime = 0.5
+  let buf = p._tick()
+  // at t=0.5, should be roughly midpoint between 5 and 10
+  almost(buf[0], 7.5, 1, 'ramp from default value')
 })
 
 // --- error type names ---

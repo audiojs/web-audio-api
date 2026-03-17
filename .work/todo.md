@@ -325,8 +325,8 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 - [x] Invalid connect/disconnect indices throw
 - [x] Cycles in audio graph: DelayNode re-entrancy guard prevents stack overflow
 - [x] Calling methods on closed context: factory methods throw InvalidStateError
-- [ ] Zero-length buffers (audio-buffer v6 rejects length < 1 — by design)
-- [ ] Automation event ordering edge cases (delegated to automation-events)
+- [x] Zero-length buffers: rejected by audio-buffer v6; 1-sample buffer plays correctly
+- [x] Automation: overlapping setValue at same time (last wins), cancelScheduledValues, ramp from default
 
 ### 4.5 Benchmarking ✅
 - [x] Benchmark harness: `npm run bench` — all nodes, OfflineAudioContext-based
