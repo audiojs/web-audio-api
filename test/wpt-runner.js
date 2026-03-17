@@ -56,20 +56,30 @@ function loadHelpers(html) {
 }
 
 // WPT-safe AudioContext — no render loop (WPT tests don't produce real audio output)
+// _wptTestDir is set per-test to the directory containing the HTML file
+let _wptTestDir = ''
+
 class WPTAudioContext extends waa.AudioContext {
   constructor(opts) {
     super(opts)
-    // provide outStream so connecting to destination doesn't throw,
-    // but override _renderLoop to prevent infinite scheduling
     this.outStream = { write: () => true, once() {}, end() {} }
+    this._basePath = _wptTestDir
   }
-  _renderLoop() {} // no-op: WPT tests use OfflineAudioContext for DSP verification
+  _renderLoop() {}
+}
+
+class WPTOfflineAudioContext extends waa.OfflineAudioContext {
+  constructor(...args) {
+    super(...args)
+    this._basePath = _wptTestDir
+  }
 }
 
 async function runTest(filePath) {
   let html = readFileSync(filePath, 'utf8')
   let code = extractScripts(html)
   if (!code.trim()) return { file: filePath, tests: [], status: 'skip' }
+
 
   let helpers = loadHelpers(html)
   let tests = []
@@ -108,6 +118,7 @@ async function runTest(filePath) {
   // Web Audio API
   for (let [k, v] of Object.entries(waa)) sandbox[k] = v
   sandbox.AudioContext = WPTAudioContext
+  sandbox.OfflineAudioContext = WPTOfflineAudioContext
 
   let ctx = vm.createContext(sandbox)
 

@@ -1,19 +1,8 @@
 // W3C Web Audio API error types
 // Uses DOMException directly when available, plain Error otherwise
 
-const E = typeof DOMException === 'function'
-  ? (name, msg) => new DOMException(msg, name)
-  : (name, msg) => { let e = new Error(msg); e.name = name; return e }
-
-export const err = {
-  InvalidState: msg => E('InvalidStateError', msg || 'Invalid state'),
-  NotSupported: msg => E('NotSupportedError', msg || 'Not supported'),
-  IndexSize: msg => E('IndexSizeError', msg || 'Index out of range'),
-  InvalidAccess: msg => E('InvalidAccessError', msg || 'Invalid access'),
-  Encoding: msg => E('EncodingError', msg || 'Encoding error'),
-}
-
-// Legacy class exports for backward compat (throw new InvalidStateError(msg))
+// W3C Web Audio API error types
+// Uses DOMException when available (browsers, Node 17+), plain Error otherwise
 export class InvalidStateError extends (globalThis.DOMException || Error) {
   constructor(msg = 'Invalid state') { super(msg, 'InvalidStateError'); if (!globalThis.DOMException) this.name = 'InvalidStateError' }
 }

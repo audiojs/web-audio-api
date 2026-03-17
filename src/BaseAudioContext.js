@@ -37,7 +37,7 @@ class BaseAudioContext extends EventTarget {
     super()
     this._sampleRate = sampleRate
     this._destination = new AudioDestinationNode(this, numberOfChannels)
-    this._listener = new AudioListener()
+    this._listener = new AudioListener(this)
     this.audioWorklet = new AudioWorklet(this)
   }
 

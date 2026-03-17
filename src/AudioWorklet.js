@@ -138,13 +138,50 @@ class AudioWorkletNode extends AudioNode {
 // AudioWorklet — attached to context, provides addModule()
 class AudioWorklet {
   #scope = new AudioWorkletGlobalScope()
+  #context
 
   constructor(context) {
+    this.#context = context
     context._workletScope = this.#scope
   }
 
   async addModule(moduleOrSetup) {
-    if (typeof moduleOrSetup === 'function') moduleOrSetup(this.#scope)
+    if (typeof moduleOrSetup === 'function') return moduleOrSetup(this.#scope)
+
+    if (typeof moduleOrSetup !== 'string')
+      throw new TypeError('addModule requires a URL string or setup function')
+
+    let code = await this.#readModule(moduleOrSetup)
+    let scope = this.#scope
+    let regFn = (name, cls) => scope.registerProcessor(name, cls)
+
+    // Temporarily set globals for scripts using globalThis.registerProcessor
+    let hadReg = 'registerProcessor' in globalThis
+    let hadAWP = 'AudioWorkletProcessor' in globalThis
+    let prevReg = globalThis.registerProcessor
+    let prevAWP = globalThis.AudioWorkletProcessor
+    globalThis.registerProcessor = regFn
+    globalThis.AudioWorkletProcessor = AudioWorkletProcessor
+    try {
+      new Function('registerProcessor', 'AudioWorkletProcessor', code)(regFn, AudioWorkletProcessor)
+    } finally {
+      if (hadReg) globalThis.registerProcessor = prevReg
+      else delete globalThis.registerProcessor
+      if (hadAWP) globalThis.AudioWorkletProcessor = prevAWP
+      else delete globalThis.AudioWorkletProcessor
+    }
+  }
+
+  async #readModule(url) {
+    // Dynamic import fs/path — works in Node.js, throws in browser
+    let fs, path
+    try { fs = await import('fs'); path = await import('path') } catch {
+      throw new Error('addModule(url) with string requires Node.js; use addModule(fn) in browser')
+    }
+
+    let rel = url.startsWith('/') ? url.slice(1) : url
+    let base = this.#context._basePath || process.cwd()
+    return fs.readFileSync(path.resolve(base, rel), 'utf8')
   }
 
   get _scope() { return this.#scope }

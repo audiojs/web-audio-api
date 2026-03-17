@@ -1,6 +1,6 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
-import { IndexSizeError, InvalidStateError } from './errors.js'
+import { IndexSizeError, InvalidStateError, NotSupportedError } from './errors.js'
 
 const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
 const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
@@ -9,7 +9,7 @@ class AudioNode extends DspObject {
   #channelCount
   get channelCount() { return this.#channelCount }
   set channelCount(val) {
-    if (val < 1) throw new Error('Invalid number of channels')
+    if (val < 1 || val > 32) throw new NotSupportedError('channelCount must be between 1 and 32')
     this._validateChannelCount(val)
     this.#channelCount = val
   }
@@ -17,7 +17,7 @@ class AudioNode extends DspObject {
   #channelCountMode
   get channelCountMode() { return this.#channelCountMode }
   set channelCountMode(val) {
-    if (!CHANNEL_COUNT_MODES.includes(val)) throw new Error('Invalid value for channelCountMode: ' + val)
+    if (!CHANNEL_COUNT_MODES.includes(val)) throw new TypeError('Invalid value for channelCountMode: ' + val)
     this._validateChannelCountMode(val)
     this.#channelCountMode = val
   }
@@ -25,7 +25,7 @@ class AudioNode extends DspObject {
   #channelInterpretation
   get channelInterpretation() { return this.#channelInterpretation }
   set channelInterpretation(val) {
-    if (!CHANNEL_INTERPRETATIONS.includes(val)) throw new Error('Invalid value for channelInterpretation: ' + val)
+    if (!CHANNEL_INTERPRETATIONS.includes(val)) throw new TypeError('Invalid value for channelInterpretation: ' + val)
     this._validateChannelInterpretation(val)
     this.#channelInterpretation = val
   }

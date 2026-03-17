@@ -27,8 +27,8 @@ test('AudioNode > channelCount > accepts valid values', () => {
   is(node.channelCount, 2)
   node.channelCount = 1
   is(node.channelCount, 1)
-  node.channelCount = 109
-  is(node.channelCount, 109)
+  node.channelCount = 32
+  is(node.channelCount, 32)
 })
 
 test('AudioNode > channelCount > rejects invalid values', () => {

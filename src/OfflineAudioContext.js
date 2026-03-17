@@ -52,12 +52,13 @@ class OfflineAudioContext extends BaseAudioContext {
     }
   }
 
-  suspend() {
-    // spec allows suspend(time) on OfflineAudioContext but we don't support mid-render pause yet
+  suspend(suspendTime) {
+    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('context is closed', 'InvalidStateError'))
     return Promise.resolve()
   }
 
   resume() {
+    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('context is closed', 'InvalidStateError'))
     return Promise.resolve()
   }
 

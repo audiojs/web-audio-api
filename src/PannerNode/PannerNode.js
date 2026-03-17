@@ -1,4 +1,5 @@
 import AudioNode from '../AudioNode.js'
+import AudioParam from '../AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../constants.js'
 import FloatPoint3D from '../FloatPoint3D.js'
@@ -11,6 +12,20 @@ import { NotSupportedError } from '../errors.js'
 
 class PannerNode extends AudioNode {
 
+  #positionX
+  #positionY
+  #positionZ
+  #orientationX
+  #orientationY
+  #orientationZ
+
+  get positionX() { return this.#positionX }
+  get positionY() { return this.#positionY }
+  get positionZ() { return this.#positionZ }
+  get orientationX() { return this.#orientationX }
+  get orientationY() { return this.#orientationY }
+  get orientationZ() { return this.#orientationZ }
+
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
     super(context, 1, 1, 2, 'clamped-max', 'speakers')
@@ -19,11 +34,20 @@ class PannerNode extends AudioNode {
     this._distanceEffect = new DistanceEffect()
     this._pannerProvider = new PannerProvider(context)
     this._coneEffect = new ConeEffect()
-    this._orientation = new FloatPoint3D(1, 0, 0)
-    this._position = new FloatPoint3D(1, 0, 0)
     this._velocity = new FloatPoint3D(1, 0, 0)
     this._lastGain = -1
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
+
+    this.#positionX = new AudioParam(this.context, options.positionX ?? 0, 'a')
+    this.#positionY = new AudioParam(this.context, options.positionY ?? 0, 'a')
+    this.#positionZ = new AudioParam(this.context, options.positionZ ?? 0, 'a')
+    this.#orientationX = new AudioParam(this.context, options.orientationX ?? 1, 'a')
+    this.#orientationY = new AudioParam(this.context, options.orientationY ?? 0, 'a')
+    this.#orientationZ = new AudioParam(this.context, options.orientationZ ?? 0, 'a')
+
+    this._position = new FloatPoint3D(this.#positionX.value, this.#positionY.value, this.#positionZ.value)
+    this._orientation = new FloatPoint3D(this.#orientationX.value, this.#orientationY.value, this.#orientationZ.value)
+
     if (options.panningModel !== undefined) this.panningModel = options.panningModel
     if (options.distanceModel !== undefined) this.distanceModel = options.distanceModel
     if (options.refDistance !== undefined) this.refDistance = options.refDistance
@@ -73,14 +97,16 @@ class PannerNode extends AudioNode {
   get coneOuterGain() { return this._coneEffect.outerGain }
   set coneOuterGain(val) { this._coneEffect.outerGain = val }
 
-  // --- 3D setters ---
+  // --- 3D setters (legacy spec methods) ---
 
   setOrientation(x, y, z) {
     if (arguments.length !== 3)
       throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': 3 arguments required, but only ${arguments.length} present.`)
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)))
       throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': The provided float value is non-finite.`)
-    this._orientation = new FloatPoint3D(x, y, z)
+    this.#orientationX.value = x
+    this.#orientationY.value = y
+    this.#orientationZ.value = z
   }
 
   setPosition(x, y, z) {
@@ -88,7 +114,9 @@ class PannerNode extends AudioNode {
       throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': 3 arguments required, but only ${arguments.length} present.`)
     if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)))
       throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': The provided float value is non-finite.`)
-    this._position = new FloatPoint3D(x, y, z)
+    this.#positionX.value = x
+    this.#positionY.value = y
+    this.#positionZ.value = z
   }
 
   setVelocity(x, y, z) {
@@ -115,6 +143,10 @@ class PannerNode extends AudioNode {
 
     outL.fill(0)
     outR.fill(0)
+
+    // Update position/orientation from AudioParam values (block-rate: sample 0)
+    this._position = new FloatPoint3D(this.#positionX.value, this.#positionY.value, this.#positionZ.value)
+    this._orientation = new FloatPoint3D(this.#orientationX.value, this.#orientationY.value, this.#orientationZ.value)
 
     let inBuff = this._inputs[0]._tick()
     let { azimuth, elevation } = this._calculateAzimuthElevation()

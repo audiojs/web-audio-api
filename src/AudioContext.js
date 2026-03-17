@@ -40,28 +40,29 @@ class AudioContext extends BaseAudioContext {
   get numberOfChannels() { return this.#numberOfChannels }
   get baseLatency() { return BLOCK_SIZE / this.sampleRate }
   get outputLatency() { return BLOCK_SIZE / this.sampleRate }
+  get renderQuantumSize() { return BLOCK_SIZE }
 
   suspend() {
-    return Promise.resolve(this._setState('suspended'))
+    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('Cannot suspend a closed AudioContext', 'InvalidStateError'))
+    this._setState('suspended')
+    return Promise.resolve()
   }
 
   resume() {
-    return new Promise(resolve => {
-      this._setState('running')
-      if (!this.#loopRunning && this.outStream && this._destination._inputs[0].sources.length) {
-        this.#loopRunning = true
-        this._renderLoop()
-      }
-      resolve()
-    })
+    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('Cannot resume a closed AudioContext', 'InvalidStateError'))
+    this._setState('running')
+    if (!this.#loopRunning && this.outStream && this._destination._inputs[0].sources.length) {
+      this.#loopRunning = true
+      this._renderLoop()
+    }
+    return Promise.resolve()
   }
 
   close() {
-    return new Promise(resolve => {
-      this._setState('closed')
-      this._closeStream()
-      resolve()
-    })
+    if (this._state === 'closed') return Promise.resolve()
+    this._setState('closed')
+    this._closeStream()
+    return Promise.resolve()
   }
 
   _closeStream() {

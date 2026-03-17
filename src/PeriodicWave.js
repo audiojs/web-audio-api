@@ -10,8 +10,9 @@ class PeriodicWave {
   #disableNormalization
 
   constructor(real, imag, { disableNormalization = false } = {}) {
-    if (!real || !imag || real.length !== imag.length)
-      throw new Error('real and imag must be arrays of equal length')
+    if (!real || !imag) throw new TypeError('real and imag are required')
+    if (real.length !== imag.length) throw new (globalThis.DOMException || Error)('real and imag must have equal length', 'IndexSizeError')
+    if (real.length < 2) throw new (globalThis.DOMException || Error)('real and imag must have at least 2 elements', 'IndexSizeError')
 
     this.#real = Float32Array.from(real)
     this.#imag = Float32Array.from(imag)
