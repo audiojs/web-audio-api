@@ -34,5 +34,10 @@ import './math.test.js'
 import './utils.test.js'
 import './audit-fixes.test.js'
 
+// Phase 3
+import './OfflineAudioContext.test.js'
+import './AudioWorklet.test.js'
+import './MediaStreamNodes.test.js'
+
 // Integration
 import './integration.test.js'

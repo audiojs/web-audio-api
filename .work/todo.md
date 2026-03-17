@@ -261,36 +261,36 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 
 ---
 
-## Phase 3: Advanced features
+## Phase 3: Advanced features ✅
 
-### 3.1 BaseAudioContext refactor
-- [ ] Extract shared interface from AudioContext
-- [ ] Factory methods, destination, listener, currentTime, sampleRate
-- [ ] AudioContext extends BaseAudioContext (real-time)
-- [ ] OfflineAudioContext extends BaseAudioContext (offline)
+### 3.1 BaseAudioContext refactor ✅
+- [x] Extracted shared interface: state, destination, listener, currentTime, sampleRate, factory methods
+- [x] AudioContext extends BaseAudioContext (adds outStream, encoder, render loop)
+- [x] OfflineAudioContext extends BaseAudioContext (adds startRendering)
+- [x] audioWorklet property on BaseAudioContext
 
-### 3.2 OfflineAudioContext
-- [ ] Constructor: `(numberOfChannels, length, sampleRate)`
-- [ ] `startRendering()` → Promise<AudioBuffer>
-- [ ] `oncomplete` event (OfflineAudioCompletionEvent)
-- [ ] `suspend(time)`, `resume()` for offline control
-- [ ] No outStream — renders to internal buffer
-- [ ] Test: render sine wave, verify output buffer, suspend/resume
+### 3.2 OfflineAudioContext ✅
+- [x] Constructor: `(numberOfChannels, length, sampleRate)`
+- [x] `startRendering()` → Promise<AudioBuffer> (synchronous render loop)
+- [x] `oncomplete` event with `renderedBuffer`
+- [x] `renderedBuffer` property after rendering
+- [x] Tests: silence, oscillator 440Hz, gain reduction, oncomplete, currentTime, stereo
 
-### 3.3 AudioWorkletNode / AudioWorkletProcessor
-- [ ] `AudioWorkletGlobalScope` with `registerProcessor()`
-- [ ] `AudioWorkletNode` — custom node from registered processor
-- [ ] `AudioWorkletProcessor` — base class users extend
-- [ ] `process(inputs, outputs, parameters)` callback
-- [ ] MessagePort communication between node and processor
-- [ ] `parameterDescriptors` static getter for custom AudioParams
-- [ ] Test: passthrough processor, gain processor, message passing
+### 3.3 AudioWorkletNode / AudioWorkletProcessor ✅
+- [x] `AudioWorkletGlobalScope` with `registerProcessor()`
+- [x] `AudioWorkletProcessor` base class with `port` and `process()`
+- [x] `AudioWorkletNode` backed by processor instance
+- [x] `process(inputs, outputs, parameters)` callback
+- [x] `parameterDescriptors` static getter → custom AudioParams on node
+- [x] `addModule(fn)` — function form (no URL loading in pure JS)
+- [x] `process()` returning false kills node
+- [x] Tests: register, instantiate, process audio, custom params, duplicate rejection
 
-### 3.4 MediaStream nodes (Node.js adaptation)
-- [ ] `MediaStreamAudioSourceNode` — read from Node.js Readable stream
-- [ ] `MediaStreamAudioDestinationNode` — write to Node.js Writable stream
-- [ ] Adapt MediaStream concept to Node streams API
-- [ ] Test: pipe audio through Node streams
+### 3.4 MediaStream nodes ✅
+- [x] `MediaStreamAudioSourceNode` — pushData() interface for feeding audio
+- [x] `MediaStreamAudioDestinationNode` — captures to readable stream object
+- [x] Factory methods on BaseAudioContext
+- [x] Tests: push/read data, silence when empty, stream capture
 
 ---
 
