@@ -24,6 +24,7 @@ class DelayNode extends AudioNode {
     this._outBuf = null
     this._outCh = 0
     this._ringLen = ringLen
+    this._ticking = false // cycle guard
   }
 
   _ensureRingBuf(channels) {
@@ -36,6 +37,9 @@ class DelayNode extends AudioNode {
   }
 
   _tick() {
+    // cycle guard: if re-entered (feedback loop), return previous output
+    if (this._ticking) return this._outBuf || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
+    this._ticking = true
     super._tick()
     let inBuf = this._inputs[0]._tick()
     let ch = inBuf.numberOfChannels
@@ -69,6 +73,7 @@ class DelayNode extends AudioNode {
     }
 
     this.#writePos = (wp + BLOCK_SIZE) % ringLen
+    this._ticking = false
     return this._outBuf
   }
 }

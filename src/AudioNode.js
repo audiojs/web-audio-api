@@ -1,6 +1,6 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
-import { IndexSizeError, InvalidAccessError } from './errors.js'
+import { IndexSizeError, InvalidStateError } from './errors.js'
 
 const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
 const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
@@ -40,6 +40,7 @@ class AudioNode extends DspObject {
   _validateChannelCountMode(val) {}
 
   constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
+    if (context?._state === 'closed') throw new InvalidStateError('cannot create node on closed context')
     super(context)
 
     this.#numberOfInputs = numberOfInputs

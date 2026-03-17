@@ -63,8 +63,6 @@ test('Panner > base class pan() throws', () => {
 
 test('PannerProvider > creates equalpower panner', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
   let pp = new PannerProvider(ctx)
   pp.panningModel = 'equalpower'
   ok(pp.panner instanceof EqualPowerPanner)
@@ -72,8 +70,6 @@ test('PannerProvider > creates equalpower panner', () => {
 
 test('PannerProvider > rejects HRTF', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
   let pp = new PannerProvider(ctx)
   throws(() => { pp.panningModel = 'HRTF' })
 })
@@ -82,8 +78,6 @@ test('PannerProvider > rejects HRTF', () => {
 
 test('PannerNode > constructor defaults', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
 
   let p = new PannerNode(ctx)
   is(p.channelCount, 2)
@@ -97,8 +91,6 @@ test('PannerNode > constructor defaults', () => {
 
 test('PannerNode > channelCount restricted to 1 or 2', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
 
   let p = new PannerNode(ctx)
   p.channelCount = 1
@@ -110,8 +102,6 @@ test('PannerNode > channelCount restricted to 1 or 2', () => {
 
 test('PannerNode > channelCountMode rejects max', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
 
   let p = new PannerNode(ctx)
   throws(() => { p.channelCountMode = 'max' })
@@ -119,8 +109,6 @@ test('PannerNode > channelCountMode rejects max', () => {
 
 test('PannerNode > setPosition validates args', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
 
   let p = new PannerNode(ctx)
   p.setPosition(1, 2, 3)
@@ -130,8 +118,6 @@ test('PannerNode > setPosition validates args', () => {
 
 test('PannerNode > _tick outputs stereo', () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
 
   let p = new PannerNode(ctx)
   let src = new AudioNode(ctx, 0, 1)

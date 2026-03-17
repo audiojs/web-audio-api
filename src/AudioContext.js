@@ -59,9 +59,13 @@ class AudioContext extends BaseAudioContext {
   close() {
     return new Promise(resolve => {
       this._setState('closed')
-      if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
+      this._closeStream()
       resolve()
     })
+  }
+
+  _closeStream() {
+    if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
   }
 
   _render() {
@@ -84,7 +88,7 @@ class AudioContext extends BaseAudioContext {
 
   [Symbol.dispose]() {
     this._setState('closed')
-    if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
+    this._closeStream()
   }
 }
 

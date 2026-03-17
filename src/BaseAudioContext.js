@@ -93,15 +93,15 @@ class BaseAudioContext extends EventTarget {
   createDelay(maxDelayTime) { return new DelayNode(this, { maxDelayTime }) }
   createBiquadFilter() { return new BiquadFilterNode(this) }
   createWaveShaper() { return new WaveShaperNode(this) }
-  createIIRFilter(feedforward, feedback) { return new IIRFilterNode(this, feedforward, feedback) }
+  createIIRFilter(ff, fb) { return new IIRFilterNode(this, ff, fb) }
   createConvolver() { return new ConvolverNode(this) }
   createDynamicsCompressor() { return new DynamicsCompressorNode(this) }
-  createChannelSplitter(numberOfOutputs) { return new ChannelSplitterNode(this, { numberOfOutputs }) }
-  createChannelMerger(numberOfInputs) { return new ChannelMergerNode(this, { numberOfInputs }) }
+  createChannelSplitter(n) { return new ChannelSplitterNode(this, { numberOfOutputs: n }) }
+  createChannelMerger(n) { return new ChannelMergerNode(this, { numberOfInputs: n }) }
   createAnalyser() { return new AnalyserNode(this) }
-  createScriptProcessor(bufferSize, inCh, outCh) { return new ScriptProcessorNode(this, bufferSize, inCh, outCh) }
+  createScriptProcessor(bs, ic, oc) { return new ScriptProcessorNode(this, bs, ic, oc) }
   createPanner() { return new PannerNode(this) }
-  createMediaStreamSource(mediaStream) { return new MediaStreamAudioSourceNode(this, { mediaStream }) }
+  createMediaStreamSource(ms) { return new MediaStreamAudioSourceNode(this, { mediaStream: ms }) }
   createMediaStreamDestination() { return new MediaStreamAudioDestinationNode(this) }
 }
 

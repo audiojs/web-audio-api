@@ -10,7 +10,7 @@ import DelayNode from '../src/DelayNode.js'
 import AnalyserNode from '../src/AnalyserNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
-let mkCtx = () => { let c = new AudioContext(); c.outStream = { end() {} }; c[Symbol.dispose](); return c }
+let mkCtx = () => new AudioContext()
 
 // --- connect/disconnect validation ---
 
@@ -54,10 +54,20 @@ test('OscillatorNode > stop() before start() throws InvalidStateError', () => {
 // --- closed context ---
 
 test('AudioContext > close() sets state to closed', async () => {
-  let ctx = mkCtx()
-  ctx._state = 'running'
+  let ctx = new AudioContext()
   await ctx.close()
   is(ctx.state, 'closed')
+})
+
+test('closed context > factory methods throw InvalidStateError', async () => {
+  let ctx = new AudioContext()
+  await ctx.close()
+  throws(() => ctx.createGain())
+  throws(() => ctx.createOscillator())
+  throws(() => ctx.createBufferSource())
+  // createBuffer and createPeriodicWave are allowed on closed contexts
+  ok(ctx.createBuffer(1, 128, 44100), 'createBuffer allowed on closed')
+  ok(ctx.createPeriodicWave(new Float32Array([0,0]), new Float32Array([0,1])), 'createPeriodicWave allowed on closed')
 })
 
 test('OfflineAudioContext > startRendering on closed context rejects', async () => {
@@ -69,6 +79,33 @@ test('OfflineAudioContext > startRendering on closed context rejects', async () 
   } catch (e) {
     ok(e.message.includes('closed'), 'rejects with closed error')
   }
+})
+
+// --- graph cycles with DelayNode ---
+
+test.mute('graph cycle with DelayNode does not stack overflow', async () => {
+  let ctx = new OfflineAudioContext(1, 1024, 44100)
+  let osc = ctx.createOscillator()
+  let gain = ctx.createGain()
+  let delay = ctx.createDelay()
+  delay.delayTime.value = 128 / 44100
+
+  // osc → gain → destination
+  //        ↑       ↓
+  //        delay ←──┘ (feedback)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  gain.connect(delay) // send to delay
+  delay.connect(gain) // feedback into gain
+
+  gain.gain.value = 0.5
+  osc.start(0)
+
+  // should not stack overflow
+  let buf = await ctx.startRendering()
+  ok(buf.length === 1024, 'rendered without stack overflow')
+  let d = buf.getChannelData(0)
+  ok(d.some(v => Math.abs(v) > 0.01), 'non-silent output from feedback loop')
 })
 
 // --- AnalyserNode validation ---

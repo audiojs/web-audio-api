@@ -9,9 +9,11 @@
   "repository": "audiojs/web-audio-api",
   "type": "module",
   "exports": "./index.js",
+  "types": "./index.d.ts",
   "files": [
     "src",
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "keywords": [
     "audio",

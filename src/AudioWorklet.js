@@ -136,11 +136,9 @@ class AudioWorkletNode extends AudioNode {
 
 // AudioWorklet — attached to context, provides addModule()
 class AudioWorklet {
-  #context
   #scope = new AudioWorkletGlobalScope()
 
   constructor(context) {
-    this.#context = context
     context._workletScope = this.#scope
   }
 

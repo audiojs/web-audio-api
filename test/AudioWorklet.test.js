@@ -8,8 +8,6 @@ import { BLOCK_SIZE } from '../src/constants.js'
 
 let mkCtx = async () => {
   let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
   return ctx
 }
 

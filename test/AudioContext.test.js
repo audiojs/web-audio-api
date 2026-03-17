@@ -11,8 +11,8 @@ let mkCtx = () => {
 }
 
 test('AudioContext > graph traversal collects all connected nodes', () => {
-  let ctx = mkCtx()
-  ctx[Symbol.dispose]()
+  let ctx = new AudioContext()
+  ctx.outStream = { write() { return true }, once() {} }
 
   let n1a = new AudioNode(ctx, 2, 1)
   let n1b = new AudioNode(ctx, 0, 1)
@@ -68,15 +68,6 @@ test('AudioContext > sampleRate from constructor option', () => {
   let ctx = new AudioContext({ sampleRate: 48000 })
   ctx.outStream = { end() {} }; ctx[Symbol.dispose]()
   is(ctx.sampleRate, 48000)
-})
-
-test('AudioContext > factory methods', () => {
-  let ctx = mkCtx(); ctx[Symbol.dispose]()
-  ok(ctx.createBuffer(1, 100, 44100))
-  ok(ctx.createBufferSource())
-  ok(ctx.createGain())
-  ok(ctx.createScriptProcessor(1024, 1, 1))
-  ok(ctx.createPanner())
 })
 
 // --- state machine ---
