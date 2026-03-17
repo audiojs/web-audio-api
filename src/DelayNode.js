@@ -15,6 +15,8 @@ class DelayNode extends AudioNode {
 
   constructor(context, { maxDelayTime = 1.0 } = {}) {
     super(context, 1, 1, undefined, 'max', 'speakers')
+    if (!Number.isFinite(maxDelayTime) || maxDelayTime < 0 || maxDelayTime > 180)
+      throw new Error('maxDelayTime must be finite, >= 0, and <= 180')
     this.#maxDelayTime = maxDelayTime
     this.#delayTime = new AudioParam(this.context, 0, 'a')
     let ringLen = Math.ceil(maxDelayTime * context.sampleRate) + BLOCK_SIZE

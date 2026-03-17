@@ -6,11 +6,9 @@ import { BLOCK_SIZE } from './constants.js'
 // W3C spec equal-power panning:
 // For mono input:  outputL = input * cos(x), outputR = input * sin(x)
 //   where x = (pan + 1) / 2 * π/2
-// For stereo input:
-//   If pan < 0:  outputL = inputL + inputR * sin(x), outputR = inputR * cos(x)
-//     where x = (pan + 1) * π/2
-//   If pan >= 0: outputL = inputL * cos(x), outputR = inputR + inputL * sin(x)
-//     where x = pan * π/2  (at pan=0: cos(0)=1, sin(0)=0 → identity passthrough)
+// For stereo input (continuous at pan=0, identity at pan=0):
+//   If pan < 0:  x = -pan * π/2; outputL = inputL + inputR * sin(x), outputR = inputR * cos(x)
+//   If pan >= 0: x = pan * π/2;  outputL = inputL * cos(x), outputR = inputR + inputL * sin(x)
 
 class StereoPannerNode extends AudioNode {
 
@@ -45,7 +43,7 @@ class StereoPannerNode extends AudioNode {
       for (let i = 0; i < BLOCK_SIZE; i++) {
         let p = Math.max(-1, Math.min(1, panArr[i]))
         if (p < 0) {
-          let x = (p + 1) * PI2
+          let x = -p * PI2
           outL[i] = inL[i] + inR[i] * Math.sin(x)
           outR[i] = inR[i] * Math.cos(x)
         } else {

@@ -36,7 +36,12 @@ class ConvolverNode extends AudioNode {
   }
 
   get normalize() { return this.#normalize }
-  set normalize(val) { this.#normalize = !!val }
+  set normalize(val) {
+    val = !!val
+    if (this.#normalize === val) return
+    this.#normalize = val
+    if (this.#buffer) this.buffer = this.#buffer // rebuild IR
+  }
 
   constructor(context) {
     super(context, 1, 1, undefined, 'clamped-max', 'speakers')

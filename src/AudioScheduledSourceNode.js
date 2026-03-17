@@ -1,5 +1,6 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import InvalidStateError from './InvalidStateError.js'
 import { BLOCK_SIZE } from './constants.js'
 
 class AudioScheduledSourceNode extends AudioNode {
@@ -20,7 +21,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   start(when = 0) {
-    if (this._started) throw new Error('already started')
+    if (this._started) throw new InvalidStateError('start has already been called')
     this._started = true
     this._schedule('start', when, () => {
       this._playing = true
@@ -29,7 +30,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   stop(when = 0) {
-    if (!this._started) throw new Error('not started')
+    if (!this._started) throw new InvalidStateError('cannot stop before start')
     this._schedule('stop', when, () => {
       this._playing = false
       this._scheduleEnded()

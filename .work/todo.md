@@ -202,61 +202,56 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 - [x] PeriodicWave: W3C-correct IDFT `x(t) = Σ[real[k]*cos(kθ) - imag[k]*sin(kθ)]`
 - [x] Built-in waveforms with correct Fourier series (64 harmonics)
 - [x] Tests: defaults, type validation, sine gen, setPeriodicWave, built-in waveforms
-- [ ] Test: frequency accuracy, onended, detune automation
+- [x] Tests: frequency accuracy (zero-crossing count), onended, detune (+1200 cents = octave)
 
 ### 2.3 StereoPannerNode ✅
 - [x] 1 input, 1 output (stereo)
 - [x] `pan` AudioParam (a-rate, default 0, range -1 to 1)
 - [x] W3C spec equal-power panning (mono and stereo input formulas)
-- [x] Tests: center pan, full left pan
-- [ ] Test: full right pan, stereo input balance
+- [x] Tests: mono L/C/R positions, full right, stereo center passthrough
 
 ### 2.4 DelayNode ✅
 - [x] 1 input, 1 output
 - [x] `delayTime` AudioParam (a-rate, default 0), `maxDelayTime` constructor param
 - [x] Ring buffer with linear interpolation, NaN-safe
-- [x] Tests: 1-block delay verification
-- [ ] Test: modulated delay, zero delay passthrough
+- [x] Tests: 1-block delay, impulse delay accuracy, zero-delay passthrough, modulated delay
 
 ### 2.5 BiquadFilterNode ✅
 - [x] 1 input, 1 output, 4 AudioParams (frequency/detune/Q/gain)
 - [x] 8 filter types (Audio EQ Cookbook coefficients)
 - [x] `getFrequencyResponse()` with z-transform evaluation
-- [x] Per-sample coefficient update
-- [x] Tests: defaults, type validation, frequency response direction
-- [ ] Test: actual filtered signal, per-type response curves
+- [x] Per-sample coefficient update (fast path when params constant)
+- [x] Tests: DC pass/block, high-freq attenuation, per-type response shape verification
 
 ### 2.6 WaveShaperNode ✅
 - [x] 1 input, 1 output, `curve` Float32Array, linear interpolation
 - [x] `oversample` property ('none'/'2x'/'4x')
-- [x] Tests: passthrough, curve application
-- [ ] Implement: oversampling DSP (property exists, DSP deferred)
+- [x] Tests: passthrough, hard clip curve, identity curve
+- [x] Oversampling DSP: chained 2x stages (upsample → halfband FIR → shape → halfband FIR → decimate)
 
 ### 2.7 IIRFilterNode ✅
 - [x] Direct Form II Transposed, Float64 coefficients, a0 normalization
 - [x] `getFrequencyResponse()`
-- [x] Tests: identity passthrough, freq response direction, coefficient validation
+- [x] Tests: identity passthrough, 1-pole lowpass DC convergence, freq response, validation
 
 ### 2.8 ConvolverNode ✅
 - [x] Time-domain convolution with overlap-save
 - [x] `buffer` (IR), `normalize`, multi-channel support
-- [x] Tests: passthrough (no buffer), convolution with unit impulse
+- [x] Tests: passthrough (no buffer), unit impulse IR, delay IR (1-sample shift)
 
 ### 2.9 DynamicsCompressorNode ✅
 - [x] `threshold`/`knee`/`ratio`/`attack`/`release` AudioParams (k-rate)
-- [x] `reduction` read-only, envelope follower, soft knee
-- [x] Tests: defaults, loud signal compression
-- [ ] Test: attack/release timing, knee curve shape
+- [x] `reduction` read-only, envelope follower, soft knee, -120dB init
+- [x] Tests: defaults, loud signal compression, quiet passthrough, attack/release timing
 
 ### 2.10 ChannelSplitterNode ✅
 - [x] 1 input, N outputs (default 6), pre-allocated mono buffers
-- [x] Tests: defaults, custom output count
-- [ ] Test: actual channel splitting (stereo → 2 mono)
+- [x] `_tickOutput(idx)` per-port hook for correct graph integration
+- [x] Tests: defaults, stereo → 2 mono split verification
 
 ### 2.11 ChannelMergerNode ✅
 - [x] N inputs (default 6), 1 output, pre-allocated output buffer
-- [x] Tests: defaults, custom input count
-- [ ] Test: actual channel merging (2 mono → stereo)
+- [x] Tests: defaults, 2 mono → stereo merge verification
 
 ### 2.12 AnalyserNode ✅
 - [x] Radix-2 Cooley-Tukey FFT, Blackman window, smoothing

@@ -38,10 +38,9 @@ class BiquadFilterNode extends AudioNode {
 
   getFrequencyResponse(frequencyHz, magResponse, phaseResponse) {
     let sr = this.context.sampleRate
-    let freq = this.#frequency.value
+    let freq = this.#frequency.value * (2 ** (this.#detune.value / 1200))
     let Q = this.#Q.value
     let gain = this.#gain.value
-    // compute coefficients once for current node state
     let coeffs = BiquadFilterNode._coefficients(this.#type, freq, sr, Q, gain)
 
     for (let i = 0; i < frequencyHz.length; i++) {
