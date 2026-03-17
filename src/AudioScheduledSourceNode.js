@@ -21,6 +21,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   start(when = 0) {
+    if (when < 0) throw new RangeError('when must be non-negative')
     if (this._started) throw new InvalidStateError('start has already been called')
     this._started = true
     this._schedule('start', when, () => {
@@ -30,6 +31,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   stop(when = 0) {
+    if (when < 0) throw new RangeError('when must be non-negative')
     if (!this._started) throw new InvalidStateError('cannot stop before start')
     this._schedule('stop', when, () => {
       this._playing = false

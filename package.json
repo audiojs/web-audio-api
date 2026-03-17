@@ -40,6 +40,7 @@
   },
   "scripts": {
     "test": "node test/index.js",
-    "bench": "node benchmark/run.js"
+    "bench": "node benchmark/run.js",
+    "wpt": "node test/wpt-runner.js"
   }
 }

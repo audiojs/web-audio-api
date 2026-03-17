@@ -296,11 +296,11 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 
 ## Phase 4: Spec compliance & quality
 
-### 4.1 WPT test harness
-- [ ] Set up W3C Web Platform Tests runner for web-audio tests
-- [ ] Identify passing/failing tests
-- [ ] Track WPT pass rate as primary completeness metric
-- [ ] Compare pass rate against node-web-audio-api (ircam)
+### 4.1 WPT test harness ✅
+- [x] WPT repo as git submodule (sparse checkout: webaudio/ + resources/)
+- [x] Runner: `npm run wpt` — testharness.js shim, assertion functions, globals injection
+- [x] Baseline: some tests pass (ConstantSourceNode onended), many need missing WPT helpers
+- [ ] Ongoing: improve pass rate (AudioParam.minValue/maxValue, Audit helper, option dict constructors)
 
 ### 4.2 Property descriptors & validation ✅
 - [x] All read-only attributes use `#private` + getters

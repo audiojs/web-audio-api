@@ -25,10 +25,12 @@ class OscillatorNode extends AudioScheduledSourceNode {
     this.#periodicWave = null
   }
 
-  constructor(context) {
+  constructor(context, options = {}) {
     super(context, 0, 1, undefined, 'max', 'speakers')
-    this.#frequency = new AudioParam(this.context, 440, 'a')
-    this.#detune = new AudioParam(this.context, 0, 'a')
+    this.#frequency = new AudioParam(this.context, options.frequency ?? 440, 'a')
+    this.#detune = new AudioParam(this.context, options.detune ?? 0, 'a')
+    if (options.type && options.type !== 'custom') this.#type = options.type
+    if (options.periodicWave) { this.#periodicWave = options.periodicWave; this.#type = 'custom' }
     this._outBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
   }
 

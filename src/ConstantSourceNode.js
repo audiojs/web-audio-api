@@ -8,9 +8,9 @@ class ConstantSourceNode extends AudioScheduledSourceNode {
   #offset
   get offset() { return this.#offset }
 
-  constructor(context) {
+  constructor(context, options = {}) {
     super(context, 0, 1, undefined, 'max', 'speakers')
-    this.#offset = new AudioParam(this.context, 1, 'a')
+    this.#offset = new AudioParam(this.context, options.offset ?? 1, 'a')
     this._outBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
   }
 
