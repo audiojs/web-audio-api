@@ -47,10 +47,11 @@ test('AudioNode > channelCountMode > accepts valid values', () => {
   is(node.channelCountMode, 'explicit')
 })
 
-test('AudioNode > channelCountMode > rejects invalid values', () => {
+test('AudioNode > channelCountMode > silently ignores invalid values', () => {
   let node = new AudioNode(ctx, 1, 1)
-  throws(() => { node.channelCountMode = 'bad' })
-  throws(() => { node.channelCountMode = 10 })
+  node.channelCountMode = 'max'
+  node.channelCountMode = 'bad' // silently ignored per spec
+  is(node.channelCountMode, 'max', 'unchanged after invalid set')
 })
 
 test('AudioNode > channelInterpretation > accepts valid values', () => {
@@ -61,10 +62,11 @@ test('AudioNode > channelInterpretation > accepts valid values', () => {
   is(node.channelInterpretation, 'discrete')
 })
 
-test('AudioNode > channelInterpretation > rejects invalid values', () => {
+test('AudioNode > channelInterpretation > silently ignores invalid values', () => {
   let node = new AudioNode(ctx, 1, 1)
-  throws(() => { node.channelInterpretation = 'bad' })
-  throws(() => { node.channelInterpretation = 10 })
+  node.channelInterpretation = 'speakers'
+  node.channelInterpretation = 'bad'
+  is(node.channelInterpretation, 'speakers', 'unchanged after invalid set')
 })
 
 test('AudioNode > connect > connects audio ports', () => {

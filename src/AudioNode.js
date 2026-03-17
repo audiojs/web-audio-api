@@ -17,7 +17,7 @@ class AudioNode extends DspObject {
   #channelCountMode
   get channelCountMode() { return this.#channelCountMode }
   set channelCountMode(val) {
-    if (!CHANNEL_COUNT_MODES.includes(val)) throw new TypeError('Invalid value for channelCountMode: ' + val)
+    if (!CHANNEL_COUNT_MODES.includes(val)) return // spec: silently ignore invalid enum values
     this._validateChannelCountMode(val)
     this.#channelCountMode = val
   }
@@ -25,7 +25,7 @@ class AudioNode extends DspObject {
   #channelInterpretation
   get channelInterpretation() { return this.#channelInterpretation }
   set channelInterpretation(val) {
-    if (!CHANNEL_INTERPRETATIONS.includes(val)) throw new TypeError('Invalid value for channelInterpretation: ' + val)
+    if (!CHANNEL_INTERPRETATIONS.includes(val)) return // spec: silently ignore invalid enum values
     this._validateChannelInterpretation(val)
     this.#channelInterpretation = val
   }
@@ -71,8 +71,14 @@ class AudioNode extends DspObject {
   // Apply channel properties from options dict through validated setters
   _applyOpts(opts) {
     if ('channelCount' in opts) this.channelCount = opts.channelCount
-    if ('channelCountMode' in opts) this.channelCountMode = opts.channelCountMode
-    if ('channelInterpretation' in opts) this.channelInterpretation = opts.channelInterpretation
+    if (opts.channelCountMode !== undefined) {
+      if (!CHANNEL_COUNT_MODES.includes(opts.channelCountMode)) throw new TypeError('Invalid channelCountMode: ' + opts.channelCountMode)
+      this.channelCountMode = opts.channelCountMode
+    }
+    if (opts.channelInterpretation !== undefined) {
+      if (!CHANNEL_INTERPRETATIONS.includes(opts.channelInterpretation)) throw new TypeError('Invalid channelInterpretation: ' + opts.channelInterpretation)
+      this.channelInterpretation = opts.channelInterpretation
+    }
   }
 
   connect(destination, output = 0, input = 0) {

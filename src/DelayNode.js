@@ -20,7 +20,7 @@ class DelayNode extends AudioNode {
     if (!Number.isFinite(maxDelayTime) || maxDelayTime < 0 || maxDelayTime > 180)
       throw new Error('maxDelayTime must be finite, >= 0, and <= 180')
     this.#maxDelayTime = maxDelayTime
-    this.#delayTime = new AudioParam(this.context, options.delayTime ?? 0, 'a')
+    this.#delayTime = new AudioParam(this.context, options.delayTime ?? 0, 'a', 0, maxDelayTime)
     let ringLen = Math.ceil(maxDelayTime * context.sampleRate) + BLOCK_SIZE
     this.#ringBuf = []
     this._outBuf = null

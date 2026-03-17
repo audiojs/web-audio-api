@@ -41,16 +41,16 @@ class DistanceEffect {
 
   get maxDistance() { return this._maxDistance }
   set maxDistance(maxDistance) {
-    if (!Number.isFinite(maxDistance)) {
-      throw new Error('Invalid maxDistance')
+    if (!Number.isFinite(maxDistance) || maxDistance <= 0) {
+      throw new RangeError('maxDistance must be positive and finite')
     }
     this._maxDistance = maxDistance
   }
 
   get rolloffFactor() { return this._rolloffFactor }
   set rolloffFactor(rolloffFactor) {
-    if (!Number.isFinite(rolloffFactor)) {
-      throw new Error('Invalid rolloffFactor')
+    if (!Number.isFinite(rolloffFactor) || rolloffFactor < 0) {
+      throw new RangeError('rolloffFactor must be non-negative and finite')
     }
     this._rolloffFactor = rolloffFactor
   }

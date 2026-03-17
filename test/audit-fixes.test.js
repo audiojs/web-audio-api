@@ -194,15 +194,12 @@ test('onended > null clears handler', () => {
   ok(!called, 'cleared handler does not fire')
 })
 
-test.mute('error messages > no typos (Invalid, not Unvalid)', () => {
+test('enum setters > silently ignore invalid values per spec', () => {
   let ctx = { sampleRate: 44100, currentTime: 0 }
   let node = new AudioNode(ctx, 1, 1)
-  let caught = ''
-  try { node.channelCountMode = 'bad' } catch (e) { caught = e.message }
-  ok(caught.startsWith('Invalid'), 'channelCountMode error starts with Invalid')
-
-  try { node.channelInterpretation = 'bad' } catch (e) { caught = e.message }
-  ok(caught.startsWith('Invalid'), 'channelInterpretation error starts with Invalid')
+  node.channelCountMode = 'max'
+  node.channelCountMode = 'bad'
+  is(node.channelCountMode, 'max', 'channelCountMode unchanged')
 })
 
 test('AudioContext > onstatechange as event handler property', async () => {

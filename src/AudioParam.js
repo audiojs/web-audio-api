@@ -9,10 +9,12 @@ class AudioParam extends DspObject {
   #intrinsicValue
   #rate
   #automationEventList
+  #minValue
+  #maxValue
 
   get defaultValue() { return this.#defaultValue }
-  get minValue() { return -3.4028234663852886e38 }
-  get maxValue() { return 3.4028234663852886e38 }
+  get minValue() { return this.#minValue }
+  get maxValue() { return this.#maxValue }
 
   get automationRate() { return this.#rate === 'a' ? 'a-rate' : 'k-rate' }
   set automationRate(val) { this.#rate = val === 'k-rate' ? 'k' : 'a' }
@@ -23,13 +25,15 @@ class AudioParam extends DspObject {
     this.#automationEventList.add(createSetValueAutomationEvent(newVal, this.context.currentTime))
   }
 
-  constructor(context, defaultValue, rate) {
+  constructor(context, defaultValue, rate, minValue, maxValue) {
     super(context)
 
     if (typeof defaultValue !== 'number')
       throw new Error('defaultValue must be a number')
 
     this.#rate = rate || 'k'
+    this.#minValue = minValue ?? -3.4028234663852886e38
+    this.#maxValue = maxValue ?? 3.4028234663852886e38
     if (this.#rate !== 'a' && this.#rate !== 'k')
       throw new Error('invalid rate, must be a or k')
 

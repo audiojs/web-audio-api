@@ -1,5 +1,6 @@
 import AudioNode from './AudioNode.js'
 import { fft as computeFFT } from 'fourier-transform'
+import { IndexSizeError } from './errors.js'
 import { BLOCK_SIZE } from './constants.js'
 
 class AnalyserNode extends AudioNode {
@@ -26,13 +27,13 @@ class AnalyserNode extends AudioNode {
 
   get minDecibels() { return this.#minDecibels }
   set minDecibels(val) {
-    if (val >= this.#maxDecibels) throw new Error('minDecibels must be less than maxDecibels')
+    if (val >= this.#maxDecibels) throw new IndexSizeError('minDecibels must be less than maxDecibels')
     this.#minDecibels = val
   }
 
   get maxDecibels() { return this.#maxDecibels }
   set maxDecibels(val) {
-    if (val <= this.#minDecibels) throw new Error('maxDecibels must be greater than minDecibels')
+    if (val <= this.#minDecibels) throw new IndexSizeError('maxDecibels must be greater than minDecibels')
     this.#maxDecibels = val
   }
 
@@ -43,8 +44,14 @@ class AnalyserNode extends AudioNode {
     options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
     if (options.fftSize !== undefined) this.fftSize = options.fftSize
-    if (options.minDecibels !== undefined) this.minDecibels = options.minDecibels
-    if (options.maxDecibels !== undefined) this.maxDecibels = options.maxDecibels
+    // Set both dB values before validating (constructor may provide both)
+    if (options.minDecibels !== undefined || options.maxDecibels !== undefined) {
+      let min = options.minDecibels ?? this.#minDecibels
+      let max = options.maxDecibels ?? this.#maxDecibels
+      if (min >= max) throw new IndexSizeError('minDecibels must be less than maxDecibels')
+      this.#minDecibels = min
+      this.#maxDecibels = max
+    }
     if (options.smoothingTimeConstant !== undefined) this.smoothingTimeConstant = options.smoothingTimeConstant
     this._allocBuffers(this.#fftSize)
     this._applyOpts(options)

@@ -29,6 +29,8 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
   }
 
   start(when, offset, duration) {
+    if (offset !== undefined && offset < 0) throw new RangeError('offset must be non-negative')
+    if (duration !== undefined && duration < 0) throw new RangeError('duration must be non-negative')
     this._offset = offset || 0
     this._duration = duration || 0
     super.start(when)
