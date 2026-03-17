@@ -1,5 +1,5 @@
 import * as mathUtils from '../mathUtils.js'
-import InvalidStateError from '../InvalidStateError.js'
+import { InvalidStateError } from '../errors.js'
 
 /**
  * Computes cone effect gain and manages related properties.

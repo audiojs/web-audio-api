@@ -25,10 +25,16 @@ class AnalyserNode extends AudioNode {
   get frequencyBinCount() { return this.#fftSize / 2 }
 
   get minDecibels() { return this.#minDecibels }
-  set minDecibels(val) { this.#minDecibels = val }
+  set minDecibels(val) {
+    if (val >= this.#maxDecibels) throw new Error('minDecibels must be less than maxDecibels')
+    this.#minDecibels = val
+  }
 
   get maxDecibels() { return this.#maxDecibels }
-  set maxDecibels(val) { this.#maxDecibels = val }
+  set maxDecibels(val) {
+    if (val <= this.#minDecibels) throw new Error('maxDecibels must be greater than minDecibels')
+    this.#maxDecibels = val
+  }
 
   get smoothingTimeConstant() { return this.#smoothingTimeConstant }
   set smoothingTimeConstant(val) { this.#smoothingTimeConstant = Math.max(0, Math.min(1, val)) }

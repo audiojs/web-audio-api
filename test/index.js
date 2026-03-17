@@ -39,5 +39,8 @@ import './OfflineAudioContext.test.js'
 import './AudioWorklet.test.js'
 import './MediaStreamNodes.test.js'
 
+// Edge cases & validation
+import './edge-cases.test.js'
+
 // Integration
 import './integration.test.js'

@@ -1,5 +1,6 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
+import { IndexSizeError, InvalidAccessError } from './errors.js'
 
 const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
 const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
@@ -56,10 +57,12 @@ class AudioNode extends DspObject {
   }
 
   connect(destination, output = 0, input = 0) {
+    if (!destination || typeof destination.numberOfInputs === 'undefined')
+      throw new TypeError('destination must be an AudioNode')
     if (output >= this.numberOfOutputs)
-      throw new Error('output out of bounds ' + output)
+      throw new IndexSizeError('output index ' + output + ' out of bounds')
     if (input >= destination.numberOfInputs)
-      throw new Error('input out of bounds ' + input)
+      throw new IndexSizeError('input index ' + input + ' out of bounds')
     this._outputs[output].connect(destination._inputs[input])
     return destination
   }
@@ -71,7 +74,7 @@ class AudioNode extends DspObject {
       return
     }
     if (typeof outputOrDest === 'number') {
-      if (outputOrDest >= this.numberOfOutputs) throw new Error('output out of bounds ' + outputOrDest)
+      if (outputOrDest >= this.numberOfOutputs) throw new IndexSizeError('output index ' + outputOrDest + ' out of bounds')
       let o = this._outputs[outputOrDest]
       o.sinks.slice(0).forEach(sink => o.disconnect(sink))
       return
@@ -79,7 +82,7 @@ class AudioNode extends DspObject {
     let dest = outputOrDest
     output = output ?? 0
     input = input ?? 0
-    if (output >= this.numberOfOutputs) throw new Error('output out of bounds ' + output)
+    if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
     let o = this._outputs[output]
     let target = dest._inputs[input]
     if (target && o.sinks.includes(target)) o.disconnect(target)

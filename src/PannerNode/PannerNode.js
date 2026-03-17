@@ -6,7 +6,7 @@ import DistanceEffect from './DistanceEffect.js'
 import ConeEffect from './ConeEffect.js'
 import PannerProvider from './PannerProvider.js'
 import * as mathUtils from '../mathUtils.js'
-import NotSupportedError from '../NotSupportedError.js'
+import { NotSupportedError } from '../errors.js'
 
 
 class PannerNode extends AudioNode {

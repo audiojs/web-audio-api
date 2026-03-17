@@ -9,6 +9,10 @@
   "repository": "audiojs/web-audio-api",
   "type": "module",
   "exports": "./index.js",
+  "files": [
+    "src",
+    "index.js"
+  ],
   "keywords": [
     "audio",
     "audiojs",
@@ -33,6 +37,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/index.js"
+    "test": "node test/index.js",
+    "bench": "node benchmark/run.js"
   }
 }
