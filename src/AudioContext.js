@@ -78,7 +78,7 @@ class AudioContext extends BaseAudioContext {
       else this.outStream.once('drain', () => this._renderLoop())
     } catch (e) {
       this.#loopRunning = false
-      if (e) this.dispatchEvent(new CustomEvent('error', { detail: e }))
+      if (e) { let ev = new Event('error'); ev.error = e; this.dispatchEvent(ev) }
     }
   }
 

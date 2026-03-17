@@ -7,7 +7,8 @@ import { BLOCK_SIZE } from './constants.js'
 // AudioWorkletProcessor — base class users extend
 class AudioWorkletProcessor {
   constructor() {
-    this.port = new MessageChannel().port1
+    // port is wired by AudioWorkletNode after construction
+    this.port = null
   }
 
   // subclass overrides: process(inputs, outputs, parameters) → boolean
@@ -42,8 +43,10 @@ class AudioWorkletNode extends AudioNode {
   #processor
   #paramMap = new Map()
   #alive = true
+  #nodePort   // node-side port exposed to user
+  #procPort   // processor-side port
 
-  get port() { return this.#processor.port }
+  get port() { return this.#nodePort }
   get parameters() { return this.#paramMap }
 
   constructor(context, processorName, options = {}) {
@@ -51,6 +54,12 @@ class AudioWorkletNode extends AudioNode {
     let numberOfOutputs = options.numberOfOutputs ?? 1
     let outputChannelCount = options.outputChannelCount ?? [2]
     let channelCount = options.channelCount ?? outputChannelCount[0] ?? 2
+
+    // normalize outputChannelCount to match numberOfOutputs
+    while (outputChannelCount.length < numberOfOutputs)
+      outputChannelCount.push(channelCount)
+    if (outputChannelCount.length > numberOfOutputs)
+      outputChannelCount = outputChannelCount.slice(0, numberOfOutputs)
 
     super(context, numberOfInputs, numberOfOutputs, channelCount, 'explicit', 'speakers')
 
@@ -60,7 +69,12 @@ class AudioWorkletNode extends AudioNode {
     let ProcessorClass = scope._getProcessor(processorName)
 
     this.#processor = new ProcessorClass()
-    this._outChannels = outputChannelCount
+
+    // wire entangled message ports: node ↔ processor
+    let channel = new MessageChannel()
+    this.#nodePort = channel.port1
+    this.#procPort = channel.port2
+    this.#processor.port = this.#procPort
 
     // create AudioParams from parameterDescriptors
     let descriptors = ProcessorClass.parameterDescriptors || []
@@ -76,9 +90,14 @@ class AudioWorkletNode extends AudioNode {
 
   _tick() {
     super._tick()
-    if (!this.#alive) return this._outBufs[0]
+    if (!this.#alive) {
+      // dead node → output silence
+      let buf = this._outBufs[0]
+      for (let ch = 0; ch < buf.numberOfChannels; ch++) buf.getChannelData(ch).fill(0)
+      return buf
+    }
 
-    // gather inputs: array of arrays of Float32Array
+    // gather inputs
     let inputs = []
     for (let i = 0; i < this.numberOfInputs; i++) {
       let buf = this._inputs[i]._tick()
@@ -88,7 +107,7 @@ class AudioWorkletNode extends AudioNode {
       inputs.push(chArrays)
     }
 
-    // prepare outputs: array of arrays of Float32Array (zeroed)
+    // prepare outputs (zeroed)
     let outputs = []
     for (let i = 0; i < this.numberOfOutputs; i++) {
       let buf = this._outBufs[i]
@@ -125,13 +144,8 @@ class AudioWorklet {
     context._workletScope = this.#scope
   }
 
-  // In browsers, addModule loads a script into the worklet thread.
-  // Here we accept a setup function that receives the global scope.
   async addModule(moduleOrSetup) {
-    if (typeof moduleOrSetup === 'function') {
-      moduleOrSetup(this.#scope)
-    }
-    // string URLs not supported in pure JS — use function form
+    if (typeof moduleOrSetup === 'function') moduleOrSetup(this.#scope)
   }
 
   get _scope() { return this.#scope }

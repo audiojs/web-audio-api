@@ -20,7 +20,7 @@ import ChannelMergerNode from './ChannelMergerNode.js'
 import AnalyserNode from './AnalyserNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
-import { AudioWorklet, AudioWorkletNode } from './AudioWorklet.js'
+import { AudioWorklet } from './AudioWorklet.js'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from './MediaStreamAudioSourceNode.js'
 
 

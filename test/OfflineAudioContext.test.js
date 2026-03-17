@@ -74,7 +74,7 @@ test.mute('OfflineAudioContext > renders oscillator', async () => {
   almost(crossings, 880, 50, `zero crossings: ${crossings}`)
 })
 
-test.mute('OfflineAudioContext > renders gain reduction', async () => {
+test('OfflineAudioContext > renders gain reduction', async () => {
   let ctx = new OfflineAudioContext(1, 1024, 44100)
   let osc = ctx.createOscillator()
   let gain = ctx.createGain()

@@ -41,8 +41,11 @@ class OfflineAudioContext extends BaseAudioContext {
         }
 
         this.#renderedBuffer = outBuf
+        this._frame = this.#length // correct for any overshoot from partial last block
         this._setState('closed')
-        this.dispatchEvent(new CustomEvent('complete', { detail: { renderedBuffer: outBuf } }))
+        let ev = new Event('complete')
+        ev.renderedBuffer = outBuf
+        this.dispatchEvent(ev)
         resolve(outBuf)
       } catch (e) {
         this._setState('closed')

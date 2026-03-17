@@ -5,7 +5,7 @@ Pure JS implementation of [Web Audio API](https://www.w3.org/TR/webaudio/) — r
 ## Implemented
 
 - AudioContext (state machine, suspend/resume/close, baseLatency)
-- OfflineAudioContext (planned)
+- OfflineAudioContext (startRendering, oncomplete)
 - AudioParam (automation events, a-rate/k-rate, cancelScheduledValues)
 - AudioBuffer (via [audio-buffer](https://github.com/audiojs/audio-buffer))
 - AudioBufferSourceNode

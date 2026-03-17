@@ -13,9 +13,9 @@ let mkCtx = async () => {
   return ctx
 }
 
-test('AudioWorkletProcessor > base class has port and process', () => {
+test('AudioWorkletProcessor > base class has process and null port', () => {
   let p = new AudioWorkletProcessor()
-  ok(p.port, 'has port')
+  is(p.port, null, 'port is null before wiring')
   is(p.process(), true, 'default process returns true')
 })
 
@@ -40,7 +40,7 @@ test('AudioWorklet > register and instantiate processor', async () => {
   is(node.parameters.size, 0, 'no custom params')
 })
 
-test.mute('AudioWorklet > processes audio', async () => {
+test('AudioWorklet > processes audio', async () => {
   let ctx = await mkCtx()
 
   class HalfGainProcessor extends AudioWorkletProcessor {
@@ -85,12 +85,17 @@ test('AudioWorklet > custom parameters', async () => {
   almost(node.parameters.get('gain').value, 0.5, 1e-6, 'default 0.5')
 })
 
-test('AudioWorklet > process returning false kills node', async () => {
+test('AudioWorklet > process returning false kills node, outputs silence', async () => {
   let ctx = await mkCtx()
+  let calls = 0
 
   class OneShot extends AudioWorkletProcessor {
-    #count = 0
-    process(inputs, outputs) { return ++this.#count < 3 }
+    process(inputs, outputs) {
+      calls++
+      let out = outputs[0]?.[0]
+      if (out) for (let i = 0; i < out.length; i++) out[i] = 1
+      return calls < 3
+    }
   }
 
   await ctx.audioWorklet.addModule(scope => scope.registerProcessor('oneshot', OneShot))
@@ -101,10 +106,15 @@ test('AudioWorklet > process returning false kills node', async () => {
   src._tick = () => AudioBuffer.filledWithVal(0, 1, BLOCK_SIZE, 44100)
 
   ctx._state = 'running'
-  node._tick() // count 1
-  node._tick() // count 2
-  ok(node._tick(), 'still alive at 3')
-  // after returning false, node stops processing (outputs silence)
+  node._tick() // calls=1
+  node._tick() // calls=2
+  node._tick() // calls=3, returns false → killed
+  is(calls, 3, 'process called 3 times')
+
+  // subsequent tick: should output silence, process not called again
+  let buf = node._tick()
+  is(calls, 3, 'process not called after kill')
+  ok(buf.getChannelData(0).every(v => v === 0), 'outputs silence after kill')
 })
 
 test('AudioWorklet > rejects duplicate registration', async () => {
@@ -119,4 +129,12 @@ test('AudioWorklet > rejects unregistered processor', async () => {
   let ctx = await mkCtx()
   await ctx.audioWorklet.addModule(() => {})
   throws(() => new AudioWorkletNode(ctx, 'nonexistent'))
+})
+
+test('AudioWorklet > message ports are entangled', async () => {
+  let ctx = await mkCtx()
+  await ctx.audioWorklet.addModule(scope => scope.registerProcessor('msg', AudioWorkletProcessor))
+  let node = new AudioWorkletNode(ctx, 'msg')
+  ok(node.port, 'node has port')
+  ok(node.port !== null, 'port is not null')
 })
