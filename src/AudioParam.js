@@ -58,8 +58,8 @@ class AudioParam extends DspObject {
   }
 
   exponentialRampToValueAtTime(value, endTime) {
-    if (this.#intrinsicValue <= 0 || value <= 0)
-      throw new Error('cannot create exponential ramp with value <= 0')
+    if (value <= 0)
+      throw new RangeError('exponentialRamp target value must be positive')
     this.#automationEventList.add(createExponentialRampToValueAutomationEvent(value, endTime))
   }
 

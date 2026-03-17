@@ -37,6 +37,10 @@ class AudioContext extends BaseAudioContext {
     })
   }
 
+  getOutputTimestamp() {
+    return { contextTime: this.currentTime, performanceTime: typeof performance !== 'undefined' ? performance.now() : 0 }
+  }
+
   get numberOfChannels() { return this.#numberOfChannels }
   get baseLatency() { return BLOCK_SIZE / this.sampleRate }
   get outputLatency() { return BLOCK_SIZE / this.sampleRate }

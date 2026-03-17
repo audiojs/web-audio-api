@@ -136,6 +136,17 @@ async function runTest(filePath) {
       };
     `, ctx)
 
+    // Add missing helper functions that some WPT tests expect
+    vm.runInContext(`
+      if (typeof assert_array_equal_within_eps === 'undefined') {
+        function assert_array_equal_within_eps(a, b, eps, msg) {
+          for (var i = 0; i < Math.min(a.length, b.length); i++)
+            if (Math.abs(a[i] - b[i]) > eps)
+              throw new Error((msg || '') + ' at index ' + i + ': ' + a[i] + ' vs ' + b[i]);
+        }
+      }
+    `, ctx)
+
     // Register result callback
     vm.runInContext(`
       var __wpt_results = [];
