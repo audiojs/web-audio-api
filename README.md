@@ -1,155 +1,96 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-> Node.js implementation of Web audio API
+Pure JS implementation of [Web Audio API](https://www.w3.org/TR/webaudio/) — runs in Node.js, Deno, Bun, serverless, and edge runtimes.
 
-This library implements the [Web Audio API specification](http://webaudio.github.io/web-audio-api/) (also know as WAA) on Node.js.
+## Implemented
 
+- AudioContext (state machine, suspend/resume/close, baseLatency)
+- OfflineAudioContext (startRendering, oncomplete)
+- AudioParam (automation events, a-rate/k-rate, cancelScheduledValues)
+- AudioBuffer (via [audio-buffer](https://github.com/audiojs/audio-buffer))
+- AudioBufferSourceNode
+- ConstantSourceNode
+- OscillatorNode (sine/square/sawtooth/triangle/custom via PeriodicWave)
+- GainNode
+- StereoPannerNode
+- PannerNode (3D spatial, equalpower, distance/cone models)
+- DelayNode
+- BiquadFilterNode (8 filter types, Audio EQ Cookbook)
+- WaveShaperNode (with 2x/4x oversampling)
+- IIRFilterNode (Direct Form II Transposed)
+- ConvolverNode (time-domain, normalize)
+- DynamicsCompressorNode (soft knee, envelope follower)
+- ChannelSplitterNode / ChannelMergerNode
+- AnalyserNode (radix-2 FFT, Blackman window)
+- ScriptProcessorNode (deprecated but supported)
 
-## What's Implemented
+## Install
 
-- [x] AudioContext (partially)
-- [x] AudioParam (almost there)
-- [x] AudioBufferSourceNode
-- [x] ScriptProcessorNode
-- [x] GainNode
-- [ ] OscillatorNode
-- [ ] DelayNode
-
-
-## Installation
-
-```shell
-npm install --save web-audio-api
+```
+npm install web-audio-api
 ```
 
+## Usage
 
-## Demo
+```js
+import { AudioContext } from 'web-audio-api'
 
-Get ready, this is going to blow up your mind:
+const ctx = new AudioContext({ sampleRate: 44100 })
+ctx.outStream = writableStream // provide output destination
 
+const osc = ctx.createOscillator()
+osc.frequency.value = 440
+osc.connect(ctx.destination)
+osc.start()
 ```
-npm install
-npm run test-speaker
-```
 
+### Node.js with speaker
 
-## Audio Output
-
-By default, **web-audio-api** doesn't play back the sound it generates. In fact, an `AudioContext` has no default output, and you need to give it a writable node stream to which it can write raw PCM audio. After creating an `AudioContext`, set its output stream like this : `audioContext.outStream = writableStream`.
-
-### Example: Playing back sound with **node-speaker**
-
-This is probably the simplest way to play back audio. Install **node-speaker** with `npm install speaker`, then do something like this :
-
-```javascript
+```js
 import { AudioContext } from 'web-audio-api'
 import Speaker from 'speaker'
 
-const context = new AudioContext
-
-context.outStream = new Speaker({
-  channels: context.format.numberOfChannels,
-  bitDepth: context.format.bitDepth,
-  sampleRate: context.sampleRate
+const ctx = new AudioContext()
+ctx.outStream = new Speaker({
+  channels: ctx.format.numberOfChannels,
+  bitDepth: ctx.format.bitDepth,
+  sampleRate: ctx.sampleRate
 })
-
-// Create some audio nodes here to make some noise ...
 ```
 
-### Example : playing back sound with **aplay**
+### Piping to aplay (Linux)
 
-Linux users can play back sound from **web-audio-api** by piping its output to [aplay](http://alsa.opensrc.org/Aplay). For this, simply send the generated sound straight to `stdout` like this :
-
-```javascript
+```js
 import { AudioContext } from 'web-audio-api'
-const context = new AudioContext()
-
-context.outStream = process.stdout
-
-// Create some audio nodes here to make some noise ...
+const ctx = new AudioContext()
+ctx.outStream = process.stdout
 ```
 
-Then start your script, piping it to **aplay** like so :
-
-```
-node myScript.js | aplay -f cd
+```sh
+node script.js | aplay -f cd
 ```
 
-### Example : creating an audio stream with **icecast2**
+## Architecture
 
-[icecast](http://icecast.org/) is a open-source streaming server. It works great, and is very easy to setup. **icecast** accepts connections from [different source clients](http://icecast.org/apps/) which provide the sound to encode and stream. [ices](http://www.icecast.org/ices/) is a client for **icecast** which accepts raw PCM audio from its standard input, and you can send sound from **web-audio-api** to **ices** (which will send it to icecast) by simply doing :
-
-```javascript
-import { spawn } from 'child_process'
-import { AudioContext } from 'web-audio-api'
- const context = new AudioContext()
-
-var ices = spawn('ices', ['ices.xml'])
-context.outStream = ices.stdin
-```
-
-A live example is available on [Sébastien's website](http://funktion.fm/#/projects/versificator-rubbish-stream)
-
-
-## Using Gibber
-
-[Gibber](https://github.com/charlieroberts/Gibber) is a great audiovisual live coding environment for the browser made by [Charlie Roberts](http://charlie-roberts.com). For audio, it uses Web Audio API, so you can run it on **web-audio-api**. First install gibber with npm :
-
-`npm install gibber.audio.lib`
-
-Then to you can run the following test to see that everything works:
-
-`npm test gibber.audio.lib`
-
-
-## Overall view of implementation
-
-Each time you create an ```AudioNode``` (like for instance an ```AudioBufferSourceNode``` or a ```GainNode```), it inherits from ```DspObject``` which is in charge of two things:
-- register schedule events with ```_schedule```
-- compute the appropriate digital signal processing with ```_tick```
-
-Each time you connect an ```AudioNode``` using ```source.connect(destination, output, input)``` it connects the relevant ```AudioOutput``` instances of ```source``` node to the relevant ```AudioInput``` instance of the ```destination``` node.
-
-To instantiate all of these ```AudioNode```, you needed an overall ```AudioContext``` instance. This latter has a ```destination``` property (where the sound will flow out), instance of ```AudioDestinationNode```, which inherits from ```AudioNode```. The ```AudioContext``` instance keeps track of connections to the ```destination```. When that happens, it triggers the audio loop, calling ```_tick``` infinitely on the ```destination```, which will itself call ```_tick``` on its input ... and so forth go up on the whole audio graph.
-
-
-## Running the debugger
-
-Right now everything runs in one process, so if you set a break point in your code, there's going to be a lot of buffer underflows, and you won't be able to debug anything.
-
-One trick is to kill the `AudioContext` right before the break point, like this:
-
-```javascript
-context[Symbol.dispose]()
-debugger
-```
-
-that way the audio loop is stopped, and you can inspect your objects in peace.
-
-<!--
-## Manual testing
-
-You can test the sound output using `node-speaker`.
+Pull-based audio graph. `AudioDestinationNode` pulls from the graph via `_tick()`, each node pulls its inputs recursively. 128-sample blocks (spec render quantum). Buffer reuse throughout — no allocation in hot paths.
 
 ```
-npm run test-speaker
+EventTarget ← Emitter ← DspObject ← AudioNode ← concrete nodes
+                                    ← AudioParam
+EventTarget ← Emitter ← AudioPort ← AudioInput / AudioOutput
+EventTarget ← AudioContext
 ```
 
-To test `AudioParam` against `AudioParam` implemented in a browser, open `test/manual-testing/AudioParam-browser-plots.html` in that browser. -->
-
+New nodes extend `AudioNode`, override `_tick()`, optionally separate DSP into static functions for future WASM swap.
 
 ## Alternatives
 
-* [web-audio-engine](https://github.com/mohayonao/web-audio-engine) − JS implementation of web-audio-api.
-* [web-audio-js](https://github.com/descriptinc/web-audio-js) − fork of web-audio-engine with extra nodes.
-* [lab-sound](https://github.com/LabSound/LabSound)
-* [node-audio](https://ghub.io/node-audio)
-* [WAAPISim](https://github.com/g200kg/WAAPISim)
-* [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)
-* [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)
+- [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) — Rust/napi-rs, native addon (Node.js only)
+- [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) — pure Rust
+- [web-audio-engine](https://github.com/mohayonao/web-audio-engine) — JS, archived 2019
 
 ## License
 
 MIT
 
-<p align="center">🕉<p>
+<p align="center">🕉</p>

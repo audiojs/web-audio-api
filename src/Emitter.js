@@ -20,7 +20,9 @@ export default (Base = EventTarget) => class Emitter extends Base {
   }
 
   emit(type, detail) {
-    this.dispatchEvent(detail !== undefined ? new CustomEvent(type, { detail }) : new Event(type))
+    let e = new Event(type)
+    if (detail !== undefined) e.detail = detail
+    this.dispatchEvent(e)
   }
 
   listenerCount(type) {
