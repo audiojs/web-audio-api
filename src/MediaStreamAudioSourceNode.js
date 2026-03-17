@@ -15,6 +15,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
     this.#stream = mediaStream
     this.#channelCount = numberOfChannels
     this.#buffer = [] // accumulated Float32Array chunks per channel
+    this._outBuf = new AudioBuffer(numberOfChannels, BLOCK_SIZE, context.sampleRate)
   }
 
   // Push audio data into the node (called externally or from stream)
@@ -24,7 +25,9 @@ class MediaStreamAudioSourceNode extends AudioNode {
 
   _tick() {
     super._tick()
-    let out = new AudioBuffer(this.#channelCount, BLOCK_SIZE, this.context.sampleRate)
+    let out = this._outBuf
+    // zero output
+    for (let ch = 0; ch < this.#channelCount; ch++) out.getChannelData(ch).fill(0)
 
     // try to fill from accumulated buffer
     if (this.#buffer.length > 0) {

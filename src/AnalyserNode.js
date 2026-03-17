@@ -1,4 +1,5 @@
 import AudioNode from './AudioNode.js'
+import { fft as computeFFT } from 'fourier-transform'
 import { BLOCK_SIZE } from './constants.js'
 
 class AnalyserNode extends AudioNode {
@@ -10,21 +11,15 @@ class AnalyserNode extends AudioNode {
   #timeBuf       // circular time-domain buffer
   #writePos = 0
   #prevSpectrum  // smoothed magnitude spectrum
-  #fftReal       // pre-allocated FFT working arrays
-  #fftImag
-  #spectrum
+  #spectrum      // pre-allocated output
+  #windowedBuf   // pre-allocated windowed input for FFT
 
   get fftSize() { return this.#fftSize }
   set fftSize(val) {
     if (val < 32 || val > 32768 || (val & (val - 1)) !== 0)
       throw new Error('fftSize must be power of 2 between 32 and 32768')
     this.#fftSize = val
-    this.#timeBuf = new Float32Array(val)
-    this.#prevSpectrum = new Float32Array(val / 2)
-    this.#fftReal = new Float32Array(val)
-    this.#fftImag = new Float32Array(val)
-    this.#spectrum = new Float32Array(val / 2)
-    this.#writePos = 0
+    this._allocBuffers(val)
   }
 
   get frequencyBinCount() { return this.#fftSize / 2 }
@@ -40,23 +35,25 @@ class AnalyserNode extends AudioNode {
 
   constructor(context) {
     super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#timeBuf = new Float32Array(this.#fftSize)
-    this.#prevSpectrum = new Float32Array(this.#fftSize / 2)
-    this.#fftReal = new Float32Array(this.#fftSize)
-    this.#fftImag = new Float32Array(this.#fftSize)
-    this.#spectrum = new Float32Array(this.#fftSize / 2)
+    this._allocBuffers(this.#fftSize)
+  }
+
+  _allocBuffers(n) {
+    this.#timeBuf = new Float32Array(n)
+    this.#prevSpectrum = new Float64Array(n / 2)
+    this.#spectrum = new Float64Array(n / 2)
+    this.#windowedBuf = new Float64Array(n)
+    this.#writePos = 0
   }
 
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()
-    // store time-domain data (mono — take channel 0)
     let ch0 = inBuf.getChannelData(0)
     let n = this.#fftSize
     for (let i = 0; i < BLOCK_SIZE; i++)
       this.#timeBuf[(this.#writePos + i) % n] = ch0[i]
     this.#writePos = (this.#writePos + BLOCK_SIZE) % n
-    // passthrough
     return inBuf
   }
 
@@ -95,64 +92,28 @@ class AnalyserNode extends AudioNode {
   _computeSpectrum() {
     let n = this.#fftSize
     let bins = n / 2
-    let real = this.#fftReal
-    let imag = this.#fftImag
+    let windowed = this.#windowedBuf
 
     // copy ordered time-domain data + apply Blackman window
     for (let i = 0; i < n; i++) {
       let w = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / n) + 0.08 * Math.cos(4 * Math.PI * i / n)
-      real[i] = this.#timeBuf[(this.#writePos + i) % n] * w
-      imag[i] = 0
+      windowed[i] = this.#timeBuf[(this.#writePos + i) % n] * w
     }
 
-    fft(real, imag, n)
+    // split-radix FFT → complex spectrum { re, im } with N/2+1 bins
+    let [re, im] = computeFFT(windowed)
 
-    // compute magnitude spectrum with smoothing (reuse pre-allocated array)
+    // compute magnitude spectrum with smoothing
     let smooth = this.#smoothingTimeConstant
     let prev = this.#prevSpectrum
     let spectrum = this.#spectrum
     for (let i = 0; i < bins; i++) {
-      let mag = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]) / n
+      let mag = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / n
       spectrum[i] = smooth * prev[i] + (1 - smooth) * mag
       prev[i] = spectrum[i]
     }
 
     return spectrum
-  }
-}
-
-// In-place radix-2 Cooley-Tukey FFT
-function fft(real, imag, n) {
-  // bit-reversal permutation
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1
-    while (j & bit) { j ^= bit; bit >>= 1 }
-    j ^= bit
-    if (i < j) {
-      [real[i], real[j]] = [real[j], real[i]];
-      [imag[i], imag[j]] = [imag[j], imag[i]]
-    }
-  }
-
-  // butterfly stages
-  for (let len = 2; len <= n; len *= 2) {
-    let half = len / 2
-    let angle = -2 * Math.PI / len
-    let wR = Math.cos(angle), wI = Math.sin(angle)
-
-    for (let i = 0; i < n; i += len) {
-      let curR = 1, curI = 0
-      for (let j = 0; j < half; j++) {
-        let a = i + j, b = a + half
-        let tR = curR * real[b] - curI * imag[b]
-        let tI = curR * imag[b] + curI * real[b]
-        real[b] = real[a] - tR; imag[b] = imag[a] - tI
-        real[a] += tR; imag[a] += tI
-        let tmpR = curR * wR - curI * wI
-        curI = curR * wI + curI * wR
-        curR = tmpR
-      }
-    }
   }
 }
 
