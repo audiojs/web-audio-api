@@ -2,7 +2,7 @@ import test from 'tst'
 import { is, ok, throws } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 
-let ctx = {}
+let ctx = { sampleRate: 44100, currentTime: 0 }
 
 test('AudioNode > creates AudioInputs and AudioOutputs', () => {
   let node = new AudioNode(ctx, 1, 2)

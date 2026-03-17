@@ -25,15 +25,18 @@ class BiquadFilterNode extends AudioNode {
     this.#type = val
   }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#frequency = new AudioParam(this.context, 350, 'a')
-    this.#detune = new AudioParam(this.context, 0, 'a')
-    this.#Q = new AudioParam(this.context, 1, 'a')
-    this.#gain = new AudioParam(this.context, 0, 'a')
+    this.#frequency = new AudioParam(this.context, options.frequency ?? 350, 'a')
+    this.#detune = new AudioParam(this.context, options.detune ?? 0, 'a')
+    this.#Q = new AudioParam(this.context, options.Q ?? 1, 'a')
+    this.#gain = new AudioParam(this.context, options.gain ?? 0, 'a')
+    if (options.type !== undefined) this.type = options.type
     this.#state = []
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
   }
 
   getFrequencyResponse(frequencyHz, magResponse, phaseResponse) {

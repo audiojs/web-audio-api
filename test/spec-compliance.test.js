@@ -22,7 +22,7 @@ test('AudioParam > has minValue and maxValue', () => {
   is(typeof p.maxValue, 'number')
   ok(p.minValue < 0, 'minValue is negative')
   ok(p.maxValue > 0, 'maxValue is positive')
-  almost(p.maxValue, 3.4028235e38, 1e30, 'maxValue ≈ FLT_MAX')
+  almost(p.maxValue, 3.4028234663852886e38, 1, 'maxValue = FLT_MAX')
 })
 
 // --- Option dict constructors (WPT: ctor-gain.html, ctor-oscillator.html) ---

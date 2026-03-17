@@ -39,9 +39,15 @@ class AnalyserNode extends AudioNode {
   get smoothingTimeConstant() { return this.#smoothingTimeConstant }
   set smoothingTimeConstant(val) { this.#smoothingTimeConstant = Math.max(0, Math.min(1, val)) }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
+    if (options.fftSize !== undefined) this.fftSize = options.fftSize
+    if (options.minDecibels !== undefined) this.minDecibels = options.minDecibels
+    if (options.maxDecibels !== undefined) this.maxDecibels = options.maxDecibels
+    if (options.smoothingTimeConstant !== undefined) this.smoothingTimeConstant = options.smoothingTimeConstant
     this._allocBuffers(this.#fftSize)
+    this._applyOpts(options)
   }
 
   _allocBuffers(n) {

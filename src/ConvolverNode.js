@@ -43,10 +43,14 @@ class ConvolverNode extends AudioNode {
     if (this.#buffer) this.buffer = this.#buffer // rebuild IR
   }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'clamped-max', 'speakers')
+    if (options.disableNormalization !== undefined) this.normalize = !options.disableNormalization
+    if (options.buffer !== undefined) this.buffer = options.buffer
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
   }
 
   _tick() {

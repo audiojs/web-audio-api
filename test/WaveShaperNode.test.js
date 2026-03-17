@@ -35,7 +35,7 @@ test.mute('WaveShaperNode > 2x oversample preserves DC', () => {
 
 test('WaveShaperNode > rejects invalid curve', () => {
   let node = new WaveShaperNode({ sampleRate: SR, currentTime: 0 })
-  throws(() => { node.curve = [1, 2, 3] })
+  throws(() => { node.curve = 'bad' })
   throws(() => { node.curve = new Float32Array(1) })
 })
 

@@ -26,6 +26,7 @@ class AudioNode extends DspObject {
   get channelInterpretation() { return this.#channelInterpretation }
   set channelInterpretation(val) {
     if (!CHANNEL_INTERPRETATIONS.includes(val)) throw new Error('Invalid value for channelInterpretation: ' + val)
+    this._validateChannelInterpretation(val)
     this.#channelInterpretation = val
   }
 
@@ -38,16 +39,26 @@ class AudioNode extends DspObject {
   // Validation hooks — subclasses override to add constraints
   _validateChannelCount(val) {}
   _validateChannelCountMode(val) {}
+  _validateChannelInterpretation(val) {}
+
+  // Validate options dict: must be undefined/null or an object (W3C spec)
+  static _checkOpts(opts) {
+    if (opts !== undefined && opts !== null && typeof opts !== 'object')
+      throw new TypeError('Options must be an object')
+    return opts || {}
+  }
 
   constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
-    if (context?._state === 'closed') throw new InvalidStateError('cannot create node on closed context')
+    if (!context || typeof context !== 'object' || !('sampleRate' in context))
+      throw new TypeError('Expected BaseAudioContext as first argument')
+    if (context._state === 'closed') throw new InvalidStateError('cannot create node on closed context')
     super(context)
 
     this.#numberOfInputs = numberOfInputs
     this.#numberOfOutputs = numberOfOutputs
     this.#channelCount = channelCount || 2
-    this.#channelCountMode = channelCountMode
-    this.#channelInterpretation = channelInterpretation
+    this.#channelCountMode = channelCountMode || 'max'
+    this.#channelInterpretation = channelInterpretation || 'speakers'
 
     this._inputs = []
     this._outputs = []
@@ -57,21 +68,33 @@ class AudioNode extends DspObject {
       this._outputs.push(new AudioOutput(context, this, i))
   }
 
+  // Apply channel properties from options dict through validated setters
+  _applyOpts(opts) {
+    if ('channelCount' in opts) this.channelCount = opts.channelCount
+    if ('channelCountMode' in opts) this.channelCountMode = opts.channelCountMode
+    if ('channelInterpretation' in opts) this.channelInterpretation = opts.channelInterpretation
+  }
+
   connect(destination, output = 0, input = 0) {
-    if (!destination || typeof destination.numberOfInputs === 'undefined')
-      throw new TypeError('destination must be an AudioNode')
-    if (output >= this.numberOfOutputs)
-      throw new IndexSizeError('output index ' + output + ' out of bounds')
-    if (input >= destination.numberOfInputs)
-      throw new IndexSizeError('input index ' + input + ' out of bounds')
+    if (!destination) throw new TypeError('destination must be an AudioNode or AudioParam')
+    // connect to AudioParam
+    if (destination._input && destination.defaultValue !== undefined) {
+      if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
+      this._outputs[output].connect(destination._input)
+      return undefined
+    }
+    // connect to AudioNode
+    if (typeof destination.numberOfInputs === 'undefined')
+      throw new TypeError('destination must be an AudioNode or AudioParam')
+    if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
+    if (input >= destination.numberOfInputs) throw new IndexSizeError('input index ' + input + ' out of bounds')
     this._outputs[output].connect(destination._inputs[input])
     return destination
   }
 
   disconnect(outputOrDest, output, input) {
     if (outputOrDest === undefined) {
-      for (let o of this._outputs)
-        o.sinks.slice(0).forEach(sink => o.disconnect(sink))
+      for (let o of this._outputs) o.sinks.slice(0).forEach(sink => o.disconnect(sink))
       return
     }
     if (typeof outputOrDest === 'number') {
@@ -82,6 +105,14 @@ class AudioNode extends DspObject {
     }
     let dest = outputOrDest
     output = output ?? 0
+    // disconnect from AudioParam
+    if (dest._input && dest.defaultValue !== undefined) {
+      if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
+      let o = this._outputs[output]
+      if (o.sinks.includes(dest._input)) o.disconnect(dest._input)
+      return
+    }
+    // disconnect from AudioNode
     input = input ?? 0
     if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
     let o = this._outputs[output]

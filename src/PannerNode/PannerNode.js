@@ -11,7 +11,8 @@ import { NotSupportedError } from '../errors.js'
 
 class PannerNode extends AudioNode {
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, 2, 'clamped-max', 'speakers')
 
     this._listener = context.listener
@@ -23,6 +24,15 @@ class PannerNode extends AudioNode {
     this._velocity = new FloatPoint3D(1, 0, 0)
     this._lastGain = -1
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
+    if (options.panningModel !== undefined) this.panningModel = options.panningModel
+    if (options.distanceModel !== undefined) this.distanceModel = options.distanceModel
+    if (options.refDistance !== undefined) this.refDistance = options.refDistance
+    if (options.maxDistance !== undefined) this.maxDistance = options.maxDistance
+    if (options.rolloffFactor !== undefined) this.rolloffFactor = options.rolloffFactor
+    if (options.coneInnerAngle !== undefined) this.coneInnerAngle = options.coneInnerAngle
+    if (options.coneOuterAngle !== undefined) this.coneOuterAngle = options.coneOuterAngle
+    if (options.coneOuterGain !== undefined) this.coneOuterGain = options.coneOuterGain
+    this._applyOpts(options)
   }
 
   // --- validation hooks (override AudioNode) ---

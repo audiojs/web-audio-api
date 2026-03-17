@@ -1,5 +1,6 @@
 import { BLOCK_SIZE } from './constants.js'
 import AudioScheduledSourceNode from './AudioScheduledSourceNode.js'
+import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 
@@ -9,20 +10,22 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
   #playbackRate
   get playbackRate() { return this.#playbackRate }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 0, 1, undefined, 'max', 'speakers')
 
-    this.buffer = null
-    this.loop = false
-    this.loopStart = 0
-    this.loopEnd = 0
+    this.buffer = options.buffer ?? null
+    this.loop = options.loop ?? false
+    this.loopStart = options.loopStart ?? 0
+    this.loopEnd = options.loopEnd ?? 0
 
-    this.#playbackRate = new AudioParam(this.context, 1, 'a')
+    this.#playbackRate = new AudioParam(this.context, options.playbackRate ?? 1, 'a')
 
     this._cursor = 0
     this._cursorEnd = 0
     this._offset = 0
     this._duration = 0
+    this._applyOpts(options)
   }
 
   start(when, offset, duration) {

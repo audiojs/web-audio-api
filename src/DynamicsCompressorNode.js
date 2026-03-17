@@ -20,15 +20,17 @@ class DynamicsCompressorNode extends AudioNode {
   get release() { return this.#release }
   get reduction() { return this.#reduction }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#threshold = new AudioParam(this.context, -24, 'k')
-    this.#knee = new AudioParam(this.context, 30, 'k')
-    this.#ratio = new AudioParam(this.context, 12, 'k')
-    this.#attack = new AudioParam(this.context, 0.003, 'k')
-    this.#release = new AudioParam(this.context, 0.25, 'k')
+    this.#threshold = new AudioParam(this.context, options.threshold ?? -24, 'k')
+    this.#knee = new AudioParam(this.context, options.knee ?? 30, 'k')
+    this.#ratio = new AudioParam(this.context, options.ratio ?? 12, 'k')
+    this.#attack = new AudioParam(this.context, options.attack ?? 0.003, 'k')
+    this.#release = new AudioParam(this.context, options.release ?? 0.25, 'k')
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
   }
 
   _tick() {

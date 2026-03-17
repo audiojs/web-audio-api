@@ -11,8 +11,11 @@ class AudioParam extends DspObject {
   #automationEventList
 
   get defaultValue() { return this.#defaultValue }
-  get minValue() { return -3.4028235e38 }
-  get maxValue() { return 3.4028235e38 }
+  get minValue() { return -3.4028234663852886e38 }
+  get maxValue() { return 3.4028234663852886e38 }
+
+  get automationRate() { return this.#rate === 'a' ? 'a-rate' : 'k-rate' }
+  set automationRate(val) { this.#rate = val === 'k-rate' ? 'k' : 'a' }
 
   get value() { return this.#intrinsicValue }
   set value(newVal) {

@@ -18,10 +18,16 @@ class WaveShaperNode extends AudioNode {
 
   get curve() { return this.#curve }
   set curve(val) {
-    if (val !== null && !(val instanceof Float32Array))
-      throw new Error('curve must be Float32Array or null')
-    if (val && val.length < 2)
-      throw new Error('curve must have at least 2 elements')
+    if (val === null) { this.#curve = null; return }
+    if (val instanceof Float32Array) {
+      if (val.length < 2) throw new Error('curve must have at least 2 elements')
+      this.#curve = val
+      return
+    }
+    if (typeof val !== 'object' || typeof val.length !== 'number')
+      throw new Error('curve must be a Float32Array, Array, or array-like')
+    val = new Float32Array(val)
+    if (val.length < 2) throw new Error('curve must have at least 2 elements')
     this.#curve = val
   }
 
@@ -31,10 +37,14 @@ class WaveShaperNode extends AudioNode {
     this.#oversample = val
   }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
+    if (options.curve !== undefined) this.curve = options.curve
+    if (options.oversample !== undefined) this.oversample = options.oversample
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
   }
 
   _tick() {

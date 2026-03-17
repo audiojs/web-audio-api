@@ -10,12 +10,15 @@ class MediaStreamAudioSourceNode extends AudioNode {
   #readPos = 0
   #channelCount
 
-  constructor(context, { mediaStream, numberOfChannels = 1 } = {}) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
+    let numberOfChannels = options.numberOfChannels ?? 1
     super(context, 0, 1, numberOfChannels, 'max', 'speakers')
-    this.#stream = mediaStream
+    this.#stream = options.mediaStream
     this.#channelCount = numberOfChannels
     this.#buffer = [] // accumulated Float32Array chunks per channel
     this._outBuf = new AudioBuffer(numberOfChannels, BLOCK_SIZE, context.sampleRate)
+    this._applyOpts(options)
   }
 
   // Push audio data into the node (called externally or from stream)
@@ -59,7 +62,9 @@ class MediaStreamAudioDestinationNode extends AudioNode {
 
   get stream() { return this.#stream }
 
-  constructor(context, { numberOfChannels = 2 } = {}) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
+    let numberOfChannels = options.numberOfChannels ?? 2
     super(context, 1, 0, numberOfChannels, 'explicit', 'speakers')
     // create a simple readable interface
     this.#stream = {

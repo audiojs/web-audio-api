@@ -21,6 +21,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   start(when = 0) {
+    if (typeof when !== 'number' || isNaN(when) || !isFinite(when)) throw new TypeError('when must be a finite number')
     if (when < 0) throw new RangeError('when must be non-negative')
     if (this._started) throw new InvalidStateError('start has already been called')
     this._started = true
@@ -31,6 +32,7 @@ class AudioScheduledSourceNode extends AudioNode {
   }
 
   stop(when = 0) {
+    if (typeof when !== 'number' || isNaN(when) || !isFinite(when)) throw new TypeError('when must be a finite number')
     if (when < 0) throw new RangeError('when must be non-negative')
     if (!this._started) throw new InvalidStateError('cannot stop before start')
     this._schedule('stop', when, () => {

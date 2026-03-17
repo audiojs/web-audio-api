@@ -11,7 +11,7 @@ class OfflineAudioContext extends BaseAudioContext {
   get length() { return this.#length }
 
   constructor(numberOfChannels, length, sampleRate) {
-    super(sampleRate)
+    super(sampleRate, numberOfChannels)
     this.#numberOfChannels = numberOfChannels
     this.#length = length
   }
@@ -19,47 +19,46 @@ class OfflineAudioContext extends BaseAudioContext {
   startRendering() {
     if (this._state === 'closed') return Promise.reject(new Error('context is closed'))
 
-    return new Promise((resolve, reject) => {
-      try {
-        this._setState('running')
+    try {
+      this._setState('running')
 
-        let outBuf = new AudioBuffer(this.#numberOfChannels, this.#length, this.sampleRate)
-        let written = 0
+      let outBuf = new AudioBuffer(this.#numberOfChannels, this.#length, this.sampleRate)
+      let written = 0
 
-        while (written < this.#length) {
-          let block = this._renderQuantum()
-          let remaining = this.#length - written
-          let count = Math.min(BLOCK_SIZE, remaining)
+      while (written < this.#length) {
+        let block = this._renderQuantum()
+        let remaining = this.#length - written
+        let count = Math.min(BLOCK_SIZE, remaining)
 
-          for (let ch = 0; ch < this.#numberOfChannels; ch++) {
-            let src = block.getChannelData(Math.min(ch, block.numberOfChannels - 1))
-            let dst = outBuf.getChannelData(ch)
-            for (let i = 0; i < count; i++) dst[written + i] = src[i]
-          }
-
-          written += count
+        for (let ch = 0; ch < this.#numberOfChannels; ch++) {
+          let src = block.getChannelData(Math.min(ch, block.numberOfChannels - 1))
+          let dst = outBuf.getChannelData(ch)
+          for (let i = 0; i < count; i++) dst[written + i] = src[i]
         }
 
-        this.#renderedBuffer = outBuf
-        this._frame = this.#length // correct for any overshoot from partial last block
-        this._setState('closed')
-        let ev = new Event('complete')
-        ev.renderedBuffer = outBuf
-        this.dispatchEvent(ev)
-        resolve(outBuf)
-      } catch (e) {
-        this._setState('closed')
-        reject(e)
+        written += count
       }
-    })
+
+      this.#renderedBuffer = outBuf
+      this._frame = this.#length
+      this._setState('closed')
+      let ev = new Event('complete')
+      ev.renderedBuffer = outBuf
+      this.dispatchEvent(ev)
+      return Promise.resolve(outBuf)
+    } catch (e) {
+      this._setState('closed')
+      return Promise.reject(e)
+    }
   }
 
   suspend() {
-    return Promise.reject(new Error('suspend() not supported on OfflineAudioContext'))
+    // spec allows suspend(time) on OfflineAudioContext but we don't support mid-render pause yet
+    return Promise.resolve()
   }
 
   resume() {
-    return Promise.reject(new Error('resume() not supported on OfflineAudioContext'))
+    return Promise.resolve()
   }
 
   get renderedBuffer() { return this.#renderedBuffer }

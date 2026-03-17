@@ -11,7 +11,7 @@ class AudioContext extends BaseAudioContext {
 
   constructor(opts) {
     opts = opts || {}
-    super(opts.sampleRate || 44100)
+    super(opts.sampleRate || 44100, opts.numberOfChannels || 2)
     this._state = 'running'
 
     this.#numberOfChannels = opts.numberOfChannels || 2

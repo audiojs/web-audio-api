@@ -13,18 +13,21 @@ class DelayNode extends AudioNode {
   get delayTime() { return this.#delayTime }
   get maxDelayTime() { return this.#maxDelayTime }
 
-  constructor(context, { maxDelayTime = 1.0 } = {}) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
+    let maxDelayTime = options.maxDelayTime ?? 1.0
     super(context, 1, 1, undefined, 'max', 'speakers')
     if (!Number.isFinite(maxDelayTime) || maxDelayTime < 0 || maxDelayTime > 180)
       throw new Error('maxDelayTime must be finite, >= 0, and <= 180')
     this.#maxDelayTime = maxDelayTime
-    this.#delayTime = new AudioParam(this.context, 0, 'a')
+    this.#delayTime = new AudioParam(this.context, options.delayTime ?? 0, 'a')
     let ringLen = Math.ceil(maxDelayTime * context.sampleRate) + BLOCK_SIZE
     this.#ringBuf = []
     this._outBuf = null
     this._outCh = 0
     this._ringLen = ringLen
-    this._ticking = false // cycle guard
+    this._ticking = false
+    this._applyOpts(options)
   }
 
   _ensureRingBuf(channels) {
@@ -37,7 +40,6 @@ class DelayNode extends AudioNode {
   }
 
   _tick() {
-    // cycle guard: if re-entered (feedback loop), return previous output
     if (this._ticking) return this._outBuf || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
     this._ticking = true
     super._tick()

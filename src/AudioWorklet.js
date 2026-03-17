@@ -49,7 +49,8 @@ class AudioWorkletNode extends AudioNode {
   get port() { return this.#nodePort }
   get parameters() { return this.#paramMap }
 
-  constructor(context, processorName, options = {}) {
+  constructor(context, processorName, options) {
+    options = AudioNode._checkOpts(options)
     let numberOfInputs = options.numberOfInputs ?? 1
     let numberOfOutputs = options.numberOfOutputs ?? 1
     let outputChannelCount = options.outputChannelCount ?? [2]

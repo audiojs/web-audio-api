@@ -32,6 +32,7 @@
     "fourier-transform": "^2.1.0"
   },
   "devDependencies": {
+    "linkedom": "^0.18.12",
     "tst": "^9.2.2"
   },
   "license": "MIT",

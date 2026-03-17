@@ -33,10 +33,10 @@ class BaseAudioContext extends EventTarget {
   #onstatechange = null
   #oncomplete = null
 
-  constructor(sampleRate = 44100) {
+  constructor(sampleRate = 44100, numberOfChannels = 2) {
     super()
     this._sampleRate = sampleRate
-    this._destination = new AudioDestinationNode(this)
+    this._destination = new AudioDestinationNode(this, numberOfChannels)
     this._listener = new AudioListener()
     this.audioWorklet = new AudioWorklet(this)
   }
@@ -93,15 +93,15 @@ class BaseAudioContext extends EventTarget {
   createDelay(maxDelayTime) { return new DelayNode(this, { maxDelayTime }) }
   createBiquadFilter() { return new BiquadFilterNode(this) }
   createWaveShaper() { return new WaveShaperNode(this) }
-  createIIRFilter(ff, fb) { return new IIRFilterNode(this, ff, fb) }
+  createIIRFilter(feedforward, feedback) { return new IIRFilterNode(this, { feedforward, feedback }) }
   createConvolver() { return new ConvolverNode(this) }
   createDynamicsCompressor() { return new DynamicsCompressorNode(this) }
-  createChannelSplitter(n) { return new ChannelSplitterNode(this, { numberOfOutputs: n }) }
-  createChannelMerger(n) { return new ChannelMergerNode(this, { numberOfInputs: n }) }
+  createChannelSplitter(numberOfOutputs) { return new ChannelSplitterNode(this, { numberOfOutputs }) }
+  createChannelMerger(numberOfInputs) { return new ChannelMergerNode(this, { numberOfInputs }) }
   createAnalyser() { return new AnalyserNode(this) }
-  createScriptProcessor(bs, ic, oc) { return new ScriptProcessorNode(this, bs, ic, oc) }
+  createScriptProcessor(bufferSize, inCh, outCh) { return new ScriptProcessorNode(this, bufferSize, inCh, outCh) }
   createPanner() { return new PannerNode(this) }
-  createMediaStreamSource(ms) { return new MediaStreamAudioSourceNode(this, { mediaStream: ms }) }
+  createMediaStreamSource(mediaStream) { return new MediaStreamAudioSourceNode(this, { mediaStream }) }
   createMediaStreamDestination() { return new MediaStreamAudioDestinationNode(this) }
 }
 
