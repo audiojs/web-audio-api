@@ -64,12 +64,23 @@ function loadHelpers(html, testDir) {
 let _wptTestDir = ''
 
 class WPTAudioContext extends waa.AudioContext {
+  #renderFrames = 0
   constructor(opts) {
     super(opts)
     this.outStream = { write: () => true, once() {}, end() {} }
     this._basePath = _wptTestDir
+    // Auto-resume like browsers do (WPT tests assume running state)
+    this._setState('running')
   }
-  _renderLoop() {}
+  // Process audio graph asynchronously via setTimeout for real-time context tests
+  // Limited to ~10s of audio to prevent hangs
+  _renderLoop() {
+    if (this._state !== 'running') return
+    if (this.#renderFrames > this.sampleRate * 10) return
+    this._renderQuantum()
+    this.#renderFrames += 128
+    setTimeout(() => this._renderLoop(), 0)
+  }
 }
 
 class WPTOfflineAudioContext extends waa.OfflineAudioContext {

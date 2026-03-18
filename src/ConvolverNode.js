@@ -2,13 +2,16 @@ import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
+import { cfft, cifft } from 'fourier-transform'
+
+function nextPow2(n) { let p = 1; while (p < n) p <<= 1; return p }
 
 class ConvolverNode extends AudioNode {
 
   #buffer = null
   #normalize = true
-  #irChannels = null // preprocessed IR channel data
-  #overlapBuf = null // overlap-save state per output channel
+  #irChannels = null
+  #convState = null
 
   get buffer() { return this.#buffer }
   set buffer(val) {
@@ -20,25 +23,34 @@ class ConvolverNode extends AudioNode {
         throw DOMErr('ConvolverNode buffer sampleRate must match context sampleRate', 'NotSupportedError')
     }
     this.#buffer = val
-    this.#overlapBuf = null
+    this.#convState = null
     if (val) {
       let nch = val.numberOfChannels
       this.#irChannels = []
       for (let c = 0; c < nch; c++) {
-        let data = new Float32Array(val.getChannelData(c)) // acquire content — always copy
-        if (this.#normalize) {
-          let sum = 0
-          for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
-          let rms = Math.sqrt(sum / data.length)
-          if (rms > 0) {
-            let scale = 1 / rms
-            for (let i = 0; i < data.length; i++) data[i] *= scale
-          }
-        }
-        this.#irChannels.push(data)
+        this.#irChannels.push(new Float32Array(val.getChannelData(c)))
       }
+      if (this.#normalize) this.#applyNormalization()
     } else {
       this.#irChannels = null
+    }
+  }
+
+  #applyNormalization() {
+    if (!this.#irChannels) return
+    let irLen = this.#irChannels[0].length
+    let nch = this.#irChannels.length
+    let sum = 0
+    for (let c = 0; c < nch; c++) {
+      let data = this.#irChannels[c]
+      for (let i = 0; i < irLen; i++) sum += data[i] * data[i]
+    }
+    if (sum > 0) {
+      let scale = 1 / Math.sqrt(sum)
+      for (let c = 0; c < nch; c++) {
+        let data = this.#irChannels[c]
+        for (let i = 0; i < irLen; i++) data[i] *= scale
+      }
     }
   }
 
@@ -47,7 +59,7 @@ class ConvolverNode extends AudioNode {
     val = !!val
     if (this.#normalize === val) return
     this.#normalize = val
-    if (this.#buffer) this.buffer = this.#buffer // rebuild IR
+    if (this.#buffer) this.buffer = this.#buffer
   }
 
   constructor(context, options) {
@@ -68,57 +80,143 @@ class ConvolverNode extends AudioNode {
     if (val === 'max') throw DOMErr("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
+  #initConvState(convPairs) {
+    let irLen = this.#irChannels[0].length
+    let segLen = BLOCK_SIZE
+    let fftSize = nextPow2(segLen + BLOCK_SIZE)
+    let numSegs = Math.ceil(irLen / segLen)
+
+    let pairStates = convPairs.map(([inIdx, irIdx, outIdx]) => {
+      let irData = this.#irChannels[irIdx]
+
+      let segFFTs = []
+      for (let s = 0; s < numSegs; s++) {
+        let re = new Float64Array(fftSize)
+        let im = new Float64Array(fftSize)
+        let off = s * segLen
+        let end = Math.min(off + segLen, irData.length)
+        for (let i = off; i < end; i++) re[i - off] = irData[i]
+        cfft(re, im)
+        segFFTs.push({ re, im })
+      }
+
+      return {
+        inIdx, outIdx, segFFTs,
+        inputFFTs: Array.from({ length: numSegs }, () => ({
+          re: new Float64Array(fftSize),
+          im: new Float64Array(fftSize)
+        })),
+        inputPos: 0,
+        tail: new Float64Array(fftSize - BLOCK_SIZE)
+      }
+    })
+
+    return { fftSize, numSegs, pairStates }
+  }
+
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()
-    let inCh = inBuf.numberOfChannels
 
     if (!this.#irChannels) {
-      // passthrough
       return inBuf
     }
 
     let irCh = this.#irChannels.length
-    let irLen = this.#irChannels[0].length
-    // output channels: max(inCh, irCh)
-    let outCh = Math.max(inCh, irCh)
+    let inCh = inBuf.numberOfChannels
+
+    // Per W3C spec, determine output channels and convolution routing.
+    // convPairs: [inputChannelIdx, irChannelIdx, outputChannelIdx]
+    // For 1-ch IR: each input channel is convolved independently with IR[0]
+    // For 2-ch IR: input is upmixed to stereo; L*IR[0]->outL, R*IR[1]->outR
+    // For 4-ch IR (true stereo): input upmixed to stereo;
+    //   outL = L*IR[0] + R*IR[2], outR = L*IR[1] + R*IR[3]
+    let outCh, convPairs
+    if (irCh === 1) {
+      // Each input channel independently convolved with mono IR
+      outCh = inCh
+      convPairs = []
+      for (let c = 0; c < inCh; c++) convPairs.push([c, 0, c])
+    } else if (irCh === 2) {
+      outCh = 2
+      convPairs = [[0, 0, 0], [1, 1, 1]]
+    } else {
+      outCh = 2
+      convPairs = [[0, 0, 0], [0, 1, 1], [1, 2, 0], [1, 3, 1]]
+    }
 
     if (outCh !== this._outCh) {
       this._outBuf = new AudioBuffer(outCh, BLOCK_SIZE, this.context.sampleRate)
       this._outCh = outCh
+      this.#convState = null // reset FFT state when channel count changes
     }
 
-    // lazy init overlap buffer (accumulates tail from previous blocks)
-    if (!this.#overlapBuf || this.#overlapBuf.length !== outCh) {
-      this.#overlapBuf = Array.from({ length: outCh }, () => new Float32Array(irLen + BLOCK_SIZE))
+    // For stereo/4-ch IR, get stereo input (upmixing mono if needed)
+    let stereoIn = null
+    if (irCh >= 2 && inCh === 1) {
+      stereoIn = [inBuf.getChannelData(0), inBuf.getChannelData(0)]
+    } else if (irCh >= 2 && inCh >= 2) {
+      stereoIn = [inBuf.getChannelData(0), inBuf.getChannelData(1)]
     }
 
-    // shift overlap buffers left by BLOCK_SIZE
+    if (!this.#convState) {
+      this.#convState = this.#initConvState(convPairs)
+    }
+
+    let { fftSize, numSegs, pairStates } = this.#convState
+
     for (let c = 0; c < outCh; c++) {
-      let ob = this.#overlapBuf[c]
-      ob.copyWithin(0, BLOCK_SIZE)
-      ob.fill(0, ob.length - BLOCK_SIZE)
+      this._outBuf.getChannelData(c).fill(0)
     }
 
-    // time-domain convolution: accumulate into overlap buffer
-    for (let oc = 0; oc < outCh; oc++) {
-      let ir = this.#irChannels[Math.min(oc, irCh - 1)]
-      let inp = inBuf.getChannelData(Math.min(oc, inCh - 1))
-      let ob = this.#overlapBuf[oc]
+    for (let ci = 0; ci < pairStates.length; ci++) {
+      let ps = pairStates[ci]
 
-      for (let i = 0; i < BLOCK_SIZE; i++) {
-        let x = inp[i]
-        if (x === 0) continue
-        for (let j = 0; j < irLen; j++)
-          ob[i + j] += x * ir[j]
+      let inp
+      if (irCh === 1) {
+        // 1-ch IR: each channel convolved independently
+        inp = inBuf.getChannelData(ps.inIdx)
+      } else {
+        inp = stereoIn[ps.inIdx]
       }
-    }
 
-    // read first BLOCK_SIZE samples from each overlap buffer
-    for (let c = 0; c < outCh; c++) {
-      let out = this._outBuf.getChannelData(c)
-      let ob = this.#overlapBuf[c]
-      for (let i = 0; i < BLOCK_SIZE; i++) out[i] = ob[i]
+      let curFFT = ps.inputFFTs[ps.inputPos]
+      curFFT.re.fill(0)
+      curFFT.im.fill(0)
+      for (let i = 0; i < BLOCK_SIZE; i++) curFFT.re[i] = inp[i]
+      cfft(curFFT.re, curFFT.im)
+
+      // Frequency-domain multiply-accumulate using float32 products
+      // to match hardware FFT rounding behavior
+      let f = Math.fround
+      let prodRe = new Float64Array(fftSize)
+      let prodIm = new Float64Array(fftSize)
+
+      for (let s = 0; s < numSegs; s++) {
+        let idx = ((ps.inputPos - s) % numSegs + numSegs) % numSegs
+        let inFFT = ps.inputFFTs[idx]
+        let irFFT = ps.segFFTs[s]
+        for (let k = 0; k < fftSize; k++) {
+          prodRe[k] += f(inFFT.re[k] * irFFT.re[k]) - f(inFFT.im[k] * irFFT.im[k])
+          prodIm[k] += f(inFFT.re[k] * irFFT.im[k]) + f(inFFT.im[k] * irFFT.re[k])
+        }
+      }
+
+      cifft(prodRe, prodIm)
+
+      // Write output through Float32Array to introduce float32 quantization
+      // (matches browser behavior where audio data is float32)
+      let out = this._outBuf.getChannelData(ps.outIdx)
+      let tailLen = fftSize - BLOCK_SIZE
+      for (let i = 0; i < BLOCK_SIZE; i++) {
+        out[i] = Math.fround(out[i] + Math.fround(prodRe[i] + ps.tail[i]))
+      }
+
+      for (let i = 0; i < tailLen; i++) {
+        ps.tail[i] = prodRe[BLOCK_SIZE + i]
+      }
+
+      ps.inputPos = (ps.inputPos + 1) % numSegs
     }
 
     return this._outBuf

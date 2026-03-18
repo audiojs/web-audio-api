@@ -49,6 +49,7 @@ class OscillatorNode extends AudioScheduledSourceNode {
     let detuneArr = this.#detune._tick()
     let out = this._outBuf.getChannelData(0)
     let sr = this.context.sampleRate
+    let nyquist = sr / 2
     let table = this.#periodicWave?.table ?? PeriodicWave.getBuiltIn(this.#type)
     let phase = this.#phase
     let count = this._activeBlockSize || BLOCK_SIZE
@@ -64,13 +65,29 @@ class OscillatorNode extends AudioScheduledSourceNode {
     for (let i = 0; i < count; i++) {
       let freq = freqArr[offset + i] * (2 ** (detuneArr[offset + i] / 1200))
 
-      // linear interpolation for smooth wavetable lookup
+      // Per spec: if computed frequency >= Nyquist, output silence
+      if (Math.abs(freq) >= nyquist) {
+        out[i] = 0
+        phase += freq / sr
+        phase -= Math.floor(phase)
+        continue
+      }
+
+      // Cubic (Hermite) interpolation for high-precision wavetable lookup
       let pos = phase * TABLE_SIZE
       let idx = Math.floor(pos)
       let frac = pos - idx
-      let a = table[idx % TABLE_SIZE]
-      let b = table[(idx + 1) % TABLE_SIZE]
-      out[i] = a + (b - a) * frac
+      let i0 = ((idx - 1) % TABLE_SIZE + TABLE_SIZE) % TABLE_SIZE
+      let i1 = idx % TABLE_SIZE
+      let i2 = (idx + 1) % TABLE_SIZE
+      let i3 = (idx + 2) % TABLE_SIZE
+      let y0 = table[i0], y1 = table[i1], y2 = table[i2], y3 = table[i3]
+      // Hermite interpolation
+      let c0 = y1
+      let c1 = 0.5 * (y2 - y0)
+      let c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3
+      let c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2)
+      out[i] = ((c3 * frac + c2) * frac + c1) * frac + c0
 
       phase += freq / sr
       phase -= Math.floor(phase) // keep in [0, 1)

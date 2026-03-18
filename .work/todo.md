@@ -1,4 +1,13 @@
-## Current README problems:
+## [ ] Make it work
+
+* Change proposition layer: The proposition of pure JavaScript is not the value I am pursuing. As you see in the plan there's WASM version, can be potentially made with JZ - subset of JS compiling into WASM.
+We need to reframe value proposition into something more reliable, like fixing the platform gap or something like that
+* All issues in github
+* Benchmarks: faster than any alternative
+* Factor out dependencies: dsp/digital-filter?
+
+
+## [ ] Current README problems:
 
 "Alternatives" framing is defensive
 Missing: offline rendering example, testing use case, clear "when to use this vs alternatives"
@@ -10,7 +19,7 @@ Proof (WPT conformance)
 Install + use (30 seconds to running code)
 When to use what (honest comparison)
 
-## BLINDSPOTS — What am I not seeing?
+## [ ] BLINDSPOTS — What am I not seeing?
 
 Performance ceiling — Pure JS will always be slower than Rust/native. Is this acknowledged honestly? At what graph complexity does it fall behind real-time? Users need to know.
 outStream is non-standard — The one API surface that ISN'T Web Audio spec. It's the escape hatch for output, but it breaks the "it's the same API" promise.
@@ -18,13 +27,13 @@ Browser-only WPT tests — Some WPT tests require MediaElement, actual hardware 
 Maintenance load — WPT evolves. Browsers update. 99% today requires ongoing effort.
 AudioWorklet isolation — In browsers, AudioWorklet runs in a separate thread. In this implementation, it runs synchronously. For most use cases that's fine, but it's a behavioral difference.
 
-## Extra value
+## [ ] Extra value
 
 Extractable DSP kernels: Each node's _dsp() function is a standalone algorithm — biquad filter, FFT, convolution, dynamics compression. These could become independent modules.
 Isomorphic audio: Write audio processing once, run it on client and server. Share audio graph definitions between browser and Node.js.
 Audio as function: OfflineAudioContext turns audio processing into a pure function: graph in → buffer out. Perfect for serverless.
 
-## Use cases
+## [ ] Use cases
 
 0. Speaker output — real-time playback via speaker/stdout
 1. Offline rendering — graph in → buffer out (OfflineAudioContext)
@@ -35,7 +44,7 @@ Audio as function: OfflineAudioContext turns audio processing into a pure functi
 6. Stream processing — real-time effects on audio streams
 
 
-## Examples (examples/)
+## [ ] Examples (examples/)
 
   Grounded in MDN tutorials + real npm usage. Each is self-contained, no browser, no DOM.
 
@@ -112,3 +121,42 @@ Audio as function: OfflineAudioContext turns audio processing into a pure functi
   The deeper question — "teach agents to be audio engineers" — is aspirational. That's not about this project, that's about agent capabilities + training data.
 
   **Agent Skill to remaster your audio**
+
+## [ ] Make it right
+
+## [ ] Make it fast
+
+## [ ] Milestone 2 — jz / WASM DSP
+
+Goal: rewrite performance-critical DSP kernels in jz, compile to WASM, maintain pure-JS fallbacks.
+
+### Phase 1: jz setup
+
+1. jz toolchain integration — build pipeline, WASM compilation
+2. JS ↔ WASM interface design — audio buffer passing (SharedArrayBuffer or copy), param automation data transfer
+3. Feature detection — auto-select WASM when available, JS fallback otherwise
+
+### Phase 2: Hot-path kernels
+
+Priority by CPU cost (highest first):
+
+1. **ConvolverNode** — FFT-based convolution, most compute-intensive node
+2. **BiquadFilterNode** — per-sample IIR filtering, very hot in typical audio graphs
+3. **OscillatorNode** — waveform generation, phase accumulation
+4. **DynamicsCompressorNode** — envelope detection, gain computation
+5. **IIRFilterNode** — general IIR filtering
+6. **FFT for AnalyserNode** — spectral analysis
+7. **Channel mixing** — up/down mixing in audioports
+8. **AudioParam automation** — sample-accurate interpolation
+
+### Phase 3: Audio graph engine
+
+1. **Graph traversal in WASM** — process ordered node list without JS ↔ WASM boundary per node
+2. **Buffer pool** — pre-allocated audio buffers managed in WASM memory
+3. **SIMD** — leverage WASM SIMD for vectorized DSP where supported
+
+### Phase 4: Validation
+
+1. Bit-exact output comparison: JS vs WASM paths
+2. Performance benchmarks: latency, throughput, memory
+3. Stress tests: large graphs, long-running sessions, real-time constraints

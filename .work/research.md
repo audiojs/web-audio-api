@@ -1,14 +1,14 @@
 ## Essence
 
-Web Audio API in pure JavaScript.
+Portable Web Audio API.
 
-Same API, same behavior, proven by the same test suite (99% WPT). Runs everywhere JavaScript does — Node.js, Deno, Bun, serverless, edge. The only spec-compliant implementation with zero native dependencies.
+The Web Audio API is a powerful W3C standard — but it only exists in browsers. This project closes the platform gap: same API, same behavior, proven by the same test suite (99% WPT). Runs in Node.js, Deno, Bun, serverless, edge — no native compilation required.
 
 ## What suffering ends
 
-A developer needs audio processing outside a browser. They know the Web Audio API. They try Rust-based alternatives — native addon, won't run in their environment. They find archived JS implementations from 2019. They're stuck writing raw DSP by hand.
+A developer needs audio processing outside a browser. They know the Web Audio API — it's what browsers use, what MDN documents, what tutorials teach. They try Rust-based alternatives — needs native compilation, won't run in their environment. They find archived JS implementations from 2019. They're stuck writing raw DSP by hand.
 
-This project: `import { AudioContext } from 'web-audio-api'` — their existing knowledge works.
+This project: `import { AudioContext } from 'web-audio-api'` — their existing knowledge works, anywhere.
 
 ## Who it's for
 
@@ -34,15 +34,15 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 
 ## Moat
 
-1. **Pure JS** — the only spec-compliant implementation with zero native dependencies
+1. **Portable** — the only spec-compliant implementation requiring no native compilation (holds for JS today, WASM tomorrow)
 2. **99% WPT** — not an approximation, proven conformance
 3. **`web-audio-api` on npm** — canonical name
-4. **4 production dependencies** — minimal surface area
+4. **Minimal surface** — 4 production dependencies
 5. **audiojs ecosystem** — audio-buffer, audio-decode feed into it
 
 ## Honest limitations
 
-- Pure JS is slower than Rust/native — performance ceiling for complex real-time graphs
+- Performance ceiling for complex real-time graphs (WASM kernels planned to close this gap)
 - `outStream` is non-standard — the one API surface that isn't part of the spec
 - ~1% WPT gap is fundamental: some tests require browser DOM (MediaElement, hardware output)
 - AudioWorklet runs synchronously (browsers use a separate thread)
@@ -75,10 +75,10 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 
 ## Landscape
 
-| Implementation | Lang | Nodes | Tests | Runtime | Status |
-|---|---|---|---|---|---|
-| **this** (audiojs/web-audio-api) | JS | 21/26 | 202 tst | Node/Deno/Bun/edge/serverless | active |
-| node-web-audio-api (ircam) | Rust+JS | ~20/26 | WPT tracked | Node only (native addon) | active |
-| web-audio-api-rs (orottier) | Rust | ~18/26 | WPT tracked | Rust/WASM | active |
-| web-audio-engine (mohayonao) | JS | ~15/26 | minimal | Node | archived 2019 |
-| standardized-audio-context | TS | ~22/26 | browser | browser polyfill | active |
+| Implementation | Portable | Conformance | Runtimes | Status |
+|---|---|---|---|---|
+| **this** (audiojs/web-audio-api) | Yes | 99% WPT | Node/Deno/Bun/edge/serverless | active |
+| node-web-audio-api (ircam) | No (native addon) | ~75% WPT | Node only | active |
+| web-audio-api-rs (orottier) | No (Rust binary) | WPT tracked | Rust/WASM | active |
+| web-audio-engine (mohayonao) | Yes | minimal | Node | archived 2019 |
+| standardized-audio-context | Browser only | browser-native | browser polyfill | active |

@@ -81,7 +81,7 @@ test('OscillatorNode > onended fires after stop', () => {
 test('PeriodicWave > built-in waveforms', () => {
   for (let type of ['sine', 'square', 'sawtooth', 'triangle']) {
     let table = PeriodicWave.getBuiltIn(type)
-    ok(table.length === 4096, type + ' has 4096 samples')
+    ok(table.length === 8192, type + ' has 8192 samples')
     ok(table.some(v => v !== 0), type + ' non-silent')
   }
 })

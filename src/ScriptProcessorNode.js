@@ -9,6 +9,8 @@ class ScriptProcessorNode extends AudioNode {
   get bufferSize() { return this.#bufferSize }
 
   constructor(context, bufferSize, numberOfInputChannels, numberOfOutputChannels) {
+    // Per spec: bufferSize of 0 means implementation picks the best size
+    if (bufferSize === 0) bufferSize = 4096
     if (![256, 512, 1024, 2048, 4096, 8192, 16384].includes(bufferSize)) throw new Error('invalid bufferSize')
     super(context, 1, 1, numberOfInputChannels, 'explicit', 'speakers')
 

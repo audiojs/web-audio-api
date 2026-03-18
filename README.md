@@ -1,8 +1,8 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Web Audio API in pure JavaScript — 99% [Web Platform Tests](https://github.com/nicolo-ribaudo/tc39-proposal-structs/blob/main/test/test262) conformance.
+Portable Web Audio API — 99% [Web Platform Tests](https://github.com/nicolo-ribaudo/tc39-proposal-structs/blob/main/test/test262) conformance.
 
-Runs in Node.js, Deno, Bun, serverless, and edge runtimes — anywhere native addons can't.
+Runs in Node.js, Deno, Bun, serverless, and edge runtimes — no native compilation required.
 
 ## Install
 
@@ -61,13 +61,13 @@ const buffer = await ctx.startRendering()
 
 ## When to use what
 
-| | Language | Runs everywhere | Spec conformance |
+| | Portable | Conformance | Runtimes |
 |---|---|---|---|
-| **web-audio-api** | Pure JS | Node, Deno, Bun, edge, serverless | 99% WPT |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi-rs) | Node.js only | ~75% WPT |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Pure Rust | Rust only | — |
+| **web-audio-api** | Yes — no native compilation | 99% WPT | Node, Deno, Bun, edge, serverless |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No — Rust native addon | ~75% WPT | Node.js only |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No — Rust binary | — | Rust only |
 
-**Use this** if you need audio processing outside a browser, want to test Web Audio code in CI, or need audio in serverless/edge environments.
+**Use this** if you need the Web Audio API outside a browser — servers, CLI, CI testing, serverless, edge.
 
 **Use `node-web-audio-api`** if you're on Node.js only and need native performance for heavy real-time workloads.
 
