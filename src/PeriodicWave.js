@@ -9,10 +9,32 @@ class PeriodicWave {
   #table
   #disableNormalization
 
-  constructor(real, imag, { disableNormalization = false } = {}) {
+  constructor(contextOrReal, optionsOrImag, constraints) {
+    let real, imag, disableNormalization = false
+
+    // Spec constructor: new PeriodicWave(context, {real, imag, disableNormalization})
+    if (contextOrReal && typeof contextOrReal === 'object' && 'sampleRate' in contextOrReal) {
+      let opts = optionsOrImag || {}
+      real = opts.real
+      imag = opts.imag
+      disableNormalization = opts.disableNormalization ?? false
+      // Per spec: if only real is given, imag defaults to zeros; if only imag, real defaults to zeros
+      if (real && !imag) imag = new Float32Array(real.length)
+      if (imag && !real) real = new Float32Array(imag.length)
+    } else {
+      // Legacy: new PeriodicWave(real, imag, {disableNormalization})
+      real = contextOrReal
+      imag = optionsOrImag
+      disableNormalization = constraints?.disableNormalization ?? false
+    }
+
     if (!real || !imag) throw new TypeError('real and imag are required')
     if (real.length !== imag.length) throw new (globalThis.DOMException || Error)('real and imag must have equal length', 'IndexSizeError')
     if (real.length < 2) throw new (globalThis.DOMException || Error)('real and imag must have at least 2 elements', 'IndexSizeError')
+    for (let i = 0; i < real.length; i++)
+      if (!isFinite(real[i])) throw new TypeError('real values must be finite')
+    for (let i = 0; i < imag.length; i++)
+      if (!isFinite(imag[i])) throw new TypeError('imag values must be finite')
 
     this.#real = Float32Array.from(real)
     this.#imag = Float32Array.from(imag)

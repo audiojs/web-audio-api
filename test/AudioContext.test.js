@@ -72,12 +72,10 @@ test('AudioContext > sampleRate from constructor option', () => {
 
 // --- state machine ---
 
-test('AudioContext > state starts as running', () => {
-  let ctx = mkCtx(); ctx[Symbol.dispose]()
-  // dispose sets state to closed, so check before dispose
-  let ctx2 = mkCtx()
-  is(ctx2.state, 'running')
-  ctx2[Symbol.dispose]()
+test('AudioContext > state starts as suspended (per spec)', () => {
+  let ctx = mkCtx()
+  is(ctx.state, 'suspended')
+  ctx[Symbol.dispose]()
 })
 
 test('AudioContext > suspend/resume/close return Promises', async () => {
@@ -118,10 +116,11 @@ test('AudioContext > onstatechange fires', async () => {
   let ctx = mkCtx()
   let states = []
   ctx.onstatechange = () => states.push(ctx.state)
+  await ctx.resume()
   await ctx.suspend()
   await ctx.resume()
   await ctx.close()
-  is(states, ['suspended', 'running', 'closed'])
+  is(states, ['running', 'suspended', 'running', 'closed'])
 })
 
 test('AudioContext > baseLatency and outputLatency', () => {

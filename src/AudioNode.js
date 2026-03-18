@@ -1,6 +1,6 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
-import { IndexSizeError, InvalidStateError, NotSupportedError } from './errors.js'
+import { IndexSizeError, InvalidStateError, NotSupportedError, InvalidAccessError } from './errors.js'
 
 const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
 const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
@@ -9,8 +9,8 @@ class AudioNode extends DspObject {
   #channelCount
   get channelCount() { return this.#channelCount }
   set channelCount(val) {
-    if (val < 1 || val > 32) throw new NotSupportedError('channelCount must be between 1 and 32')
     this._validateChannelCount(val)
+    if (val < 1 || val > 32) throw new NotSupportedError('channelCount must be between 1 and 32')
     this.#channelCount = val
   }
 
@@ -85,6 +85,8 @@ class AudioNode extends DspObject {
     if (!destination) throw new TypeError('destination must be an AudioNode or AudioParam')
     // connect to AudioParam
     if (destination._input && destination.defaultValue !== undefined) {
+      if (destination.context && this.context && destination.context !== this.context)
+        throw new InvalidAccessError('cannot connect nodes from different AudioContexts')
       if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
       this._outputs[output].connect(destination._input)
       return undefined
@@ -92,6 +94,8 @@ class AudioNode extends DspObject {
     // connect to AudioNode
     if (typeof destination.numberOfInputs === 'undefined')
       throw new TypeError('destination must be an AudioNode or AudioParam')
+    if (destination.context && this.context && destination.context !== this.context)
+      throw new InvalidAccessError('cannot connect nodes from different AudioContexts')
     if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
     if (input >= destination.numberOfInputs) throw new IndexSizeError('input index ' + input + ' out of bounds')
     this._outputs[output].connect(destination._inputs[input])
@@ -99,31 +103,85 @@ class AudioNode extends DspObject {
   }
 
   disconnect(outputOrDest, output, input) {
+    // disconnect() — disconnect all outputs
     if (outputOrDest === undefined) {
       for (let o of this._outputs) o.sinks.slice(0).forEach(sink => o.disconnect(sink))
       return
     }
+    // disconnect(output) — disconnect specific output index
     if (typeof outputOrDest === 'number') {
-      if (outputOrDest >= this.numberOfOutputs) throw new IndexSizeError('output index ' + outputOrDest + ' out of bounds')
+      if (outputOrDest >= this.numberOfOutputs || outputOrDest < 0)
+        throw new IndexSizeError('output index ' + outputOrDest + ' out of bounds')
       let o = this._outputs[outputOrDest]
       o.sinks.slice(0).forEach(sink => o.disconnect(sink))
       return
     }
     let dest = outputOrDest
-    output = output ?? 0
+
     // disconnect from AudioParam
     if (dest._input && dest.defaultValue !== undefined) {
-      if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
-      let o = this._outputs[output]
-      if (o.sinks.includes(dest._input)) o.disconnect(dest._input)
+      if (dest.context && this.context && dest.context !== this.context)
+        throw new InvalidAccessError('cannot disconnect nodes from different AudioContexts')
+      if (output !== undefined) {
+        if (output >= this.numberOfOutputs || output < 0)
+          throw new IndexSizeError('output index ' + output + ' out of bounds')
+        let o = this._outputs[output]
+        if (!o.sinks.includes(dest._input))
+          throw new InvalidAccessError('not connected to this destination')
+        o.disconnect(dest._input)
+      } else {
+        // disconnect(destination) — disconnect all outputs from this AudioParam
+        let found = false
+        for (let o of this._outputs) {
+          if (o.sinks.includes(dest._input)) {
+            o.disconnect(dest._input)
+            found = true
+          }
+        }
+        if (!found) throw new InvalidAccessError('not connected to this destination')
+      }
       return
     }
+
     // disconnect from AudioNode
-    input = input ?? 0
-    if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
-    let o = this._outputs[output]
-    let target = dest._inputs[input]
-    if (target && o.sinks.includes(target)) o.disconnect(target)
+    if (dest.context && this.context && dest.context !== this.context)
+      throw new InvalidAccessError('cannot disconnect nodes from different AudioContexts')
+    if (output !== undefined && (output >= this.numberOfOutputs || output < 0))
+      throw new IndexSizeError('output index ' + output + ' out of bounds')
+    if (input !== undefined && (input >= dest.numberOfInputs || input < 0))
+      throw new IndexSizeError('input index ' + input + ' out of bounds')
+
+    if (output !== undefined && input !== undefined) {
+      // disconnect(destination, output, input) — specific output to specific input
+      let o = this._outputs[output]
+      let target = dest._inputs[input]
+      if (!o.sinks.includes(target))
+        throw new InvalidAccessError('not connected to this destination')
+      o.disconnect(target)
+    } else if (output !== undefined) {
+      // disconnect(destination, output) — specific output from all inputs of destination
+      let o = this._outputs[output]
+      let found = false
+      for (let inp of dest._inputs) {
+        if (o.sinks.includes(inp)) {
+          o.disconnect(inp)
+          found = true
+        }
+      }
+      if (!found) throw new InvalidAccessError('not connected to this destination')
+    } else {
+      // disconnect(destination) — all outputs from all inputs of destination
+      let found = false
+      for (let o of this._outputs) {
+        for (let inp of dest._inputs) {
+          if (o.sinks.includes(inp)) {
+            o.disconnect(inp)
+            found = true
+          }
+        }
+      }
+      if (!found) throw new InvalidAccessError('not connected to this destination')
+    }
   }
 
   [Symbol.dispose]() {

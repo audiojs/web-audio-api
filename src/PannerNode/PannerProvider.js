@@ -40,7 +40,8 @@ class PannerProvider {
     case PanningModelType.equalpower:
       return new EqualPowerPanner(sampleRate)
     case PanningModelType.HRTF:
-      throw new TypeError('HRTF panner is not implemented')
+      // HRTF not implemented; fall back to equal-power
+      return new EqualPowerPanner(sampleRate)
     default:
       throw new TypeError('Invalid panner model')
     }

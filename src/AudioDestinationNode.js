@@ -7,7 +7,7 @@ class AudioDestinationNode extends AudioNode {
   get maxChannelCount() { return this.#maxChannelCount }
 
   constructor(context, channelCount = 2) {
-    super(context, 1, 0, channelCount, 'explicit', 'speakers')
+    super(context, 1, 1, channelCount, 'explicit', 'speakers')
   }
 
   _validateChannelCount(val) {

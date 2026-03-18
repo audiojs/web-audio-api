@@ -211,12 +211,13 @@ test('AudioContext > onstatechange as event handler property', async () => {
   ctx.onstatechange = () => states.push(ctx.state)
   ok(typeof ctx.onstatechange === 'function')
 
-  await ctx.suspend()
+  // initial state is now 'suspended' per spec
   await ctx.resume()
+  await ctx.suspend()
 
   // replace handler
   ctx.onstatechange = () => states.push('!' + ctx.state)
   await ctx.close()
 
-  is(states, ['suspended', 'running', '!closed'])
+  is(states, ['running', 'suspended', '!closed'])
 })

@@ -102,7 +102,7 @@ class PannerNode extends AudioNode {
   setOrientation(x, y, z) {
     if (arguments.length !== 3)
       throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': 3 arguments required, but only ${arguments.length} present.`)
-    if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)))
+    if (!(isFinite(Math.fround(x)) && isFinite(Math.fround(y)) && isFinite(Math.fround(z))))
       throw new TypeError(`Failed to execute 'setOrientation' on 'PannerNode': The provided float value is non-finite.`)
     this.#orientationX.value = x
     this.#orientationY.value = y
@@ -112,7 +112,7 @@ class PannerNode extends AudioNode {
   setPosition(x, y, z) {
     if (arguments.length !== 3)
       throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': 3 arguments required, but only ${arguments.length} present.`)
-    if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)))
+    if (!(isFinite(Math.fround(x)) && isFinite(Math.fround(y)) && isFinite(Math.fround(z))))
       throw new TypeError(`Failed to execute 'setPosition' on 'PannerNode': The provided float value is non-finite.`)
     this.#positionX.value = x
     this.#positionY.value = y
@@ -144,9 +144,22 @@ class PannerNode extends AudioNode {
     outL.fill(0)
     outR.fill(0)
 
-    // Update position/orientation from AudioParam values (block-rate: sample 0)
-    this._position = new FloatPoint3D(this.#positionX.value, this.#positionY.value, this.#positionZ.value)
-    this._orientation = new FloatPoint3D(this.#orientationX.value, this.#orientationY.value, this.#orientationZ.value)
+    // Tick all AudioParams to process automation, use sample 0 for block-rate spatial update
+    let px = this.#positionX._tick()
+    let py = this.#positionY._tick()
+    let pz = this.#positionZ._tick()
+    let ox = this.#orientationX._tick()
+    let oy = this.#orientationY._tick()
+    let oz = this.#orientationZ._tick()
+
+    this._position = new FloatPoint3D(px[0], py[0], pz[0])
+    this._orientation = new FloatPoint3D(ox[0], oy[0], oz[0])
+
+    // Tick listener params so its position/orientation reflect automation
+    let listener = this._listener._tick()
+    this._listenerPosition = listener.position
+    this._listenerOrientation = listener.orientation
+    this._listenerUpVector = listener.upVector
 
     let inBuff = this._inputs[0]._tick()
     let { azimuth, elevation } = this._calculateAzimuthElevation()
@@ -167,14 +180,14 @@ class PannerNode extends AudioNode {
   _calculateAzimuthElevation() {
     let azimuth = 0.0
 
-    let listenerPosition = this._listener.position
+    let listenerPosition = this._listenerPosition
     let sourceListener = this._position.sub(listenerPosition)
     sourceListener.normalize()
 
     if (sourceListener.isZero()) return { azimuth: 0, elevation: 0 }
 
-    let listenerFront = this._listener.orientation
-    let listenerUp = this._listener.upVector
+    let listenerFront = this._listenerOrientation
+    let listenerUp = this._listenerUpVector
     let listenerRight = listenerFront.cross(listenerUp)
     listenerRight.normalize()
 
@@ -200,7 +213,7 @@ class PannerNode extends AudioNode {
   }
 
   _calculateDistanceConeGain() {
-    let listenerPosition = this._listener.position
+    let listenerPosition = this._listenerPosition
     let listenerDistance = this._position.distanceTo(listenerPosition)
     return this._distanceEffect.gain(listenerDistance) * this._coneEffect.gain(this._position, this._orientation, listenerPosition)
   }

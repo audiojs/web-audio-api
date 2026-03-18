@@ -68,10 +68,12 @@ test('PannerProvider > creates equalpower panner', () => {
   ok(pp.panner instanceof EqualPowerPanner)
 })
 
-test('PannerProvider > rejects HRTF', () => {
+test('PannerProvider > HRTF falls back to equalpower', () => {
   let ctx = new AudioContext()
   let pp = new PannerProvider(ctx)
-  throws(() => { pp.panningModel = 'HRTF' })
+  pp.panningModel = 'HRTF'
+  is(pp.panningModel, 'HRTF')
+  ok(pp.panner) // should not throw, uses equalpower fallback
 })
 
 // --- PannerNode ---

@@ -16,7 +16,7 @@ test('BiquadFilterNode > defaults', () => {
 test('BiquadFilterNode > type validation', () => {
   let f = new BiquadFilterNode({ sampleRate: SR, currentTime: 0 })
   f.type = 'highpass'; is(f.type, 'highpass')
-  throws(() => { f.type = 'invalid' })
+  f.type = 'invalid'; is(f.type, 'highpass') // WebIDL: silently ignored
 })
 
 test.mute('BiquadFilterNode > lowpass passes DC', () => {

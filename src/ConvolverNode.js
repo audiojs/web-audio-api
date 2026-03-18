@@ -11,6 +11,13 @@ class ConvolverNode extends AudioNode {
 
   get buffer() { return this.#buffer }
   set buffer(val) {
+    if (val !== null && val !== undefined) {
+      let nch = val.numberOfChannels
+      if (nch < 1 || nch > 4 || nch === 3)
+        throw new (globalThis.DOMException || Error)('ConvolverNode buffer must have 1, 2, or 4 channels', 'NotSupportedError')
+      if (val.sampleRate !== this.context.sampleRate)
+        throw new (globalThis.DOMException || Error)('ConvolverNode buffer sampleRate must match context sampleRate', 'NotSupportedError')
+    }
     this.#buffer = val
     this.#overlapBuf = null
     if (val) {
@@ -51,6 +58,14 @@ class ConvolverNode extends AudioNode {
     this._outBuf = null
     this._outCh = 0
     this._applyOpts(options)
+  }
+
+  _validateChannelCount(val) {
+    if (val > 2) throw new (globalThis.DOMException || Error)('channelCount cannot be greater than 2', 'NotSupportedError')
+  }
+
+  _validateChannelCountMode(val) {
+    if (val === 'max') throw new (globalThis.DOMException || Error)("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
   _tick() {

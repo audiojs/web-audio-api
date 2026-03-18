@@ -22,15 +22,29 @@ class DynamicsCompressorNode extends AudioNode {
 
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
-    super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#threshold = new AudioParam(this.context, options.threshold ?? -24, 'k')
-    this.#knee = new AudioParam(this.context, options.knee ?? 30, 'k')
-    this.#ratio = new AudioParam(this.context, options.ratio ?? 12, 'k')
-    this.#attack = new AudioParam(this.context, options.attack ?? 0.003, 'k')
-    this.#release = new AudioParam(this.context, options.release ?? 0.25, 'k')
+    super(context, 1, 1, 2, 'clamped-max', 'speakers')
+    this.#threshold = new AudioParam(this.context, Math.fround(options.threshold ?? -24), 'k')
+    this.#knee = new AudioParam(this.context, Math.fround(options.knee ?? 30), 'k')
+    this.#ratio = new AudioParam(this.context, Math.fround(options.ratio ?? 12), 'k')
+    this.#attack = new AudioParam(this.context, Math.fround(options.attack ?? 0.003), 'k')
+    this.#release = new AudioParam(this.context, Math.fround(options.release ?? 0.25), 'k')
+    // DynamicsCompressor params have fixed k-rate per spec
+    this.#threshold._fixedRate = true
+    this.#knee._fixedRate = true
+    this.#ratio._fixedRate = true
+    this.#attack._fixedRate = true
+    this.#release._fixedRate = true
     this._outBuf = null
     this._outCh = 0
     this._applyOpts(options)
+  }
+
+  _validateChannelCount(val) {
+    if (val > 2) throw new (globalThis.DOMException || Error)('channelCount cannot be greater than 2', 'NotSupportedError')
+  }
+
+  _validateChannelCountMode(val) {
+    if (val === 'max') throw new (globalThis.DOMException || Error)("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
   _tick() {

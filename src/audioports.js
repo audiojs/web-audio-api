@@ -122,12 +122,19 @@ class AudioOutput extends AudioPort {
     super(context, node, id)
     this._cachedBlock = { time: -1, buffer: null }
     this._numberOfChannels = null
+    this._ticking = false
   }
 
   get sinks() { return this.connections }
 
   _tick() {
+    // Cycle detection: if this output is already being pulled, return cached or silence
+    if (this._ticking) {
+      return this._cachedBlock.buffer || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
+    }
+
     if (this._cachedBlock.time < this.context.currentTime) {
+      this._ticking = true
       // _tickOutput allows nodes like ChannelSplitterNode to return different buffers per output
       let outBuffer = this.node._tickOutput ? this.node._tickOutput(this.id) : this.node._tick()
       if (this._numberOfChannels !== outBuffer.numberOfChannels) {
@@ -136,6 +143,7 @@ class AudioOutput extends AudioPort {
       }
       this._cachedBlock.time = this.context.currentTime
       this._cachedBlock.buffer = outBuffer
+      this._ticking = false
       return outBuffer
     }
     return this._cachedBlock.buffer

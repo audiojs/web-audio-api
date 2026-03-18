@@ -20,8 +20,8 @@ class OscillatorNode extends AudioScheduledSourceNode {
 
   get type() { return this.#type }
   set type(val) {
-    if (!TYPES.includes(val)) throw new Error('Invalid oscillator type: ' + val)
-    if (val === 'custom') throw new Error('Cannot set type to custom; use setPeriodicWave()')
+    if (!TYPES.includes(val)) return // WebIDL: silently ignore invalid enum values
+    if (val === 'custom') throw new (globalThis.DOMException || Error)('Cannot set type to custom; use setPeriodicWave()', 'InvalidStateError')
     this.#type = val
     this.#periodicWave = null
   }

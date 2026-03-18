@@ -49,6 +49,23 @@ class AudioListener {
     return new FloatPoint3D(this.#upX.value, this.#upY.value, this.#upZ.value)
   }
 
+  _tick() {
+    let px = this.#positionX._tick()
+    let py = this.#positionY._tick()
+    let pz = this.#positionZ._tick()
+    let fx = this.#forwardX._tick()
+    let fy = this.#forwardY._tick()
+    let fz = this.#forwardZ._tick()
+    let ux = this.#upX._tick()
+    let uy = this.#upY._tick()
+    let uz = this.#upZ._tick()
+    return {
+      position: new FloatPoint3D(px[0], py[0], pz[0]),
+      orientation: new FloatPoint3D(fx[0], fy[0], fz[0]),
+      upVector: new FloatPoint3D(ux[0], uy[0], uz[0])
+    }
+  }
+
   get velocity() { return this._velocity }
 
   /**
@@ -57,20 +74,17 @@ class AudioListener {
    * @param {number} z
    */
   setPosition(x, y, z) {
+    if (!(isFinite(Math.fround(x)) && isFinite(Math.fround(y)) && isFinite(Math.fround(z))))
+      throw new TypeError('The provided float value is non-finite.')
     this.#positionX.value = x
     this.#positionY.value = y
     this.#positionZ.value = z
   }
 
-  /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} z
-   * @param {number} xUp
-   * @param {number} yUp
-   * @param {number} zUp
-   */
   setOrientation(x, y, z, xUp, yUp, zUp) {
+    if (!(isFinite(Math.fround(x)) && isFinite(Math.fround(y)) && isFinite(Math.fround(z))
+       && isFinite(Math.fround(xUp)) && isFinite(Math.fround(yUp)) && isFinite(Math.fround(zUp))))
+      throw new TypeError('The provided float value is non-finite.')
     this.#forwardX.value = x
     this.#forwardY.value = y
     this.#forwardZ.value = z

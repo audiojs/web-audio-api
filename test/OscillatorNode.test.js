@@ -16,8 +16,8 @@ test('OscillatorNode > constructor defaults', () => {
 test('OscillatorNode > type validation', () => {
   let node = new OscillatorNode({ sampleRate: SR, currentTime: 0 })
   node.type = 'square'; is(node.type, 'square')
-  throws(() => { node.type = 'invalid' })
-  throws(() => { node.type = 'custom' })
+  node.type = 'invalid'; is(node.type, 'square') // WebIDL: silently ignored
+  throws(() => { node.type = 'custom' }) // InvalidStateError
 })
 
 test('OscillatorNode > setPeriodicWave', () => {

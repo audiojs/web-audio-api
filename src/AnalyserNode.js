@@ -18,7 +18,7 @@ class AnalyserNode extends AudioNode {
   get fftSize() { return this.#fftSize }
   set fftSize(val) {
     if (val < 32 || val > 32768 || (val & (val - 1)) !== 0)
-      throw new Error('fftSize must be power of 2 between 32 and 32768')
+      throw new IndexSizeError('fftSize must be power of 2 between 32 and 32768')
     this.#fftSize = val
     this._allocBuffers(val)
   }
@@ -38,7 +38,10 @@ class AnalyserNode extends AudioNode {
   }
 
   get smoothingTimeConstant() { return this.#smoothingTimeConstant }
-  set smoothingTimeConstant(val) { this.#smoothingTimeConstant = Math.max(0, Math.min(1, val)) }
+  set smoothingTimeConstant(val) {
+    if (val < 0 || val > 1) throw new IndexSizeError('smoothingTimeConstant must be between 0 and 1')
+    this.#smoothingTimeConstant = val
+  }
 
   constructor(context, options) {
     options = AudioNode._checkOpts(options)

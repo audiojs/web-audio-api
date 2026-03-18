@@ -21,7 +21,7 @@ class BiquadFilterNode extends AudioNode {
 
   get type() { return this.#type }
   set type(val) {
-    if (!TYPES.includes(val)) throw new Error('Invalid filter type: ' + val)
+    if (!TYPES.includes(val)) return // WebIDL: silently ignore invalid enum values
     this.#type = val
   }
 
@@ -40,13 +40,26 @@ class BiquadFilterNode extends AudioNode {
   }
 
   getFrequencyResponse(frequencyHz, magResponse, phaseResponse) {
+    if (!(frequencyHz instanceof Float32Array)) throw new TypeError('frequencyHz must be a Float32Array')
+    if (!(magResponse instanceof Float32Array)) throw new TypeError('magResponse must be a Float32Array')
+    if (!(phaseResponse instanceof Float32Array)) throw new TypeError('phaseResponse must be a Float32Array')
+    if (magResponse.length < frequencyHz.length)
+      throw new (globalThis.DOMException || Error)('magResponse length must be >= frequencyHz length', 'InvalidAccessError')
+    if (phaseResponse.length < frequencyHz.length)
+      throw new (globalThis.DOMException || Error)('phaseResponse length must be >= frequencyHz length', 'InvalidAccessError')
     let sr = this.context.sampleRate
     let freq = this.#frequency.value * (2 ** (this.#detune.value / 1200))
     let Q = this.#Q.value
     let gain = this.#gain.value
     let coeffs = BiquadFilterNode._coefficients(this.#type, freq, sr, Q, gain)
 
+    let nyquist = sr / 2
     for (let i = 0; i < frequencyHz.length; i++) {
+      if (frequencyHz[i] < 0 || frequencyHz[i] > nyquist) {
+        magResponse[i] = NaN
+        phaseResponse[i] = NaN
+        continue
+      }
       let { b0, b1, b2, a1, a2 } = coeffs
       let w = 2 * Math.PI * frequencyHz[i] / sr
       let cos_w = Math.cos(w), sin_w = Math.sin(w)

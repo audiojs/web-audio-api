@@ -39,6 +39,8 @@ test('WaveShaperNode > rejects invalid curve', () => {
   throws(() => { node.curve = new Float32Array(1) })
 })
 
-test('WaveShaperNode > rejects invalid oversample', () => {
-  throws(() => { new WaveShaperNode({ sampleRate: SR, currentTime: 0 }).oversample = '8x' })
+test('WaveShaperNode > silently ignores invalid oversample (WebIDL enum)', () => {
+  let node = new WaveShaperNode({ sampleRate: SR, currentTime: 0 })
+  node.oversample = '8x'
+  ok(node.oversample === 'none') // unchanged from default
 })

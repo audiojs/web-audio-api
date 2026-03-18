@@ -23,6 +23,14 @@ class StereoPannerNode extends AudioNode {
     this._applyOpts(options)
   }
 
+  _validateChannelCount(val) {
+    if (val > 2) throw new (globalThis.DOMException || Error)('channelCount cannot be greater than 2', 'NotSupportedError')
+  }
+
+  _validateChannelCountMode(val) {
+    if (val === 'max') throw new (globalThis.DOMException || Error)("channelCountMode cannot be 'max'", 'NotSupportedError')
+  }
+
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()

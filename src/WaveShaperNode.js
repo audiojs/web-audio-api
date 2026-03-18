@@ -33,7 +33,7 @@ class WaveShaperNode extends AudioNode {
 
   get oversample() { return this.#oversample }
   set oversample(val) {
-    if (!OVERSAMPLES.includes(val)) throw new Error('Invalid oversample: ' + val)
+    if (!OVERSAMPLES.includes(val)) return
     this.#oversample = val
   }
 

@@ -167,7 +167,8 @@ test('OfflineAudioContext > non-block-aligned length renders correctly', async (
   let ctx = new OfflineAudioContext(1, 200, 44100) // 200 not multiple of 128
   let buf = await ctx.startRendering()
   is(buf.length, 200)
-  almost(ctx.currentTime, 200 / 44100, 1e-6, 'currentTime correct for partial block')
+  // currentTime advances in full render quanta (128 frames)
+  almost(ctx.currentTime, Math.ceil(200 / 128) * 128 / 44100, 1e-6, 'currentTime correct for partial block')
 })
 
 // --- zero-length / short buffers ---

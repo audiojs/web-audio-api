@@ -3,26 +3,45 @@ import AudioScheduledSourceNode from './AudioScheduledSourceNode.js'
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
+import { InvalidStateError } from './errors.js'
 
 
 class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
   #playbackRate
   get playbackRate() { return this.#playbackRate }
+  #detune
+  get detune() { return this.#detune }
+
+  #buffer = null
+  #bufferSet = false  // tracks if buffer was ever assigned a non-null value
+  get buffer() { return this.#buffer }
+  set buffer(val) {
+    if (val !== null && !(val instanceof AudioBuffer))
+      throw new TypeError('buffer must be an AudioBuffer or null')
+    if (val !== null && this.#bufferSet)
+      throw new InvalidStateError('buffer can only be set once')
+    if (val !== null) this.#bufferSet = true
+    this.#buffer = val
+  }
 
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
     super(context, 0, 1, undefined, 'max', 'speakers')
 
-    this.buffer = options.buffer ?? null
+    this.#buffer = options.buffer ?? null
     this.loop = options.loop ?? false
     this.loopStart = options.loopStart ?? 0
     this.loopEnd = options.loopEnd ?? 0
 
-    this.#playbackRate = new AudioParam(this.context, options.playbackRate ?? 1, 'a')
+    this.#playbackRate = new AudioParam(this.context, options.playbackRate ?? 1, 'k')
+    this.#playbackRate._fixedRate = true
+    this.#detune = new AudioParam(this.context, options.detune ?? 0, 'k')
+    this.#detune._fixedRate = true
 
-    this._cursor = 0
-    this._cursorEnd = 0
+    this._cursor = 0        // current position in buffer (samples)
+    this._bufEnd = 0         // loop end or buffer end (samples)
+    this._framesLeft = 0     // remaining frames from duration (0 = unlimited)
     this._offset = 0
     this._duration = 0
     this._applyOpts(options)
@@ -38,43 +57,84 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
   _onStart() {
     if (!this.buffer) throw new Error('invalid buffer')
-    this._reinitPlayback()
-  }
-
-  _reinitPlayback() {
     let sr = this.context.sampleRate
-    this._cursor = (this._offset ? this._offset : this.loopStart) * sr
-    if (this._duration) this._cursorEnd = this._cursor + this._duration * sr
-    else if (this.loopEnd) this._cursorEnd = this.loopEnd * sr
-    else this._cursorEnd = this.buffer.length
+    this._cursor = Math.round(this._offset * sr)
+    this._bufEnd = this.loopEnd > 0 ? Math.round(this.loopEnd * sr) : this.buffer.length
+    this._framesLeft = this._duration > 0 ? Math.round(this._duration * sr) : 0
   }
 
   _dsp() {
-    let cursorNext = this._cursor + BLOCK_SIZE
     let sr = this.context.sampleRate
+    let nch = this.buffer.numberOfChannels
+    let bufLen = this.buffer.length
+    let loopStart = this.loop && this.loopStart > 0 ? Math.round(this.loopStart * sr) : 0
 
-    if (cursorNext < this._cursorEnd) {
-      let out = this.buffer.slice(this._cursor, cursorNext)
+    // Duration exhausted — silence
+    if (this._duration > 0 && this._framesLeft <= 0)
+      return new AudioBuffer(nch, BLOCK_SIZE, sr)
+
+    // How many frames to produce this block
+    let toWrite = BLOCK_SIZE
+    if (this._framesLeft > 0) toWrite = Math.min(toWrite, this._framesLeft)
+
+    // Fast path: entire block fits within buffer bounds, no loop crossing
+    let cursorNext = this._cursor + toWrite
+    if (cursorNext <= this._bufEnd && cursorNext <= bufLen) {
+      if (this._framesLeft > 0) this._framesLeft -= toWrite
+      if (toWrite === BLOCK_SIZE) {
+        let out = this.buffer.slice(this._cursor, cursorNext)
+        this._cursor = cursorNext
+        if (this._framesLeft === 0 && this._duration > 0) this._scheduleEnded(0)
+        return out
+      }
+      // Duration ends mid-block: partial output + silence
+      let out = new AudioBuffer(nch, BLOCK_SIZE, sr)
+      for (let ch = 0; ch < nch; ch++) {
+        let src = this.buffer.getChannelData(ch)
+        let dst = out.getChannelData(ch)
+        for (let i = 0; i < toWrite; i++) dst[i] = src[this._cursor + i]
+      }
       this._cursor = cursorNext
+      this._scheduleEnded(0)
       return out
     }
 
-    let out = new AudioBuffer(this.buffer.numberOfChannels, BLOCK_SIZE, sr)
-    let remaining = Math.min(cursorNext, this._cursorEnd) - this._cursor
-    if (remaining > 0)
-      out.set(this.buffer.slice(this._cursor, this._cursor + remaining))
+    // Partial block: fill sample-by-sample handling loop wraps
+    let out = new AudioBuffer(nch, BLOCK_SIZE, sr)
+    let written = 0
 
-    if (this.loop) {
-      let missing = cursorNext - this._cursorEnd
-      this._reinitPlayback()
-      cursorNext = this._cursor + missing
-      out.set(this.buffer.slice(this._cursor, cursorNext), out.length - missing)
-    } else {
-      let delay = (cursorNext - this._cursorEnd) / sr
-      this._scheduleEnded(delay)
+    while (written < toWrite) {
+      // Clamp read to buffer/loop end
+      let end = this.loop ? Math.min(this._bufEnd, bufLen) : Math.min(this._bufEnd, bufLen)
+      let avail = end - this._cursor
+      if (avail <= 0) {
+        if (this.loop) {
+          this._cursor = loopStart
+          continue
+        }
+        break // non-loop: end of buffer
+      }
+      let count = Math.min(avail, toWrite - written)
+      for (let ch = 0; ch < nch; ch++) {
+        let src = this.buffer.getChannelData(ch)
+        let dst = out.getChannelData(ch)
+        for (let i = 0; i < count; i++) dst[written + i] = src[this._cursor + i]
+      }
+      written += count
+      this._cursor += count
+
+      if (this._cursor >= end && this.loop) {
+        this._cursor = loopStart
+      }
     }
 
-    this._cursor = cursorNext
+    if (this._framesLeft > 0) {
+      this._framesLeft -= toWrite
+      if (this._framesLeft <= 0) this._scheduleEnded(0)
+    } else if (!this.loop && written < BLOCK_SIZE) {
+      this._scheduleEnded((BLOCK_SIZE - written) / sr)
+    }
+
     return out
   }
 

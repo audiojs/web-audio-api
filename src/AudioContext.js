@@ -10,9 +10,31 @@ class AudioContext extends BaseAudioContext {
   #encoder
 
   constructor(opts) {
+    if (opts !== undefined && (typeof opts !== 'object' || opts === null))
+      throw new TypeError("Failed to construct 'AudioContext': The provided value is not of type 'AudioContextOptions'.")
+
     opts = opts || {}
-    super(opts.sampleRate || 44100, opts.numberOfChannels || 2)
-    this._state = 'running'
+
+    // Validate latencyHint
+    if (opts.latencyHint !== undefined) {
+      if (typeof opts.latencyHint === 'string' &&
+          !['interactive', 'balanced', 'playback'].includes(opts.latencyHint))
+        throw new TypeError("Failed to construct 'AudioContext': Failed to read the 'latencyHint' property from 'AudioContextOptions': The provided value '" + opts.latencyHint + "' is not a valid enum value of type AudioContextLatencyCategory.")
+      if (typeof opts.latencyHint !== 'string' && typeof opts.latencyHint !== 'number')
+        throw new TypeError("Failed to construct 'AudioContext': Failed to read the 'latencyHint' property from 'AudioContextOptions': The provided value is not of type 'AudioContextLatencyCategory'.")
+    }
+
+    // Validate sampleRate
+    let sampleRate = opts.sampleRate || 44100
+    if (opts.sampleRate !== undefined) {
+      if (opts.sampleRate < 3000 || opts.sampleRate > 768000)
+        throw new (globalThis.DOMException || Error)("Failed to construct 'AudioContext': The sample rate provided (" + opts.sampleRate + ") is outside the range [3000, 768000].", 'NotSupportedError')
+      sampleRate = opts.sampleRate
+    }
+
+    super(sampleRate, opts.numberOfChannels || 2)
+    // Per spec, initial state is 'suspended' until resume() or user activation
+    this._state = 'suspended'
 
     this.#numberOfChannels = opts.numberOfChannels || 2
     this.#bitDepth = opts.bitDepth || 16
@@ -31,7 +53,7 @@ class AudioContext extends BaseAudioContext {
     // When a new connection is established, start to pull audio
     this._destination._inputs[0].on('connection', () => {
       if (this.#loopRunning || this._state !== 'running') return
-      if (!this.outStream) throw new Error('you need to set outStream to send the audio somewhere')
+      if (!this.outStream) return
       this.#loopRunning = true
       this._renderLoop()
     })

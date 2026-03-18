@@ -64,11 +64,8 @@ class IIRFilterNode extends AudioNode {
     if (feedback[0] === 0)
       throw new InvalidStateError('feedback[0] must be non-zero')
 
-    let channelCount = options.channelCount !== undefined ? options.channelCount : undefined
-    let channelCountMode = options.channelCountMode || 'max'
-    let channelInterpretation = options.channelInterpretation || 'speakers'
-
-    super(context, 1, 1, channelCount, channelCountMode, channelInterpretation)
+    super(context, 1, 1, undefined, 'max', 'speakers')
+    this._applyOpts(options)
 
     this.#feedforward = Float64Array.from(feedforward)
     this.#feedback = Float64Array.from(feedback)

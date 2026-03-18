@@ -45,12 +45,16 @@ function extractScripts(html) {
   return scripts.join('\n')
 }
 
-function loadHelpers(html) {
+function loadHelpers(html, testDir) {
   let code = ''
-  let re = /<script\s+src="\/webaudio\/resources\/([^"]+)"/gi
+  let re = /<script\s+src="([^"]+\.js)"/gi
   let m
   while ((m = re.exec(html))) {
-    try { code += readFileSync(join(WAA_RESOURCES, m[1]), 'utf8') + '\n' } catch {}
+    let src = m[1]
+    if (src.includes('testharness')) continue // already loaded
+    // resolve relative to WPT root
+    let path = src.startsWith('/') ? join(join(__dirname, 'wpt'), src.slice(1)) : join(testDir, src)
+    try { code += readFileSync(path, 'utf8') + '\n' } catch {}
   }
   return code
 }
@@ -81,15 +85,26 @@ async function runTest(filePath) {
   if (!code.trim()) return { file: filePath, tests: [], status: 'skip' }
 
 
-  let helpers = loadHelpers(html)
+  let helpers = loadHelpers(html, join(filePath, '..'))
   let tests = []
 
   // Build sandbox with linkedom's DOM
   let { window: domWin, document } = parseHTML('<!DOCTYPE html><html><body></body></html>')
 
   let sandbox = Object.create(null)
-  // Copy all DOM globals from linkedom
+  // Copy DOM globals from linkedom, but skip JS builtins that vm provides natively
+  let vmBuiltins = new Set([
+    'Object', 'Function', 'Array', 'Number', 'String', 'Boolean', 'Symbol', 'RegExp',
+    'Error', 'TypeError', 'RangeError', 'SyntaxError', 'ReferenceError', 'URIError',
+    'Map', 'Set', 'WeakMap', 'WeakSet', 'Promise', 'Proxy', 'Reflect',
+    'Float32Array', 'Float64Array', 'Int8Array', 'Int16Array', 'Int32Array',
+    'Uint8Array', 'Uint16Array', 'Uint32Array', 'Uint8ClampedArray',
+    'ArrayBuffer', 'DataView', 'SharedArrayBuffer', 'BigInt', 'BigInt64Array', 'BigUint64Array',
+    'JSON', 'Math', 'Intl', 'Date', 'eval', 'isNaN', 'isFinite', 'parseInt', 'parseFloat',
+    'NaN', 'Infinity', 'undefined', 'globalThis', 'console',
+  ])
   for (let k of Object.getOwnPropertyNames(domWin)) {
+    if (vmBuiltins.has(k)) continue
     try { sandbox[k] = domWin[k] } catch {}
   }
   // Ensure critical properties
@@ -109,10 +124,20 @@ async function runTest(filePath) {
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
     Promise, Proxy, Reflect, Map, Set, WeakMap, WeakSet,
     Error, TypeError, RangeError, SyntaxError, ReferenceError, URIError, DOMException,
-    Event, CustomEvent, MessageChannel,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => true,
+    Event, CustomEvent, MessageChannel, WebAssembly, SharedArrayBuffer,
+    _eventListeners: {},
+    addEventListener(type, fn) {
+      (sandbox._eventListeners[type] ??= []).push(fn)
+    },
+    removeEventListener(type, fn) {
+      let arr = sandbox._eventListeners[type]
+      if (arr) sandbox._eventListeners[type] = arr.filter(f => f !== fn)
+    },
+    dispatchEvent(event) {
+      let type = typeof event === 'string' ? event : event.type
+      for (let fn of (sandbox._eventListeners[type] || [])) fn(event)
+      return true
+    },
   })
 
   // Web Audio API
@@ -160,6 +185,9 @@ async function runTest(filePath) {
       filename: relative(WPT_DIR, filePath),
       timeout: 3000
     })
+
+    // Fire 'load' event to signal testharness that page has loaded
+    vm.runInContext("dispatchEvent(new Event('load'))", ctx)
 
     // Wait for async tests to complete
     await new Promise(r => setTimeout(r, 200))

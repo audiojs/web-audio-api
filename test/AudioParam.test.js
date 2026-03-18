@@ -94,12 +94,12 @@ test.mute('AudioParam > linearRampToValueAtTime (k-rate)', () => {
   allEqual(block, 25)
 })
 
-test.mute('AudioParam > exponentialRampToValueAtTime > rejects non-positive target', () => {
+test.mute('AudioParam > exponentialRampToValueAtTime > rejects zero target', () => {
   let ctx = mkCtx()
   let p = new AudioParam(ctx, 15, 'a')
-  throws(() => p.exponentialRampToValueAtTime(-1, 9))
   throws(() => p.exponentialRampToValueAtTime(0, 1))
-  // starting from negative value is ok — only target must be positive
+  // negative targets are allowed per spec — only zero is forbidden
+  p.exponentialRampToValueAtTime(-1, 9) // should not throw
   p.value = -5
   p.exponentialRampToValueAtTime(10, 9) // should not throw
 })
