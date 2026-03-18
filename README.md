@@ -1,28 +1,8 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Pure JS implementation of [Web Audio API](https://www.w3.org/TR/webaudio/) — runs in Node.js, Deno, Bun, serverless, and edge runtimes.
+Web Audio API in pure JavaScript — 99% [Web Platform Tests](https://github.com/nicolo-ribaudo/tc39-proposal-structs/blob/main/test/test262) conformance.
 
-## Implemented
-
-- AudioContext (state machine, suspend/resume/close, baseLatency)
-- OfflineAudioContext (startRendering, oncomplete)
-- AudioParam (automation events, a-rate/k-rate, cancelScheduledValues)
-- AudioBuffer (via [audio-buffer](https://github.com/audiojs/audio-buffer))
-- AudioBufferSourceNode
-- ConstantSourceNode
-- OscillatorNode (sine/square/sawtooth/triangle/custom via PeriodicWave)
-- GainNode
-- StereoPannerNode
-- PannerNode (3D spatial, equalpower, distance/cone models)
-- DelayNode
-- BiquadFilterNode (8 filter types, Audio EQ Cookbook)
-- WaveShaperNode (with 2x/4x oversampling)
-- IIRFilterNode (Direct Form II Transposed)
-- ConvolverNode (time-domain, normalize)
-- DynamicsCompressorNode (soft knee, envelope follower)
-- ChannelSplitterNode / ChannelMergerNode
-- AnalyserNode (radix-2 FFT, Blackman window)
-- ScriptProcessorNode (deprecated but supported)
+Runs in Node.js, Deno, Bun, serverless, and edge runtimes — anywhere native addons can't.
 
 ## Install
 
@@ -30,7 +10,7 @@ Pure JS implementation of [Web Audio API](https://www.w3.org/TR/webaudio/) — r
 npm install web-audio-api
 ```
 
-## Usage
+## Use
 
 ```js
 import { AudioContext } from 'web-audio-api'
@@ -58,39 +38,53 @@ ctx.outStream = new Speaker({
 })
 ```
 
-### Piping to aplay (Linux)
-
-```js
-import { AudioContext } from 'web-audio-api'
-const ctx = new AudioContext()
-ctx.outStream = process.stdout
-```
+### Pipe to system audio
 
 ```sh
 node script.js | aplay -f cd
 ```
 
+### Offline rendering
+
+```js
+import { OfflineAudioContext } from 'web-audio-api'
+
+const ctx = new OfflineAudioContext(2, 44100 * 5, 44100)
+
+const osc = ctx.createOscillator()
+osc.connect(ctx.destination)
+osc.start()
+
+const buffer = await ctx.startRendering()
+// buffer: AudioBuffer with 5 seconds of audio
+```
+
+## When to use what
+
+| | Language | Runs everywhere | Spec conformance |
+|---|---|---|---|
+| **web-audio-api** | Pure JS | Node, Deno, Bun, edge, serverless | 99% WPT |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi-rs) | Node.js only | ~75% WPT |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Pure Rust | Rust only | — |
+
+**Use this** if you need audio processing outside a browser, want to test Web Audio code in CI, or need audio in serverless/edge environments.
+
+**Use `node-web-audio-api`** if you're on Node.js only and need native performance for heavy real-time workloads.
+
 ## Architecture
 
-Pull-based audio graph. `AudioDestinationNode` pulls from the graph via `_tick()`, each node pulls its inputs recursively. 128-sample blocks (spec render quantum). Buffer reuse throughout — no allocation in hot paths.
+Pull-based audio graph. `AudioDestinationNode` pulls from upstream via `_tick()`, 128-sample blocks (spec render quantum). Zero allocation in hot paths — buffers pre-allocated and reused.
 
 ```
 EventTarget ← Emitter ← DspObject ← AudioNode ← concrete nodes
                                     ← AudioParam
 EventTarget ← Emitter ← AudioPort ← AudioInput / AudioOutput
-EventTarget ← AudioContext
 ```
 
-New nodes extend `AudioNode`, override `_tick()`, optionally separate DSP into static functions for future WASM swap.
-
-## Alternatives
-
-- [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) — Rust/napi-rs, native addon (Node.js only)
-- [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) — pure Rust
-- [web-audio-engine](https://github.com/mohayonao/web-audio-engine) — JS, archived 2019
+DSP kernels are separated from graph plumbing for future WASM swap.
 
 ## License
 
 MIT
 
-<p align="center">🕉</p>
+<p align=center><a href="https://github.com/krishnized/license/">ॐ</a></p>
