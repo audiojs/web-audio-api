@@ -76,6 +76,14 @@ test('PannerProvider > HRTF falls back to equalpower', () => {
   ok(pp.panner) // should not throw, uses equalpower fallback
 })
 
+test('PannerProvider > model change preserves sampleRate', () => {
+  let ctx = new AudioContext()
+  let pp = new PannerProvider(ctx)
+  pp.panningModel = 'equalpower' // re-set same model
+  // panner should have valid smoothingConstant (not NaN from missing sampleRate)
+  ok(!isNaN(pp.panner._smoothingConstant))
+})
+
 // --- PannerNode ---
 
 test('PannerNode > constructor defaults', () => {

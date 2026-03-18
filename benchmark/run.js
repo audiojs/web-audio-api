@@ -7,7 +7,8 @@ const LENGTH = SR * DURATION
 
 async function bench(name, setup) {
   let ctx = new OfflineAudioContext(1, LENGTH, SR)
-  setup(ctx)
+  let alt = setup(ctx)
+  if (alt instanceof OfflineAudioContext) ctx = alt
   let start = performance.now()
   await ctx.startRendering()
   let ms = performance.now() - start
@@ -54,15 +55,15 @@ await bench('BiquadFilterNode (lowpass)', ctx => {
   osc.start(0)
 })
 
-await bench('StereoPannerNode', ctx => {
-  let ctx2 = new OfflineAudioContext(2, LENGTH, SR) // stereo
-  let osc = ctx2.createOscillator()
-  let pan = ctx2.createStereoPanner()
+await bench('StereoPannerNode', () => {
+  let ctx = new OfflineAudioContext(2, LENGTH, SR)
+  let osc = ctx.createOscillator()
+  let pan = ctx.createStereoPanner()
   pan.pan.value = 0.5
   osc.connect(pan)
-  pan.connect(ctx2.destination)
+  pan.connect(ctx.destination)
   osc.start(0)
-  return ctx2.startRendering()
+  return ctx
 })
 
 await bench('DelayNode (10ms)', ctx => {

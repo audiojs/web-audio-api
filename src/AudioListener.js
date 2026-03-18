@@ -23,7 +23,11 @@ class AudioListener {
   get upY() { return this.#upY }
   get upZ() { return this.#upZ }
 
+  #context
   constructor(context) {
+    this.#context = context
+    this._cachedTime = -1
+    this._cached = null
     this.#positionX = new AudioParam(context, 0, 'a')
     this.#positionY = new AudioParam(context, 0, 'a')
     this.#positionZ = new AudioParam(context, 0, 'a')
@@ -50,6 +54,10 @@ class AudioListener {
   }
 
   _tick() {
+    // Cache per render quantum — multiple panners share the same listener
+    let t = this.#context.currentTime
+    if (this._cachedTime === t) return this._cached
+    this._cachedTime = t
     let px = this.#positionX._tick()
     let py = this.#positionY._tick()
     let pz = this.#positionZ._tick()
@@ -59,7 +67,7 @@ class AudioListener {
     let ux = this.#upX._tick()
     let uy = this.#upY._tick()
     let uz = this.#upZ._tick()
-    return {
+    return this._cached = {
       position: new FloatPoint3D(px[0], py[0], pz[0]),
       orientation: new FloatPoint3D(fx[0], fy[0], fz[0]),
       upVector: new FloatPoint3D(ux[0], uy[0], uz[0])

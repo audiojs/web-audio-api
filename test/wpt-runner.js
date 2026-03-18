@@ -201,12 +201,14 @@ async function runTest(filePath) {
       }
     `, ctx)
 
-    // Register result callback
+    // Register result + completion callbacks
     vm.runInContext(`
       var __wpt_results = [];
+      var __wpt_done = false;
       add_result_callback(function(t) {
         __wpt_results.push({ name: t.name, status: t.status, message: t.message || '' });
       });
+      add_completion_callback(function() { __wpt_done = true; });
     `, ctx)
 
     // Run helpers + test code
@@ -218,8 +220,15 @@ async function runTest(filePath) {
     // Fire 'load' event to signal testharness that page has loaded
     vm.runInContext("dispatchEvent(new Event('load'))", ctx)
 
-    // Wait for async tests to complete
-    await new Promise(r => setTimeout(r, 200))
+    // Wait for async tests to complete (poll for done, up to 5s)
+    let deadline = Date.now() + 5000
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 50))
+      try {
+        let done = vm.runInContext('typeof __wpt_done !== "undefined" ? __wpt_done : __wpt_results.length > 0', ctx)
+        if (done) break
+      } catch { break }
+    }
 
     // Collect results
     let results = vm.runInContext('__wpt_results', ctx)

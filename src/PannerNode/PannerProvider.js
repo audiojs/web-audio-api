@@ -23,7 +23,7 @@ class PannerProvider {
   set panningModel(panningModel) {
     if (!PanningModelType[panningModel]) return // WebIDL: silently ignore invalid enum values
     this._panningModel = panningModel
-    this._panner = this.create(panningModel)
+    this._panner = this.create(panningModel, this._context.sampleRate)
   }
 
   get panner() { return this._panner }
