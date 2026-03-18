@@ -1,5 +1,5 @@
 import * as mathUtils from '../mathUtils.js'
-import { InvalidStateError } from '../errors.js'
+import { DOMErr } from '../errors.js'
 
 /**
  * Computes cone effect gain and manages related properties.
@@ -35,7 +35,7 @@ class ConeEffect {
       throw new TypeError('Invalid coneOuterGain')
     }
     if (outerGain < 0 || 1 < outerGain) {
-      throw new InvalidStateError('Invalid coneOuterGain')
+      throw DOMErr('Invalid coneOuterGain', 'InvalidStateError')
     }
     this._outerGain = outerGain
   }

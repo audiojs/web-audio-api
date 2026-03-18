@@ -299,8 +299,25 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 ### 4.1 WPT test harness ✅
 - [x] WPT repo as git submodule (sparse checkout: webaudio/ + resources/)
 - [x] Runner: `npm run wpt` — testharness.js shim, assertion functions, globals injection
-- [x] Baseline: some tests pass (ConstantSourceNode onended), many need missing WPT helpers
-- [ ] Ongoing: improve pass rate (AudioParam.minValue/maxValue, Audit helper, option dict constructors)
+- [x] Cross-realm fixes: vm builtins preserved, `Function` instanceof, `setup()` callback, `load` event dispatch
+- [x] `assert_throws_dom` patched for cross-realm DOMException (checks `.name`)
+- [x] Concurrent runner (8 parallel) with 3s timeout per test
+- [x] **82.3% pass rate** — 3151/3830 tests (263 own tests + WPT)
+
+### 4.1.1 WPT coverage details
+Justifiably unfixable (~66 test files):
+- AudioWorklet URL loading (26) — requires HTTP server for module loading
+- MediaElement/MediaStream source (9) — require browser DOM APIs
+- Browser-specific (13) — sinkId, playbackStats, navigation, iframe
+- `window` constructor pattern (~10) — WPT uses `new window[name]()`
+- renderSizeHint (8) — newer spec feature, not implemented
+
+Remaining fixable (~52 test files, mostly DSP precision):
+- BiquadFilter DSP accuracy (12) — coefficient precision vs native
+- PannerNode distance/cone models (10) — spatial audio precision
+- AudioParam k-rate/automation edge cases (13) — automation library precision
+- Convolver DSP (5) — time-domain convolution accuracy
+- Sub-sample scheduling (6) — playbackRate interpolation, grain scheduling
 
 ### 4.2 Property descriptors & validation ✅
 - [x] All read-only attributes use `#private` + getters
@@ -310,10 +327,15 @@ All 13 nodes implemented, exported, with factory methods. 184 tests passing.
 - [x] Constructors: most use options dicts; IIRFilterNode/ScriptProcessorNode use positional (spec-correct — created via factory)
 
 ### 4.3 Error handling ✅
-- [x] Unified error module: `InvalidStateError`, `NotSupportedError`, `IndexSizeError`, `InvalidAccessError`, `EncodingError`
-- [x] `start()`/`stop()` throw `InvalidStateError`
-- [x] `connect()`/`disconnect()` throw `IndexSizeError`
-- [x] Exported from index.js for consumer use
+- [x] Unified `DOMErr` inline pattern: `const DOMErr = (msg, name) => new (globalThis.DOMException || Error)(msg, name)`
+- [x] Error classes in `errors.js` exported for consumers (but src uses `DOMErr` directly)
+- [x] Per-spec error types: InvalidStateError, NotSupportedError, IndexSizeError, InvalidAccessError
+- [x] Cross-context validation: connect/disconnect throw InvalidAccessError
+- [x] WebIDL enum setters silently ignore invalid values (channelCountMode, type, oversample, etc.)
+- [x] Float32 overflow validation on PannerNode/AudioListener setPosition/setOrientation
+- [x] AudioParam method chaining (all methods return `this`)
+- [x] AudioParam `_fixedRate` support (DynamicsCompressor, AudioBufferSourceNode)
+- [x] channelCount/channelCountMode validation hooks on all constrained nodes
 
 ### 4.4 Edge cases ✅
 - [x] Disconnected nodes output silence

@@ -154,10 +154,39 @@ async function runTest(filePath) {
     // Patch assert_throws_dom to check by name (our DOMExceptions come from a different realm)
     vm.runInContext(`
       var _orig_assert_throws_dom = assert_throws_dom;
+      var _legacyNames = {
+        INDEX_SIZE_ERR: 'IndexSizeError',
+        DOMSTRING_SIZE_ERR: 'DOMStringSizeError',
+        HIERARCHY_REQUEST_ERR: 'HierarchyRequestError',
+        WRONG_DOCUMENT_ERR: 'WrongDocumentError',
+        INVALID_CHARACTER_ERR: 'InvalidCharacterError',
+        NO_DATA_ALLOWED_ERR: 'NoDataAllowedError',
+        NO_MODIFICATION_ALLOWED_ERR: 'NoModificationAllowedError',
+        NOT_FOUND_ERR: 'NotFoundError',
+        NOT_SUPPORTED_ERR: 'NotSupportedError',
+        INUSE_ATTRIBUTE_ERR: 'InUseAttributeError',
+        INVALID_STATE_ERR: 'InvalidStateError',
+        SYNTAX_ERR: 'SyntaxError',
+        INVALID_MODIFICATION_ERR: 'InvalidModificationError',
+        NAMESPACE_ERR: 'NamespaceError',
+        INVALID_ACCESS_ERR: 'InvalidAccessError',
+        TYPE_MISMATCH_ERR: 'TypeMismatchError',
+        SECURITY_ERR: 'SecurityError',
+        NETWORK_ERR: 'NetworkError',
+        ABORT_ERR: 'AbortError',
+        URL_MISMATCH_ERR: 'URLMismatchError',
+        QUOTA_EXCEEDED_ERR: 'QuotaExceededError',
+        TIMEOUT_ERR: 'TimeoutError',
+        INVALID_NODE_TYPE_ERR: 'InvalidNodeTypeError',
+        DATA_CLONE_ERR: 'DataCloneError',
+        ENCODING_ERR: 'EncodingError',
+        NOT_READABLE_ERR: 'NotReadableError',
+      };
       assert_throws_dom = function(type, fn, msg) {
+        var expected = _legacyNames[type] || type;
         try { fn(); throw new Error(msg || 'expected exception') }
         catch(e) { if (e.message === (msg || 'expected exception')) throw e;
-          if (e.name !== type) throw new Error((msg ? msg + ': ' : '') + 'expected ' + type + ' but got ' + e.name) }
+          if (e.name !== expected) throw new Error((msg ? msg + ': ' : '') + 'expected ' + expected + ' but got ' + e.name) }
       };
     `, ctx)
 

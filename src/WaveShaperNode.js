@@ -21,7 +21,7 @@ class WaveShaperNode extends AudioNode {
     if (val === null) { this.#curve = null; return }
     if (val instanceof Float32Array) {
       if (val.length < 2) throw new Error('curve must have at least 2 elements')
-      this.#curve = val
+      this.#curve = new Float32Array(val)
       return
     }
     if (typeof val !== 'object' || typeof val.length !== 'number')

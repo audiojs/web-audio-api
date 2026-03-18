@@ -3,8 +3,7 @@ import AudioScheduledSourceNode from './AudioScheduledSourceNode.js'
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
-import { InvalidStateError } from './errors.js'
-
+import { DOMErr } from './errors.js'
 
 class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
@@ -20,7 +19,7 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     if (val !== null && !(val instanceof AudioBuffer))
       throw new TypeError('buffer must be an AudioBuffer or null')
     if (val !== null && this.#bufferSet)
-      throw new InvalidStateError('buffer can only be set once')
+      throw DOMErr('buffer can only be set once', 'InvalidStateError')
     if (val !== null) this.#bufferSet = true
     this.#buffer = val
   }
@@ -68,27 +67,28 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     let nch = this.buffer.numberOfChannels
     let bufLen = this.buffer.length
     let loopStart = this.loop && this.loopStart > 0 ? Math.round(this.loopStart * sr) : 0
+    let blockSize = this._activeBlockSize || BLOCK_SIZE
 
     // Duration exhausted — silence
     if (this._duration > 0 && this._framesLeft <= 0)
-      return new AudioBuffer(nch, BLOCK_SIZE, sr)
+      return new AudioBuffer(nch, blockSize, sr)
 
     // How many frames to produce this block
-    let toWrite = BLOCK_SIZE
+    let toWrite = blockSize
     if (this._framesLeft > 0) toWrite = Math.min(toWrite, this._framesLeft)
 
     // Fast path: entire block fits within buffer bounds, no loop crossing
     let cursorNext = this._cursor + toWrite
     if (cursorNext <= this._bufEnd && cursorNext <= bufLen) {
       if (this._framesLeft > 0) this._framesLeft -= toWrite
-      if (toWrite === BLOCK_SIZE) {
+      if (toWrite === blockSize) {
         let out = this.buffer.slice(this._cursor, cursorNext)
         this._cursor = cursorNext
         if (this._framesLeft === 0 && this._duration > 0) this._scheduleEnded(0)
         return out
       }
       // Duration ends mid-block: partial output + silence
-      let out = new AudioBuffer(nch, BLOCK_SIZE, sr)
+      let out = new AudioBuffer(nch, blockSize, sr)
       for (let ch = 0; ch < nch; ch++) {
         let src = this.buffer.getChannelData(ch)
         let dst = out.getChannelData(ch)
@@ -100,12 +100,12 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     }
 
     // Partial block: fill sample-by-sample handling loop wraps
-    let out = new AudioBuffer(nch, BLOCK_SIZE, sr)
+    let out = new AudioBuffer(nch, blockSize, sr)
     let written = 0
 
     while (written < toWrite) {
       // Clamp read to buffer/loop end
-      let end = this.loop ? Math.min(this._bufEnd, bufLen) : Math.min(this._bufEnd, bufLen)
+      let end = Math.min(this._bufEnd, bufLen)
       let avail = end - this._cursor
       if (avail <= 0) {
         if (this.loop) {
@@ -131,8 +131,8 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     if (this._framesLeft > 0) {
       this._framesLeft -= toWrite
       if (this._framesLeft <= 0) this._scheduleEnded(0)
-    } else if (!this.loop && written < BLOCK_SIZE) {
-      this._scheduleEnded((BLOCK_SIZE - written) / sr)
+    } else if (!this.loop && written < blockSize) {
+      this._scheduleEnded((blockSize - written) / sr)
     }
 
     return out

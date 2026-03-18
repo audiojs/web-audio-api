@@ -2,6 +2,7 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 const TYPES = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass']
 
@@ -44,9 +45,9 @@ class BiquadFilterNode extends AudioNode {
     if (!(magResponse instanceof Float32Array)) throw new TypeError('magResponse must be a Float32Array')
     if (!(phaseResponse instanceof Float32Array)) throw new TypeError('phaseResponse must be a Float32Array')
     if (magResponse.length < frequencyHz.length)
-      throw new (globalThis.DOMException || Error)('magResponse length must be >= frequencyHz length', 'InvalidAccessError')
+      throw DOMErr('magResponse length must be >= frequencyHz length', 'InvalidAccessError')
     if (phaseResponse.length < frequencyHz.length)
-      throw new (globalThis.DOMException || Error)('phaseResponse length must be >= frequencyHz length', 'InvalidAccessError')
+      throw DOMErr('phaseResponse length must be >= frequencyHz length', 'InvalidAccessError')
     let sr = this.context.sampleRate
     let freq = this.#frequency.value * (2 ** (this.#detune.value / 1200))
     let Q = this.#Q.value

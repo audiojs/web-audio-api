@@ -1,8 +1,9 @@
 import DspObject from './DspObject.js'
 import { AudioInput } from './audioports.js'
 import { BLOCK_SIZE } from './constants.js'
-import { InvalidStateError } from './errors.js'
-import { AutomationEventList, createExponentialRampToValueAutomationEvent, createLinearRampToValueAutomationEvent, createSetTargetAutomationEvent, createSetValueAutomationEvent, createSetValueCurveAutomationEvent } from 'automation-events';
+import { AutomationEventList, createExponentialRampToValueAutomationEvent, createLinearRampToValueAutomationEvent, createSetTargetAutomationEvent, createSetValueAutomationEvent, createSetValueCurveAutomationEvent } from 'automation-events'
+import { DOMErr } from './errors.js'
+
 
 let _assertTime = (t) => {
   if (typeof t !== 'number' || isNaN(t) || t === Infinity || t === -Infinity)
@@ -32,14 +33,28 @@ class AudioParam extends DspObject {
   get automationRate() { return this.#rate === 'a' ? 'a-rate' : 'k-rate' }
   set automationRate(val) {
     if (this._fixedRate)
-      throw new InvalidStateError('automationRate is fixed and cannot be changed')
+      throw DOMErr('automationRate is fixed and cannot be changed', 'InvalidStateError')
     this.#rate = val === 'k-rate' ? 'k' : 'a'
   }
 
-  get value() { return this.#intrinsicValue }
+  get value() { return Math.fround(this.#intrinsicValue) }
   set value(newVal) {
+    let t = this.context.currentTime
+    this._assertNotInCurve(t)
+    newVal = Math.fround(newVal)
     this.#intrinsicValue = newVal
-    this.#automationEventList.add(createSetValueAutomationEvent(newVal, this.context.currentTime))
+    this.#automationEventList.add(createSetValueAutomationEvent(newVal, t))
+  }
+
+  // Throws NotSupportedError if time falls within an existing setValueCurve
+  _assertNotInCurve(time) {
+    for (let e of this.#automationEventList) {
+      if (e.type === 'setValueCurve') {
+        let eEnd = e.startTime + e.duration
+        if (time >= e.startTime && time < eEnd)
+          throw DOMErr('Cannot set value during a setValueCurve', 'NotSupportedError')
+      }
+    }
   }
 
   constructor(context, defaultValue, rate, minValue, maxValue) {
@@ -69,6 +84,7 @@ class AudioParam extends DspObject {
   setValueAtTime(value, startTime) {
     _assertFinite(value)
     _assertTime(startTime)
+    this._assertNotInCurve(startTime)
     this.#automationEventList.add(createSetValueAutomationEvent(value, startTime))
     return this
   }
@@ -76,6 +92,7 @@ class AudioParam extends DspObject {
   linearRampToValueAtTime(value, endTime) {
     _assertFinite(value)
     _assertTime(endTime)
+    this._assertNotInCurve(endTime)
     this.#automationEventList.add(createLinearRampToValueAutomationEvent(value, endTime))
     return this
   }
@@ -85,6 +102,7 @@ class AudioParam extends DspObject {
     _assertTime(endTime)
     if (Math.fround(value) === 0)
       throw new RangeError('exponentialRamp target value must be non-zero')
+    this._assertNotInCurve(endTime)
     this.#automationEventList.add(createExponentialRampToValueAutomationEvent(value, endTime))
     return this
   }
@@ -95,6 +113,7 @@ class AudioParam extends DspObject {
     _assertFinite(timeConstant)
     if (timeConstant < 0)
       throw new RangeError('timeConstant must be non-negative')
+    this._assertNotInCurve(startTime)
     this.#automationEventList.add(createSetTargetAutomationEvent(target, startTime, timeConstant))
     return this
   }
@@ -105,16 +124,21 @@ class AudioParam extends DspObject {
     if (duration <= 0)
       throw new RangeError('duration must be strictly positive')
     if (!values || values.length < 2)
-      throw new (globalThis.DOMException || Error)('setValueCurve requires at least 2 values', 'InvalidStateError')
+      throw DOMErr('setValueCurve requires at least 2 values', 'InvalidStateError')
     for (let i = 0; i < values.length; i++)
       _assertFinite(values[i])
     // Check for overlap: setValueCurve cannot overlap any other automation event
     let endTime = startTime + duration
     for (let e of this.#automationEventList) {
+      let eTime = e.startTime ?? e.endTime
       if (e.type === 'setValueCurve') {
         let eEnd = e.startTime + e.duration
         if (startTime < eEnd && endTime > e.startTime)
-          throw new (globalThis.DOMException || Error)('setValueCurveAtTime overlaps an existing event', 'NotSupportedError')
+          throw DOMErr('setValueCurveAtTime overlaps an existing setValueCurve', 'NotSupportedError')
+      } else {
+        // Any other event strictly inside (startTime, endTime) of the new curve is an overlap
+        if (eTime > startTime && eTime < endTime)
+          throw DOMErr('setValueCurveAtTime overlaps an existing event', 'NotSupportedError')
       }
     }
     this.#automationEventList.add(createSetValueCurveAutomationEvent(values, startTime, duration))
@@ -136,13 +160,42 @@ class AudioParam extends DspObject {
       for (let i = 0; i < BLOCK_SIZE; i++)
         array[i] = val
     }
+
+    // Add connected node inputs (spec: computedValue = intrinsicValue + sum(inputs))
+    if (this._input.sources.length > 0) {
+      let inputBuf = this._input._tick()
+      let ch0 = inputBuf.getChannelData(0)
+      if (this.#rate === 'a') {
+        for (let i = 0; i < BLOCK_SIZE; i++)
+          array[i] += ch0[i]
+      } else {
+        // k-rate: use only the first sample of the input
+        let inputVal = ch0[0]
+        for (let i = 0; i < BLOCK_SIZE; i++)
+          array[i] += inputVal
+      }
+    }
+
+    // Spec: flush NaN to default value
+    let def = this.#defaultValue
+    for (let i = 0; i < BLOCK_SIZE; i++)
+      if (isNaN(array[i])) array[i] = def
+
     this.#intrinsicValue = array[BLOCK_SIZE - 1]
   }
 
   cancelScheduledValues(startTime) {
     _assertTime(startTime)
     // Remove all events at or after startTime by rebuilding the list
-    let keep = [...this.#automationEventList].filter(e => e.startTime < startTime)
+    // For ramp events, use endTime; for setValueCurve, remove if range includes startTime
+    let keep = [...this.#automationEventList].filter(e => {
+      let eTime = e.startTime ?? e.endTime
+      if (e.type === 'setValueCurve') {
+        let eEnd = e.startTime + e.duration
+        return eEnd <= startTime  // keep only if curve ends before cancelTime
+      }
+      return eTime < startTime
+    })
     this.#automationEventList = new AutomationEventList(this.#defaultValue)
     for (let e of keep) this.#automationEventList.add(e)
     return this

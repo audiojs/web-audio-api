@@ -19,8 +19,11 @@ class ConstantSourceNode extends AudioScheduledSourceNode {
 
   _dsp() {
     let values = this.#offset._tick()
+    let count = this._activeBlockSize || BLOCK_SIZE
+    let offset = this._blockStartOffset || 0
     let out = this._outBuf.getChannelData(0)
-    for (let i = 0; i < BLOCK_SIZE; i++) out[i] = values[i]
+    for (let i = 0; i < count; i++) out[i] = values[offset + i]
+    for (let i = count; i < BLOCK_SIZE; i++) out[i] = 0
     return this._outBuf
   }
 }

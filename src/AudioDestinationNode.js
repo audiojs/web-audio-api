@@ -1,5 +1,6 @@
 import AudioNode from './AudioNode.js'
-import { IndexSizeError, InvalidStateError } from './errors.js'
+import { DOMErr } from './errors.js'
+
 
 class AudioDestinationNode extends AudioNode {
 
@@ -12,12 +13,12 @@ class AudioDestinationNode extends AudioNode {
 
   _validateChannelCount(val) {
     if (val > this.#maxChannelCount)
-      throw new IndexSizeError('channelCount cannot exceed maxChannelCount (' + this.#maxChannelCount + ')')
+      throw DOMErr('channelCount cannot exceed maxChannelCount (' + this.#maxChannelCount + ')', 'IndexSizeError')
   }
 
   _validateChannelCountMode(val) {
     if (val === 'max')
-      throw new InvalidStateError('channelCountMode "max" is not allowed for AudioDestinationNode')
+      throw DOMErr('channelCountMode "max" is not allowed for AudioDestinationNode', 'InvalidStateError')
   }
 
   _tick() {

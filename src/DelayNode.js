@@ -2,6 +2,7 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 class DelayNode extends AudioNode {
 
@@ -20,7 +21,7 @@ class DelayNode extends AudioNode {
     if (typeof maxDelayTime !== 'number' || isNaN(maxDelayTime))
       throw new TypeError('maxDelayTime must be a valid number')
     if (maxDelayTime <= 0 || maxDelayTime >= 180)
-      throw new (globalThis.DOMException || Error)('maxDelayTime must be in range (0, 180)', 'NotSupportedError')
+      throw DOMErr('maxDelayTime must be in range (0, 180)', 'NotSupportedError')
     this.#maxDelayTime = maxDelayTime
     this.#delayTime = new AudioParam(this.context, options.delayTime ?? 0, 'a', 0, maxDelayTime)
     let ringLen = Math.ceil(maxDelayTime * context.sampleRate) + BLOCK_SIZE
@@ -29,6 +30,8 @@ class DelayNode extends AudioNode {
     this._outCh = 0
     this._ringLen = ringLen
     this._ticking = false
+    // Mark output as allowing cycles (DelayNode breaks cycles per spec)
+    this._outputs[0]._allowsCycle = true
     this._applyOpts(options)
   }
 
@@ -44,6 +47,8 @@ class DelayNode extends AudioNode {
   _tick() {
     if (this._ticking) return this._outBuf || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
     this._ticking = true
+    // Mark that a DelayNode is in the current processing path (allows cycles)
+    this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
     super._tick()
     let inBuf = this._inputs[0]._tick()
     let ch = inBuf.numberOfChannels
@@ -77,6 +82,7 @@ class DelayNode extends AudioNode {
     }
 
     this.#writePos = (wp + BLOCK_SIZE) % ringLen
+    this.context._delayInCycle = (this.context._delayInCycle || 1) - 1
     this._ticking = false
     return this._outBuf
   }

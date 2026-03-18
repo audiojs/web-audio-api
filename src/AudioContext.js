@@ -1,7 +1,7 @@
 import BaseAudioContext from './BaseAudioContext.js'
 import { BufferEncoder } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
-
+import { DOMErr } from './errors.js'
 
 class AudioContext extends BaseAudioContext {
   #loopRunning = false
@@ -28,7 +28,7 @@ class AudioContext extends BaseAudioContext {
     let sampleRate = opts.sampleRate || 44100
     if (opts.sampleRate !== undefined) {
       if (opts.sampleRate < 3000 || opts.sampleRate > 768000)
-        throw new (globalThis.DOMException || Error)("Failed to construct 'AudioContext': The sample rate provided (" + opts.sampleRate + ") is outside the range [3000, 768000].", 'NotSupportedError')
+        throw DOMErr("Failed to construct 'AudioContext': The sample rate provided (" + opts.sampleRate + ") is outside the range [3000, 768000].", 'NotSupportedError')
       sampleRate = opts.sampleRate
     }
 
@@ -69,13 +69,13 @@ class AudioContext extends BaseAudioContext {
   get renderQuantumSize() { return BLOCK_SIZE }
 
   suspend() {
-    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('Cannot suspend a closed AudioContext', 'InvalidStateError'))
+    if (this._state === 'closed') return Promise.reject(DOMErr('Cannot suspend a closed AudioContext', 'InvalidStateError'))
     this._setState('suspended')
     return Promise.resolve()
   }
 
   resume() {
-    if (this._state === 'closed') return Promise.reject(new (globalThis.DOMException || Error)('Cannot resume a closed AudioContext', 'InvalidStateError'))
+    if (this._state === 'closed') return Promise.reject(DOMErr('Cannot resume a closed AudioContext', 'InvalidStateError'))
     this._setState('running')
     if (!this.#loopRunning && this.outStream && this._destination._inputs[0].sources.length) {
       this.#loopRunning = true

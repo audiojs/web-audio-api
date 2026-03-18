@@ -1,6 +1,6 @@
 import DspObject from './DspObject.js'
 import {AudioInput, AudioOutput} from './audioports.js'
-import { IndexSizeError, InvalidStateError, NotSupportedError, InvalidAccessError } from './errors.js'
+import { DOMErr } from './errors.js'
 
 const CHANNEL_COUNT_MODES = ['max', 'clamped-max', 'explicit']
 const CHANNEL_INTERPRETATIONS = ['speakers', 'discrete']
@@ -10,7 +10,7 @@ class AudioNode extends DspObject {
   get channelCount() { return this.#channelCount }
   set channelCount(val) {
     this._validateChannelCount(val)
-    if (val < 1 || val > 32) throw new NotSupportedError('channelCount must be between 1 and 32')
+    if (val < 1 || val > 32) throw DOMErr('channelCount must be between 1 and 32', 'NotSupportedError')
     this.#channelCount = val
   }
 
@@ -51,7 +51,7 @@ class AudioNode extends DspObject {
   constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
     if (!context || typeof context !== 'object' || !('sampleRate' in context))
       throw new TypeError('Expected BaseAudioContext as first argument')
-    if (context._state === 'closed') throw new InvalidStateError('cannot create node on closed context')
+    if (context._state === 'closed') throw DOMErr('cannot create node on closed context', 'InvalidStateError')
     super(context)
 
     this.#numberOfInputs = numberOfInputs
@@ -86,8 +86,8 @@ class AudioNode extends DspObject {
     // connect to AudioParam
     if (destination._input && destination.defaultValue !== undefined) {
       if (destination.context && this.context && destination.context !== this.context)
-        throw new InvalidAccessError('cannot connect nodes from different AudioContexts')
-      if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
+        throw DOMErr('cannot connect nodes from different AudioContexts', 'InvalidAccessError')
+      if (output >= this.numberOfOutputs) throw DOMErr('output index ' + output + ' out of bounds', 'IndexSizeError')
       this._outputs[output].connect(destination._input)
       return undefined
     }
@@ -95,9 +95,9 @@ class AudioNode extends DspObject {
     if (typeof destination.numberOfInputs === 'undefined')
       throw new TypeError('destination must be an AudioNode or AudioParam')
     if (destination.context && this.context && destination.context !== this.context)
-      throw new InvalidAccessError('cannot connect nodes from different AudioContexts')
-    if (output >= this.numberOfOutputs) throw new IndexSizeError('output index ' + output + ' out of bounds')
-    if (input >= destination.numberOfInputs) throw new IndexSizeError('input index ' + input + ' out of bounds')
+      throw DOMErr('cannot connect nodes from different AudioContexts', 'InvalidAccessError')
+    if (output >= this.numberOfOutputs) throw DOMErr('output index ' + output + ' out of bounds', 'IndexSizeError')
+    if (input >= destination.numberOfInputs) throw DOMErr('input index ' + input + ' out of bounds', 'IndexSizeError')
     this._outputs[output].connect(destination._inputs[input])
     return destination
   }
@@ -111,7 +111,7 @@ class AudioNode extends DspObject {
     // disconnect(output) — disconnect specific output index
     if (typeof outputOrDest === 'number') {
       if (outputOrDest >= this.numberOfOutputs || outputOrDest < 0)
-        throw new IndexSizeError('output index ' + outputOrDest + ' out of bounds')
+        throw DOMErr('output index ' + outputOrDest + ' out of bounds', 'IndexSizeError')
       let o = this._outputs[outputOrDest]
       o.sinks.slice(0).forEach(sink => o.disconnect(sink))
       return
@@ -121,13 +121,13 @@ class AudioNode extends DspObject {
     // disconnect from AudioParam
     if (dest._input && dest.defaultValue !== undefined) {
       if (dest.context && this.context && dest.context !== this.context)
-        throw new InvalidAccessError('cannot disconnect nodes from different AudioContexts')
+        throw DOMErr('cannot disconnect nodes from different AudioContexts', 'InvalidAccessError')
       if (output !== undefined) {
         if (output >= this.numberOfOutputs || output < 0)
-          throw new IndexSizeError('output index ' + output + ' out of bounds')
+          throw DOMErr('output index ' + output + ' out of bounds', 'IndexSizeError')
         let o = this._outputs[output]
         if (!o.sinks.includes(dest._input))
-          throw new InvalidAccessError('not connected to this destination')
+          throw DOMErr('not connected to this destination', 'InvalidAccessError')
         o.disconnect(dest._input)
       } else {
         // disconnect(destination) — disconnect all outputs from this AudioParam
@@ -138,25 +138,25 @@ class AudioNode extends DspObject {
             found = true
           }
         }
-        if (!found) throw new InvalidAccessError('not connected to this destination')
+        if (!found) throw DOMErr('not connected to this destination', 'InvalidAccessError')
       }
       return
     }
 
     // disconnect from AudioNode
     if (dest.context && this.context && dest.context !== this.context)
-      throw new InvalidAccessError('cannot disconnect nodes from different AudioContexts')
+      throw DOMErr('cannot disconnect nodes from different AudioContexts', 'InvalidAccessError')
     if (output !== undefined && (output >= this.numberOfOutputs || output < 0))
-      throw new IndexSizeError('output index ' + output + ' out of bounds')
+      throw DOMErr('output index ' + output + ' out of bounds', 'IndexSizeError')
     if (input !== undefined && (input >= dest.numberOfInputs || input < 0))
-      throw new IndexSizeError('input index ' + input + ' out of bounds')
+      throw DOMErr('input index ' + input + ' out of bounds', 'IndexSizeError')
 
     if (output !== undefined && input !== undefined) {
       // disconnect(destination, output, input) — specific output to specific input
       let o = this._outputs[output]
       let target = dest._inputs[input]
       if (!o.sinks.includes(target))
-        throw new InvalidAccessError('not connected to this destination')
+        throw DOMErr('not connected to this destination', 'InvalidAccessError')
       o.disconnect(target)
     } else if (output !== undefined) {
       // disconnect(destination, output) — specific output from all inputs of destination
@@ -168,7 +168,7 @@ class AudioNode extends DspObject {
           found = true
         }
       }
-      if (!found) throw new InvalidAccessError('not connected to this destination')
+      if (!found) throw DOMErr('not connected to this destination', 'InvalidAccessError')
     } else {
       // disconnect(destination) — all outputs from all inputs of destination
       let found = false
@@ -180,7 +180,7 @@ class AudioNode extends DspObject {
           }
         }
       }
-      if (!found) throw new InvalidAccessError('not connected to this destination')
+      if (!found) throw DOMErr('not connected to this destination', 'InvalidAccessError')
     }
   }
 

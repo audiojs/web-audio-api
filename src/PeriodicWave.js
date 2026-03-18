@@ -1,5 +1,6 @@
 // PeriodicWave — custom waveforms for OscillatorNode
 // Stores wavetable generated from Fourier coefficients (W3C spec convention)
+import { DOMErr } from './errors.js'
 
 export const TABLE_SIZE = 4096
 
@@ -29,8 +30,8 @@ class PeriodicWave {
     }
 
     if (!real || !imag) throw new TypeError('real and imag are required')
-    if (real.length !== imag.length) throw new (globalThis.DOMException || Error)('real and imag must have equal length', 'IndexSizeError')
-    if (real.length < 2) throw new (globalThis.DOMException || Error)('real and imag must have at least 2 elements', 'IndexSizeError')
+    if (real.length !== imag.length) throw DOMErr('real and imag must have equal length', 'IndexSizeError')
+    if (real.length < 2) throw DOMErr('real and imag must have at least 2 elements', 'IndexSizeError')
     for (let i = 0; i < real.length; i++)
       if (!isFinite(real[i])) throw new TypeError('real values must be finite')
     for (let i = 0; i < imag.length; i++)

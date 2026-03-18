@@ -1,6 +1,6 @@
 import AudioNode from './AudioNode.js'
 import { fft as computeFFT } from 'fourier-transform'
-import { IndexSizeError } from './errors.js'
+import { DOMErr } from './errors.js'
 import { BLOCK_SIZE } from './constants.js'
 
 class AnalyserNode extends AudioNode {
@@ -18,7 +18,7 @@ class AnalyserNode extends AudioNode {
   get fftSize() { return this.#fftSize }
   set fftSize(val) {
     if (val < 32 || val > 32768 || (val & (val - 1)) !== 0)
-      throw new IndexSizeError('fftSize must be power of 2 between 32 and 32768')
+      throw DOMErr('fftSize must be power of 2 between 32 and 32768', 'IndexSizeError')
     this.#fftSize = val
     this._allocBuffers(val)
   }
@@ -27,19 +27,19 @@ class AnalyserNode extends AudioNode {
 
   get minDecibels() { return this.#minDecibels }
   set minDecibels(val) {
-    if (val >= this.#maxDecibels) throw new IndexSizeError('minDecibels must be less than maxDecibels')
+    if (val >= this.#maxDecibels) throw DOMErr('minDecibels must be less than maxDecibels', 'IndexSizeError')
     this.#minDecibels = val
   }
 
   get maxDecibels() { return this.#maxDecibels }
   set maxDecibels(val) {
-    if (val <= this.#minDecibels) throw new IndexSizeError('maxDecibels must be greater than minDecibels')
+    if (val <= this.#minDecibels) throw DOMErr('maxDecibels must be greater than minDecibels', 'IndexSizeError')
     this.#maxDecibels = val
   }
 
   get smoothingTimeConstant() { return this.#smoothingTimeConstant }
   set smoothingTimeConstant(val) {
-    if (val < 0 || val > 1) throw new IndexSizeError('smoothingTimeConstant must be between 0 and 1')
+    if (val < 0 || val > 1) throw DOMErr('smoothingTimeConstant must be between 0 and 1', 'IndexSizeError')
     this.#smoothingTimeConstant = val
   }
 
@@ -51,13 +51,16 @@ class AnalyserNode extends AudioNode {
     if (options.minDecibels !== undefined || options.maxDecibels !== undefined) {
       let min = options.minDecibels ?? this.#minDecibels
       let max = options.maxDecibels ?? this.#maxDecibels
-      if (min >= max) throw new IndexSizeError('minDecibels must be less than maxDecibels')
+      if (min >= max) throw DOMErr('minDecibels must be less than maxDecibels', 'IndexSizeError')
       this.#minDecibels = min
       this.#maxDecibels = max
     }
     if (options.smoothingTimeConstant !== undefined) this.smoothingTimeConstant = options.smoothingTimeConstant
     this._allocBuffers(this.#fftSize)
     this._applyOpts(options)
+    // Register as tail node so _tick() is called during rendering
+    // even when not connected to destination (spec: AnalyserNode captures input data)
+    context._tailNodes?.add(this)
   }
 
   _allocBuffers(n) {

@@ -71,7 +71,7 @@ class AudioInput extends AudioPort {
   }
 
   _tick() {
-    let inBuffers = this.sources.map(source => source._tick())
+    let inBuffers = this.sources.slice().map(source => source._tick())
 
     if (this.computedNumberOfChannels === null) {
       let maxUp = this.sources.length
@@ -130,13 +130,26 @@ class AudioOutput extends AudioPort {
   _tick() {
     // Cycle detection: if this output is already being pulled, return cached or silence
     if (this._ticking) {
+      // Spec: cycles without DelayNode must be muted.
+      // Track cycle depth — a DelayNode in the path will set _delayInCycle on context.
+      let ctx = this.context
+      if (!ctx._delayInCycle) ctx._cycleWithoutDelay = true
       return this._cachedBlock.buffer || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
     }
 
     if (this._cachedBlock.time < this.context.currentTime) {
       this._ticking = true
+      let ctx = this.context
+      let prevCycleFlag = ctx._cycleWithoutDelay
+      ctx._cycleWithoutDelay = false
       // _tickOutput allows nodes like ChannelSplitterNode to return different buffers per output
       let outBuffer = this.node._tickOutput ? this.node._tickOutput(this.id) : this.node._tick()
+      // Spec: if a no-delay cycle was detected, mute this node's output
+      let hasCycleWithoutDelay = ctx._cycleWithoutDelay
+      ctx._cycleWithoutDelay = prevCycleFlag
+      if (hasCycleWithoutDelay) {
+        outBuffer = new AudioBuffer(outBuffer.numberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+      }
       if (this._numberOfChannels !== outBuffer.numberOfChannels) {
         this._numberOfChannels = outBuffer.numberOfChannels
         this.emit('_numberOfChannels')

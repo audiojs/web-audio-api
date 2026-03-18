@@ -1,6 +1,7 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 class ConvolverNode extends AudioNode {
 
@@ -14,9 +15,9 @@ class ConvolverNode extends AudioNode {
     if (val !== null && val !== undefined) {
       let nch = val.numberOfChannels
       if (nch < 1 || nch > 4 || nch === 3)
-        throw new (globalThis.DOMException || Error)('ConvolverNode buffer must have 1, 2, or 4 channels', 'NotSupportedError')
+        throw DOMErr('ConvolverNode buffer must have 1, 2, or 4 channels', 'NotSupportedError')
       if (val.sampleRate !== this.context.sampleRate)
-        throw new (globalThis.DOMException || Error)('ConvolverNode buffer sampleRate must match context sampleRate', 'NotSupportedError')
+        throw DOMErr('ConvolverNode buffer sampleRate must match context sampleRate', 'NotSupportedError')
     }
     this.#buffer = val
     this.#overlapBuf = null
@@ -61,11 +62,11 @@ class ConvolverNode extends AudioNode {
   }
 
   _validateChannelCount(val) {
-    if (val > 2) throw new (globalThis.DOMException || Error)('channelCount cannot be greater than 2', 'NotSupportedError')
+    if (val > 2) throw DOMErr('channelCount cannot be greater than 2', 'NotSupportedError')
   }
 
   _validateChannelCountMode(val) {
-    if (val === 'max') throw new (globalThis.DOMException || Error)("channelCountMode cannot be 'max'", 'NotSupportedError')
+    if (val === 'max') throw DOMErr("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
   _tick() {

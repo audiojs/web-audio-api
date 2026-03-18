@@ -7,8 +7,7 @@ import DistanceEffect from './DistanceEffect.js'
 import ConeEffect from './ConeEffect.js'
 import PannerProvider from './PannerProvider.js'
 import * as mathUtils from '../mathUtils.js'
-import { NotSupportedError } from '../errors.js'
-
+import { DOMErr } from '../errors.js'
 
 class PannerNode extends AudioNode {
 
@@ -63,12 +62,12 @@ class PannerNode extends AudioNode {
 
   _validateChannelCount(val) {
     if (val !== 1 && val !== 2)
-      throw new NotSupportedError(`The channelCount provided (${val}) is outside the range [1, 2].`)
+      throw DOMErr(`The channelCount provided (${val}) is outside the range [1, 2].`, 'NotSupportedError')
   }
 
   _validateChannelCountMode(val) {
     if (val === 'max')
-      throw new NotSupportedError(`Panner: 'max' is not allowed`)
+      throw DOMErr(`Panner: 'max' is not allowed`, 'NotSupportedError')
   }
 
   // --- delegation properties ---

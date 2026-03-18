@@ -1,25 +1,25 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
-import { IndexSizeError, InvalidStateError } from './errors.js'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 class ChannelSplitterNode extends AudioNode {
 
   constructor(context, options = {}) {
     let numberOfOutputs = options?.numberOfOutputs ?? 6
     if (numberOfOutputs < 1 || numberOfOutputs > 32)
-      throw new IndexSizeError(`numberOfOutputs (${numberOfOutputs}) is outside [1, 32]`)
+      throw DOMErr(`numberOfOutputs (${numberOfOutputs}) is outside [1, 32]`, 'IndexSizeError')
 
     // validate locked properties from options
     let channelCount = options?.channelCount ?? numberOfOutputs
     if (channelCount !== numberOfOutputs)
-      throw new InvalidStateError(`channelCount (${channelCount}) must equal numberOfOutputs (${numberOfOutputs})`)
+      throw DOMErr(`channelCount (${channelCount}) must equal numberOfOutputs (${numberOfOutputs})`, 'InvalidStateError')
     let channelCountMode = options?.channelCountMode ?? 'explicit'
     if (channelCountMode !== 'explicit')
-      throw new InvalidStateError(`channelCountMode must be 'explicit'`)
+      throw DOMErr(`channelCountMode must be 'explicit'`, 'InvalidStateError')
     let channelInterpretation = options?.channelInterpretation ?? 'discrete'
     if (channelInterpretation !== 'discrete')
-      throw new InvalidStateError(`channelInterpretation must be 'discrete'`)
+      throw DOMErr(`channelInterpretation must be 'discrete'`, 'InvalidStateError')
 
     super(context, 1, numberOfOutputs, numberOfOutputs, 'explicit', 'discrete')
     this._outBufs = Array.from({ length: numberOfOutputs },
@@ -29,15 +29,15 @@ class ChannelSplitterNode extends AudioNode {
 
   _validateChannelCount(val) {
     if (val !== this.numberOfOutputs)
-      throw new InvalidStateError(`channelCount must equal numberOfOutputs (${this.numberOfOutputs})`)
+      throw DOMErr(`channelCount must equal numberOfOutputs (${this.numberOfOutputs})`, 'InvalidStateError')
   }
 
   _validateChannelCountMode(val) {
-    if (val !== 'explicit') throw new InvalidStateError(`channelCountMode must be 'explicit'`)
+    if (val !== 'explicit') throw DOMErr(`channelCountMode must be 'explicit'`, 'InvalidStateError')
   }
 
   _validateChannelInterpretation(val) {
-    if (val !== 'discrete') throw new InvalidStateError(`channelInterpretation must be 'discrete'`)
+    if (val !== 'discrete') throw DOMErr(`channelInterpretation must be 'discrete'`, 'InvalidStateError')
   }
 
   _tickOutput(outputIndex) {

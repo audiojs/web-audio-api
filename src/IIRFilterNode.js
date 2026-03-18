@@ -1,7 +1,7 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
-import { NotSupportedError, InvalidStateError, InvalidAccessError } from './errors.js'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 const MAX_COEF = 20
 
@@ -46,23 +46,23 @@ class IIRFilterNode extends AudioNode {
 
     // Empty arrays -> NotSupportedError
     if (feedforward.length === 0)
-      throw new NotSupportedError('feedforward must not be empty')
+      throw DOMErr('feedforward must not be empty', 'NotSupportedError')
     if (feedback.length === 0)
-      throw new NotSupportedError('feedback must not be empty')
+      throw DOMErr('feedback must not be empty', 'NotSupportedError')
 
     // Max 20 coefficients -> NotSupportedError
     if (feedforward.length > MAX_COEF)
-      throw new NotSupportedError('feedforward length exceeds ' + MAX_COEF)
+      throw DOMErr('feedforward length exceeds ' + MAX_COEF, 'NotSupportedError')
     if (feedback.length > MAX_COEF)
-      throw new NotSupportedError('feedback length exceeds ' + MAX_COEF)
+      throw DOMErr('feedback length exceeds ' + MAX_COEF, 'NotSupportedError')
 
     // All-zero feedforward -> InvalidStateError
     if (feedforward.every(v => v === 0))
-      throw new InvalidStateError('feedforward coefficients must not all be zero')
+      throw DOMErr('feedforward coefficients must not all be zero', 'InvalidStateError')
 
     // feedback[0] === 0 -> InvalidStateError
     if (feedback[0] === 0)
-      throw new InvalidStateError('feedback[0] must be non-zero')
+      throw DOMErr('feedback[0] must be non-zero', 'InvalidStateError')
 
     super(context, 1, 1, undefined, 'max', 'speakers')
     this._applyOpts(options)
@@ -91,9 +91,9 @@ class IIRFilterNode extends AudioNode {
 
     // Length mismatch -> InvalidAccessError
     if (magResponse.length < frequencyHz.length)
-      throw new InvalidAccessError('magResponse length must be >= frequencyHz length')
+      throw DOMErr('magResponse length must be >= frequencyHz length', 'InvalidAccessError')
     if (phaseResponse.length < frequencyHz.length)
-      throw new InvalidAccessError('phaseResponse length must be >= frequencyHz length')
+      throw DOMErr('phaseResponse length must be >= frequencyHz length', 'InvalidAccessError')
 
     let sr = this.context.sampleRate
     let nyquist = sr / 2

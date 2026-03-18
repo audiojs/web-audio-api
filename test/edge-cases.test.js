@@ -235,7 +235,7 @@ test('AudioParam > ramp without prior setValue uses current value', () => {
 test('error types > have correct names', async () => {
   let mod = await import('../src/errors.js')
   for (let [name, Cls] of Object.entries(mod)) {
-    if (typeof Cls !== 'function' || name === 'setDOMExceptionClass') continue
+    if (typeof Cls !== 'function' || !name.endsWith('Error')) continue
     let err = new Cls('test')
     is(err.name, name, name + ' has correct .name')
     ok(err.message === 'test', name + ' has message')

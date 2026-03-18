@@ -24,9 +24,7 @@ class DistanceEffect {
    * @param {boolean} clampled
    */
   setModel(model, clamped) {
-    if (!DistanceModelType[model]) {
-      throw new Error('Invalid DistanceModelType')
-    }
+    if (!DistanceModelType[model]) return // WebIDL: silently ignore invalid enum values
     this._model     = model
     this._isClamped = clamped
   }

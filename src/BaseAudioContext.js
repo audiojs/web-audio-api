@@ -30,6 +30,7 @@ class BaseAudioContext extends EventTarget {
   _sampleRate
   _destination
   _listener
+  _tailNodes = new Set()  // nodes that need processing even when not connected to destination
   #onstatechange = null
   #oncomplete = null
 
@@ -67,9 +68,12 @@ class BaseAudioContext extends EventTarget {
     this.dispatchEvent(new Event('statechange'))
   }
 
-  // Render one quantum: pull graph, advance frame counter
+  // Render one quantum: pull graph + tail nodes, advance frame counter
   _renderQuantum() {
     let buf = this._destination._tick()
+    // Process tail nodes (e.g. AnalyserNode) not in the destination graph
+    for (let node of this._tailNodes)
+      node._outputs[0]._tick()
     this._frame += BLOCK_SIZE
     return buf
   }

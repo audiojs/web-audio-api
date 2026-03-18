@@ -4,6 +4,7 @@ import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import PeriodicWave, { TABLE_SIZE } from './PeriodicWave.js'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 
 const TYPES = ['sine', 'square', 'sawtooth', 'triangle', 'custom']
 
@@ -21,7 +22,7 @@ class OscillatorNode extends AudioScheduledSourceNode {
   get type() { return this.#type }
   set type(val) {
     if (!TYPES.includes(val)) return // WebIDL: silently ignore invalid enum values
-    if (val === 'custom') throw new (globalThis.DOMException || Error)('Cannot set type to custom; use setPeriodicWave()', 'InvalidStateError')
+    if (val === 'custom') throw DOMErr('Cannot set type to custom; use setPeriodicWave()', 'InvalidStateError')
     this.#type = val
     this.#periodicWave = null
   }
@@ -31,14 +32,14 @@ class OscillatorNode extends AudioScheduledSourceNode {
     super(context, 0, 1, undefined, 'max', 'speakers')
     this.#frequency = new AudioParam(this.context, options.frequency ?? 440, 'a')
     this.#detune = new AudioParam(this.context, options.detune ?? 0, 'a')
-    if (options.periodicWave) this.setPeriodicWave(options.periodicWave)
+    if ('periodicWave' in options) this.setPeriodicWave(options.periodicWave)
     else if (options.type !== undefined) this.type = options.type
     this._outBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
   }
 
   setPeriodicWave(wave) {
-    if (!(wave instanceof PeriodicWave)) throw new Error('Expected PeriodicWave')
+    if (!(wave instanceof PeriodicWave)) throw new TypeError('Expected PeriodicWave')
     this.#periodicWave = wave
     this.#type = 'custom'
   }
@@ -50,9 +51,18 @@ class OscillatorNode extends AudioScheduledSourceNode {
     let sr = this.context.sampleRate
     let table = this.#periodicWave?.table ?? PeriodicWave.getBuiltIn(this.#type)
     let phase = this.#phase
+    let count = this._activeBlockSize || BLOCK_SIZE
+    let offset = this._blockStartOffset || 0
 
-    for (let i = 0; i < BLOCK_SIZE; i++) {
+    // Advance phase for skipped samples (before start within block)
+    for (let i = 0; i < offset; i++) {
       let freq = freqArr[i] * (2 ** (detuneArr[i] / 1200))
+      phase += freq / sr
+      phase -= Math.floor(phase)
+    }
+
+    for (let i = 0; i < count; i++) {
+      let freq = freqArr[offset + i] * (2 ** (detuneArr[offset + i] / 1200))
 
       // linear interpolation for smooth wavetable lookup
       let pos = phase * TABLE_SIZE
@@ -65,6 +75,8 @@ class OscillatorNode extends AudioScheduledSourceNode {
       phase += freq / sr
       phase -= Math.floor(phase) // keep in [0, 1)
     }
+    // Zero remaining samples if producing less than BLOCK_SIZE
+    for (let i = count; i < BLOCK_SIZE; i++) out[i] = 0
 
     this.#phase = phase
     return this._outBuf
