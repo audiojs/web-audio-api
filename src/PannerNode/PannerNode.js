@@ -143,7 +143,7 @@ class PannerNode extends AudioNode {
     outL.fill(0)
     outR.fill(0)
 
-    // Tick all AudioParams to process automation, use sample 0 for block-rate spatial update
+    // Tick all AudioParams to get per-sample automation values (Float32Array)
     let px = this.#positionX._tick()
     let py = this.#positionY._tick()
     let pz = this.#positionZ._tick()
@@ -151,53 +151,103 @@ class PannerNode extends AudioNode {
     let oy = this.#orientationY._tick()
     let oz = this.#orientationZ._tick()
 
-    this._position = new FloatPoint3D(px[0], py[0], pz[0])
-    this._orientation = new FloatPoint3D(ox[0], oy[0], oz[0])
-
-    // Tick listener params so its position/orientation reflect automation
+    // Tick listener params (block-rate)
     let listener = this._listener._tick()
-    this._listenerPosition = listener.position
-    this._listenerOrientation = listener.orientation
-    this._listenerUpVector = listener.upVector
+    let listenerPos = listener.position
+    let listenerFwd = listener.orientation
+    let listenerUp = listener.upVector
 
     let inBuff = this._inputs[0]._tick()
-    let { azimuth, elevation } = this._calculateAzimuthElevation()
+    let numInputCh = inBuff.numberOfChannels
+    let srcL = inBuff.getChannelData(0)
+    let srcR = numInputCh > 1 ? inBuff.getChannelData(1) : srcL
 
-    this._pannerProvider.panner.pan(azimuth, elevation, inBuff, this._outBuf, BLOCK_SIZE)
-
-    let totalGain = this._calculateDistanceConeGain()
-    if (this._lastGain === -1.0) this._lastGain = totalGain
-
+    // Per-sample spatial processing.
+    // Apply panning first (writes to Float32Array, matching spec precision),
+    // then multiply by distance/cone gain.
     for (let i = 0; i < BLOCK_SIZE; i++) {
+      let pos = new FloatPoint3D(px[i], py[i], pz[i])
+      let orient = new FloatPoint3D(ox[i], oy[i], oz[i])
+
+      let { azimuth } = this._calculateAzimuthElevation(pos, listenerPos, listenerFwd, listenerUp)
+
+      // Equal-power panning gains
+      let { gainL, gainR } = this._equalPowerGains(azimuth, numInputCh)
+
+      // Apply panning (stored in Float32Array, quantizing intermediates to float32)
+      if (numInputCh === 1) {
+        outL[i] = srcL[i] * gainL
+        outR[i] = srcL[i] * gainR
+      } else {
+        if (azimuth <= 0) {
+          outL[i] = srcL[i] + srcR[i] * gainL
+          outR[i] = srcR[i] * gainR
+        } else {
+          outL[i] = srcL[i] * gainL
+          outR[i] = srcR[i] + srcL[i] * gainR
+        }
+      }
+
+      // Distance and cone gain (applied after panning, matching spec ordering)
+      let dist = pos.distanceTo(listenerPos)
+      let totalGain = Math.fround(this._distanceEffect.gain(dist) * this._coneEffect.gain(pos, orient, listenerPos))
       outL[i] *= totalGain
       outR[i] *= totalGain
     }
 
+    // Update cached position/orientation (for external queries)
+    this._position = new FloatPoint3D(px[BLOCK_SIZE - 1], py[BLOCK_SIZE - 1], pz[BLOCK_SIZE - 1])
+    this._orientation = new FloatPoint3D(ox[BLOCK_SIZE - 1], oy[BLOCK_SIZE - 1], oz[BLOCK_SIZE - 1])
+
     return this._outBuf
   }
 
-  _calculateAzimuthElevation() {
-    let azimuth = 0.0
+  /**
+   * Compute equal-power panning gains from azimuth.
+   * @param {number} azimuth - in degrees, [-180, 180]
+   * @param {number} numChannels - number of input channels (1 or 2)
+   * @returns {{ gainL: number, gainR: number }}
+   */
+  _equalPowerGains(azimuth, numChannels) {
+    azimuth = mathUtils.clampTo(azimuth, -180.0, 180.0)
 
-    let listenerPosition = this._listenerPosition
-    let sourceListener = this._position.sub(listenerPosition)
+    if (azimuth < -90) azimuth = -180 - azimuth
+    else if (azimuth > 90) azimuth = 180 - azimuth
+
+    let panPosition
+    if (numChannels === 1) {
+      panPosition = (azimuth + 90) / 180
+    } else {
+      if (azimuth <= 0) panPosition = (azimuth + 90) / 90
+      else panPosition = azimuth / 90
+    }
+
+    let panRadius = Math.PI / 2 * panPosition
+    return { gainL: Math.cos(panRadius), gainR: Math.sin(panRadius) }
+  }
+
+  _calculateAzimuthElevation(position, listenerPosition, listenerOrientation, listenerUpVector) {
+    let sourceListener = position.sub(listenerPosition)
     sourceListener.normalize()
 
     if (sourceListener.isZero()) return { azimuth: 0, elevation: 0 }
 
-    let listenerFront = this._listenerOrientation
-    let listenerUp = this._listenerUpVector
-    let listenerRight = listenerFront.cross(listenerUp)
+    let listenerRight = listenerOrientation.cross(listenerUpVector)
     listenerRight.normalize()
 
-    let listenerFrontNorm = listenerFront
+    let listenerFrontNorm = new FloatPoint3D(listenerOrientation.x, listenerOrientation.y, listenerOrientation.z)
     listenerFrontNorm.normalize()
 
     let up = listenerRight.cross(listenerFrontNorm)
     let upProjection = sourceListener.dot(up)
     let projectedSource = sourceListener.sub(up.mul(upProjection))
 
-    azimuth = mathUtils.rad2deg(projectedSource.angleBetween(listenerRight))
+    // When projectedSource is zero (source directly above/below), azimuth is 0.
+    if (projectedSource.isZero()) return { azimuth: 0, elevation: 0 }
+
+    projectedSource.normalize()
+
+    let azimuth = mathUtils.rad2deg(projectedSource.angleBetween(listenerRight))
     azimuth = mathUtils.fixNANs(azimuth)
 
     if (projectedSource.dot(listenerFrontNorm) < 0.0) azimuth = 360.0 - azimuth
@@ -209,12 +259,6 @@ class PannerNode extends AudioNode {
     else if (elevation < -90.0) elevation = -180.0 - elevation
 
     return { azimuth, elevation }
-  }
-
-  _calculateDistanceConeGain() {
-    let listenerPosition = this._listenerPosition
-    let listenerDistance = this._position.distanceTo(listenerPosition)
-    return this._distanceEffect.gain(listenerDistance) * this._coneEffect.gain(this._position, this._orientation, listenerPosition)
   }
 
 }

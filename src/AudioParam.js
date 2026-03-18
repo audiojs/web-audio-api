@@ -41,7 +41,6 @@ class AudioParam extends DspObject {
   set value(newVal) {
     let t = this.context.currentTime
     this._assertNotInCurve(t)
-    newVal = Math.fround(newVal)
     this.#intrinsicValue = newVal
     this.#automationEventList.add(createSetValueAutomationEvent(newVal, t))
   }

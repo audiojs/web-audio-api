@@ -45,9 +45,14 @@ class DelayNode extends AudioNode {
   }
 
   _tick() {
-    if (this._ticking) return this._outBuf || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
+    if (this._ticking) {
+      // Re-entry in a feedback cycle: mark for delay clamping, return previous output
+      this._inCycle = true
+      if (this._outBuf) return this._outBuf
+      return new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
+    }
     this._ticking = true
-    // Mark that a DelayNode is in the current processing path (allows cycles)
+    this._inCycle = false
     this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
     super._tick()
     let inBuf = this._inputs[0]._tick()
@@ -65,6 +70,9 @@ class DelayNode extends AudioNode {
     let ringLen = this._ringLen
     let wp = this.#writePos
 
+    // Spec: in a cycle, delay must be at least one render quantum
+    let minDelay = this._inCycle ? BLOCK_SIZE / sr : 0
+
     for (let c = 0; c < ch; c++) {
       let ring = this.#ringBuf[c]
       let inp = inBuf.getChannelData(c)
@@ -73,7 +81,7 @@ class DelayNode extends AudioNode {
       for (let i = 0; i < BLOCK_SIZE; i++) {
         ring[(wp + i) % ringLen] = inp[i]
         let d = delayArr[i]
-        let delaySamples = Math.max(0, Math.min(this.#maxDelayTime, d === d ? d : 0)) * sr
+        let delaySamples = Math.max(minDelay, Math.min(this.#maxDelayTime, d === d ? d : 0)) * sr
         let readPos = (wp + i - delaySamples + ringLen * 2) % ringLen
         let idx = Math.floor(readPos)
         let frac = readPos - idx

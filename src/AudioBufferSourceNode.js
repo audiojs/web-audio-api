@@ -20,8 +20,16 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
       throw new TypeError('buffer must be an AudioBuffer or null')
     if (val !== null && this.#bufferSet)
       throw DOMErr('buffer can only be set once', 'InvalidStateError')
-    if (val !== null) this.#bufferSet = true
-    this.#buffer = val
+    if (val !== null) {
+      this.#bufferSet = true
+      // Spec: "acquire the content" — copy buffer data so external mutations don't affect playback
+      let nch = val.numberOfChannels, len = val.length
+      let copy = new AudioBuffer(nch, len, val.sampleRate)
+      for (let c = 0; c < nch; c++) copy.getChannelData(c).set(val.getChannelData(c))
+      this.#buffer = copy
+    } else {
+      this.#buffer = null
+    }
   }
 
   constructor(context, options) {
@@ -55,7 +63,7 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
   }
 
   _onStart() {
-    if (!this.buffer) throw new Error('invalid buffer')
+    if (!this.buffer) return // no buffer yet — will initialize when buffer is set later
     let sr = this.context.sampleRate
     this._cursor = Math.round(this._offset * sr)
     this._bufEnd = this.loopEnd > 0 ? Math.round(this.loopEnd * sr) : this.buffer.length
@@ -63,6 +71,9 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
   }
 
   _dsp() {
+    if (!this.buffer) return this._zeroBuf // no buffer assigned yet
+    // Lazy init: if buffer was set after start(), initialize playback now
+    if (this._bufEnd === 0 && this.buffer) this._onStart()
     let sr = this.context.sampleRate
     let nch = this.buffer.numberOfChannels
     let bufLen = this.buffer.length

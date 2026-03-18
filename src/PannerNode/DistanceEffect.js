@@ -31,8 +31,8 @@ class DistanceEffect {
 
   get refDistance() { return this._refDistance }
   set refDistance(refDistance) {
-    if (!Number.isFinite(refDistance)) {
-      throw new Error('Invalid refDistance')
+    if (!Number.isFinite(refDistance) || refDistance < 0) {
+      throw new RangeError('refDistance must be non-negative and finite')
     }
     this._refDistance = refDistance
   }
@@ -83,7 +83,9 @@ class DistanceEffect {
    * @return {number}
    */
   linearGain(distance) {
-    return (1.0 - this._rolloffFactor * (distance - this._refDistance) / (this._maxDistance - this._refDistance))
+    // Per spec, rolloffFactor is clamped to [0, 1] for the linear model.
+    let rolloff = Math.min(Math.max(this._rolloffFactor, 0), 1)
+    return (1.0 - rolloff * (distance - this._refDistance) / (this._maxDistance - this._refDistance))
   }
 
   /**

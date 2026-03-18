@@ -1,7 +1,7 @@
 {
   "name": "web-audio-api",
   "version": "1.0.0",
-  "description": "Pure JS implementation of Web Audio API",
+  "description": "Web Audio API in pure JavaScript",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
     "Dmitry Iv <df.creative@gmail.com>"

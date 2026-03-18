@@ -25,13 +25,12 @@ class ConvolverNode extends AudioNode {
       let nch = val.numberOfChannels
       this.#irChannels = []
       for (let c = 0; c < nch; c++) {
-        let data = val.getChannelData(c)
+        let data = new Float32Array(val.getChannelData(c)) // acquire content — always copy
         if (this.#normalize) {
           let sum = 0
           for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
           let rms = Math.sqrt(sum / data.length)
           if (rms > 0) {
-            data = new Float32Array(data)
             let scale = 1 / rms
             for (let i = 0; i < data.length; i++) data[i] *= scale
           }
