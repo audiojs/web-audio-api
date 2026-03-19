@@ -57,7 +57,7 @@ We need to reframe value proposition into something more reliable, like fixing t
 - [x] #94 How to clear AudioContext?
   Answer: `await ctx.close()` closes and releases. `using ctx = new AudioContext()` auto-disposes.
   Action: close with answer, add to README FAQ.
-- [ ] #88 OfflineAudioContext for Tone.js
+- [x] #88 OfflineAudioContext for Tone.js
   Answer: `OfflineAudioContext` is fully implemented. `Tone.setContext(new AudioContext())` works.
   Action: close with answer + example.
 - [x] #72 Polyfill entry — `globalThis.AudioContext ??= (await import('web-audio-api')).AudioContext`
