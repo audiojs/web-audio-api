@@ -21,12 +21,19 @@ class ScriptProcessorNode extends AudioNode {
   set onaudioprocess(onaudioprocess) {
     let inputBuffer = null
     let outputBuffer = null
+    // Spec: SPN latency is 2*bufferSize. Track frames to enforce this.
+    let frameCount = 0
+    let latency = 2 * this.#bufferSize
 
     this._tick = function() {
       AudioNode.prototype._tick.call(this)
 
       let inBlock = this._inputs[0]._tick()
-      inputBuffer = inputBuffer ? inputBuffer.concat(inBlock) : inBlock
+      // Clone the input block since AudioInput reuses its internal mix buffer
+      let cloned = new AudioBuffer(inBlock.numberOfChannels, inBlock.length, this.context.sampleRate)
+      for (let c = 0; c < inBlock.numberOfChannels; c++)
+        cloned.getChannelData(c).set(inBlock.getChannelData(c))
+      inputBuffer = inputBuffer ? inputBuffer.concat(cloned) : cloned
 
       if (inputBuffer.length === this.bufferSize) {
         let event = this._processingEvent(inputBuffer)
@@ -35,7 +42,10 @@ class ScriptProcessorNode extends AudioNode {
         outputBuffer = outputBuffer ? outputBuffer.concat(event.outputBuffer) : event.outputBuffer
       } else if (inputBuffer.length >= this.bufferSize) throw new Error('this shouldnt happen')
 
-      if (outputBuffer && outputBuffer.length >= BLOCK_SIZE) {
+      frameCount += BLOCK_SIZE
+
+      // Enforce 2*bufferSize latency: don't emit output until enough frames have passed
+      if (frameCount > latency && outputBuffer && outputBuffer.length >= BLOCK_SIZE) {
         let returned = outputBuffer.slice(0, BLOCK_SIZE)
         outputBuffer = outputBuffer.length > BLOCK_SIZE ? outputBuffer.slice(BLOCK_SIZE) : null
         return returned

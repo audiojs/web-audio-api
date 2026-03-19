@@ -20,7 +20,7 @@ class StereoPannerNode extends AudioNode {
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
     super(context, 1, 1, 2, 'clamped-max', 'speakers')
-    this.#pan = new AudioParam(this.context, options.pan ?? 0, 'a')
+    this.#pan = new AudioParam(this.context, options.pan ?? 0, 'a', -1, 1)
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
   }

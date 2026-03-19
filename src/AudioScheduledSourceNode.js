@@ -59,25 +59,33 @@ class AudioScheduledSourceNode extends AudioNode {
 
     let sr = this.context.sampleRate
     let blockStart = this.context.currentTime
-    let blockEnd = blockStart + BLOCK_SIZE / sr
+    // Compute blockEnd from frame counter to avoid float precision drift
+    let blockEnd = this.context._frame != null
+      ? (this.context._frame + BLOCK_SIZE) / sr
+      : blockStart + BLOCK_SIZE / sr
 
     // Not started yet
     if (!this._started || this._startTime >= blockEnd) return this._zeroBuf
 
+    // Compute sub-sample-accurate start/stop offsets within this block.
+    // Use fp-safe ceiling: if value is within 1e-8 of an integer, snap to it.
+    let fpCeil = v => { let r = Math.round(v); return Math.abs(v - r) < 1e-8 ? r : Math.ceil(v) }
+    let startSample = 0
+    if (this._startTime > blockStart)
+      startSample = fpCeil((this._startTime - blockStart) * sr)
+
+    // If the source starts at/past the end of this block, defer to next quantum
+    if (startSample >= BLOCK_SIZE) return this._zeroBuf
+
     // Check if we just crossed start boundary — initialize on first playing tick
-    if (!this._playing && this._startTime < blockEnd) {
+    if (!this._playing) {
       this._playing = true
       this._onStart()
     }
 
-    // Compute sample-accurate start/stop offsets within this block
-    let startSample = 0
-    if (this._startTime > blockStart)
-      startSample = Math.round((this._startTime - blockStart) * sr)
-
     let stopSample = BLOCK_SIZE
     if (this._stopTime >= 0 && this._stopTime < blockEnd) {
-      stopSample = Math.max(0, Math.round((this._stopTime - blockStart) * sr))
+      stopSample = Math.max(0, fpCeil((this._stopTime - blockStart) * sr))
       if (stopSample <= startSample) {
         this._scheduleEnded(0)
         return this._zeroBuf

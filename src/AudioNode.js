@@ -51,7 +51,6 @@ class AudioNode extends DspObject {
   constructor(context, numberOfInputs, numberOfOutputs, channelCount, channelCountMode, channelInterpretation) {
     if (!context || typeof context !== 'object' || !('sampleRate' in context))
       throw new TypeError('Expected BaseAudioContext as first argument')
-    if (context._state === 'closed') throw DOMErr('cannot create node on closed context', 'InvalidStateError')
     super(context)
 
     this.#numberOfInputs = numberOfInputs

@@ -25,11 +25,11 @@ class DynamicsCompressorNode extends AudioNode {
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
     super(context, 1, 1, 2, 'clamped-max', 'speakers')
-    this.#threshold = new AudioParam(this.context, Math.fround(options.threshold ?? -24), 'k')
-    this.#knee = new AudioParam(this.context, Math.fround(options.knee ?? 30), 'k')
-    this.#ratio = new AudioParam(this.context, Math.fround(options.ratio ?? 12), 'k')
-    this.#attack = new AudioParam(this.context, Math.fround(options.attack ?? 0.003), 'k')
-    this.#release = new AudioParam(this.context, Math.fround(options.release ?? 0.25), 'k')
+    this.#threshold = new AudioParam(this.context, Math.fround(options.threshold ?? -24), 'k', -100, 0)
+    this.#knee = new AudioParam(this.context, Math.fround(options.knee ?? 30), 'k', 0, 40)
+    this.#ratio = new AudioParam(this.context, Math.fround(options.ratio ?? 12), 'k', 1, 20)
+    this.#attack = new AudioParam(this.context, Math.fround(options.attack ?? 0.003), 'k', 0, 1)
+    this.#release = new AudioParam(this.context, Math.fround(options.release ?? 0.25), 'k', 0, 1)
     // DynamicsCompressor params have fixed k-rate per spec
     this.#threshold._fixedRate = true
     this.#knee._fixedRate = true

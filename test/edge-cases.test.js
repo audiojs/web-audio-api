@@ -62,13 +62,13 @@ test('AudioContext > close() sets state to closed', async () => {
   is(ctx.state, 'closed')
 })
 
-test('closed context > factory methods throw InvalidStateError', async () => {
+test('closed context > node creation allowed on closed contexts (per spec)', async () => {
   let ctx = new AudioContext()
   await ctx.close()
-  throws(() => ctx.createGain())
-  throws(() => ctx.createOscillator())
-  throws(() => ctx.createBufferSource())
-  // createBuffer and createPeriodicWave are allowed on closed contexts
+  // Per W3C spec, creating nodes on closed contexts is allowed
+  ok(ctx.createGain(), 'createGain allowed on closed')
+  ok(ctx.createOscillator(), 'createOscillator allowed on closed')
+  ok(ctx.createBufferSource(), 'createBufferSource allowed on closed')
   ok(ctx.createBuffer(1, 128, 44100), 'createBuffer allowed on closed')
   ok(ctx.createPeriodicWave(new Float32Array([0,0]), new Float32Array([0,1])), 'createPeriodicWave allowed on closed')
 })

@@ -13,16 +13,20 @@ class OfflineAudioContext extends BaseAudioContext {
   #renderResolve = null
   #renderReject = null
   #rendering = false  // true when inside startRendering
+  #renderQuantumSize
 
   get length() { return this.#length }
+  get renderQuantumSize() { return this.#renderQuantumSize }
 
   constructor(numberOfChannels, length, sampleRate) {
+    let renderSizeHint
     // Support options dict form: new OfflineAudioContext({numberOfChannels, length, sampleRate})
     if (typeof numberOfChannels === 'object') {
       let opts = numberOfChannels
       numberOfChannels = opts.numberOfChannels || 1
       length = opts.length
       sampleRate = opts.sampleRate
+      renderSizeHint = opts.renderSizeHint
     }
 
     // Validate required parameters
@@ -34,9 +38,23 @@ class OfflineAudioContext extends BaseAudioContext {
     if (!(length >= 1)) throw DOMErr('length must be >= 1', 'NotSupportedError')
     if (sampleRate < 3000 || sampleRate > 768000) throw DOMErr('sampleRate must be between 3000 and 768000', 'NotSupportedError')
 
+    // Validate renderSizeHint
+    let renderQuantumSize = BLOCK_SIZE
+    if (renderSizeHint !== undefined) {
+      if (renderSizeHint === 'default' || renderSizeHint === 'hardware') {
+        renderQuantumSize = BLOCK_SIZE
+      } else if (typeof renderSizeHint === 'number') {
+        let maxSize = sampleRate * 6
+        if (renderSizeHint < 1 || renderSizeHint > maxSize)
+          throw DOMErr("Failed to construct 'OfflineAudioContext': renderSizeHint " + renderSizeHint + " is out of range.", 'NotSupportedError')
+        renderQuantumSize = renderSizeHint
+      }
+    }
+
     super(sampleRate, numberOfChannels)
     this.#numberOfChannels = numberOfChannels
     this.#length = length
+    this.#renderQuantumSize = renderQuantumSize
   }
 
   startRendering() {

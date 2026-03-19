@@ -69,9 +69,13 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     // create a simple readable interface
     this.#stream = {
       _buffers: [],
+      _tracks: [],
       read() { return this._buffers.shift() || null },
-      get readable() { return this._buffers.length > 0 }
+      get readable() { return this._buffers.length > 0 },
+      getAudioTracks() { return this._tracks },
+      getTracks() { return this._tracks },
     }
+    this._applyOpts(options)
   }
 
   _tick() {
@@ -86,4 +90,27 @@ class MediaStreamAudioDestinationNode extends AudioNode {
   }
 }
 
-export { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode }
+// Minimal MediaElementAudioSourceNode — wraps a media element as audio source
+class MediaElementAudioSourceNode extends AudioNode {
+  #mediaElement
+
+  get mediaElement() { return this.#mediaElement }
+
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
+    super(context, 0, 1, 2, 'max', 'speakers')
+    this.#mediaElement = options.mediaElement || null
+    this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
+    this._applyOpts(options)
+  }
+
+  _tick() {
+    super._tick()
+    // Output silence — media element playback is a browser concern
+    for (let ch = 0; ch < this._outBuf.numberOfChannels; ch++)
+      this._outBuf.getChannelData(ch).fill(0)
+    return this._outBuf
+  }
+}
+
+export { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode, MediaElementAudioSourceNode }

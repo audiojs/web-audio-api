@@ -11,6 +11,7 @@ import { execFileSync } from 'child_process'
 import vm from 'vm'
 import { parseHTML } from 'linkedom'
 import * as waa from '../index.js'
+import { AudioWorklet } from '../src/AudioWorklet.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const WPT_DIR = join(__dirname, 'wpt/webaudio')
@@ -40,7 +41,11 @@ function extractScripts(html) {
   let re = /<script[^>]*>([\s\S]*?)<\/script>/gi
   let m
   while ((m = re.exec(html))) {
-    if (!/<script[^>]*\ssrc=/i.test(m[0]) && m[1].trim()) scripts.push(m[1])
+    let tag = m[0]
+    // Skip scripts with src (loaded separately) or type="worklet" (loaded via addModule)
+    if (/<script[^>]*\ssrc=/i.test(tag)) continue
+    if (/<script[^>]*\stype\s*=\s*["']?worklet/i.test(tag)) continue
+    if (m[1].trim()) scripts.push(m[1])
   }
   return scripts.join('\n')
 }
@@ -62,6 +67,24 @@ function loadHelpers(html, testDir) {
 // WPT-safe AudioContext — no render loop (WPT tests don't produce real audio output)
 // _wptTestDir is set per-test to the directory containing the HTML file
 let _wptTestDir = ''
+let _activeContexts = []
+// Blob store for blob: URLs created by URL.createObjectURL in the sandbox
+let _blobStore = new Map()
+const WPT_ROOT = join(__dirname, 'wpt')
+
+// Custom module reader: resolves file paths (relative & absolute) and blob URLs
+async function wptReadModule(url) {
+  // Blob URL
+  if (url.startsWith('blob:')) {
+    let blob = _blobStore.get(url)
+    if (!blob) throw new Error(`Blob not found: ${url}`)
+    return await blob.text()
+  }
+  // Absolute WPT path (e.g. /webaudio/the-audio-api/...)
+  if (url.startsWith('/')) return readFileSync(join(WPT_ROOT, url.slice(1)), 'utf8')
+  // Relative path — resolve from test directory
+  return readFileSync(join(this._basePath || process.cwd(), url), 'utf8')
+}
 
 class WPTAudioContext extends waa.AudioContext {
   #renderFrames = 0
@@ -69,24 +92,23 @@ class WPTAudioContext extends waa.AudioContext {
     super(opts)
     this.outStream = { write: () => true, once() {}, end() {} }
     this._basePath = _wptTestDir
-    // Auto-resume like browsers do (WPT tests assume running state)
-    this._setState('running')
+    this._readModule = wptReadModule.bind(this)
+    // Track for async audio processing
+    _activeContexts.push(this)
   }
-  // Process audio graph asynchronously via setTimeout for real-time context tests
-  // Limited to ~10s of audio to prevent hangs
   _renderLoop() {
-    if (this._state !== 'running') return
-    if (this.#renderFrames > this.sampleRate * 10) return
-    this._renderQuantum()
-    this.#renderFrames += 128
-    setTimeout(() => this._renderLoop(), 0)
+    // No-op — rendering is driven by the polling loop in runTest()
   }
 }
+
+// Register known device IDs for setSinkId validation
+WPTAudioContext._knownDeviceIds = new Set(['', 'device-1'])
 
 class WPTOfflineAudioContext extends waa.OfflineAudioContext {
   constructor(...args) {
     super(...args)
     this._basePath = _wptTestDir
+    this._readModule = wptReadModule.bind(this)
   }
 }
 
@@ -95,12 +117,21 @@ async function runTest(filePath) {
   let code = extractScripts(html)
   if (!code.trim()) return { file: filePath, tests: [], status: 'skip' }
 
-
   let helpers = loadHelpers(html, join(filePath, '..'))
   let tests = []
 
-  // Build sandbox with linkedom's DOM
-  let { window: domWin, document } = parseHTML('<!DOCTYPE html><html><body></body></html>')
+  // Set test directory so WPT context classes capture the right basePath
+  _wptTestDir = join(filePath, '..')
+  _blobStore = new Map()
+  _activeContexts = []
+
+  // Build sandbox with linkedom's DOM — use actual test HTML so querySelector finds inline script elements
+  let { window: domWin, document } = parseHTML(html)
+
+  // Fix linkedom's innerText on script elements: linkedom collapses newlines,
+  // but script content must preserve them (single-line // comments break otherwise)
+  for (let el of document.querySelectorAll('script'))
+    Object.defineProperty(el, 'innerText', { get() { return this.textContent } })
 
   let sandbox = Object.create(null)
   // Copy DOM globals from linkedom, but skip JS builtins that vm provides natively
@@ -125,7 +156,74 @@ async function runTest(filePath) {
   sandbox.parent = sandbox
   sandbox.top = sandbox
   sandbox.location = { href: 'https://localhost/', protocol: 'https:', search: '', pathname: '/' }
-  sandbox.navigator = { userAgent: 'node' }
+
+  // --- Browser API shims ---
+
+  // navigator with mediaDevices stub
+  sandbox.navigator = {
+    userAgent: 'node',
+    mediaDevices: {
+      getUserMedia() { return Promise.resolve({}) },
+      enumerateDevices() {
+        return Promise.resolve([
+          { deviceId: '', kind: 'audiooutput', label: 'Default' },
+          { deviceId: 'device-1', kind: 'audiooutput', label: 'Device 1' },
+        ])
+      }
+    }
+  }
+
+  // EventTarget from outer realm — so instanceof checks work across vm boundary
+  sandbox.EventTarget = EventTarget
+
+  // requestAnimationFrame / cancelAnimationFrame
+  sandbox.requestAnimationFrame = fn => setTimeout(() => fn(Date.now()), 16)
+  sandbox.cancelAnimationFrame = id => clearTimeout(id)
+
+  // performance
+  sandbox.performance = typeof performance !== 'undefined' ? performance : { now: () => Date.now() }
+
+  // Audio element stub (for tests using `new Audio()`)
+  sandbox.Audio = class Audio {
+    constructor(src) { this.src = src || ''; this.volume = 1; this.muted = false; this.currentTime = 0 }
+    play() { return Promise.resolve() }
+    pause() {}
+    addEventListener() {}
+    removeEventListener() {}
+  }
+
+  // MediaStream stub
+  sandbox.MediaStream = class MediaStream {
+    #tracks = []
+    constructor(tracks) { this.#tracks = tracks || [] }
+    getAudioTracks() { return this.#tracks }
+    getTracks() { return this.#tracks }
+    addTrack(t) { this.#tracks.push(t) }
+    removeTrack(t) { this.#tracks = this.#tracks.filter(x => x !== t) }
+  }
+
+  // MediaElementAudioSourceNode exported from our lib
+  sandbox.MediaElementAudioSourceNode = waa.MediaElementAudioSourceNode
+
+  // fetch shim: resolve relative URLs to local files
+  sandbox.fetch = async function(url) {
+    let resolved = typeof url === 'string' ? url : url.toString()
+    // Resolve relative URLs to the test directory
+    let filePath = resolved.startsWith('/') ? join(join(__dirname, 'wpt'), resolved) : join(_wptTestDir, resolved)
+    let data
+    try { data = readFileSync(filePath) } catch (e) {
+      return { ok: false, status: 404, statusText: 'Not Found',
+        arrayBuffer() { return Promise.reject(e) },
+        text() { return Promise.reject(e) },
+        json() { return Promise.reject(e) } }
+    }
+    return {
+      ok: true, status: 200, statusText: 'OK',
+      arrayBuffer() { return Promise.resolve(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)) },
+      text() { return Promise.resolve(data.toString('utf8')) },
+      json() { return Promise.resolve(JSON.parse(data.toString('utf8'))) },
+    }
+  }
 
   // Standard JS globals
   Object.assign(sandbox, {
@@ -136,6 +234,15 @@ async function runTest(filePath) {
     Promise, Proxy, Reflect, Map, Set, WeakMap, WeakSet,
     Error, TypeError, RangeError, SyntaxError, ReferenceError, URIError, DOMException,
     Event, CustomEvent, MessageChannel, WebAssembly, SharedArrayBuffer,
+    Blob,
+    URL: Object.assign(function WPTUrl(...a) { return new URL(...a) }, {
+      createObjectURL(blob) {
+        let id = 'blob:wpt-' + Math.random().toString(36).slice(2)
+        _blobStore.set(id, blob)
+        return id
+      },
+      revokeObjectURL(url) { _blobStore.delete(url) },
+    }),
     _eventListeners: {},
     addEventListener(type, fn) {
       (sandbox._eventListeners[type] ??= []).push(fn)
@@ -151,10 +258,17 @@ async function runTest(filePath) {
     },
   })
 
+  // Named element access: browsers expose id'd elements as window globals
+  for (let el of document.querySelectorAll('[id]')) {
+    let id = el.getAttribute('id')
+    if (id && !sandbox[id]) sandbox[id] = el
+  }
+
   // Web Audio API
   for (let [k, v] of Object.entries(waa)) sandbox[k] = v
   sandbox.AudioContext = WPTAudioContext
   sandbox.OfflineAudioContext = WPTOfflineAudioContext
+  sandbox.AudioWorklet = AudioWorklet
 
   let ctx = vm.createContext(sandbox)
 
@@ -193,11 +307,23 @@ async function runTest(filePath) {
         ENCODING_ERR: 'EncodingError',
         NOT_READABLE_ERR: 'NotReadableError',
       };
-      assert_throws_dom = function(type, fn, msg) {
+      assert_throws_dom = function(type, fn_or_constructor, fn_or_msg, msg) {
         var expected = _legacyNames[type] || type;
-        try { fn(); throw new Error(msg || 'expected exception') }
-        catch(e) { if (e.message === (msg || 'expected exception')) throw e;
-          if (e.name !== expected) throw new Error((msg ? msg + ': ' : '') + 'expected ' + expected + ' but got ' + e.name) }
+        // Handle both 3-arg and 4-arg forms: (type, fn, msg) and (type, constructor, fn, msg)
+        var fn, description;
+        if (typeof fn_or_constructor === 'function' && fn_or_constructor.length === 0 && typeof fn_or_msg !== 'function') {
+          fn = fn_or_constructor;
+          description = fn_or_msg;
+        } else if (typeof fn_or_msg === 'function') {
+          fn = fn_or_msg;
+          description = msg;
+        } else {
+          fn = fn_or_constructor;
+          description = fn_or_msg;
+        }
+        try { fn(); throw new Error(description || 'expected exception') }
+        catch(e) { if (e.message === (description || 'expected exception')) throw e;
+          if (e.name !== expected) throw new Error((description ? description + ': ' : '') + 'expected ' + expected + ' but got ' + e.name) }
       };
     `, ctx)
 
@@ -222,23 +348,40 @@ async function runTest(filePath) {
       add_completion_callback(function() { __wpt_done = true; });
     `, ctx)
 
-    // Run helpers + test code
-    vm.runInContext(helpers + '\n' + code, ctx, {
+    // Run helpers, then patch corrupted testInvalidConstructor_W3CTH, then run test code
+    if (helpers.trim()) {
+      vm.runInContext(helpers, ctx, { filename: 'helpers.js', timeout: 5000 })
+    }
+
+    // Fix corrupted testInvalidConstructor_W3CTH in audionodeoptions.js
+    // Line 469 has `new window` instead of `new window[name](1)`
+    vm.runInContext(`
+      if (typeof testInvalidConstructor_W3CTH !== 'undefined') {
+        var _origInvalid = testInvalidConstructor_W3CTH;
+        testInvalidConstructor_W3CTH = function(name, context) {
+          assert_throws_js(TypeError, function() { return new window[name](); }, 'new ' + name + '()');
+          assert_throws_js(TypeError, function() { return new window[name](1); }, 'new ' + name + '(1)');
+          assert_throws_js(TypeError, function() { return new window[name](context, 42); }, 'new ' + name + '(context, 42)');
+        };
+      }
+    `, ctx)
+
+    vm.runInContext(code, ctx, {
       filename: relative(WPT_DIR, filePath),
-      timeout: 3000
+      timeout: 5000
     })
 
-    // Fire 'load' event to signal testharness that page has loaded
+    // Fire 'load' event and trigger testharness completion
     vm.runInContext("dispatchEvent(new Event('load'))", ctx)
 
-    // Wait for async tests to complete (poll for done, up to 5s)
-    let deadline = Date.now() + 5000
-    while (Date.now() < deadline) {
-      await new Promise(r => setTimeout(r, 50))
-      try {
-        let done = vm.runInContext('typeof __wpt_done !== "undefined" ? __wpt_done : __wpt_results.length > 0', ctx)
-        if (done) break
-      } catch { break }
+    // Wait for testharness completion — process audio between polls
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, i < 3 ? 0 : 20))
+      // Drive audio processing for real-time contexts created by the test
+      for (let c of _activeContexts) {
+        if (c._state === 'running') try { for (let j = 0; j < 32; j++) c._renderQuantum() } catch {}
+      }
+      try { if (vm.runInContext('__wpt_done', ctx)) break } catch { break }
     }
 
     // Collect results
@@ -294,3 +437,4 @@ for (let i = 0; i < files.length; i += CONCURRENCY) {
 console.log(`\n─── WPT Summary ───`)
 console.log(`Pass: ${totalPass}  Fail: ${totalFail}  Skip: ${totalSkip}`)
 console.log(`Rate: ${totalPass + totalFail > 0 ? (100 * totalPass / (totalPass + totalFail)).toFixed(1) : 0}%`)
+process.exit(totalFail > 0 ? 1 : 0)

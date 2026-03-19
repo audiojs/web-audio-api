@@ -24,7 +24,35 @@ export { default as AnalyserNode } from './src/AnalyserNode.js'
 export { default as ScriptProcessorNode } from './src/ScriptProcessorNode.js'
 export { default as PannerNode } from './src/PannerNode/index.js'
 export { AudioWorkletNode, AudioWorkletProcessor } from './src/AudioWorklet.js'
-export { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from './src/MediaStreamAudioSourceNode.js'
+export { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode, MediaElementAudioSourceNode } from './src/MediaStreamAudioSourceNode.js'
 export { default as AudioListener } from './src/AudioListener.js'
 export { BLOCK_SIZE } from './src/constants.js'
 export { InvalidStateError, NotSupportedError, IndexSizeError, InvalidAccessError, EncodingError } from './src/errors.js'
+
+// Make AudioParam accessor properties enumerable on prototypes (Web IDL compliance)
+// Browsers expose these as enumerable; ES6 class getters are non-enumerable by default.
+import AudioParam from './src/AudioParam.js'
+import GainNode from './src/GainNode.js'
+import StereoPannerNode from './src/StereoPannerNode.js'
+import DelayNode from './src/DelayNode.js'
+import BiquadFilterNode from './src/BiquadFilterNode.js'
+import OscillatorNode from './src/OscillatorNode.js'
+import AudioBufferSourceNode from './src/AudioBufferSourceNode.js'
+import DynamicsCompressorNode from './src/DynamicsCompressorNode.js'
+import ConstantSourceNode from './src/ConstantSourceNode.js'
+import PannerNode from './src/PannerNode/index.js'
+import AudioListener from './src/AudioListener.js'
+
+function makeEnumerable(proto) {
+  for (let name of Object.getOwnPropertyNames(proto)) {
+    let desc = Object.getOwnPropertyDescriptor(proto, name)
+    if (desc.get && !desc.enumerable) {
+      Object.defineProperty(proto, name, { ...desc, enumerable: true })
+    }
+  }
+}
+
+for (let cls of [GainNode, StereoPannerNode, DelayNode, BiquadFilterNode,
+  OscillatorNode, AudioBufferSourceNode, DynamicsCompressorNode,
+  ConstantSourceNode, PannerNode, AudioListener])
+  makeEnumerable(cls.prototype)

@@ -82,3 +82,7 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 | web-audio-api-rs (orottier) | No (Rust binary) | WPT tracked | Rust/WASM | active |
 | web-audio-engine (mohayonao) | Yes | minimal | Node | archived 2019 |
 | standardized-audio-context | Browser only | browser-native | browser polyfill | active |
+
+## Ideas
+
+* https://www.facebook.com/share/r/18HdZba8T3/ - formulas sounder?

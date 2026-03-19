@@ -3,11 +3,30 @@ import { BufferEncoder } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
+// Stub stats object for playbackStats / playoutStats
+class PlaybackStats {
+  totalDuration = 0; underrunDuration = 0; underrunEvents = 0
+  minimumLatency = 0; maximumLatency = 0; averageLatency = 0
+  resetLatency() { this.minimumLatency = this.averageLatency; this.maximumLatency = this.averageLatency }
+  toJSON() { return { totalDuration: this.totalDuration, underrunDuration: this.underrunDuration, underrunEvents: this.underrunEvents, minimumLatency: this.minimumLatency, maximumLatency: this.maximumLatency, averageLatency: this.averageLatency } }
+}
+class PlayoutStats {
+  totalFramesDuration = 0; fallbackFramesDuration = 0; fallbackFramesEvents = 0
+  minimumLatency = 0; maximumLatency = 0; averageLatency = 0
+  resetLatency() { this.minimumLatency = this.averageLatency; this.maximumLatency = this.averageLatency }
+  toJSON() { return { totalFramesDuration: this.totalFramesDuration, fallbackFramesDuration: this.fallbackFramesDuration, fallbackFramesEvents: this.fallbackFramesEvents, minimumLatency: this.minimumLatency, maximumLatency: this.maximumLatency, averageLatency: this.averageLatency } }
+}
+
 class AudioContext extends BaseAudioContext {
   #loopRunning = false
   #numberOfChannels
   #bitDepth
   #encoder
+  #sinkId = ''
+  #playbackStats = new PlaybackStats()
+  #playoutStats = new PlayoutStats()
+  #renderQuantumSize
+  #onsinkchange = null
 
   constructor(opts) {
     if (opts !== undefined && (typeof opts !== 'object' || opts === null))
@@ -32,12 +51,51 @@ class AudioContext extends BaseAudioContext {
       sampleRate = opts.sampleRate
     }
 
+    // Validate renderSizeHint
+    let renderQuantumSize = BLOCK_SIZE
+    if (opts.renderSizeHint !== undefined) {
+      let hint = opts.renderSizeHint
+      if (hint === 'default' || hint === 'hardware') {
+        renderQuantumSize = BLOCK_SIZE
+      } else if (typeof hint === 'number') {
+        let maxSize = sampleRate * 6
+        if (hint < 1 || hint > maxSize)
+          throw DOMErr("Failed to construct 'AudioContext': renderSizeHint " + hint + " is out of range.", 'NotSupportedError')
+        renderQuantumSize = hint
+      }
+    }
+
+    // Validate sinkId option
+    if (opts.sinkId !== undefined) {
+      if (typeof opts.sinkId === 'object' && opts.sinkId !== null) {
+        if (opts.sinkId.type !== 'none')
+          throw new TypeError("Failed to construct 'AudioContext': Invalid AudioSinkOptions.type value.")
+      }
+    }
+
     super(sampleRate, opts.numberOfChannels || 2)
     // Per spec, initial state is 'suspended' until resume() or user activation
     this._state = 'suspended'
 
+    this.#renderQuantumSize = renderQuantumSize
     this.#numberOfChannels = opts.numberOfChannels || 2
     this.#bitDepth = opts.bitDepth || 16
+
+    // Handle sinkId from constructor options
+    if (opts.sinkId !== undefined) {
+      if (typeof opts.sinkId === 'object' && opts.sinkId !== null) {
+        this.#sinkId = { type: opts.sinkId.type }
+      } else if (typeof opts.sinkId === 'string') {
+        // Validate against known devices if a registry exists
+        let known = this.constructor._knownDeviceIds || AudioContext._knownDeviceIds
+        if (opts.sinkId !== '' && known && !known.has(opts.sinkId)) {
+          // Invalid device ID: dispatch onerror asynchronously per spec
+          setTimeout(() => this.dispatchEvent(new Event('error')), 0)
+        } else {
+          this.#sinkId = opts.sinkId
+        }
+      }
+    }
 
     this.format = {
       numberOfChannels: this.#numberOfChannels,
@@ -66,7 +124,47 @@ class AudioContext extends BaseAudioContext {
   get numberOfChannels() { return this.#numberOfChannels }
   get baseLatency() { return BLOCK_SIZE / this.sampleRate }
   get outputLatency() { return BLOCK_SIZE / this.sampleRate }
-  get renderQuantumSize() { return BLOCK_SIZE }
+  get renderQuantumSize() { return this.#renderQuantumSize }
+
+  get sinkId() { return this.#sinkId }
+  get playbackStats() { return this.#playbackStats }
+  get playoutStats() { return this.#playoutStats }
+
+  get onsinkchange() { return this.#onsinkchange }
+  set onsinkchange(fn) {
+    if (this.#onsinkchange) this.removeEventListener('sinkchange', this.#onsinkchange)
+    this.#onsinkchange = fn
+    if (fn) this.addEventListener('sinkchange', fn)
+  }
+
+  setSinkId(sinkId) {
+    if (this._state === 'closed')
+      return Promise.reject(DOMErr('Cannot setSinkId on a closed AudioContext', 'InvalidStateError'))
+    if (typeof sinkId === 'object' && sinkId !== null) {
+      if (sinkId.type !== 'none')
+        return Promise.reject(new TypeError('Invalid AudioSinkOptions.type value.'))
+      let prev = this.#sinkId
+      this.#sinkId = { type: sinkId.type }
+      if (typeof prev !== 'object' || prev?.type !== sinkId.type)
+        this.dispatchEvent(new Event('sinkchange'))
+      return Promise.resolve()
+    }
+    if (typeof sinkId === 'string') {
+      // Empty string = default device, always valid
+      if (sinkId !== '' && sinkId !== this.#sinkId) {
+        // Validate against known devices if a registry exists
+        let known = this.constructor._knownDeviceIds || AudioContext._knownDeviceIds
+        if (known && !known.has(sinkId))
+          return Promise.reject(DOMErr('Device not found: ' + sinkId, 'NotFoundError'))
+      }
+      let prev = this.#sinkId
+      this.#sinkId = sinkId
+      if (prev !== sinkId)
+        this.dispatchEvent(new Event('sinkchange'))
+      return Promise.resolve()
+    }
+    return Promise.reject(new TypeError('Invalid sinkId type'))
+  }
 
   suspend() {
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot suspend a closed AudioContext', 'InvalidStateError'))
