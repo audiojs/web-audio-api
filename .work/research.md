@@ -4,6 +4,12 @@ Portable Web Audio API.
 
 The Web Audio API is a powerful W3C standard — but it only exists in browsers. This project closes the platform gap: same API, same behavior, proven by the same test suite (99% WPT). Runs in Node.js, Deno, Bun, serverless, edge — no native compilation required.
 
+
+### Why this project matters
+
+Pure JS implementation runs everywhere: Node.js, Deno, Bun, Cloudflare Workers, serverless functions, edge runtimes — anywhere native addons can't. The ircam Rust implementation is superior for desktop Node.js, but can't serve these environments. That's the niche.
+
+
 ## What suffering ends
 
 A developer needs audio processing outside a browser. They know the Web Audio API — it's what browsers use, what MDN documents, what tutorials teach. They try Rust-based alternatives — needs native compilation, won't run in their environment. They find archived JS implementations from 2019. They're stuck writing raw DSP by hand.
@@ -18,12 +24,6 @@ This project: `import { AudioContext } from 'web-audio-api'` — their existing 
 - AI/ML pipelines preprocessing audio in serverless functions
 - Isomorphic audio: share code between client and server
 - Audio as function: OfflineAudioContext turns graphs into pure functions (graph in → buffer out)
-
-## Who it's NOT for
-
-- Browser users — use the native API
-- Node.js users needing maximum throughput without portability — use `node-web-audio-api` (Rust)
-- Rust ecosystem — use `web-audio-api-rs`
 
 ## One job
 
@@ -47,7 +47,6 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 - AudioWorklet runs synchronously (browsers use a separate thread)
 - WPT evolves — 99% requires ongoing maintenance
 
-
 ## Hidden value
 
 - **Educational**: Source code is a readable spec implementation — learn DSP by reading JS, not browser C++
@@ -55,13 +54,6 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 - **Extractable DSP**: Each node's `_dsp()` is a standalone algorithm (biquad, FFT, convolution, compression)
 - **Isomorphic**: Write audio processing once, run on client and server
 - **Serverless audio**: OfflineAudioContext = pure function, perfect for cloud functions
-
-## Distribution
-
-- Package name `web-audio-api` on npm = anyone searching finds it
-- API surface already known by every web audio developer = zero learning curve
-- The "you gotta see this" moment: existing browser audio code runs in Node.js unchanged
-- Every WPT test passed is permanent credibility. The spec is stable — this work doesn't depreciate.
 
 ## Use cases
 
@@ -72,15 +64,7 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 5. **CLI tools** — audio manipulation with familiar API
 6. **Isomorphic audio** — share graph definitions between browser and server
 
-## Landscape
 
-| Implementation | Portable | Conformance | Runtimes | Status |
-|---|---|---|---|---|
-| **this** (audiojs/web-audio-api) | Yes | 99% WPT | Node/Deno/Bun/edge/serverless | active |
-| node-web-audio-api (ircam) | No (native addon) | ~75% WPT | Node only | active |
-| web-audio-api-rs (orottier) | No (Rust binary) | WPT tracked | Rust/WASM | active |
-| web-audio-engine (mohayonao) | Yes | minimal | Node | archived 2019 |
-| standardized-audio-context | Browser only | browser-native | browser polyfill | active |
 
 ## Ideas
 

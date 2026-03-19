@@ -4,11 +4,11 @@
 //
 // Usage: node test/wpt-runner.js [filter]
 
-import { readFileSync, readdirSync } from 'fs'
-import { join, relative } from 'path'
-import { fileURLToPath } from 'url'
-import { execFileSync } from 'child_process'
-import vm from 'vm'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
+import vm from 'node:vm'
 import { parseHTML } from 'linkedom'
 import * as waa from '../index.js'
 import { AudioWorklet } from '../src/AudioWorklet.js'

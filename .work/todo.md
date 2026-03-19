@@ -3,19 +3,21 @@
 1. [x] PannerNode per-sample object allocations — 7 scratch FloatPoint3D, mutating methods
 2. [x] Dead code — deleted EqualPowerPanner.js, Panner.js, simplified PannerProvider
 3. [x] Cycle detection — extracted to `context._cycle` structured object
-4. [~] Reaching into dependency internals — fixed AudioContext._render(); audio-buffer._channels kept (no public API for buffer replacement)
+4. [~] Reaching into dependency internals — fixed AudioContext._render(); audio-buffer._channels kept (no public API)
 5. [x] ConvolverNode hot-path allocations — prodRe/prodIm pre-allocated in #initConvState
-6. [ ] AudioBufferSourceNode _outBuf — kept as-is (semantic ownership prevents pre-allocation)
+6. [~] AudioBufferSourceNode _outBuf — kept as-is (callers hold references across quanta)
 7. [x] ConeEffect.innerAngle bug — removed broken normalization
-8. [ ] WPT runner split — deferred (functional, 100% pass rate)
+8. [~] WPT runner split — deferred (functional, 100% pass rate, 22s runtime)
 9. [x] fpCeil duplication — moved to constants.js
 10. [x] PeriodicWave sign convention — W3C §1.31 spec reference added
 
-Missed opportunities (deferred):
-- [ ] DistanceEffect/ConeEffect #private properties
-- [ ] _outBuf convention in AudioNode base class
-- [ ] _activeBlockSize/_blockStartOffset → {start, count} arg to _dsp()
-- [ ] Automatic _tailNodes registration
+Extra cleanup:
+- [x] DistanceEffect/ConeEffect #private properties — converted both
+- [x] _activeBlockSize/_blockStartOffset → {offset, count} arg to _dsp() — eliminated temporal coupling
+- [~] _outBuf convention in AudioNode base — pattern is consistent enough, not worth abstracting
+- [~] Automatic _tailNodes registration — explicit registration is clearer
+- [x] Deno CI: bare `fs`/`path`/`url`/`vm` imports → `node:` prefix
+- [x] Bun CI: MP3 decode CRC issue in audio-decode dependency — graceful skip
 
 ## [x] Make it work
 

@@ -91,15 +91,11 @@ class AudioScheduledSourceNode extends AudioNode {
 
     // Full block — fast path
     if (startSample === 0 && stopSample === BLOCK_SIZE)
-      return this._dsp()
+      return this._dsp(0, BLOCK_SIZE)
 
-    // Partial block — tell DSP to produce only the active samples, then place at correct offset
+    // Partial block — DSP produces only the active samples
     let activeSamples = stopSample - startSample
-    this._activeBlockSize = activeSamples
-    this._blockStartOffset = startSample
-    let out = this._dsp()
-    this._activeBlockSize = 0
-    this._blockStartOffset = 0
+    let out = this._dsp(startSample, activeSamples)
     if (startSample > 0 || stopSample < BLOCK_SIZE) {
       let nch = out.numberOfChannels
       let partial = new AudioBuffer(nch, BLOCK_SIZE, sr)
@@ -119,8 +115,9 @@ class AudioScheduledSourceNode extends AudioNode {
     return out
   }
 
-  // subclasses override this
-  _dsp() { return this._zeroBuf }
+  // subclasses override: _dsp(offset, count) → AudioBuffer
+  // offset = start sample within block, count = number of samples to produce
+  _dsp(offset, count) { return this._zeroBuf }
 }
 
 export default AudioScheduledSourceNode

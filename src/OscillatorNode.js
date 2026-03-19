@@ -45,7 +45,7 @@ class OscillatorNode extends AudioScheduledSourceNode {
     this.#type = 'custom'
   }
 
-  _dsp() {
+  _dsp(offset, count) {
     let freqArr = this.#frequency._tick()
     let detuneArr = this.#detune._tick()
     let out = this._outBuf.getChannelData(0)
@@ -53,8 +53,7 @@ class OscillatorNode extends AudioScheduledSourceNode {
     let nyquist = sr / 2
     let table = this.#periodicWave?.table ?? PeriodicWave.getBuiltIn(this.#type)
     let phase = this.#phase
-    let count = this._activeBlockSize || BLOCK_SIZE
-    let offset = this._blockStartOffset || 0
+    // offset and count are passed by AudioScheduledSourceNode._tick()
 
     // Advance phase for skipped samples (before start within block)
     for (let i = 0; i < offset; i++) {

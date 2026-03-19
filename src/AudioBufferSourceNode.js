@@ -90,7 +90,7 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     this._cursor += subSampleOffset * (bufSr / sr) * (this.#playbackRate.value || 0)
   }
 
-  _dsp() {
+  _dsp(offset, count) {
     if (!this.buffer) return this._zeroBuf // no buffer assigned yet
     // Lazy init: if buffer was set after start(), initialize playback now
     if (this._bufEnd === 0 && this.buffer) this._onStart()
@@ -99,7 +99,7 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     let nch = this.buffer.numberOfChannels
     let bufLen = this.buffer.length
     let loopStart = this.loop && this.loopStart > 0 ? this.loopStart * bufSr : 0
-    let blockSize = this._activeBlockSize || BLOCK_SIZE
+    let blockSize = count
 
     // Duration exhausted — silence
     if (this._duration > 0 && this._framesLeft <= 0)

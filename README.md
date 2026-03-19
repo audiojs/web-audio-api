@@ -1,10 +1,6 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JavaScript runtime.
-
-* **100% [WPT](https://web-platform-tests.org/) conformance.**
-* No native compilation.
-* Node, Deno, Bun, serverless, edge, browser polyfill.
+Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JS environment. **100% [WPT](https://web-platform-tests.org/) conformance**.
 
 ## Install
 
@@ -87,13 +83,16 @@ test('gain halves amplitude', async () => {
 ```
 
 
-## When to use what
+## Alternatives
 
-| | Portable | Conformance | Runtimes |
-|---|---|---|---|
-| **web-audio-api** | Yes — no native compilation | 99% WPT | Node, Deno, Bun, edge, serverless |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No — Rust native addon | ~75% WPT | Node.js only |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No — Rust binary | — | Rust only |
+| Implementation | Portable | Conformance | Runtimes | Status |
+|---|---|---|---|---|
+| **web-audio-api** | Yes | 100% WPT | Node/Deno/Bun/edge/serverless | active |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) (ircam) | No (native addon) | ~75% WPT | Node only | active |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) (orottier) | No (Rust binary) | WPT tracked | Rust/WASM | active |
+| web-audio-engine (mohayonao) | Yes | minimal | Node | archived 2019 |
+| standardized-audio-context | Browser only | browser-native | browser polyfill | active |
+
 
 ## Architecture
 
