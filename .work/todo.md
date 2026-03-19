@@ -23,9 +23,68 @@ Extra cleanup:
 
 * [x] Change proposition layer: The proposition of pure JavaScript is not the value I am pursuing. As you see in the plan there's WASM version, can be potentially made with JZ - subset of JS compiling into WASM.
 We need to reframe value proposition into something more reliable, like fixing the platform gap or something like that
-* [ ] All issues in github
+* [x] All issues in github — triaged below
+
+## GitHub issues triage
+
+### Fixed by phase4 (close these)
+- [x] #85 Use EventTarget instead EventEmitter — done (Emitter mixin extends EventTarget)
+- [x] #82 Next (v1): making complete compatible API — done (100% WPT, v1.0.0)
+- [x] #78 decodeAudioData throw error 'Maximum call stack size exceeded' — fixed (audio-decode replaces old decoder)
+- [x] #77 copyFromChannel is NOT in AudioBuffer.js — fixed (audio-buffer v6)
+- [x] #76 m4a demuxer incomplete — fixed (audio-decode handles 12+ formats)
+- [x] #75 Array buffer allocation failed while trying to decode large files — fixed (audio-decode)
+- [x] #73 decodeAudioData throws decoded data as error — fixed (Promise-based)
+- [x] #93 decodeAudioData doesn't return a Promise — fixed
+- [x] #67 OscillatorNode (coming soon) — done
+- [x] #66 createBiquadFilter is not a function — done
+- [x] #63 createMediaStreamSource is not a function — done (MediaStreamAudioSourceNode)
+- [x] #58 Implement copyFromChannel/copyToChannel — done (audio-buffer v6)
+- [x] #57 AudioBufferSourceNode.start() fails silently — fixed
+- [x] #54 big cleaning — done (complete rewrite)
+- [x] #53 Specifying AudioContext sample rate — done (constructor option)
+- [x] #46 Feature request: createAnalyser() — done (AnalyserNode)
+- [x] #31 Use native es6 if available — done (ESM, #private fields)
+- [x] #24 test against W3C test suite — done (100% WPT)
+- [x] #23 ES6 refactoring — done
+- [x] #18 Implement DynamicsCompressorNode — done
+- [x] #15 decodeAudioData support for more formats — done (audio-decode: 12+ formats)
+- [x] #14 decodeAudioData should perform all steps described in the spec — done
+- [x] #10 sample-precise scheduling — done (sub-sample accurate)
+- [x] #9 Handle setting .value properly — done (AudioParam spec-compliant)
+
+### Still relevant (keep open)
+- [ ] #94 How to clear AudioContext? — needs docs: `ctx.close()` + `ctx[Symbol.dispose]()`
+- [ ] #88 OfflineAudioContext for Tone.js — needs testing/docs
+- [ ] #72 Polyfill entry — browser polyfill bundle not yet provided
+- [ ] #60 1.0 release ideas/discussion — close after v1 publish
+- [ ] #16 DSP graph should run in a different thread — future: WASM/Worker architecture
+
+### Outdated / not applicable (close with note)
+- [x] #92 Latest version? — v1.0.0 incoming
+- [x] #91 .coffee files — CoffeeScript removed long ago
+- [x] #90 Creating audio server — usage question, answer in docs
+- [x] #89 Is AudioBuffer too huge? — fixed with audio-buffer v6
+- [x] #80 Creating the same data as Web API — done (spec-compliant)
+- [x] #79 Modifying incoming MediaStream — MediaStreamAudioSourceNode implemented
+- [x] #74 Do you have any plan to continue? — yes, v1.0.0
+- [x] #71 Does not build with node 12 — requires node 18+
+- [x] #70 How do i analyse audio from URL? — AnalyserNode + fetch
+- [x] #69 coreaudio buffer underflow — native dep removed
+- [x] #68 Is this project abandoned? — no
+- [x] #56 Cannot find sound card — native dep removed
+- [x] #55 React native — works via pure JS, no native deps
+- [x] #49 Microphone level — use MediaStreamAudioSourceNode
+- [x] #48 Enhance README examples — done
+- [x] #35 Capturing audio — MediaStreamAudioDestinationNode
+- [x] #13 Number of channels = 0 should be valid — spec says ≥1, throws NotSupportedError
+- [x] #12 Decouple event scheduling from dsp tick — done (DspObject)
+- [x] #6 AudioParam out of the library — kept in (spec requirement)
+- [x] #5 How to calculate computedNumberOfChannels — done (spec-compliant in audioports.js)
+- [x] #4 Mixing with inputs — done (AudioParam modulation)
+
 * [ ] Benchmarks: faster than any alternative
-* [ ] Factor out dependencies: dsp/digital-filter?
+* [ ] Factor out modules: dsp/digital-filter?
 
 ## [ ] BLINDSPOTS — What am I not seeing?
 
