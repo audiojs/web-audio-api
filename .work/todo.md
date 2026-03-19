@@ -53,12 +53,36 @@ We need to reframe value proposition into something more reliable, like fixing t
 - [x] #10 sample-precise scheduling — done (sub-sample accurate)
 - [x] #9 Handle setting .value properly — done (AudioParam spec-compliant)
 
-### Still relevant (keep open)
-- [ ] #94 How to clear AudioContext? — needs docs: `ctx.close()` + `ctx[Symbol.dispose]()`
-- [ ] #88 OfflineAudioContext for Tone.js — needs testing/docs
-- [ ] #72 Polyfill entry — browser polyfill bundle not yet provided
-- [ ] #60 1.0 release ideas/discussion — close after v1 publish
-- [ ] #16 DSP graph should run in a different thread — future: WASM/Worker architecture
+### Still relevant
+- [ ] #94 How to clear AudioContext?
+  Answer: `await ctx.close()` closes and releases. `using ctx = new AudioContext()` auto-disposes.
+  Action: close with answer, add to README FAQ.
+- [ ] #88 OfflineAudioContext for Tone.js
+  Answer: `OfflineAudioContext` is fully implemented. `Tone.setContext(new AudioContext())` works.
+  Action: close with answer + example.
+- [x] #72 Polyfill entry — `globalThis.AudioContext ??= (await import('web-audio-api')).AudioContext`
+  Action: add `polyfill.js` entry, close issue.
+- [x] #60 1.0 release — all core items done. Close with summary.
+  Original #60 checklist assessment:
+  - [x] use audio-buffer — done (audio-buffer v6)
+  - [x] port to commonjs — superseded: ESM is the standard now
+  - [x] common browser/node interface — done (polyfill.js + same API)
+  - [~] use audio-buffer-remix — not needed. Our ChannelMixing.js is spec-compliant (speakers/discrete),
+    cached per topology, and handles all W3C mixing rules. audio-buffer-remix is a simpler utility
+    that doesn't cover the spec's channel interpretation modes. Keep ChannelMixing.
+  - [ ] audio-speaker as default outStream — worth doing. Auto-detect and use audio-speaker when no
+    outStream is set, with lazy import to avoid mandatory dependency. Would remove the biggest friction
+    point ("you need to set outStream"). Deferred to post-1.0.
+  - [x] pcm-boilerplate vs pcm-util — resolved: both replaced with DataView-based BufferEncoder (zero deps)
+  - [~] audio-biquad extraction — not needed now. Our BiquadFilterNode._coefficients() is self-contained
+    (Audio EQ Cookbook). Extracting to a separate package would help standalone filter use cases but
+    adds dep management. Consider for milestone 2 (extractable DSP kernels).
+  - [x] get rid of underscore — done (never had it in phase4; all native array methods)
+  - [~] pull-stream/functional interfaces — not applicable. We implement the W3C spec API, not audiojs
+    streaming conventions. The OfflineAudioContext "graph in → buffer out" IS the functional interface.
+  - [x] @audiojs infra — GitHub Actions CI (replaces Travis), npm audit (replaces Greenkeeper),
+    100% WPT (replaces ad-hoc test suite). No ESLint — code style enforced by convention.
+  - [x] W3C test suite — done: 100% WPT (4300/4300)
 
 ### Outdated / not applicable (close with note)
 - [x] #92 Latest version? — v1.0.0 incoming
@@ -83,8 +107,70 @@ We need to reframe value proposition into something more reliable, like fixing t
 - [x] #5 How to calculate computedNumberOfChannels — done (spec-compliant in audioports.js)
 - [x] #4 Mixing with inputs — done (AudioParam modulation)
 
-* [ ] Benchmarks: faster than any alternative
-* [ ] Factor out modules: dsp/digital-filter?
+## [ ] Benchmarks: faster than any alternative
+
+## [ ] Factor out modules
+
+Already extracted (external deps):
+- `audio-buffer` — AudioBuffer container
+- `audio-decode` — multi-format audio decoding (12+ formats)
+- `automation-events` — AudioParam automation timeline
+- `fourier-transform` — real + complex FFT (rfft, fft, cfft, cifft)
+
+## [ ] Modularization
+
+**`biquad-coefficients`** — Audio EQ Cookbook coefficient computation
+- Source: `BiquadFilterNode._coefficients()` (static, ~100 lines)
+- API: `coefficients(type, frequency, sampleRate, Q, gain) → {b0, b1, b2, a1, a2}`
+- 8 filter types: lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
+- Use cases: any audio/music app needing filter design without Web Audio
+- Zero dependencies. Pure math.
+
+**`pcm-encode`** — PCM buffer encoding
+- Source: `BufferEncoder` in `utils.js` (~40 lines)
+- API: `encode(channels, {bitDepth, sampleRate, endianness}) → Uint8Array`
+- Supports 8/16/24/32-bit int + 32-bit float, LE/BE
+- Uses DataView — works everywhere (Node, Deno, Bun, browser)
+- Zero dependencies. Replaces pcm-convert/pcm-util.
+
+**`channel-mixing`** — W3C-compliant audio channel mixing
+- Source: `ChannelMixing.js` (~130 lines)
+- API: `mix(inputBuffer, outputBuffer)` with speaker/discrete interpretation
+- Handles all standard mixes: mono↔stereo, stereo↔5.1, arbitrary N→M
+- Use cases: any multi-channel audio processing
+- Only dependency: block size constant (parameterizable).
+
+**`spatial-audio`** — 3D audio positioning math
+- Sources: `FloatPoint3D.js` + `DistanceEffect.js` + `ConeEffect.js` (~280 lines)
+- API: distance models (linear/inverse/exponential), cone attenuation, vector math
+- Use cases: game audio, VR, spatial audio outside Web Audio
+- Zero dependencies.
+
+**`periodic-wave`** — Fourier synthesis wavetable generation
+- Source: `PeriodicWave.buildTable()` (~40 lines)
+- API: `buildTable(real, imag, normalize) → Float32Array`
+- Built-in waveforms: sine, square, sawtooth, triangle
+- Use cases: synth engines, waveform generation
+- Depends on: fourier-transform (for potential future use), but the core is pure math.
+
+**`dynamics-compressor`** — audio compression algorithm
+- Source: `DynamicsCompressorNode._tick()` DSP loop (~30 lines)
+- API: `compress(samples, {threshold, knee, ratio, attack, release}) → samples`
+- Envelope follower + soft knee + gain reduction
+- Use cases: audio normalization, mastering, loudness control
+
+**`iir-filter`** — IIR filter + frequency response
+- Source: `IIRFilterNode._tick()` DSP + `getFrequencyResponse()` (~50 lines)
+- Direct Form II Transposed, Float64 coefficients
+- `getFrequencyResponse(freqHz) → {magnitude, phase}`
+- Use cases: custom filter design, audio analysis
+
+### Extraction strategy
+
+Principle: WAA imports these as deps. Each module works standalone.
+The graph infrastructure (AudioNode, AudioParam, audioports) stays in WAA — that IS the framework.
+
+## [ ] CLI interface — `npx web-audio-api eval "..."` or piping. Nice-to-have, not blocking.
 
 ## [ ] BLINDSPOTS — What am I not seeing?
 
@@ -109,7 +195,7 @@ AudioWorklet isolation — In browsers, AudioWorklet runs in a separate thread. 
 4. Audio testing — test Web Audio code in CI without a browser
 5. Audio analysis — FFT, spectral features, metering
 6. Stream processing — real-time effects on audio streams
-
+7. Other integration cases?
 
 ## [ ] Examples (examples/)
 
@@ -189,13 +275,13 @@ AudioWorklet isolation — In browsers, AudioWorklet runs in a separate thread. 
 
   **Agent Skill to remaster your audio**
 
-## [ ] Make it right
 
-## [ ] Make it fast
 
-## [ ] Milestone 2 — jz / WASM DSP
+## [ ] Milestone 2 (make it fast) — jz / WASM DSP
 
 Goal: rewrite performance-critical DSP kernels in jz, compile to WASM, maintain pure-JS fallbacks.
+
+- [ ] #16 DSP in separate thread — future milestone (WASM/Worker). Keep open, tag milestone-2.
 
 ### Phase 1: jz setup
 

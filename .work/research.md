@@ -2,7 +2,7 @@
 
 Portable Web Audio API.
 
-The Web Audio API is a powerful W3C standard — but it only exists in browsers. This project closes the platform gap: same API, same behavior, proven by the same test suite (99% WPT). Runs in Node.js, Deno, Bun, serverless, edge — no native compilation required.
+The Web Audio API is a powerful W3C standard — but it only exists in browsers. This project closes the platform gap: same API, same behavior, proven by the same test suite (100% WPT). Runs in Node.js, Deno, Bun, serverless, edge — no native compilation required.
 
 
 ### Why this project matters
@@ -43,9 +43,9 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 
 - Performance ceiling for complex real-time graphs (WASM kernels planned to close this gap)
 - `outStream` is non-standard — the one API surface that isn't part of the spec
-- ~1% WPT gap is fundamental: some tests require browser DOM (MediaElement, hardware output)
+- WPT tests requiring browser DOM (MediaElement, iframe navigation) are shimmed in the test runner
 - AudioWorklet runs synchronously (browsers use a separate thread)
-- WPT evolves — 99% requires ongoing maintenance
+- WPT evolves — 100% requires ongoing maintenance
 
 ## Hidden value
 

@@ -109,9 +109,19 @@ class AudioContext extends BaseAudioContext {
     this.outStream = null
 
     // When a new connection is established, start to pull audio
-    this._destination._inputs[0].on('connection', () => {
+    this._destination._inputs[0].on('connection', async () => {
       if (this.#loopRunning || this._state !== 'running') return
-      if (!this.outStream) return
+      // Auto-detect output: try speaker package, fall back to stdout
+      if (!this.outStream) {
+        try {
+          let { default: Speaker } = await import('speaker')
+          this.outStream = new Speaker({ channels: this.format.numberOfChannels, bitDepth: this.format.bitDepth, sampleRate: this.sampleRate })
+        } catch {
+          if (typeof process !== 'undefined' && process.stdout?.writable)
+            this.outStream = process.stdout
+          else return
+        }
+      }
       this.#loopRunning = true
       this._renderLoop()
     })
