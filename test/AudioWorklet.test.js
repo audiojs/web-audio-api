@@ -11,10 +11,10 @@ let mkCtx = async () => {
   return ctx
 }
 
-test('AudioWorkletProcessor > base class has process and null port', () => {
+test('AudioWorkletProcessor > base class has null port', () => {
   let p = new AudioWorkletProcessor()
   is(p.port, null, 'port is null before wiring')
-  is(p.process(), true, 'default process returns true')
+  is(typeof p.process, 'undefined', 'no default process method')
 })
 
 test('AudioWorklet > register and instantiate processor', async () => {

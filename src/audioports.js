@@ -82,6 +82,12 @@ class AudioInput extends AudioPort {
 
     if (!this._mixBuf || this._mixBuf.numberOfChannels !== this.computedNumberOfChannels) {
       this._mixBuf = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+      // AudioParam inputs use Float64Array to avoid intermediate float32 rounding
+      // that would cause precision mismatch vs direct automation
+      if (this._useFloat64) {
+        for (let ch = 0; ch < this.computedNumberOfChannels; ch++)
+          this._mixBuf._channels[ch] = new Float64Array(BLOCK_SIZE)
+      }
     } else {
       for (let ch = 0; ch < this._mixBuf.numberOfChannels; ch++)
         this._mixBuf.getChannelData(ch).fill(0)
@@ -134,6 +140,7 @@ class AudioOutput extends AudioPort {
       // Track cycle depth — a DelayNode in the path will set _delayInCycle on context.
       let ctx = this.context
       if (!ctx._delayInCycle) ctx._cycleWithoutDelay = true
+      else ctx._delayCycleDetected = true
       return this._cachedBlock.buffer || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
     }
 

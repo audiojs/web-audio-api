@@ -138,6 +138,8 @@ class AudioContext extends BaseAudioContext {
   }
 
   setSinkId(sinkId) {
+    if (this._discarded)
+      return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed')
       return Promise.reject(DOMErr('Cannot setSinkId on a closed AudioContext', 'InvalidStateError'))
     if (typeof sinkId === 'object' && sinkId !== null) {
@@ -167,12 +169,14 @@ class AudioContext extends BaseAudioContext {
   }
 
   suspend() {
+    if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot suspend a closed AudioContext', 'InvalidStateError'))
     this._setState('suspended')
     return Promise.resolve()
   }
 
   resume() {
+    if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot resume a closed AudioContext', 'InvalidStateError'))
     this._setState('running')
     if (!this.#loopRunning && this.outStream && this._destination._inputs[0].sources.length) {
@@ -183,6 +187,7 @@ class AudioContext extends BaseAudioContext {
   }
 
   close() {
+    if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.resolve()
     this._setState('closed')
     this._closeStream()

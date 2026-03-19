@@ -14,6 +14,8 @@ class ConstantSourceNode extends AudioScheduledSourceNode {
     super(context, 0, 1, undefined, 'max', 'speakers')
     this.#offset = new AudioParam(this.context, options.offset ?? 1, 'a')
     this._outBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
+    // Use Float64Array to preserve precision when modulating AudioParams
+    this._outBuf._channels[0] = new Float64Array(BLOCK_SIZE)
     this._applyOpts(options)
   }
 

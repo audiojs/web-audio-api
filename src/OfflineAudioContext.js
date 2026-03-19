@@ -58,6 +58,7 @@ class OfflineAudioContext extends BaseAudioContext {
   }
 
   startRendering() {
+    if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.reject(new Error('context is closed'))
 
     return new Promise((resolve, reject) => {

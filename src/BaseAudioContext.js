@@ -1,5 +1,6 @@
 import { decodeAudioData } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 import AudioBuffer from 'audio-buffer'
 import AudioListener from './AudioListener.js'
 import AudioDestinationNode from './AudioDestinationNode.js'
@@ -21,7 +22,7 @@ import AnalyserNode from './AnalyserNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
 import { AudioWorklet } from './AudioWorklet.js'
-import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from './MediaStreamAudioSourceNode.js'
+import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode, MediaElementAudioSourceNode } from './MediaStreamAudioSourceNode.js'
 
 
 class BaseAudioContext extends EventTarget {
@@ -71,9 +72,16 @@ class BaseAudioContext extends EventTarget {
   // Render one quantum: pull graph + tail nodes, advance frame counter
   _renderQuantum() {
     let buf = this._destination._tick()
-    // Process tail nodes (e.g. AnalyserNode) not in the destination graph
+    // Process tail nodes (e.g. AnalyserNode, MediaStreamAudioDestinationNode) not in the destination graph
     for (let node of this._tailNodes)
-      node._outputs[0]._tick()
+      node._outputs.length ? node._outputs[0]._tick() : node._tick()
+    // Process delay nodes that deferred their ring buffer update during a cycle.
+    // At this point all upstream nodes have cached outputs, so re-pulling gives correct input.
+    if (this._deferredDelays) {
+      let delays = this._deferredDelays
+      this._deferredDelays = null
+      for (let delay of delays) delay._deferredWrite()
+    }
     this._frame += BLOCK_SIZE
     return buf
   }
@@ -83,6 +91,11 @@ class BaseAudioContext extends EventTarget {
   }
 
   decodeAudioData(audioData, successCallback, errorCallback) {
+    if (this._discarded) {
+      let err = DOMErr('Document is not fully active', 'InvalidStateError')
+      if (errorCallback) errorCallback(err)
+      return Promise.reject(err)
+    }
     let promise = decodeAudioData(audioData)
     if (successCallback) promise.then(successCallback, errorCallback)
     return promise
@@ -107,6 +120,7 @@ class BaseAudioContext extends EventTarget {
   createPanner() { return new PannerNode(this) }
   createMediaStreamSource(mediaStream) { return new MediaStreamAudioSourceNode(this, { mediaStream }) }
   createMediaStreamDestination() { return new MediaStreamAudioDestinationNode(this) }
+  createMediaElementSource(mediaElement) { return new MediaElementAudioSourceNode(this, { mediaElement }) }
 }
 
 export default BaseAudioContext

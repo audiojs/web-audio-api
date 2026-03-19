@@ -10,6 +10,8 @@ class DelayNode extends AudioNode {
   #maxDelayTime
   #ringBuf    // per-channel ring buffers
   #writePos = 0
+  #writtenFrames = 0  // total frames written to ring buffer
+  #ringCh = 0         // channel count of data in ring buffer
 
   get delayTime() { return this.#delayTime }
   get maxDelayTime() { return this.#maxDelayTime }
@@ -37,10 +39,16 @@ class DelayNode extends AudioNode {
 
   _ensureRingBuf(channels) {
     if (this.#ringBuf.length !== channels) {
+      // When channel count changes, allocate new ring buffers.
+      // Copy data from old buffers if possible.
+      let old = this.#ringBuf
       this.#ringBuf = []
-      for (let ch = 0; ch < channels; ch++)
-        this.#ringBuf.push(new Float32Array(this._ringLen))
-      this.#writePos = 0
+      for (let ch = 0; ch < channels; ch++) {
+        let buf = new Float32Array(this._ringLen)
+        if (ch < old.length) buf.set(old[ch])
+        this.#ringBuf.push(buf)
+      }
+      this.#ringCh = channels
     }
   }
 
@@ -54,45 +62,119 @@ class DelayNode extends AudioNode {
     this._ticking = true
     this._inCycle = false
     this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
+    // Track whether the cycle re-enters through an AudioOutput (not through this._tick re-entry)
+    let prevCycleFlag = this.context._delayCycleDetected
+    this.context._delayCycleDetected = false
     super._tick()
     let inBuf = this._inputs[0]._tick()
-    let ch = inBuf.numberOfChannels
+
+    // Detect cycle: either via delay._tick re-entry (_inCycle) or via AudioOutput re-entry
+    if (!this._inCycle && this.context._delayCycleDetected) this._inCycle = true
+    this.context._delayCycleDetected = prevCycleFlag
+
     let sr = this.context.sampleRate
     let delayArr = this.#delayTime._tick()
+    let ch = inBuf.numberOfChannels
 
     this._ensureRingBuf(ch)
 
-    if (ch !== this._outCh) {
-      this._outBuf = new AudioBuffer(ch, BLOCK_SIZE, sr)
-      this._outCh = ch
+    // Spec: in a cycle, delay must be at least one render quantum
+    let minDelay = this._inCycle ? BLOCK_SIZE / sr : 0
+
+    // Determine output channel count: when reading from the ring buffer,
+    // use the ring buffer's channel count if delayed data exists, else mono.
+    // For write-then-read (non-cycle, including zero delay), output matches input.
+    let d0 = delayArr[0]
+    let delaySamples0 = Math.max(minDelay, Math.min(this.#maxDelayTime, d0 === d0 ? d0 : 0)) * sr
+    let outCh
+    if (this._inCycle) {
+      // In a cycle, read-before-write: output depends on what's in the ring buffer
+      outCh = this.#writtenFrames >= delaySamples0 ? this.#ringCh : 1
+    } else {
+      // Not in a cycle, write-before-read: current input data is available immediately
+      outCh = this.#writtenFrames + BLOCK_SIZE > delaySamples0 ? ch : 1
+    }
+
+    if (outCh !== this._outCh) {
+      this._outBuf = new AudioBuffer(outCh, BLOCK_SIZE, sr)
+      this._outCh = outCh
     }
 
     let ringLen = this._ringLen
     let wp = this.#writePos
 
-    // Spec: in a cycle, delay must be at least one render quantum
-    let minDelay = this._inCycle ? BLOCK_SIZE / sr : 0
+    if (this._inCycle) {
+      // In a cycle: read from ring buffer first (output for this quantum),
+      // then defer the write until after the cycle resolves with correct input.
+      for (let c = 0; c < outCh; c++) {
+        let ring = c < this.#ringBuf.length ? this.#ringBuf[c] : null
+        let out = this._outBuf.getChannelData(c)
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          if (!ring) { out[i] = 0; continue }
+          let d = delayArr[i]
+          let delaySamples = Math.max(minDelay, Math.min(this.#maxDelayTime, d === d ? d : 0)) * sr
+          let readPos = (wp + i - delaySamples + ringLen * 2) % ringLen
+          let idx = Math.floor(readPos)
+          let frac = readPos - idx
+          out[i] = ring[idx % ringLen] * (1 - frac) + ring[(idx + 1) % ringLen] * frac
+        }
+      }
+      // Defer ring buffer write — input from the cycle is stale;
+      // _deferredWrite will re-pull and get the correct cached input
+      if (!this.context._deferredDelays) this.context._deferredDelays = []
+      this.context._deferredDelays.push(this)
+    } else {
+      // Not in a cycle: write input then read (zero-delay passthrough works)
+      for (let c = 0; c < ch; c++) {
+        let ring = this.#ringBuf[c]
+        let inp = inBuf.getChannelData(c)
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          ring[(wp + i) % ringLen] = inp[i]
+        }
+      }
+      for (let c = 0; c < outCh; c++) {
+        let ring = c < this.#ringBuf.length ? this.#ringBuf[c] : null
+        let out = this._outBuf.getChannelData(c)
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          if (!ring) { out[i] = 0; continue }
+          let d = delayArr[i]
+          let delaySamples = Math.max(minDelay, Math.min(this.#maxDelayTime, d === d ? d : 0)) * sr
+          let readPos = (wp + i - delaySamples + ringLen * 2) % ringLen
+          let idx = Math.floor(readPos)
+          let frac = readPos - idx
+          out[i] = ring[idx % ringLen] * (1 - frac) + ring[(idx + 1) % ringLen] * frac
+        }
+      }
+      this.#writePos = (wp + BLOCK_SIZE) % ringLen
+      this.#writtenFrames += BLOCK_SIZE
+    }
+
+    this.context._delayInCycle = (this.context._delayInCycle || 1) - 1
+    this._ticking = false
+    return this._outBuf
+  }
+
+  // Called after the full graph pull resolves. Re-pull input (now correctly cached
+  // by upstream nodes) and write it to the ring buffer.
+  _deferredWrite() {
+    this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
+    let inBuf = this._inputs[0]._tick()
+    let ch = inBuf.numberOfChannels
+    let ringLen = this._ringLen
+    let wp = this.#writePos
+
+    this._ensureRingBuf(ch)
 
     for (let c = 0; c < ch; c++) {
       let ring = this.#ringBuf[c]
       let inp = inBuf.getChannelData(c)
-      let out = this._outBuf.getChannelData(c)
-
       for (let i = 0; i < BLOCK_SIZE; i++) {
         ring[(wp + i) % ringLen] = inp[i]
-        let d = delayArr[i]
-        let delaySamples = Math.max(minDelay, Math.min(this.#maxDelayTime, d === d ? d : 0)) * sr
-        let readPos = (wp + i - delaySamples + ringLen * 2) % ringLen
-        let idx = Math.floor(readPos)
-        let frac = readPos - idx
-        out[i] = ring[idx % ringLen] * (1 - frac) + ring[(idx + 1) % ringLen] * frac
       }
     }
-
     this.#writePos = (wp + BLOCK_SIZE) % ringLen
+    this.#writtenFrames += BLOCK_SIZE
     this.context._delayInCycle = (this.context._delayInCycle || 1) - 1
-    this._ticking = false
-    return this._outBuf
   }
 }
 

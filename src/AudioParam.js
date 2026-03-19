@@ -37,11 +37,14 @@ class AudioParam extends DspObject {
     this.#rate = val === 'k-rate' ? 'k' : 'a'
   }
 
-  get value() { return Math.fround(this.#intrinsicValue) }
+  get value() {
+    let v = this.#intrinsicValue
+    v = Math.min(this.#maxValue, Math.max(this.#minValue, v))
+    return Math.fround(v)
+  }
   set value(newVal) {
     let t = this.context.currentTime
     this._assertNotInCurve(t)
-    newVal = Math.min(this.#maxValue, Math.max(this.#minValue, newVal))
     this.#intrinsicValue = newVal
     this.#automationEventList.add(createSetValueAutomationEvent(newVal, t))
   }
@@ -78,7 +81,8 @@ class AudioParam extends DspObject {
     this.channelCount = 1
     this.channelCountMode = 'explicit'
     this._input = new AudioInput(this.context, this, 0)
-    this._outBuf = new Float32Array(BLOCK_SIZE)
+    this._input._useFloat64 = true
+    this._outBuf = new Float64Array(BLOCK_SIZE)
   }
 
   setValueAtTime(value, startTime) {
@@ -182,28 +186,30 @@ class AudioParam extends DspObject {
   }
 
   _dsp(array) {
+    let hasInput = this._input.sources.length > 0
+
     if (this.#rate === 'a') {
-      for (let i = 0; i < BLOCK_SIZE; i++)
-        array[i] = this.#getValue(this.context.currentTime + i / this.context.sampleRate)
+      if (hasInput) {
+        // Compute in float64 to avoid double-rounding through Float32Array
+        let inputBuf = this._input._tick()
+        let ch0 = inputBuf.getChannelData(0)
+        for (let i = 0; i < BLOCK_SIZE; i++)
+          array[i] = this.#getValue(this.context.currentTime + i / this.context.sampleRate) + ch0[i]
+      } else {
+        for (let i = 0; i < BLOCK_SIZE; i++)
+          array[i] = this.#getValue(this.context.currentTime + i / this.context.sampleRate)
+      }
     } else {
       let val = this.#getValue(this.context.currentTime)
-      for (let i = 0; i < BLOCK_SIZE; i++)
-        array[i] = val
-    }
-
-    // Add connected node inputs (spec: computedValue = intrinsicValue + sum(inputs))
-    if (this._input.sources.length > 0) {
-      let inputBuf = this._input._tick()
-      let ch0 = inputBuf.getChannelData(0)
-      if (this.#rate === 'a') {
-        for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] += ch0[i]
-      } else {
+      if (hasInput) {
+        let inputBuf = this._input._tick()
+        let ch0 = inputBuf.getChannelData(0)
         // k-rate: use only the first sample of the input
         let inputVal = ch0[0]
-        for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] += inputVal
+        val += inputVal
       }
+      for (let i = 0; i < BLOCK_SIZE; i++)
+        array[i] = val
     }
 
     // Spec: flush NaN to default value
