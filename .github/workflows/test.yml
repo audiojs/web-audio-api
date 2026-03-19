@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  test:
+  node:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,3 +20,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: deno run --allow-read --allow-env test/index.js
+
+  bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun test/index.js

@@ -1,5 +1,6 @@
 import { decodeAudioData } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
 import AudioBuffer from 'audio-buffer'
 import AudioListener from './AudioListener.js'
 import AudioDestinationNode from './AudioDestinationNode.js'
@@ -21,7 +22,7 @@ import AnalyserNode from './AnalyserNode.js'
 import ScriptProcessorNode from './ScriptProcessorNode.js'
 import PannerNode from './PannerNode/index.js'
 import { AudioWorklet } from './AudioWorklet.js'
-import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from './MediaStreamAudioSourceNode.js'
+import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode, MediaElementAudioSourceNode } from './MediaStreamAudioSourceNode.js'
 
 
 class BaseAudioContext extends EventTarget {
@@ -30,15 +31,18 @@ class BaseAudioContext extends EventTarget {
   _sampleRate
   _destination
   _listener
+  _tailNodes = new Set()  // nodes that need processing even when not connected to destination
   #onstatechange = null
   #oncomplete = null
 
-  constructor(sampleRate = 44100) {
+  constructor(sampleRate = 44100, numberOfChannels = 2) {
     super()
     this._sampleRate = sampleRate
-    this._destination = new AudioDestinationNode(this)
-    this._listener = new AudioListener()
+    this._destination = new AudioDestinationNode(this, numberOfChannels)
+    this._listener = new AudioListener(this)
     this.audioWorklet = new AudioWorklet(this)
+    // Cycle detection state: consolidated from ad-hoc properties
+    this._cycle = { delayCount: 0, withoutDelay: false, detected: false, deferred: null }
   }
 
   get destination() { return this._destination }
@@ -67,9 +71,19 @@ class BaseAudioContext extends EventTarget {
     this.dispatchEvent(new Event('statechange'))
   }
 
-  // Render one quantum: pull graph, advance frame counter
+  // Render one quantum: pull graph + tail nodes, advance frame counter
   _renderQuantum() {
     let buf = this._destination._tick()
+    // Process tail nodes (e.g. AnalyserNode, MediaStreamAudioDestinationNode) not in the destination graph
+    for (let node of this._tailNodes)
+      node._outputs.length ? node._outputs[0]._tick() : node._tick()
+    // Process delay nodes that deferred their ring buffer update during a cycle.
+    // At this point all upstream nodes have cached outputs, so re-pulling gives correct input.
+    if (this._cycle.deferred) {
+      let delays = this._cycle.deferred
+      this._cycle.deferred = null
+      for (let delay of delays) delay._deferredWrite()
+    }
     this._frame += BLOCK_SIZE
     return buf
   }
@@ -79,6 +93,11 @@ class BaseAudioContext extends EventTarget {
   }
 
   decodeAudioData(audioData, successCallback, errorCallback) {
+    if (this._discarded) {
+      let err = DOMErr('Document is not fully active', 'InvalidStateError')
+      if (errorCallback) errorCallback(err)
+      return Promise.reject(err)
+    }
     let promise = decodeAudioData(audioData)
     if (successCallback) promise.then(successCallback, errorCallback)
     return promise
@@ -93,7 +112,7 @@ class BaseAudioContext extends EventTarget {
   createDelay(maxDelayTime) { return new DelayNode(this, { maxDelayTime }) }
   createBiquadFilter() { return new BiquadFilterNode(this) }
   createWaveShaper() { return new WaveShaperNode(this) }
-  createIIRFilter(feedforward, feedback) { return new IIRFilterNode(this, feedforward, feedback) }
+  createIIRFilter(feedforward, feedback) { return new IIRFilterNode(this, { feedforward, feedback }) }
   createConvolver() { return new ConvolverNode(this) }
   createDynamicsCompressor() { return new DynamicsCompressorNode(this) }
   createChannelSplitter(numberOfOutputs) { return new ChannelSplitterNode(this, { numberOfOutputs }) }
@@ -103,6 +122,7 @@ class BaseAudioContext extends EventTarget {
   createPanner() { return new PannerNode(this) }
   createMediaStreamSource(mediaStream) { return new MediaStreamAudioSourceNode(this, { mediaStream }) }
   createMediaStreamDestination() { return new MediaStreamAudioDestinationNode(this) }
+  createMediaElementSource(mediaElement) { return new MediaElementAudioSourceNode(this, { mediaElement }) }
 }
 
 export default BaseAudioContext

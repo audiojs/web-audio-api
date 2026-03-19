@@ -2,6 +2,8 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
+
 
 // W3C spec equal-power panning:
 // For mono input:  outputL = input * cos(x), outputR = input * sin(x)
@@ -15,10 +17,20 @@ class StereoPannerNode extends AudioNode {
   #pan
   get pan() { return this.#pan }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, 2, 'clamped-max', 'speakers')
-    this.#pan = new AudioParam(this.context, 0, 'a')
+    this.#pan = new AudioParam(this.context, options.pan ?? 0, 'a', -1, 1)
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
+    this._applyOpts(options)
+  }
+
+  _validateChannelCount(val) {
+    if (val > 2) throw DOMErr('channelCount cannot be greater than 2', 'NotSupportedError')
+  }
+
+  _validateChannelCountMode(val) {
+    if (val === 'max') throw DOMErr("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
   _tick() {
@@ -42,7 +54,15 @@ class StereoPannerNode extends AudioNode {
       let inL = inBuf.getChannelData(0), inR = inBuf.getChannelData(1)
       for (let i = 0; i < BLOCK_SIZE; i++) {
         let p = Math.max(-1, Math.min(1, panArr[i]))
-        if (p < 0) {
+        if (p <= -1) {
+          // Hard left: all to left channel
+          outL[i] = inL[i] + inR[i]
+          outR[i] = 0
+        } else if (p >= 1) {
+          // Hard right: all to right channel
+          outL[i] = 0
+          outR[i] = inR[i] + inL[i]
+        } else if (p < 0) {
           let x = -p * PI2
           outL[i] = inL[i] + inR[i] * Math.sin(x)
           outR[i] = inR[i] * Math.cos(x)

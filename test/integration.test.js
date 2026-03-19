@@ -36,7 +36,7 @@ test.mute('Integration > splitter splits stereo correctly through graph', () => 
 })
 
 test('AudioContext > all factory methods', () => {
-  let c = new AudioContext(); c.outStream = { end() {} }; c[Symbol.dispose]()
+  let c = new AudioContext()
   ok(c.createBufferSource()); ok(c.createConstantSource()); ok(c.createOscillator())
   ok(c.createPeriodicWave(new Float32Array([0, 0]), new Float32Array([0, 1])))
   ok(c.createGain()); ok(c.createStereoPanner()); ok(c.createDelay())

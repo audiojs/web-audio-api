@@ -2,7 +2,7 @@ import test from 'tst'
 import { is, ok, throws } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 
-let ctx = {}
+let ctx = { sampleRate: 44100, currentTime: 0 }
 
 test('AudioNode > creates AudioInputs and AudioOutputs', () => {
   let node = new AudioNode(ctx, 1, 2)
@@ -27,8 +27,8 @@ test('AudioNode > channelCount > accepts valid values', () => {
   is(node.channelCount, 2)
   node.channelCount = 1
   is(node.channelCount, 1)
-  node.channelCount = 109
-  is(node.channelCount, 109)
+  node.channelCount = 32
+  is(node.channelCount, 32)
 })
 
 test('AudioNode > channelCount > rejects invalid values', () => {
@@ -47,10 +47,11 @@ test('AudioNode > channelCountMode > accepts valid values', () => {
   is(node.channelCountMode, 'explicit')
 })
 
-test('AudioNode > channelCountMode > rejects invalid values', () => {
+test('AudioNode > channelCountMode > silently ignores invalid values', () => {
   let node = new AudioNode(ctx, 1, 1)
-  throws(() => { node.channelCountMode = 'bad' })
-  throws(() => { node.channelCountMode = 10 })
+  node.channelCountMode = 'max'
+  node.channelCountMode = 'bad' // silently ignored per spec
+  is(node.channelCountMode, 'max', 'unchanged after invalid set')
 })
 
 test('AudioNode > channelInterpretation > accepts valid values', () => {
@@ -61,10 +62,11 @@ test('AudioNode > channelInterpretation > accepts valid values', () => {
   is(node.channelInterpretation, 'discrete')
 })
 
-test('AudioNode > channelInterpretation > rejects invalid values', () => {
+test('AudioNode > channelInterpretation > silently ignores invalid values', () => {
   let node = new AudioNode(ctx, 1, 1)
-  throws(() => { node.channelInterpretation = 'bad' })
-  throws(() => { node.channelInterpretation = 10 })
+  node.channelInterpretation = 'speakers'
+  node.channelInterpretation = 'bad'
+  is(node.channelInterpretation, 'speakers', 'unchanged after invalid set')
 })
 
 test('AudioNode > connect > connects audio ports', () => {

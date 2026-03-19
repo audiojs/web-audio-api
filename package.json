@@ -1,14 +1,24 @@
 {
   "name": "web-audio-api",
   "version": "1.0.0",
-  "description": "Pure JS implementation of Web Audio API",
+  "description": "Portable Web Audio API",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
     "Dmitry Iv <df.creative@gmail.com>"
   ],
   "repository": "audiojs/web-audio-api",
   "type": "module",
-  "exports": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./polyfill": "./polyfill.js"
+  },
+  "types": "./index.d.ts",
+  "files": [
+    "src",
+    "index.js",
+    "index.d.ts",
+    "polyfill.js"
+  ],
   "keywords": [
     "audio",
     "audiojs",
@@ -23,9 +33,10 @@
     "audio-buffer": "^6.0.0",
     "audio-decode": "^3.1.2",
     "automation-events": "^7.1.15",
-    "fourier-transform": "^2.1.0"
+    "fourier-transform": "^2.2.0"
   },
   "devDependencies": {
+    "linkedom": "^0.18.12",
     "tst": "^9.2.2"
   },
   "license": "MIT",
@@ -33,6 +44,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/index.js"
+    "test": "node test/index.js",
+    "bench": "node benchmark/run.js",
+    "wpt": "node test/wpt-runner.js"
   }
 }

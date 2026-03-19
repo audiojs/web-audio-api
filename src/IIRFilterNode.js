@@ -1,6 +1,9 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
+
+const MAX_COEF = 20
 
 class IIRFilterNode extends AudioNode {
 
@@ -8,10 +11,62 @@ class IIRFilterNode extends AudioNode {
   #feedback
   #state // per-channel state
 
-  constructor(context, feedforward, feedback) {
+  constructor(context, options) {
+    if (!(context && typeof context === 'object' && 'sampleRate' in context))
+      throw new TypeError('First argument must be an AudioContext')
+    if (!options || typeof options !== 'object')
+      throw new TypeError('Second argument must be an IIRFilterOptions dictionary')
+
+    let feedforward = options.feedforward
+    let feedback = options.feedback
+
+    // Required members per spec
+    if (feedforward === undefined || feedforward === null)
+      throw new TypeError('feedforward is required')
+    if (feedback === undefined || feedback === null)
+      throw new TypeError('feedback is required')
+
+    // Convert to array (handles TypedArrays, array-like)
+    feedforward = Array.from(feedforward)
+    feedback = Array.from(feedback)
+
+    // Non-finite check (TypeError per spec) - must come before length checks
+    for (let i = 0; i < feedforward.length; i++) {
+      let v = +feedforward[i]
+      if (!Number.isFinite(v))
+        throw new TypeError('feedforward coefficient at index ' + i + ' is not finite')
+      feedforward[i] = v
+    }
+    for (let i = 0; i < feedback.length; i++) {
+      let v = +feedback[i]
+      if (!Number.isFinite(v))
+        throw new TypeError('feedback coefficient at index ' + i + ' is not finite')
+      feedback[i] = v
+    }
+
+    // Empty arrays -> NotSupportedError
+    if (feedforward.length === 0)
+      throw DOMErr('feedforward must not be empty', 'NotSupportedError')
+    if (feedback.length === 0)
+      throw DOMErr('feedback must not be empty', 'NotSupportedError')
+
+    // Max 20 coefficients -> NotSupportedError
+    if (feedforward.length > MAX_COEF)
+      throw DOMErr('feedforward length exceeds ' + MAX_COEF, 'NotSupportedError')
+    if (feedback.length > MAX_COEF)
+      throw DOMErr('feedback length exceeds ' + MAX_COEF, 'NotSupportedError')
+
+    // All-zero feedforward -> InvalidStateError
+    if (feedforward.every(v => v === 0))
+      throw DOMErr('feedforward coefficients must not all be zero', 'InvalidStateError')
+
+    // feedback[0] === 0 -> InvalidStateError
+    if (feedback[0] === 0)
+      throw DOMErr('feedback[0] must be non-zero', 'InvalidStateError')
+
     super(context, 1, 1, undefined, 'max', 'speakers')
-    if (!feedforward?.length || !feedback?.length) throw new Error('feedforward and feedback must be non-empty')
-    if (feedback[0] === 0) throw new Error('feedback[0] must be non-zero')
+    this._applyOpts(options)
+
     this.#feedforward = Float64Array.from(feedforward)
     this.#feedback = Float64Array.from(feedback)
     // normalize by a0
@@ -26,11 +81,35 @@ class IIRFilterNode extends AudioNode {
   }
 
   getFrequencyResponse(frequencyHz, magResponse, phaseResponse) {
+    // Null/undefined check per spec -> TypeError
+    if (!frequencyHz || !(frequencyHz instanceof Float32Array))
+      throw new TypeError('frequencyHz must be a Float32Array')
+    if (!magResponse || !(magResponse instanceof Float32Array))
+      throw new TypeError('magResponse must be a Float32Array')
+    if (!phaseResponse || !(phaseResponse instanceof Float32Array))
+      throw new TypeError('phaseResponse must be a Float32Array')
+
+    // Length mismatch -> InvalidAccessError
+    if (magResponse.length < frequencyHz.length)
+      throw DOMErr('magResponse length must be >= frequencyHz length', 'InvalidAccessError')
+    if (phaseResponse.length < frequencyHz.length)
+      throw DOMErr('phaseResponse length must be >= frequencyHz length', 'InvalidAccessError')
+
     let sr = this.context.sampleRate
+    let nyquist = sr / 2
     let ff = this.#feedforward, fb = this.#feedback
 
     for (let i = 0; i < frequencyHz.length; i++) {
-      let w = 2 * Math.PI * frequencyHz[i] / sr
+      let freq = frequencyHz[i]
+
+      // Out-of-range frequencies (< 0 or > Nyquist) -> NaN per spec
+      if (freq < 0 || freq > nyquist) {
+        magResponse[i] = NaN
+        phaseResponse[i] = NaN
+        continue
+      }
+
+      let w = 2 * Math.PI * freq / sr
       let numR = 0, numI = 0, denR = 0, denI = 0
 
       for (let k = 0; k < ff.length; k++) {

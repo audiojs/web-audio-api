@@ -1,5 +1,7 @@
 import { BLOCK_SIZE } from './constants.js'
 
+const SQRT1_2 = Math.fround(Math.SQRT1_2) // SQRT1_2067690849304
+
 // speaker mix lookup: key = inCh * 10 + outCh
 const SPEAKER_MIX = {}
 
@@ -111,14 +113,14 @@ SPEAKER_MIX[61] = function(inBuffer, outBuffer) { // 5.1 → mono
   let L = inBuffer.getChannelData(0), R = inBuffer.getChannelData(1)
   let C = inBuffer.getChannelData(2), SL = inBuffer.getChannelData(4), SR = inBuffer.getChannelData(5)
   let out = outBuffer.getChannelData(0)
-  for (let i = 0; i < BLOCK_SIZE; i++) out[i] += 0.7071 * (L[i] + R[i]) + C[i] + 0.5 * (SL[i] + SR[i])
+  for (let i = 0; i < BLOCK_SIZE; i++) out[i] += SQRT1_2 * (L[i] + R[i]) + C[i] + 0.5 * (SL[i] + SR[i])
 }
 
 SPEAKER_MIX[62] = function(inBuffer, outBuffer) { // 5.1 → stereo
   let L = inBuffer.getChannelData(0), R = inBuffer.getChannelData(1)
   let C = inBuffer.getChannelData(2), SL = inBuffer.getChannelData(4), SR = inBuffer.getChannelData(5)
   let oL = outBuffer.getChannelData(0), oR = outBuffer.getChannelData(1)
-  for (let i = 0; i < BLOCK_SIZE; i++) { oL[i] += L[i] + 0.7071 * (C[i] + SL[i]); oR[i] += R[i] + 0.7071 * (C[i] + SR[i]) }
+  for (let i = 0; i < BLOCK_SIZE; i++) { oL[i] += L[i] + SQRT1_2 * (C[i] + SL[i]); oR[i] += R[i] + SQRT1_2 * (C[i] + SR[i]) }
 }
 
 SPEAKER_MIX[64] = function(inBuffer, outBuffer) { // 5.1 → quad
@@ -127,7 +129,7 @@ SPEAKER_MIX[64] = function(inBuffer, outBuffer) { // 5.1 → quad
   let oL = outBuffer.getChannelData(0), oR = outBuffer.getChannelData(1)
   let oSL = outBuffer.getChannelData(2), oSR = outBuffer.getChannelData(3)
   for (let i = 0; i < BLOCK_SIZE; i++) {
-    oL[i] += L[i] + 0.7071 * C[i]; oR[i] += R[i] + 0.7071 * C[i]
+    oL[i] += L[i] + SQRT1_2 * C[i]; oR[i] += R[i] + SQRT1_2 * C[i]
     oSL[i] += SL[i]; oSR[i] += SR[i]
   }
 }

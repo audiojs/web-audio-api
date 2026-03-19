@@ -35,7 +35,7 @@ test('exports > no broken default import from constants', async () => {
 // --- HIGH PRIORITY FIXES ---
 
 test('connect() > returns destination for chaining', () => {
-  let ctx = {}
+  let ctx = { sampleRate: 44100, currentTime: 0 }
   let a = new AudioNode(ctx, 0, 1)
   let b = new AudioNode(ctx, 1, 1)
   let c = new AudioNode(ctx, 1, 0)
@@ -49,7 +49,7 @@ test('connect() > returns destination for chaining', () => {
 })
 
 test.mute('disconnect(destination) > disconnects specific destination', () => {
-  let ctx = {}
+  let ctx = { sampleRate: 44100, currentTime: 0 }
   let src = new AudioNode(ctx, 0, 1)
   let dest1 = new AudioNode(ctx, 1, 0)
   let dest2 = new AudioNode(ctx, 1, 0)
@@ -64,7 +64,7 @@ test.mute('disconnect(destination) > disconnects specific destination', () => {
 })
 
 test.mute('disconnect() > disconnects all outputs', () => {
-  let ctx = {}
+  let ctx = { sampleRate: 44100, currentTime: 0 }
   let src = new AudioNode(ctx, 0, 3)
   let s1 = new AudioNode(ctx, 1, 0)
   let s2 = new AudioNode(ctx, 1, 0)
@@ -80,7 +80,7 @@ test.mute('disconnect() > disconnects all outputs', () => {
 })
 
 test('disconnect(dest, output, input) > precise disconnection', () => {
-  let ctx = {}
+  let ctx = { sampleRate: 44100, currentTime: 0 }
   let src = new AudioNode(ctx, 0, 2)
   let dest = new AudioNode(ctx, 2, 0)
 
@@ -194,15 +194,12 @@ test('onended > null clears handler', () => {
   ok(!called, 'cleared handler does not fire')
 })
 
-test.mute('error messages > no typos (Invalid, not Unvalid)', () => {
-  let ctx = {}
+test('enum setters > silently ignore invalid values per spec', () => {
+  let ctx = { sampleRate: 44100, currentTime: 0 }
   let node = new AudioNode(ctx, 1, 1)
-  let caught = ''
-  try { node.channelCountMode = 'bad' } catch (e) { caught = e.message }
-  ok(caught.startsWith('Invalid'), 'channelCountMode error starts with Invalid')
-
-  try { node.channelInterpretation = 'bad' } catch (e) { caught = e.message }
-  ok(caught.startsWith('Invalid'), 'channelInterpretation error starts with Invalid')
+  node.channelCountMode = 'max'
+  node.channelCountMode = 'bad'
+  is(node.channelCountMode, 'max', 'channelCountMode unchanged')
 })
 
 test('AudioContext > onstatechange as event handler property', async () => {
@@ -214,12 +211,13 @@ test('AudioContext > onstatechange as event handler property', async () => {
   ctx.onstatechange = () => states.push(ctx.state)
   ok(typeof ctx.onstatechange === 'function')
 
-  await ctx.suspend()
+  // initial state is now 'suspended' per spec
   await ctx.resume()
+  await ctx.suspend()
 
   // replace handler
   ctx.onstatechange = () => states.push('!' + ctx.state)
   await ctx.close()
 
-  is(states, ['suspended', 'running', '!closed'])
+  is(states, ['running', 'suspended', '!closed'])
 })

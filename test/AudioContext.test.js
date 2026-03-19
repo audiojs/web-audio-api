@@ -11,8 +11,8 @@ let mkCtx = () => {
 }
 
 test('AudioContext > graph traversal collects all connected nodes', () => {
-  let ctx = mkCtx()
-  ctx[Symbol.dispose]()
+  let ctx = new AudioContext()
+  ctx.outStream = { write() { return true }, once() {} }
 
   let n1a = new AudioNode(ctx, 2, 1)
   let n1b = new AudioNode(ctx, 0, 1)
@@ -70,23 +70,12 @@ test('AudioContext > sampleRate from constructor option', () => {
   is(ctx.sampleRate, 48000)
 })
 
-test('AudioContext > factory methods', () => {
-  let ctx = mkCtx(); ctx[Symbol.dispose]()
-  ok(ctx.createBuffer(1, 100, 44100))
-  ok(ctx.createBufferSource())
-  ok(ctx.createGain())
-  ok(ctx.createScriptProcessor(1024, 1, 1))
-  ok(ctx.createPanner())
-})
-
 // --- state machine ---
 
-test('AudioContext > state starts as running', () => {
-  let ctx = mkCtx(); ctx[Symbol.dispose]()
-  // dispose sets state to closed, so check before dispose
-  let ctx2 = mkCtx()
-  is(ctx2.state, 'running')
-  ctx2[Symbol.dispose]()
+test('AudioContext > state starts as suspended (per spec)', () => {
+  let ctx = mkCtx()
+  is(ctx.state, 'suspended')
+  ctx[Symbol.dispose]()
 })
 
 test('AudioContext > suspend/resume/close return Promises', async () => {
@@ -127,10 +116,11 @@ test('AudioContext > onstatechange fires', async () => {
   let ctx = mkCtx()
   let states = []
   ctx.onstatechange = () => states.push(ctx.state)
+  await ctx.resume()
   await ctx.suspend()
   await ctx.resume()
   await ctx.close()
-  is(states, ['suspended', 'running', 'closed'])
+  is(states, ['running', 'suspended', 'running', 'closed'])
 })
 
 test('AudioContext > baseLatency and outputLatency', () => {

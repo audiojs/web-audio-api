@@ -16,8 +16,8 @@ test('OscillatorNode > constructor defaults', () => {
 test('OscillatorNode > type validation', () => {
   let node = new OscillatorNode({ sampleRate: SR, currentTime: 0 })
   node.type = 'square'; is(node.type, 'square')
-  throws(() => { node.type = 'invalid' })
-  throws(() => { node.type = 'custom' })
+  node.type = 'invalid'; is(node.type, 'square') // WebIDL: silently ignored
+  throws(() => { node.type = 'custom' }) // InvalidStateError
 })
 
 test('OscillatorNode > setPeriodicWave', () => {
@@ -81,7 +81,7 @@ test('OscillatorNode > onended fires after stop', () => {
 test('PeriodicWave > built-in waveforms', () => {
   for (let type of ['sine', 'square', 'sawtooth', 'triangle']) {
     let table = PeriodicWave.getBuiltIn(type)
-    ok(table.length === 4096, type + ' has 4096 samples')
+    ok(table.length === 8192, type + ' has 8192 samples')
     ok(table.some(v => v !== 0), type + ' non-silent')
   }
 })

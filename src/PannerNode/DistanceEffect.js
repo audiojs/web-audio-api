@@ -4,106 +4,56 @@ const DistanceModelType = {
   exponential : 'exponential',
 }
 
-/**
- * Computes distance effect gain and manages related properties.
- */
 class DistanceEffect {
+  #model = 'inverse'
+  #clamped = true
+  #refDistance = 1
+  #maxDistance = 10000
+  #rolloffFactor = 1
 
-  constructor() {
-    this._model         = DistanceModelType.inverse
-    this._isClamped     = true
-    this._refDistance   = 1.0
-    this._maxDistance   = 10000.0
-    this._rolloffFactor = 1.0
-  }
+  get model() { return this.#model }
 
-  get model() { return this._model }
-
-  /**
-   * @param {DistanceModelType} model
-   * @param {boolean} clampled
-   */
   setModel(model, clamped) {
-    if (!DistanceModelType[model]) {
-      throw new Error('Invalid DistanceModelType')
-    }
-    this._model     = model
-    this._isClamped = clamped
+    if (!DistanceModelType[model]) return // WebIDL: silently ignore invalid enum
+    this.#model = model
+    this.#clamped = clamped
   }
 
-  get refDistance() { return this._refDistance }
-  set refDistance(refDistance) {
-    if (!Number.isFinite(refDistance)) {
-      throw new Error('Invalid refDistance')
-    }
-    this._refDistance = refDistance
+  get refDistance() { return this.#refDistance }
+  set refDistance(v) {
+    if (!Number.isFinite(v) || v < 0) throw new RangeError('refDistance must be non-negative and finite')
+    this.#refDistance = v
   }
 
-  get maxDistance() { return this._maxDistance }
-  set maxDistance(maxDistance) {
-    if (!Number.isFinite(maxDistance)) {
-      throw new Error('Invalid maxDistance')
-    }
-    this._maxDistance = maxDistance
+  get maxDistance() { return this.#maxDistance }
+  set maxDistance(v) {
+    if (!Number.isFinite(v) || v <= 0) throw new RangeError('maxDistance must be positive and finite')
+    this.#maxDistance = v
   }
 
-  get rolloffFactor() { return this._rolloffFactor }
-  set rolloffFactor(rolloffFactor) {
-    if (!Number.isFinite(rolloffFactor)) {
-      throw new Error('Invalid rolloffFactor')
-    }
-    this._rolloffFactor = rolloffFactor
+  get rolloffFactor() { return this.#rolloffFactor }
+  set rolloffFactor(v) {
+    if (!Number.isFinite(v) || v < 0) throw new RangeError('rolloffFactor must be non-negative and finite')
+    this.#rolloffFactor = v
   }
 
-  /**
-   * @param {number}
-   * @return {number}
-   */
   gain(distance) {
-    // don't go beyond maximum distance
-    distance = Math.min(distance, this._maxDistance)
+    distance = Math.min(distance, this.#maxDistance)
+    if (this.#clamped) distance = Math.max(distance, this.#refDistance)
 
-    // if clamped, don't get closer than reference distance
-    if (this._isClamped) {
-      distance = Math.max(distance, this._refDistance)
-    }
-
-    switch (this._model) {
-    case DistanceModelType.linear:
-      return this.linearGain(distance)
-    case DistanceModelType.inverse:
-      return this.inverseGain(distance)
-    case DistanceModelType.exponential:
-      return this.exponentialGain(distance)
+    switch (this.#model) {
+    case 'linear':
+      // Per spec, rolloffFactor clamped to [0, 1] for linear model
+      let rolloff = Math.min(Math.max(this.#rolloffFactor, 0), 1)
+      return 1 - rolloff * (distance - this.#refDistance) / (this.#maxDistance - this.#refDistance)
+    case 'inverse':
+      return this.#refDistance / (this.#refDistance + this.#rolloffFactor * (distance - this.#refDistance))
+    case 'exponential':
+      return Math.pow(distance / this.#refDistance, -this.#rolloffFactor)
     default:
-      throw new TypeError('Invalid distance model', this._model)
+      throw new TypeError('Invalid distance model')
     }
   }
-
-  /**
-   * @param {number}
-   * @return {number}
-   */
-  linearGain(distance) {
-    return (1.0 - this._rolloffFactor * (distance - this._refDistance) / (this._maxDistance - this._refDistance))
-  }
-
-  /**
-   * @param {number}
-   * @return {number}
-   */
-  inverseGain(distance) {
-    return this._refDistance / (this._refDistance + this._rolloffFactor * (distance - this._refDistance))
-  }
-
-  /**
-   * @param {number}
-   * @return {number}
-   */
-  exponentialGain(distance) {
-    return Math.pow(distance / this._refDistance, -this._rolloffFactor)
-  }
-
 }
 
 export default DistanceEffect

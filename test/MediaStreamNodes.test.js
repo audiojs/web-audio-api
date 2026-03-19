@@ -6,12 +6,7 @@ import AudioBuffer from 'audio-buffer'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from '../src/MediaStreamAudioSourceNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
-let mkCtx = () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  ctx[Symbol.dispose]()
-  return ctx
-}
+let mkCtx = () => new AudioContext()
 
 test('MediaStreamAudioSourceNode > outputs pushed data', () => {
   let ctx = mkCtx()

@@ -2,6 +2,8 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import { DOMErr } from './errors.js'
+
 
 class DynamicsCompressorNode extends AudioNode {
 
@@ -20,15 +22,31 @@ class DynamicsCompressorNode extends AudioNode {
   get release() { return this.#release }
   get reduction() { return this.#reduction }
 
-  constructor(context) {
-    super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#threshold = new AudioParam(this.context, -24, 'k')
-    this.#knee = new AudioParam(this.context, 30, 'k')
-    this.#ratio = new AudioParam(this.context, 12, 'k')
-    this.#attack = new AudioParam(this.context, 0.003, 'k')
-    this.#release = new AudioParam(this.context, 0.25, 'k')
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
+    super(context, 1, 1, 2, 'clamped-max', 'speakers')
+    this.#threshold = new AudioParam(this.context, Math.fround(options.threshold ?? -24), 'k', -100, 0)
+    this.#knee = new AudioParam(this.context, Math.fround(options.knee ?? 30), 'k', 0, 40)
+    this.#ratio = new AudioParam(this.context, Math.fround(options.ratio ?? 12), 'k', 1, 20)
+    this.#attack = new AudioParam(this.context, Math.fround(options.attack ?? 0.003), 'k', 0, 1)
+    this.#release = new AudioParam(this.context, Math.fround(options.release ?? 0.25), 'k', 0, 1)
+    // DynamicsCompressor params have fixed k-rate per spec
+    this.#threshold._fixedRate = true
+    this.#knee._fixedRate = true
+    this.#ratio._fixedRate = true
+    this.#attack._fixedRate = true
+    this.#release._fixedRate = true
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
+  }
+
+  _validateChannelCount(val) {
+    if (val > 2) throw DOMErr('channelCount cannot be greater than 2', 'NotSupportedError')
+  }
+
+  _validateChannelCountMode(val) {
+    if (val === 'max') throw DOMErr("channelCountMode cannot be 'max'", 'NotSupportedError')
   }
 
   _tick() {
@@ -48,9 +66,11 @@ class DynamicsCompressorNode extends AudioNode {
       this._outCh = ch
     }
 
-    let attackCoeff = Math.exp(-1 / (attack * sr))
-    let releaseCoeff = Math.exp(-1 / (release * sr))
+    let attackCoeff = attack > 0 ? Math.exp(-1 / (attack * sr)) : 0
+    let releaseCoeff = release > 0 ? Math.exp(-1 / (release * sr)) : 0
+    if (knee < 0) knee = 0
     let halfKnee = knee / 2
+    if (ratio <= 0) ratio = 1 // guard against divide-by-zero
     let env = this.#envelope
 
     for (let i = 0; i < BLOCK_SIZE; i++) {
@@ -72,7 +92,7 @@ class DynamicsCompressorNode extends AudioNode {
         gainReduction = 0
       } else if (overshoot >= halfKnee) {
         gainReduction = overshoot * (1 - 1 / ratio)
-      } else {
+      } else if (knee > 0) {
         // soft knee
         let x = overshoot + halfKnee
         gainReduction = (x * x) / (4 * knee) * (1 - 1 / ratio)

@@ -16,7 +16,7 @@ let untilTime = (p, ctx, until, fn) => {
   while (ctx.currentTime < until - 3 * Ts / 2) {
     let block = p._tick()
     fn(block, ctx.currentTime)
-    is(p.value, block[BLOCK_SIZE - 1])
+    almost(p.value, block[BLOCK_SIZE - 1], 1e-6)
     ctx.currentTime += Ts * BLOCK_SIZE
   }
 }
@@ -94,13 +94,14 @@ test.mute('AudioParam > linearRampToValueAtTime (k-rate)', () => {
   allEqual(block, 25)
 })
 
-test.mute('AudioParam > exponentialRampToValueAtTime > rejects non-positive values', () => {
+test.mute('AudioParam > exponentialRampToValueAtTime > rejects zero target', () => {
   let ctx = mkCtx()
   let p = new AudioParam(ctx, 15, 'a')
-  throws(() => p.exponentialRampToValueAtTime(-1, 9))
   throws(() => p.exponentialRampToValueAtTime(0, 1))
+  // negative targets are allowed per spec — only zero is forbidden
+  p.exponentialRampToValueAtTime(-1, 9) // should not throw
   p.value = -5
-  throws(() => p.exponentialRampToValueAtTime(10, 9))
+  p.exponentialRampToValueAtTime(10, 9) // should not throw
 })
 
 test.mute('AudioParam > exponentialRampToValueAtTime (a-rate)', () => {
@@ -168,13 +169,13 @@ test.mute('AudioParam > events sequence: setValue before ramp', () => {
 
 // --- Phase 0 issue tests ---
 
-test('Phase0 > AudioParam > returns reused Float32Array (no alloc per tick)', () => {
+test('Phase0 > AudioParam > returns reused typed array (no alloc per tick)', () => {
   let ctx = mkCtx()
   let p = new AudioParam(ctx, 1)
 
   let b1 = p._tick()
   let b2 = p._tick()
-  ok(b1 instanceof Float32Array, 'returns Float32Array directly')
+  ok(b1 instanceof Float64Array, 'returns Float64Array for precision')
   ok(b1 === b2, 'same array reused across ticks')
   is(b1.length, BLOCK_SIZE)
 })

@@ -9,11 +9,13 @@ class GainNode extends AudioNode {
 
   get gain() { return this.#gain }
 
-  constructor(context) {
+  constructor(context, options) {
+    options = AudioNode._checkOpts(options)
     super(context, 1, 1, undefined, 'max', 'speakers')
-    this.#gain = new AudioParam(this.context, 1, 'a')
+    this.#gain = new AudioParam(this.context, options.gain ?? 1, 'a')
     this._outBuf = null
     this._outCh = 0
+    this._applyOpts(options)
   }
 
   _tick() {
