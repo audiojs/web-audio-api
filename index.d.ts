@@ -19,14 +19,17 @@ export class AudioBuffer {
 
 export class AudioParam extends EventTarget {
   readonly defaultValue: number;
+  readonly minValue: number;
+  readonly maxValue: number;
+  automationRate: 'a-rate' | 'k-rate';
   value: number;
-  setValueAtTime(value: number, startTime: number): void;
-  linearRampToValueAtTime(value: number, endTime: number): void;
-  exponentialRampToValueAtTime(value: number, endTime: number): void;
-  setTargetAtTime(target: number, startTime: number, timeConstant: number): void;
-  setValueCurveAtTime(values: number[] | Float32Array, startTime: number, duration: number): void;
-  cancelScheduledValues(startTime: number): void;
-  cancelAndHoldAtTime(cancelTime: number): void;
+  setValueAtTime(value: number, startTime: number): AudioParam;
+  linearRampToValueAtTime(value: number, endTime: number): AudioParam;
+  exponentialRampToValueAtTime(value: number, endTime: number): AudioParam;
+  setTargetAtTime(target: number, startTime: number, timeConstant: number): AudioParam;
+  setValueCurveAtTime(values: number[] | Float32Array, startTime: number, duration: number): AudioParam;
+  cancelScheduledValues(startTime: number): AudioParam;
+  cancelAndHoldAtTime(cancelTime: number): AudioParam;
 }
 
 export class AudioNode extends EventTarget {
@@ -37,8 +40,11 @@ export class AudioNode extends EventTarget {
   channelCountMode: 'max' | 'clamped-max' | 'explicit';
   channelInterpretation: 'speakers' | 'discrete';
   connect(destination: AudioNode, output?: number, input?: number): AudioNode;
-  disconnect(output?: number): void;
+  connect(destination: AudioParam, output?: number): void;
+  disconnect(): void;
+  disconnect(output: number): void;
   disconnect(destination: AudioNode, output?: number, input?: number): void;
+  disconnect(destination: AudioParam, output?: number): void;
   [Symbol.dispose](): void;
 }
 
@@ -54,7 +60,7 @@ export class BaseAudioContext extends EventTarget {
   readonly sampleRate: number;
   readonly currentTime: number;
   readonly state: 'suspended' | 'running' | 'closed';
-  readonly audioWorklet: { addModule(setup: (scope: any) => void): Promise<void> };
+  readonly audioWorklet: { addModule(setup: string | ((scope: any) => void)): Promise<void> };
   onstatechange: ((event: Event) => void) | null;
   oncomplete: ((event: Event) => void) | null;
   createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
@@ -81,12 +87,19 @@ export class BaseAudioContext extends EventTarget {
 }
 
 export class AudioContext extends BaseAudioContext {
-  constructor(options?: { sampleRate?: number; numberOfChannels?: number; bitDepth?: number });
+  constructor(options?: { sampleRate?: number; numberOfChannels?: number; bitDepth?: number; latencyHint?: 'interactive' | 'balanced' | 'playback' | number; sinkId?: string | { type: 'none' } });
   readonly numberOfChannels: number;
   readonly baseLatency: number;
   readonly outputLatency: number;
+  readonly renderQuantumSize: number;
+  readonly sinkId: string | { type: string };
+  readonly playbackStats: { totalDuration: number; underrunDuration: number; underrunEvents: number; minimumLatency: number; maximumLatency: number; averageLatency: number };
+  readonly playoutStats: { totalFramesDuration: number; fallbackFramesDuration: number; fallbackFramesEvents: number; minimumLatency: number; maximumLatency: number; averageLatency: number };
   outStream: any;
   format: { numberOfChannels: number; bitDepth: number; sampleRate: number };
+  onsinkchange: ((event: Event) => void) | null;
+  getOutputTimestamp(): { contextTime: number; performanceTime: number };
+  setSinkId(sinkId: string | { type: 'none' }): Promise<void>;
   suspend(): Promise<void>;
   resume(): Promise<void>;
   close(): Promise<void>;
@@ -95,9 +108,14 @@ export class AudioContext extends BaseAudioContext {
 
 export class OfflineAudioContext extends BaseAudioContext {
   constructor(numberOfChannels: number, length: number, sampleRate: number);
+  constructor(options: { numberOfChannels?: number; length: number; sampleRate: number });
   readonly length: number;
+  readonly renderQuantumSize: number;
   readonly renderedBuffer: AudioBuffer | null;
+  oncomplete: ((event: Event & { renderedBuffer: AudioBuffer }) => void) | null;
   startRendering(): Promise<AudioBuffer>;
+  suspend(suspendTime: number): Promise<void>;
+  resume(): Promise<void>;
 }
 
 export class AudioDestinationNode extends AudioNode {
@@ -110,6 +128,7 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
   loopStart: number;
   loopEnd: number;
   readonly playbackRate: AudioParam;
+  readonly detune: AudioParam;
   start(when?: number, offset?: number, duration?: number): void;
 }
 
@@ -125,6 +144,7 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 }
 
 export class PeriodicWave {
+  constructor(context: BaseAudioContext, options?: { real?: Float32Array; imag?: Float32Array; disableNormalization?: boolean });
   constructor(real: Float32Array, imag: Float32Array, constraints?: { disableNormalization?: boolean });
 }
 
@@ -137,7 +157,7 @@ export class StereoPannerNode extends AudioNode {
 }
 
 export class DelayNode extends AudioNode {
-  constructor(context: BaseAudioContext, options?: { maxDelayTime?: number });
+  constructor(context: BaseAudioContext, options?: { maxDelayTime?: number; delayTime?: number });
   readonly delayTime: AudioParam;
   readonly maxDelayTime: number;
 }
@@ -195,6 +215,12 @@ export class ScriptProcessorNode extends AudioNode {
 }
 
 export class PannerNode extends AudioNode {
+  readonly positionX: AudioParam;
+  readonly positionY: AudioParam;
+  readonly positionZ: AudioParam;
+  readonly orientationX: AudioParam;
+  readonly orientationY: AudioParam;
+  readonly orientationZ: AudioParam;
   distanceModel: 'inverse' | 'linear' | 'exponential';
   panningModel: 'equalpower' | 'HRTF';
   refDistance: number;
@@ -208,6 +234,15 @@ export class PannerNode extends AudioNode {
 }
 
 export class AudioListener {
+  readonly positionX: AudioParam;
+  readonly positionY: AudioParam;
+  readonly positionZ: AudioParam;
+  readonly forwardX: AudioParam;
+  readonly forwardY: AudioParam;
+  readonly forwardZ: AudioParam;
+  readonly upX: AudioParam;
+  readonly upY: AudioParam;
+  readonly upZ: AudioParam;
   setPosition(x: number, y: number, z: number): void;
   setOrientation(x: number, y: number, z: number, xUp: number, yUp: number, zUp: number): void;
 }
@@ -215,20 +250,26 @@ export class AudioListener {
 export class AudioWorkletNode extends AudioNode {
   readonly port: MessagePort;
   readonly parameters: Map<string, AudioParam>;
+  onprocessorerror: ((event: Event) => void) | null;
 }
 
 export class AudioWorkletProcessor {
   readonly port: MessagePort | null;
   process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean;
-  static get parameterDescriptors(): Array<{ name: string; defaultValue?: number; automationRate?: 'a-rate' | 'k-rate' }>;
+  static get parameterDescriptors(): Array<{ name: string; defaultValue?: number; minValue?: number; maxValue?: number; automationRate?: 'a-rate' | 'k-rate' }>;
 }
 
 export class MediaStreamAudioSourceNode extends AudioNode {
+  readonly mediaStream: any;
   pushData(channelData: Float32Array | Float32Array[]): void;
 }
 
 export class MediaStreamAudioDestinationNode extends AudioNode {
   readonly stream: { read(): Float32Array[] | null; readonly readable: boolean };
+}
+
+export class MediaElementAudioSourceNode extends AudioNode {
+  readonly mediaElement: any;
 }
 
 // Error types

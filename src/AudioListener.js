@@ -38,7 +38,6 @@ class AudioListener {
     this.#upY = new AudioParam(context, 1, 'a')
     this.#upZ = new AudioParam(context, 0, 'a')
 
-    this._velocity = new FloatPoint3D(0, 0, 0)
   }
 
   get position() {
@@ -74,13 +73,6 @@ class AudioListener {
     }
   }
 
-  get velocity() { return this._velocity }
-
-  /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} z
-   */
   setPosition(x, y, z) {
     if (!(isFinite(Math.fround(x)) && isFinite(Math.fround(y)) && isFinite(Math.fround(z))))
       throw new TypeError('The provided float value is non-finite.')

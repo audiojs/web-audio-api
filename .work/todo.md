@@ -1,5 +1,22 @@
 # web-audio-api — roadmap
 
+## [ ] Cleanup v1
+
+- [x] Delete `.travis.yml` — dead CI config from 0.x era (Node 4-7), replaced by GitHub Actions
+- [x] Complete `index.d.ts` — OfflineAudioContext suspend/resume, AudioContext setSinkId/getOutputTimestamp/sinkId/stats/renderQuantumSize, AudioListener/PannerNode AudioParam getters, AudioParam automationRate/minValue/maxValue, MediaStreamAudioSourceNode.mediaStream, OfflineAudioContext options dict, PeriodicWave spec constructor, MediaElementAudioSourceNode, AudioWorkletNode.onprocessorerror
+- [x] Add project AGENTS.md — test commands, WPT invariant, float precision rules, rendering contract, cycle detection flow
+- [x] Delete dead `FloatPoint3D` methods — `cross()`, `add()`, `sub()`, `mul()`, `toArray()`, `normSquared()`; inlined `distanceTo()` math; also deleted unused allocating `sub()` by fixing ConeEffect
+- [x] Delete dead velocity — `PannerNode.setVelocity()`, `PannerNode._velocity`, `AudioListener._velocity`, `AudioListener.velocity` getter
+- [x] Inline `PannerProvider` into `PannerNode` — deleted PannerProvider.js, moved panningModel enum validation into PannerNode
+- [x] Fix `ConeEffect.gain()` allocation — accepts scratch FloatPoint3D param, PannerNode passes `_s7`
+- [x] Add `"sideEffects": false` to `package.json`
+- [x] `AudioWorklet.addModule` `with` statement — documented why `with` is required (live currentTime/currentFrame getters) and why alternatives are worse
+- [x] `ScriptProcessorNode.onaudioprocess` — documented _tick replacement pattern and why it exists
+- [x] `index.js` `makeEnumerable` loop — added comment explaining which classes need it and when to add new ones
+- [x] `AudioContext._renderLoop` error handling — documented silent stop behavior
+- [ ] Fix `AudioParam.#getValue` upstream — move exponential ramp opposite-sign fix into `automation-events` instead of wrapping in AudioParam
+- [ ] Fix `cancelAndHoldAtTime` upstream — precision truncation fix (60 lines) compensates for `automation-events` float32 resampling; fix in library, remove workaround
+
 ## Next up
 
 - [ ] Examples (`examples/` directory)
@@ -56,6 +73,8 @@ examples/
 ## Modularization
 
 Extractable standalone modules (each useful outside Web Audio API):
+
+- [ ] Consider inlining `automation-events` — brings `@babel/runtime` + `tslib` (runtime polyfills for Node 18+ target); the most complex AudioParam code is workarounds for this library; ~200 lines to inline
 
 - [ ] **biquad-coefficients** — Audio EQ Cookbook. `coefficients(type, freq, sr, Q, gain) → {b0,b1,b2,a1,a2}`. ~100 lines, zero deps.
 - [ ] **pcm-encode** — DataView-based PCM encoding. `encode(channels, format) → Uint8Array`. ~40 lines, zero deps.

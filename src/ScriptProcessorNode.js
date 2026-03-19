@@ -18,6 +18,10 @@ class ScriptProcessorNode extends AudioNode {
     this.#bufferSize = bufferSize
   }
 
+  // NOTE: This setter replaces _tick() at runtime — the only place in the codebase
+  // where the rendering method is dynamically swapped. This is intentional: SPN needs
+  // to buffer input across multiple quanta before firing onaudioprocess, which requires
+  // closure state. SPN is deprecated (W3C spec), so this pattern won't spread.
   set onaudioprocess(onaudioprocess) {
     let inputBuffer = null
     let outputBuffer = null

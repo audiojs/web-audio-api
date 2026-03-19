@@ -29,8 +29,10 @@ export { default as AudioListener } from './src/AudioListener.js'
 export { BLOCK_SIZE } from './src/constants.js'
 export { InvalidStateError, NotSupportedError, IndexSizeError, InvalidAccessError, EncodingError } from './src/errors.js'
 
-// Make AudioParam accessor properties enumerable on prototypes (Web IDL compliance)
-// Browsers expose these as enumerable; ES6 class getters are non-enumerable by default.
+// Make AudioParam accessor properties enumerable on prototypes (Web IDL compliance).
+// Browsers expose AudioParam-backed getters (e.g. gain, frequency, pan) as enumerable;
+// ES6 class getters are non-enumerable by default. Only classes with AudioParam getters
+// need this — add new classes here when they expose AudioParam properties.
 import AudioParam from './src/AudioParam.js'
 import GainNode from './src/GainNode.js'
 import StereoPannerNode from './src/StereoPannerNode.js'

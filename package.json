@@ -8,6 +8,7 @@
   ],
   "repository": "audiojs/web-audio-api",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./index.js",
     "./polyfill": "./polyfill.js"

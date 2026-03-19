@@ -233,6 +233,8 @@ class AudioContext extends BaseAudioContext {
       if (ok || !this.outStream.once) setTimeout(() => this._renderLoop(), 0)
       else this.outStream.once('drain', () => this._renderLoop())
     } catch (e) {
+      // Render loop stops on error. The error is dispatched as an 'error' event per spec.
+      // Users must listen for 'error' on the context — without a listener, audio stops silently.
       this.#loopRunning = false
       if (e) { let ev = new Event('error'); ev.error = e; this.dispatchEvent(ev) }
     }

@@ -25,11 +25,11 @@ class ConeEffect {
     this.#outerGain = v
   }
 
-  gain(sourcePosition, sourceOrientation, listenerPosition) {
+  gain(sourcePosition, sourceOrientation, listenerPosition, scratch) {
     if (sourceOrientation.isZero() || (this.#innerAngle === 360 && this.#outerAngle === 360))
       return 1 // no cone — unity gain
 
-    let sourceToListener = listenerPosition.sub(sourcePosition)
+    let sourceToListener = scratch.setFrom(listenerPosition).subFrom(sourcePosition)
     let absAngle = Math.abs(mathUtils.rad2deg(sourceToListener.angleBetween(sourceOrientation)))
     let absInner = Math.abs(this.#innerAngle) / 2
     let absOuter = Math.abs(this.#outerAngle) / 2

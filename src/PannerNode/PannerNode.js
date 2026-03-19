@@ -5,9 +5,10 @@ import { BLOCK_SIZE } from '../constants.js'
 import FloatPoint3D from '../FloatPoint3D.js'
 import DistanceEffect from './DistanceEffect.js'
 import ConeEffect from './ConeEffect.js'
-import PannerProvider from './PannerProvider.js'
 import * as mathUtils from '../mathUtils.js'
 import { DOMErr } from '../errors.js'
+
+const PANNING_MODELS = { equalpower: 'equalpower', HRTF: 'HRTF' }
 
 class PannerNode extends AudioNode {
 
@@ -17,6 +18,7 @@ class PannerNode extends AudioNode {
   #orientationX
   #orientationY
   #orientationZ
+  #panningModel = 'equalpower'
 
   get positionX() { return this.#positionX }
   get positionY() { return this.#positionY }
@@ -31,14 +33,13 @@ class PannerNode extends AudioNode {
 
     this._listener = context.listener
     this._distanceEffect = new DistanceEffect()
-    this._pannerProvider = new PannerProvider(context)
     this._coneEffect = new ConeEffect()
-    this._velocity = new FloatPoint3D(1, 0, 0)
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
 
     // Pre-allocate scratch FloatPoint3D instances to avoid per-sample allocations.
     // _s0/_s1: reused as pos/orient in the per-sample loop.
     // _s2.._s6: used inside _calculateAzimuthElevation.
+    // _s7: used by ConeEffect.gain() for sourceToListener computation.
     this._s0 = new FloatPoint3D()
     this._s1 = new FloatPoint3D()
     this._s2 = new FloatPoint3D()
@@ -46,6 +47,7 @@ class PannerNode extends AudioNode {
     this._s4 = new FloatPoint3D()
     this._s5 = new FloatPoint3D()
     this._s6 = new FloatPoint3D()
+    this._s7 = new FloatPoint3D()
 
     this.#positionX = new AudioParam(this.context, options.positionX ?? 0, 'a')
     this.#positionY = new AudioParam(this.context, options.positionY ?? 0, 'a')
@@ -85,8 +87,11 @@ class PannerNode extends AudioNode {
   get distanceModel() { return this._distanceEffect.model }
   set distanceModel(val) { this._distanceEffect.setModel(val, true) }
 
-  get panningModel() { return this._pannerProvider.panningModel }
-  set panningModel(val) { this._pannerProvider.panningModel = val }
+  get panningModel() { return this.#panningModel }
+  set panningModel(val) {
+    if (!PANNING_MODELS[val]) return // WebIDL: silently ignore invalid enum values
+    this.#panningModel = val
+  }
 
   get refDistance() { return this._distanceEffect.refDistance }
   set refDistance(val) { this._distanceEffect.refDistance = val }
@@ -126,14 +131,6 @@ class PannerNode extends AudioNode {
     this.#positionX.value = x
     this.#positionY.value = y
     this.#positionZ.value = z
-  }
-
-  setVelocity(x, y, z) {
-    if (arguments.length !== 3)
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode': 3 arguments required, but only ${arguments.length} present.`)
-    if (!(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)))
-      throw new TypeError(`Failed to execute 'setVelocity' on 'PannerNode': The provided float value is non-finite.`)
-    this._velocity = new FloatPoint3D(x, y, z)
   }
 
   // --- DSP ---
@@ -203,7 +200,7 @@ class PannerNode extends AudioNode {
 
       // Distance and cone gain (applied after panning, matching spec ordering)
       let dist = pos.distanceTo(listenerPos)
-      let totalGain = Math.fround(this._distanceEffect.gain(dist) * this._coneEffect.gain(pos, orient, listenerPos))
+      let totalGain = Math.fround(this._distanceEffect.gain(dist) * this._coneEffect.gain(pos, orient, listenerPos, this._s7))
       outL[i] *= totalGain
       outR[i] *= totalGain
     }
@@ -215,12 +212,6 @@ class PannerNode extends AudioNode {
     return this._outBuf
   }
 
-  /**
-   * Compute equal-power panning gains from azimuth.
-   * @param {number} azimuth - in degrees, [-180, 180]
-   * @param {number} numChannels - number of input channels (1 or 2)
-   * @returns {{ gainL: number, gainR: number }}
-   */
   _equalPowerGains(azimuth, numChannels) {
     azimuth = mathUtils.clampTo(azimuth, -180.0, 180.0)
 

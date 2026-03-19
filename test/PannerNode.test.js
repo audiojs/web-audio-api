@@ -7,7 +7,6 @@ import AudioContext from '../src/AudioContext.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 import DistanceEffect from '../src/PannerNode/DistanceEffect.js'
 import ConeEffect from '../src/PannerNode/ConeEffect.js'
-import PannerProvider from '../src/PannerNode/PannerProvider.js'
 import FloatPoint3D from '../src/FloatPoint3D.js'
 import { allAlmost } from './helpers.js'
 
@@ -42,32 +41,37 @@ test('ConeEffect > gain within inner cone is 1', () => {
   c.outerAngle = 180
   c.outerGain = 0
   // source at origin looking at listener — listener directly in front
+  let scratch = new FloatPoint3D()
   let g = c.gain(
     new FloatPoint3D(0, 0, 0),
     new FloatPoint3D(0, 0, 1),
-    new FloatPoint3D(0, 0, 5)
+    new FloatPoint3D(0, 0, 5),
+    scratch
   )
   almost(g, 1, 1e-6)
 })
 
-// --- PannerProvider ---
+// --- PannerNode panningModel ---
 
-test('PannerProvider > validates equalpower model', () => {
-  let pp = new PannerProvider(new AudioContext())
-  pp.panningModel = 'equalpower'
-  is(pp.panningModel, 'equalpower')
+test('PannerNode > panningModel validates equalpower', () => {
+  let ctx = new AudioContext()
+  let p = new PannerNode(ctx)
+  p.panningModel = 'equalpower'
+  is(p.panningModel, 'equalpower')
 })
 
-test('PannerProvider > accepts HRTF model', () => {
-  let pp = new PannerProvider(new AudioContext())
-  pp.panningModel = 'HRTF'
-  is(pp.panningModel, 'HRTF')
+test('PannerNode > panningModel accepts HRTF', () => {
+  let ctx = new AudioContext()
+  let p = new PannerNode(ctx)
+  p.panningModel = 'HRTF'
+  is(p.panningModel, 'HRTF')
 })
 
-test('PannerProvider > ignores invalid model', () => {
-  let pp = new PannerProvider(new AudioContext())
-  pp.panningModel = 'invalid'
-  is(pp.panningModel, 'equalpower')
+test('PannerNode > panningModel ignores invalid', () => {
+  let ctx = new AudioContext()
+  let p = new PannerNode(ctx)
+  p.panningModel = 'invalid'
+  is(p.panningModel, 'equalpower')
 })
 
 // --- PannerNode ---

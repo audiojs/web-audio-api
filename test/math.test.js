@@ -30,7 +30,6 @@ test('FloatPoint3D > constructor and properties', () => {
   is(p.x, 1)
   is(p.y, 2)
   is(p.z, 3)
-  is(p.toArray(), [1, 2, 3])
 })
 
 test('FloatPoint3D > defaults to zero', () => {
@@ -45,9 +44,8 @@ test('FloatPoint3D > isZero', () => {
   is(new FloatPoint3D(1, 0, 0).isZero(), false)
 })
 
-test('FloatPoint3D > norm and normSquared', () => {
+test('FloatPoint3D > norm', () => {
   let p = new FloatPoint3D(3, 4, 0)
-  is(p.normSquared(), 25)
   is(p.norm(), 5)
 })
 
@@ -64,27 +62,31 @@ test('FloatPoint3D > dot product', () => {
   is(a.dot(b), 32) // 4+10+18
 })
 
-test('FloatPoint3D > cross product', () => {
+test('FloatPoint3D > crossInto', () => {
   let a = new FloatPoint3D(1, 0, 0)
   let b = new FloatPoint3D(0, 1, 0)
-  let c = a.cross(b)
-  is(c.x, 0)
-  is(c.y, 0)
-  is(c.z, 1)
+  let out = new FloatPoint3D()
+  a.crossInto(b, out)
+  is(out.x, 0)
+  is(out.y, 0)
+  is(out.z, 1)
 })
 
-test('FloatPoint3D > add/sub/mul', () => {
+test('FloatPoint3D > setFrom/subFrom/mulSelf', () => {
   let a = new FloatPoint3D(1, 2, 3)
   let b = new FloatPoint3D(4, 5, 6)
 
-  let s = a.add(b)
-  is(s.toArray(), [5, 7, 9])
+  let r = new FloatPoint3D()
+  r.setFrom(a).subFrom(b)
+  is(r.x, -3)
+  is(r.y, -3)
+  is(r.z, -3)
 
-  let d = a.sub(b)
-  is(d.toArray(), [-3, -3, -3])
-
-  let m = a.mul(2)
-  is(m.toArray(), [2, 4, 6])
+  let m = new FloatPoint3D(1, 2, 3)
+  m.mulSelf(2)
+  is(m.x, 2)
+  is(m.y, 4)
+  is(m.z, 6)
 })
 
 test('FloatPoint3D > distanceTo', () => {

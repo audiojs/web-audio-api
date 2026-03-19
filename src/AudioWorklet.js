@@ -326,7 +326,11 @@ class AudioWorklet {
       port: scope.port,
       _ctx: ctx,
     }
-    // Strip 'use strict' from code so we can use `with`
+    // `with` is required here: the spec mandates that currentTime/currentFrame are live
+    // values in the AudioWorkletGlobalScope, accessible as bare identifiers in processor
+    // code. Only `with` + getter-backed scope object achieves this without polluting
+    // globalThis. We strip 'use strict' because `with` is forbidden in strict mode.
+    // This is safe: processor code runs in an isolated Function scope, not the module scope.
     let cleanCode = code.replace(/^(['"])use strict\1;?\s*/gm, '')
     let names = Object.keys(args)
     // Wrap with a scope proxy so currentTime/currentFrame are live
