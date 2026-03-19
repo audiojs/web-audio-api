@@ -79,14 +79,10 @@ test('gain halves amplitude', async () => {
 | Implementation | Portable | Conformance | Runtimes | Status |
 |---|---|---|---|---|
 | **web-audio-api** | Yes | 100% WPT | Node/Deno/Bun/edge/serverless | active |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) (ircam) | No (native addon) | ~75% WPT | Node only | active |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) (orottier) | No (Rust binary) | WPT tracked | Rust/WASM | active |
-| [web-audio-engine](https://github.com/nicol-ograve/web-audio-engine) (mohayonao) | Yes | minimal | Node | archived 2019 |
-| [standardized-audio-context](https://github.com/nicol-ograve/standardized-audio-context) (chrisguttandin) | Browser only | browser-native | browser polyfill | active |
-
-**Use this** for servers, CLI tools, CI testing, serverless, edge, Deno, Bun — anywhere native addons can't go.
-
-**Use `node-web-audio-api`** for sustained heavy real-time DSP workloads on Node.js.
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No (native addon) | ~75% WPT | Node only | active |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No (Rust binary) | WPT tracked | Rust/WASM | active |
+| [web-audio-engine](https://github.com/nicol-ograve/web-audio-engine)| Yes | minimal | Node | archived 2019 |
+| [standardized-audio-context](https://github.com/nicol-ograve/standardized-audio-context) | Browser only | browser-native | browser polyfill | active |
 
 ## Architecture
 
