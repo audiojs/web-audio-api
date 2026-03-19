@@ -544,6 +544,11 @@ async function runTest(filePath) {
 
   let ctx = vm.createContext(sandbox)
 
+  // Restore vm-internal Array/Object so instanceof checks work for literals
+  // created inside the sandbox (vm literals use vm-internal constructors,
+  // which differ from outer-realm constructors set on the sandbox)
+  sandbox.Array = vm.runInContext('[].constructor', ctx)
+
   try {
     // Run testharness.js
     vm.runInContext(testharnessCode, ctx, { filename: 'testharness.js' })

@@ -181,11 +181,20 @@ class AudioWorkletNode extends AudioNode {
       if (this._inputs[i].sources.length === 0) {
         inputs.push(Object.freeze([]))
       } else {
+        // Check ended state BEFORE ticking, since ticking may set _ended
+        // during the source's last active quantum (should still report channels)
+        let sources = this._inputs[i].sources
+        let allEndedBefore = sources.every(s => s.node && s.node._ended)
         let buf = this._inputs[i]._tick()
-        let chArrays = []
-        for (let ch = 0; ch < buf.numberOfChannels; ch++)
-          chArrays.push(buf.getChannelData(ch))
-        inputs.push(Object.freeze(chArrays))
+        if (allEndedBefore) {
+          // All sources already ended — report zero channels per spec
+          inputs.push(Object.freeze([]))
+        } else {
+          let chArrays = []
+          for (let ch = 0; ch < buf.numberOfChannels; ch++)
+            chArrays.push(buf.getChannelData(ch))
+          inputs.push(Object.freeze(chArrays))
+        }
       }
     }
     Object.freeze(inputs)
@@ -196,6 +205,7 @@ class AudioWorkletNode extends AudioNode {
       if (this._outBufs[0].numberOfChannels !== inCh)
         this._outBufs[0] = new AudioBuffer(inCh, BLOCK_SIZE, this.context.sampleRate)
     }
+    outBuf = this._outBufs[0] || null
 
     // prepare outputs (zeroed)
     let outputs = []

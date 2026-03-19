@@ -175,6 +175,22 @@ class ConvolverNode extends AudioNode {
           fresh.pairStates[i].inputFFTs[s].im.set(existing[i].inputFFTs[s].im)
         }
       }
+      // For 1-ch IR growing from fewer to more pairs in speakers mode:
+      // copy mono pair state to new pairs. When mono is upmixed to stereo
+      // (speakers interpretation), the mono tail appears in all channels.
+      // In discrete mode, upmixed channels are zero — no tail copy needed.
+      if (irCh === 1 && this.channelInterpretation === 'speakers'
+          && existing.length < fresh.pairStates.length && existing.length > 0) {
+        let src = fresh.pairStates[0]
+        for (let i = existing.length; i < fresh.pairStates.length; i++) {
+          fresh.pairStates[i].tail.set(src.tail)
+          fresh.pairStates[i].inputPos = src.inputPos
+          for (let s = 0; s < src.inputFFTs.length; s++) {
+            fresh.pairStates[i].inputFFTs[s].re.set(src.inputFFTs[s].re)
+            fresh.pairStates[i].inputFFTs[s].im.set(src.inputFFTs[s].im)
+          }
+        }
+      }
       this.#convState = fresh
     }
 
