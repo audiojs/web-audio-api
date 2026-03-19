@@ -90,6 +90,55 @@ test('gain halves amplitude', async () => {
 - **`outStream`** — the only API surface outside the W3C spec. It's the bridge to audio output (speaker, stdout, stream). Browsers handle this internally.
 - **AudioWorklet threading** — runs synchronously on the main thread. Browsers use a separate audio thread. Functionally identical, but no thread isolation.
 
+## FAQ
+
+**How do I close/dispose an AudioContext?**
+
+```js
+await ctx.close() // stops rendering, releases resources
+```
+
+Or use [explicit resource management](https://github.com/nicol-ograve/proposal-explicit-resource-management):
+
+```js
+using ctx = new AudioContext() // auto-disposes when scope exits
+```
+
+**Why does AudioContext start suspended?**
+
+Per the [W3C spec](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audiocontext). Browsers require user activation before audio can play. Call `await ctx.resume()` to start, or use `OfflineAudioContext` which doesn't need it.
+
+**Does it work with Tone.js?**
+
+Yes. Pass the context:
+
+```js
+import { AudioContext } from 'web-audio-api'
+import * as Tone from 'tone'
+Tone.setContext(new AudioContext())
+```
+
+**How do I decode audio files?**
+
+```js
+import { readFileSync } from 'node:fs'
+const ctx = new OfflineAudioContext(2, 1, 44100)
+const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
+// buffer.numberOfChannels, buffer.sampleRate, buffer.getChannelData(0)
+```
+
+Supports WAV, MP3, FLAC, OGG, AAC, and [more](https://github.com/nicol-ograve/audio-decode).
+
+**Can I use it as a browser polyfill?**
+
+```js
+import 'web-audio-api/polyfill' // registers AudioContext, OfflineAudioContext, etc. as globals
+```
+
+**What about performance?**
+
+All nodes run faster than real-time on a single thread. Benchmark: `npm run bench`. For heavy real-time workloads (many convolvers/panners), consider [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) which uses Rust.
+
 ## Architecture
 
 Pull-based audio graph. `AudioDestinationNode` pulls upstream via `_tick()`, 128-sample render quanta per the spec. DSP kernels separated from graph plumbing for future WASM swap.

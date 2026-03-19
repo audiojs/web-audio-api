@@ -54,7 +54,7 @@ We need to reframe value proposition into something more reliable, like fixing t
 - [x] #9 Handle setting .value properly — done (AudioParam spec-compliant)
 
 ### Still relevant
-- [ ] #94 How to clear AudioContext?
+- [x] #94 How to clear AudioContext?
   Answer: `await ctx.close()` closes and releases. `using ctx = new AudioContext()` auto-disposes.
   Action: close with answer, add to README FAQ.
 - [ ] #88 OfflineAudioContext for Tone.js
