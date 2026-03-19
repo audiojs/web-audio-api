@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "1.0.0",
+  "version": "0.2.1",
   "description": "Portable Web Audio API",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
