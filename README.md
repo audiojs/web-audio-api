@@ -73,15 +73,12 @@ test('gain halves amplitude', async () => {
 ```
 
 
-## Alternatives
+## See also
 
-| Implementation | Portable | Conformance | Runtimes | Status |
-|---|---|---|---|---|
-| **web-audio-api** | Yes | 100% WPT | Node/Deno/Bun/edge/serverless | active |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No (native addon) | ~75% WPT | Node only | active |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No (Rust binary) | WPT tracked | Rust/WASM | active |
-| [web-audio-engine](https://github.com/mohayonao/web-audio-engine) | Yes | minimal | Node | archived 2019 |
-| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | Browser only | browser-native | browser polyfill | active |
+- [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) — Rust-backed, native performance, Node.js only
+- [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) — full Rust implementation, also compiles to WASM
+- [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) — browser polyfill normalizing cross-browser differences
+- [web-audio-engine](https://github.com/mohayonao/web-audio-engine) — earlier pure-JS effort (archived 2019), inspiration for this project
 
 ## Limitations
 
