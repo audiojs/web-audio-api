@@ -73,7 +73,6 @@ test('gain halves amplitude', async () => {
 ```
 
 
-
 ## Alternatives
 
 | Implementation | Portable | Conformance | Runtimes | Status |
@@ -81,8 +80,8 @@ test('gain halves amplitude', async () => {
 | **web-audio-api** | Yes | 100% WPT | Node/Deno/Bun/edge/serverless | active |
 | [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No (native addon) | ~75% WPT | Node only | active |
 | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No (Rust binary) | WPT tracked | Rust/WASM | active |
-| [web-audio-engine](https://github.com/nicol-ograve/web-audio-engine)| Yes | minimal | Node | archived 2019 |
-| [standardized-audio-context](https://github.com/nicol-ograve/standardized-audio-context) | Browser only | browser-native | browser polyfill | active |
+| [web-audio-engine](https://github.com/mohayonao/web-audio-engine) | Yes | minimal | Node | archived 2019 |
+| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | Browser only | browser-native | browser polyfill | active |
 
 ## Limitations
 
@@ -92,52 +91,59 @@ test('gain halves amplitude', async () => {
 
 ## FAQ
 
-**How do I close/dispose an AudioContext?**
+<dl>
+
+<dt>How do I close/dispose an AudioContext?</dt>
+<dd>
 
 ```js
 await ctx.close() // stops rendering, releases resources
 ```
+Or with [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management): `using ctx = new AudioContext()`
+</dd>
 
-Or use [explicit resource management](https://github.com/nicol-ograve/proposal-explicit-resource-management):
-
-```js
-using ctx = new AudioContext() // auto-disposes when scope exits
-```
-
-**Why does AudioContext start suspended?**
+<dt>Why does AudioContext start suspended?</dt>
+<dd>
 
 Per the [W3C spec](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audiocontext). Browsers require user activation before audio can play. Call `await ctx.resume()` to start, or use `OfflineAudioContext` which doesn't need it.
+</dd>
 
-**Does it work with Tone.js?**
-
-Yes. Pass the context:
+<dt>Does it work with Tone.js?</dt>
+<dd>
 
 ```js
 import { AudioContext } from 'web-audio-api'
 import * as Tone from 'tone'
 Tone.setContext(new AudioContext())
 ```
+</dd>
 
-**How do I decode audio files?**
+<dt>How do I decode audio files?</dt>
+<dd>
 
 ```js
 import { readFileSync } from 'node:fs'
 const ctx = new OfflineAudioContext(2, 1, 44100)
 const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
-// buffer.numberOfChannels, buffer.sampleRate, buffer.getChannelData(0)
 ```
+Supports WAV, MP3, FLAC, OGG, AAC, and [more](https://github.com/audiojs/audio-decode).
+</dd>
 
-Supports WAV, MP3, FLAC, OGG, AAC, and [more](https://github.com/nicol-ograve/audio-decode).
-
-**Can I use it as a browser polyfill?**
+<dt>Can I use it as a browser polyfill?</dt>
+<dd>
 
 ```js
 import 'web-audio-api/polyfill' // registers AudioContext, OfflineAudioContext, etc. as globals
 ```
+</dd>
 
-**What about performance?**
+<dt>What about performance?</dt>
+<dd>
 
-All nodes run faster than real-time on a single thread. Benchmark: `npm run bench`. For heavy real-time workloads (many convolvers/panners), consider [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) which uses Rust.
+All nodes run faster than real-time on a single thread (`npm run bench`). For heavy real-time workloads (many convolvers/panners), consider [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) which uses Rust.
+</dd>
+
+</dl>
 
 ## Architecture
 
