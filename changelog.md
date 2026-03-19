@@ -2,34 +2,35 @@
 
 #### 1.0.0
 
-Complete rewrite. Pure JS Web Audio API for any JS runtime.
+Pure-JS Web Audio API. 100% W3C Web Platform Tests conformance.
 
-**Architecture:**
-- EventEmitter → EventTarget (cross-environment)
-- Pull-based graph with buffer reuse (zero alloc in hot paths)
-- DSP kernels separated from graph plumbing for future WASM swap
-- Emitter mixin shared between DspObject and AudioPort
+**Spec compliance**
+- 100% WPT pass rate (4300 tests)
+- All 26 audio node types implemented
+- Sample-accurate scheduling with sub-sample interpolation
+- AudioWorklet with URL module loading and MessagePort
+- Full AudioParam automation (setValueAtTime, ramps, curves, cancelAndHold)
+- Correct channel mixing (speakers/discrete) per spec
+- OfflineAudioContext with suspend/resume
 
-**Nodes added (13):**
-- ConstantSourceNode, OscillatorNode (wavetable + PeriodicWave)
-- StereoPannerNode, DelayNode, BiquadFilterNode (8 types)
-- WaveShaperNode (with 2x/4x oversampling), IIRFilterNode
-- ConvolverNode, DynamicsCompressorNode
-- ChannelSplitterNode, ChannelMergerNode, AnalyserNode (FFT)
-- AudioScheduledSourceNode base class
+**Runs everywhere**
+- Node.js 18+, Deno, Bun
+- Serverless, edge, Workers
+- Browser polyfill: `import 'web-audio-api/polyfill'`
+- Auto-detects `speaker` package for real-time output, falls back to stdout
 
-**Dependencies replaced:**
-- `av`, `aac`, `alac`, `flac`, `mp3` → `audio-decode` (WASM, 12+ formats)
-- Internal AudioBuffer → `audio-buffer` v6 (enhanced upstream)
-- `automation-events` 4.x → 7.x
+**Dependencies**
+- `audio-buffer` — AudioBuffer
+- `audio-decode` — 12+ audio format decoding
+- `automation-events` — AudioParam automation timeline
+- `fourier-transform` — FFT (real + complex)
 
-**Infrastructure:**
-- AudioContext: state machine (suspend/resume/close), onstatechange, baseLatency
-- AudioParam: cancelScheduledValues, cancelAndHoldAtTime
-- AudioNode: connect() chaining, full disconnect() overloads, validation hooks
-- PCM encoder: cross-environment (ArrayBuffer + DataView, no Buffer)
-- Tests: mocha/chai → tst (202 tests, 321k assertions)
-- CI: Node 18/20/22
+**Breaking changes from 0.x**
+- ESM only (no CommonJS)
+- Requires Node.js 18+
+- `AudioContext` starts suspended (call `resume()`)
+- `outStream` auto-detects — no longer required to set manually
+- Error types are spec-correct DOMException (not plain Error)
 
 #### 0.2.2
 

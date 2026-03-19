@@ -29,7 +29,7 @@ If [`speaker`](https://npmjs.com/speaker) is installed, audio plays automaticall
 import { AudioContext } from 'web-audio-api'
 
 const ctx = new AudioContext()
-await ctx.resume()
+await ctx.resume() // per W3C spec, AudioContext starts suspended
 
 const osc = ctx.createOscillator()
 osc.connect(ctx.destination)
@@ -83,6 +83,12 @@ test('gain halves amplitude', async () => {
 | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No (Rust binary) | WPT tracked | Rust/WASM | active |
 | [web-audio-engine](https://github.com/nicol-ograve/web-audio-engine)| Yes | minimal | Node | archived 2019 |
 | [standardized-audio-context](https://github.com/nicol-ograve/standardized-audio-context) | Browser only | browser-native | browser polyfill | active |
+
+## Limitations
+
+- **Performance** — pure JS is fast for most use cases but won't match native implementations for sustained heavy real-time DSP (dozens of simultaneous convolver/panner nodes). WASM kernels are planned.
+- **`outStream`** — the only API surface outside the W3C spec. It's the bridge to audio output (speaker, stdout, stream). Browsers handle this internally.
+- **AudioWorklet threading** — runs synchronously on the main thread. Browsers use a separate audio thread. Functionally identical, but no thread isolation.
 
 ## Architecture
 
