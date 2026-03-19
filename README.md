@@ -1,6 +1,6 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JS environment. **100% [WPT](https://web-platform-tests.org/) conformance**.
+Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JS environment. 100% [WPT](https://web-platform-tests.org/) conformance.
 
 ```
 npm install web-audio-api
