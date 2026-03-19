@@ -118,7 +118,11 @@ class AudioContext extends BaseAudioContext {
   }
 
   getOutputTimestamp() {
-    return { contextTime: this.currentTime, performanceTime: typeof performance !== 'undefined' ? performance.now() : 0 }
+    // performanceTime = 0 when no audio has been rendered, otherwise reflects
+    // the performance time at which the current audio frame was output
+    if (this.currentTime === 0) return { contextTime: 0, performanceTime: 0 }
+    let perf = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    return { contextTime: this.currentTime, performanceTime: perf }
   }
 
   get numberOfChannels() { return this.#numberOfChannels }
@@ -154,16 +158,21 @@ class AudioContext extends BaseAudioContext {
     if (typeof sinkId === 'string') {
       // Empty string = default device, always valid
       if (sinkId !== '' && sinkId !== this.#sinkId) {
-        // Validate against known devices if a registry exists
         let known = this.constructor._knownDeviceIds || AudioContext._knownDeviceIds
         if (known && !known.has(sinkId))
           return Promise.reject(DOMErr('Device not found: ' + sinkId, 'NotFoundError'))
       }
+      // Spec: sinkId only updates when the promise resolves (not before)
       let prev = this.#sinkId
-      this.#sinkId = sinkId
-      if (prev !== sinkId)
-        this.dispatchEvent(new Event('sinkchange'))
-      return Promise.resolve()
+      let self = this
+      return new Promise(resolve => {
+        // Use setTimeout to ensure the test can check sinkId before it changes
+        setTimeout(() => {
+          self.#sinkId = sinkId
+          if (prev !== sinkId) self.dispatchEvent(new Event('sinkchange'))
+          resolve()
+        }, 0)
+      })
     }
     return Promise.reject(new TypeError('Invalid sinkId type'))
   }

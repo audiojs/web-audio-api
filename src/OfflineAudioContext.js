@@ -7,6 +7,7 @@ class OfflineAudioContext extends BaseAudioContext {
   #length
   #numberOfChannels
   #renderedBuffer = null
+  #oncomplete = null
   #suspendPoints = new Map()  // frame -> [resolve callbacks]
   #outBuf = null
   #written = 0
@@ -140,6 +141,13 @@ class OfflineAudioContext extends BaseAudioContext {
   }
 
   get renderedBuffer() { return this.#renderedBuffer }
+
+  get oncomplete() { return this.#oncomplete }
+  set oncomplete(fn) {
+    if (this.#oncomplete) this.removeEventListener('complete', this.#oncomplete)
+    this.#oncomplete = fn
+    if (fn) this.addEventListener('complete', fn)
+  }
 }
 
 export default OfflineAudioContext

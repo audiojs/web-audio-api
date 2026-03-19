@@ -175,13 +175,10 @@ class AudioWorkletNode extends AudioNode {
       return outBuf
     }
 
-    // gather inputs — per spec, disconnected or inactive inputs have zero channels
+    // gather inputs — per spec, disconnected inputs have zero channels
     let inputs = []
     for (let i = 0; i < this.numberOfInputs; i++) {
-      let activeSources = this._inputs[i].sources.filter(s => !s.node?._ended)
-      if (activeSources.length === 0) {
-        // Still tick the input to process any remaining data
-        if (this._inputs[i].sources.length > 0) this._inputs[i]._tick()
+      if (this._inputs[i].sources.length === 0) {
         inputs.push(Object.freeze([]))
       } else {
         let buf = this._inputs[i]._tick()

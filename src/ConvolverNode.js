@@ -148,7 +148,8 @@ class ConvolverNode extends AudioNode {
     if (outCh !== this._outCh) {
       this._outBuf = new AudioBuffer(outCh, BLOCK_SIZE, this.context.sampleRate)
       this._outCh = outCh
-      this.#convState = null // reset FFT state when channel count changes
+      // Don't reset convState — grow/shrink pairStates to match new convPairs
+      // This preserves FFT overlap tails across channel count transitions
     }
 
     // For stereo/4-ch IR, get stereo input (upmixing mono if needed)
@@ -161,6 +162,20 @@ class ConvolverNode extends AudioNode {
 
     if (!this.#convState) {
       this.#convState = this.#initConvState(convPairs)
+    } else if (this.#convState.pairStates.length !== convPairs.length) {
+      // Channel count changed — grow or shrink pair states while preserving existing
+      let existing = this.#convState.pairStates
+      let fresh = this.#initConvState(convPairs)
+      // Preserve overlap tails from existing pairs that match
+      for (let i = 0; i < Math.min(existing.length, fresh.pairStates.length); i++) {
+        fresh.pairStates[i].tail.set(existing[i].tail)
+        fresh.pairStates[i].inputPos = existing[i].inputPos
+        for (let s = 0; s < existing[i].inputFFTs.length; s++) {
+          fresh.pairStates[i].inputFFTs[s].re.set(existing[i].inputFFTs[s].re)
+          fresh.pairStates[i].inputFFTs[s].im.set(existing[i].inputFFTs[s].im)
+        }
+      }
+      this.#convState = fresh
     }
 
     let { fftSize, numSegs, pairStates } = this.#convState

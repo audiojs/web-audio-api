@@ -223,8 +223,8 @@ async function runTest(filePath) {
     pause() {}
     setSinkId(id) {
       let knownIds = new Set(['', 'device-1'])
-      if (knownIds.has(id)) { this.sinkId = id; return Promise.resolve() }
-      return Promise.reject(new DOMException('Device not found', 'NotFoundError'))
+      if (!knownIds.has(id)) return Promise.reject(new DOMException('Device not found', 'NotFoundError'))
+      return new Promise(r => setTimeout(() => { this.sinkId = id; r() }, 0))
     }
     addEventListener(type, fn, opts) { (this._listeners[type] ??= []).push(fn) }
     removeEventListener(type, fn) {
@@ -515,8 +515,8 @@ async function runTest(filePath) {
       el.sinkId = ''
       el.setSinkId = (id) => {
         let knownIds = new Set(['', 'device-1'])
-        if (knownIds.has(id)) { el.sinkId = id; return Promise.resolve() }
-        return Promise.reject(new DOMException('Device not found', 'NotFoundError'))
+        if (!knownIds.has(id)) return Promise.reject(new DOMException('Device not found', 'NotFoundError'))
+        return new Promise(r => setTimeout(() => { el.sinkId = id; r() }, 0))
       }
     }
     return el
@@ -649,7 +649,6 @@ async function runTest(filePath) {
     // Wait for testharness completion — process audio between polls
     for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, i < 3 ? 0 : 20))
-      // Drive audio processing for real-time contexts created by the test
       for (let c of activeContexts) {
         if (c._state === 'running') try { for (let j = 0; j < 64; j++) c._renderQuantum() } catch {}
       }
