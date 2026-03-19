@@ -30,6 +30,7 @@ This project: `import { AudioContext } from 'web-audio-api'` — their existing 
 Fidelity. Be the Web Audio API. Not "inspired by," not "compatible with." The same API, the same behavior, proven by the same test suite. The spec is the soul — the moment it diverges to be "helpful," it betrays its purpose.
 
 ## What it must NOT become
+
 A "better" audio API. A framework. An opinionated toolkit. The moment it diverges from the spec to be "helpful," it betrays its purpose. The spec is the soul.
 
 ## Moat
