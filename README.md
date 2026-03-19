@@ -9,6 +9,23 @@ npm install web-audio-api
 ## Use
 
 ```js
+import { AudioContext } from 'web-audio-api'
+
+const ctx = new AudioContext()
+await ctx.resume()
+
+const osc = ctx.createOscillator()
+osc.frequency.value = 440
+osc.connect(ctx.destination)
+osc.start()
+// → plays through speakers
+```
+
+Audio output is built-in via [`audio-speaker`](https://github.com/audiojs/audio-speaker) — no extra packages needed.
+
+### Offline rendering
+
+```js
 import { OfflineAudioContext } from 'web-audio-api'
 
 const ctx = new OfflineAudioContext(2, 44100, 44100) // 1 second, stereo
@@ -21,26 +38,16 @@ const buffer = await ctx.startRendering()
 // buffer.getChannelData(0) → Float32Array of 44100 samples
 ```
 
-### Real-time output
+### Custom output stream
 
-If [`speaker`](https://npmjs.com/speaker) is installed, audio plays automatically. Otherwise falls back to stdout:
+For piping to external tools or custom sinks, set `outStream` to any writable:
 
 ```js
-import { AudioContext } from 'web-audio-api'
-
-const ctx = new AudioContext()
-await ctx.resume() // per W3C spec, AudioContext starts suspended
-
-const osc = ctx.createOscillator()
-osc.connect(ctx.destination)
-osc.start()
-// → plays through speaker (if installed), or pipe: node synth.js | aplay -f cd
+ctx.outStream = myWritableStream
 ```
 
-Custom output stream:
-
-```js
-ctx.outStream = new Speaker({ channels: 2, bitDepth: 16, sampleRate: 44100 })
+```sh
+node synth.js | aplay -f cd
 ```
 
 ### Polyfill
@@ -73,6 +80,26 @@ test('gain halves amplitude', async () => {
 ```
 
 
+## Examples
+
+Run any example: `node examples/<name>.js` — real-time examples play sound through speakers.
+
+| | Example | |
+|---|---------|---|
+| | [speaker.js](examples/speaker.js) | Hello world — play a tone |
+| | [sweep.js](examples/sweep.js) | Frequency sweep 100Hz → 4kHz |
+| | [subtractive-synth.js](examples/subtractive-synth.js) | Sawtooth → filter sweep → ADSR |
+| | [noise.js](examples/noise.js) | AudioWorklet noise → bandpass filter |
+| | [lfo.js](examples/lfo.js) | Tremolo via LFO modulation |
+| | [spatial.js](examples/spatial.js) | PannerNode — sound moves left to right |
+| | [sequencer.js](examples/sequencer.js) | Step sequencer with precise scheduling |
+| | [worklet.js](examples/worklet.js) | AudioWorkletProcessor with custom param |
+| | [linked-params.js](examples/linked-params.js) | ConstantSourceNode controlling multiple gains |
+| | [fft.js](examples/fft.js) | AnalyserNode — frequency spectrum |
+| | [render-to-buffer.js](examples/render-to-buffer.js) | OfflineAudioContext → buffer |
+| | [process-file.js](examples/process-file.js) | Read audio file → EQ + compress → render |
+| | [pipe-stdout.js](examples/pipe-stdout.js) | Pipe PCM to system player |
+
 ## See also
 
 - [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) — Rust-backed, native performance, Node.js only
@@ -83,7 +110,7 @@ test('gain halves amplitude', async () => {
 ## Limitations
 
 - **Performance** — pure JS is fast for most use cases but won't match native implementations for sustained heavy real-time DSP (dozens of simultaneous convolver/panner nodes). WASM kernels are planned.
-- **`outStream`** — the only API surface outside the W3C spec. It's the bridge to audio output (speaker, stdout, stream). Browsers handle this internally.
+- **`outStream`** — the only API surface outside the W3C spec. It's the bridge to custom audio output (stdout, streams). Default output uses `audio-speaker` and needs no configuration.
 - **AudioWorklet threading** — runs synchronously on the main thread. Browsers use a separate audio thread. Functionally identical, but no thread isolation.
 
 ## FAQ

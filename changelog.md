@@ -1,5 +1,16 @@
 # Changelog
 
+#### 1.1.0
+
+- Built-in audio output via `audio-speaker` — no optional `speaker` package needed
+- AudioContext plays through system speakers automatically on `resume()`
+- 13 runnable examples (`node examples/<name>.js`)
+- `outStream` still supported for custom output (stdout, streams)
+
+**Dependencies**
+- Added `audio-speaker` (cross-platform audio output, zero native compilation)
+- Removed optional `speaker` dependency
+
 #### 1.0.0
 
 Pure-JS Web Audio API. 100% W3C Web Platform Tests conformance.

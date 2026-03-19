@@ -19,7 +19,7 @@
 
 ## Next up
 
-- [ ] Examples (`examples/` directory)
+- [x] Examples (`examples/` directory)
 - [ ] CLI interface — `npx web-audio-api eval "..."` or piping
 - [ ] Benchmarks — comparative benchmarks against alternatives
 - [ ] Modularization — extract standalone DSP modules (see below)
@@ -46,29 +46,29 @@ examples/
 ```
 
 ### Getting started
-- [ ] **speaker.js** — Hello world. AudioContext + OscillatorNode → speaker.
-- [ ] **pipe-stdout.js** — Pipe to system: `node pipe-stdout.js | aplay -f cd`.
+- [x] **speaker.js** — Hello world. AudioContext + OscillatorNode → speaker.
+- [x] **pipe-stdout.js** — Pipe to system: `node pipe-stdout.js | aplay -f cd`.
 
 ### Offline rendering
-- [ ] **render-to-buffer.js** — OfflineAudioContext → OscillatorNode → AudioBuffer → raw PCM.
-- [ ] **process-file.js** — readFile → decodeAudioData → BiquadFilter + DynamicsCompressor → render.
+- [x] **render-to-buffer.js** — OfflineAudioContext → OscillatorNode → AudioBuffer → raw PCM.
+- [x] **process-file.js** — readFile → decodeAudioData → BiquadFilter + DynamicsCompressor → render.
 
 ### Synthesis
-- [ ] **sweep.js** — OscillatorNode + PeriodicWave + GainNode envelope (linearRamp).
-- [ ] **subtractive-synth.js** — Sawtooth → BiquadFilter (lowpass sweep) → GainNode (ADSR).
-- [ ] **noise.js** — Procedural white noise → BiquadFilter (bandpass) → shaped noise.
-- [ ] **lfo.js** — Sine carrier + square LFO → gain modulation = tremolo.
+- [x] **sweep.js** — OscillatorNode + PeriodicWave + GainNode envelope (linearRamp).
+- [x] **subtractive-synth.js** — Sawtooth → BiquadFilter (lowpass sweep) → GainNode (ADSR).
+- [x] **noise.js** — Procedural white noise → BiquadFilter (bandpass) → shaped noise.
+- [x] **lfo.js** — Sine carrier + square LFO → gain modulation = tremolo.
 
 ### Spatial
-- [ ] **spatial.js** — PannerNode + AudioListener + positionX automation → stereo render.
+- [x] **spatial.js** — PannerNode + AudioListener + positionX automation → stereo render.
 
 ### Analysis
-- [ ] **fft.js** — decodeAudioData → AnalyserNode → getFloatFrequencyData → print spectrum.
+- [x] **fft.js** — AnalyserNode → getFloatFrequencyData → print spectrum.
 
 ### Advanced
-- [ ] **worklet.js** — AudioWorkletProcessor white noise generator.
-- [ ] **linked-params.js** — ConstantSourceNode controlling multiple GainNodes.
-- [ ] **sequencer.js** — Multi-voice step sequencer with currentTime-based scheduling.
+- [x] **worklet.js** — AudioWorkletProcessor white noise generator with custom param.
+- [x] **linked-params.js** — ConstantSourceNode controlling multiple GainNodes.
+- [x] **sequencer.js** — Multi-voice step sequencer with currentTime-based scheduling.
 
 ## Modularization
 

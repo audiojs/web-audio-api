@@ -1,4 +1,5 @@
 import BaseAudioContext from './BaseAudioContext.js'
+import Speaker from 'audio-speaker'
 import { BufferEncoder } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
@@ -22,6 +23,7 @@ class AudioContext extends BaseAudioContext {
   #numberOfChannels
   #bitDepth
   #encoder
+  #speaker = null  // audio-speaker write function (default output)
   #sinkId = ''
   #playbackStats = new PlaybackStats()
   #playoutStats = new PlayoutStats()
@@ -111,16 +113,13 @@ class AudioContext extends BaseAudioContext {
     // When a new connection is established, start to pull audio
     this._destination._inputs[0].on('connection', async () => {
       if (this.#loopRunning || this._state !== 'running') return
-      // Auto-detect output: try speaker package, fall back to stdout
-      if (!this.outStream) {
-        try {
-          let { default: Speaker } = await import('speaker')
-          this.outStream = new Speaker({ channels: this.format.numberOfChannels, bitDepth: this.format.bitDepth, sampleRate: this.sampleRate })
-        } catch {
-          if (typeof process !== 'undefined' && process.stdout?.writable)
-            this.outStream = process.stdout
-          else return
-        }
+      // If user set outStream manually, use it; otherwise use audio-speaker
+      if (!this.outStream && !this.#speaker) {
+        this.#speaker = await Speaker({
+          sampleRate: this.sampleRate,
+          channels: this.#numberOfChannels,
+          bitDepth: this.#bitDepth
+        })
       }
       this.#loopRunning = true
       this._renderLoop()
@@ -198,7 +197,7 @@ class AudioContext extends BaseAudioContext {
     if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot resume a closed AudioContext', 'InvalidStateError'))
     this._setState('running')
-    if (!this.#loopRunning && this.outStream && this._destination._inputs[0].sources.length) {
+    if (!this.#loopRunning && (this.#speaker || this.outStream) && this._destination._inputs[0].sources.length) {
       this.#loopRunning = true
       this._renderLoop()
     }
@@ -209,29 +208,33 @@ class AudioContext extends BaseAudioContext {
     if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.resolve()
     this._setState('closed')
-    this._closeStream()
+    this._closeOutput()
     return Promise.resolve()
   }
 
-  _closeStream() {
+  _closeOutput() {
+    if (this.#speaker) { this.#speaker(null); this.#speaker = null }
     if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
-  }
-
-  _render() {
-    let outBuff = this._renderQuantum()
-    let nch = outBuff.numberOfChannels
-    let channels = []
-    for (let c = 0; c < nch; c++) channels.push(outBuff.getChannelData(c))
-    return this.#encoder(channels)
   }
 
   _renderLoop() {
     if (this._state !== 'running') { this.#loopRunning = false; return }
     try {
-      let encoded = this._render()
-      let ok = this.outStream.write(encoded)
-      if (ok || !this.outStream.once) setTimeout(() => this._renderLoop(), 0)
-      else this.outStream.once('drain', () => this._renderLoop())
+      let buf = this._renderQuantum()
+
+      if (this.#speaker) {
+        // audio-speaker accepts AudioBuffer directly — no PCM encoding needed
+        this.#speaker(buf, () => this._renderLoop())
+      } else if (this.outStream) {
+        // Custom outStream: encode to PCM
+        let nch = buf.numberOfChannels
+        let channels = []
+        for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
+        let encoded = this.#encoder(channels)
+        let ok = this.outStream.write(encoded)
+        if (ok || !this.outStream.once) setTimeout(() => this._renderLoop(), 0)
+        else this.outStream.once('drain', () => this._renderLoop())
+      }
     } catch (e) {
       // Render loop stops on error. The error is dispatched as an 'error' event per spec.
       // Users must listen for 'error' on the context — without a listener, audio stops silently.
@@ -242,7 +245,7 @@ class AudioContext extends BaseAudioContext {
 
   [Symbol.dispose]() {
     this._setState('closed')
-    this._closeStream()
+    this._closeOutput()
   }
 }
 

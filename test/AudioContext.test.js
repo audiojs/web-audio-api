@@ -131,8 +131,7 @@ test('AudioContext > baseLatency and outputLatency', () => {
 
 // --- render method ---
 
-test('AudioContext > _render is overridable method', () => {
+test('AudioContext > _renderLoop is overridable method', () => {
   let ctx = mkCtx(); ctx[Symbol.dispose]()
-  is(typeof ctx._render, 'function')
   is(typeof ctx._renderLoop, 'function')
 })
