@@ -1,8 +1,10 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Portable Web Audio API — 99% [Web Platform Tests](https://github.com/nicolo-ribaudo/tc39-proposal-structs/blob/main/test/test262) conformance.
+Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JavaScript runtime.
 
-Runs in Node.js, Deno, Bun, serverless, and edge runtimes — no native compilation required.
+* **100% [WPT](https://web-platform-tests.org/) conformance.**
+* No native compilation.
+* Node, Deno, Bun, serverless, edge, browser polyfill.
 
 ## Install
 
@@ -24,7 +26,8 @@ osc.connect(ctx.destination)
 osc.start()
 ```
 
-### Node.js with speaker
+
+## Real-time output (Node.js)
 
 ```js
 import { AudioContext } from 'web-audio-api'
@@ -36,9 +39,15 @@ ctx.outStream = new Speaker({
   bitDepth: ctx.format.bitDepth,
   sampleRate: ctx.sampleRate
 })
+await ctx.resume()
+
+const osc = ctx.createOscillator()
+osc.connect(ctx.destination)
+osc.start()
 ```
 
-### Pipe to system audio
+Or pipe raw PCM to any audio sink:
+
 
 ```sh
 node script.js | aplay -f cd
@@ -59,6 +68,25 @@ const buffer = await ctx.startRendering()
 // buffer: AudioBuffer with 5 seconds of audio
 ```
 
+## Testing audio code
+
+```js
+import { OfflineAudioContext } from 'web-audio-api'
+import test from 'node:test'
+
+test('gain halves amplitude', async () => {
+  const ctx = new OfflineAudioContext(1, 128, 44100)
+  const src = ctx.createConstantSource()
+  const gain = ctx.createGain()
+  gain.gain.value = 0.5
+  src.connect(gain).connect(ctx.destination)
+  src.start()
+  const buf = await ctx.startRendering()
+  assert.strictEqual(buf.getChannelData(0)[0], 0.5)
+})
+```
+
+
 ## When to use what
 
 | | Portable | Conformance | Runtimes |
@@ -66,10 +94,6 @@ const buffer = await ctx.startRendering()
 | **web-audio-api** | Yes — no native compilation | 99% WPT | Node, Deno, Bun, edge, serverless |
 | [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | No — Rust native addon | ~75% WPT | Node.js only |
 | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | No — Rust binary | — | Rust only |
-
-**Use this** if you need the Web Audio API outside a browser — servers, CLI, CI testing, serverless, edge.
-
-**Use `node-web-audio-api`** if you're on Node.js only and need native performance for heavy real-time workloads.
 
 ## Architecture
 

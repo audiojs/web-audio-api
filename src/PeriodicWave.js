@@ -45,7 +45,8 @@ class PeriodicWave {
 
   get table() { return this.#table }
 
-  // W3C spec: x(n) = Σ [ real[k] * cos(2πkn/N) + imag[k] * sin(2πkn/N) ]
+  // W3C Web Audio spec §1.31 OscillatorNode:
+  // x(n) = Σ[ real[k]·cos(2πkn/N) + imag[k]·sin(2πkn/N) ]
   static buildTable(real, imag, disableNormalization = false) {
     let n = real.length
     let table = new Float32Array(TABLE_SIZE)

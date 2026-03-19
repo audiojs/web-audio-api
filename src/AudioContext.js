@@ -209,7 +209,10 @@ class AudioContext extends BaseAudioContext {
 
   _render() {
     let outBuff = this._renderQuantum()
-    return this.#encoder(outBuff._channels)
+    let nch = outBuff.numberOfChannels
+    let channels = []
+    for (let c = 0; c < nch; c++) channels.push(outBuff.getChannelData(c))
+    return this.#encoder(channels)
   }
 
   _renderLoop() {

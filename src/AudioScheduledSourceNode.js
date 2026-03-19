@@ -1,6 +1,6 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
-import { BLOCK_SIZE } from './constants.js'
+import { BLOCK_SIZE, fpCeil } from './constants.js'
 import { DOMErr } from './errors.js'
 
 class AudioScheduledSourceNode extends AudioNode {
@@ -67,9 +67,6 @@ class AudioScheduledSourceNode extends AudioNode {
     // Not started yet
     if (!this._started || this._startTime >= blockEnd) return this._zeroBuf
 
-    // Compute sub-sample-accurate start/stop offsets within this block.
-    // Use fp-safe ceiling: if value is within 1e-8 of an integer, snap to it.
-    let fpCeil = v => { let r = Math.round(v); return Math.abs(v - r) < 1e-8 ? r : Math.ceil(v) }
     let startSample = 0
     if (this._startTime > blockStart)
       startSample = fpCeil((this._startTime - blockStart) * sr)

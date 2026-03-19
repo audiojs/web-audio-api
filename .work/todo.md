@@ -1,37 +1,43 @@
-## [ ] Make it work
+## [x] Cleanup / perf pass
 
-* Change proposition layer: The proposition of pure JavaScript is not the value I am pursuing. As you see in the plan there's WASM version, can be potentially made with JZ - subset of JS compiling into WASM.
+1. [x] PannerNode per-sample object allocations — 7 scratch FloatPoint3D, mutating methods
+2. [x] Dead code — deleted EqualPowerPanner.js, Panner.js, simplified PannerProvider
+3. [x] Cycle detection — extracted to `context._cycle` structured object
+4. [~] Reaching into dependency internals — fixed AudioContext._render(); audio-buffer._channels kept (no public API for buffer replacement)
+5. [x] ConvolverNode hot-path allocations — prodRe/prodIm pre-allocated in #initConvState
+6. [ ] AudioBufferSourceNode _outBuf — kept as-is (semantic ownership prevents pre-allocation)
+7. [x] ConeEffect.innerAngle bug — removed broken normalization
+8. [ ] WPT runner split — deferred (functional, 100% pass rate)
+9. [x] fpCeil duplication — moved to constants.js
+10. [x] PeriodicWave sign convention — W3C §1.31 spec reference added
+
+Missed opportunities (deferred):
+- [ ] DistanceEffect/ConeEffect #private properties
+- [ ] _outBuf convention in AudioNode base class
+- [ ] _activeBlockSize/_blockStartOffset → {start, count} arg to _dsp()
+- [ ] Automatic _tailNodes registration
+
+## [x] Make it work
+
+* [x] Change proposition layer: The proposition of pure JavaScript is not the value I am pursuing. As you see in the plan there's WASM version, can be potentially made with JZ - subset of JS compiling into WASM.
 We need to reframe value proposition into something more reliable, like fixing the platform gap or something like that
-* All issues in github
-* Benchmarks: faster than any alternative
-* Factor out dependencies: dsp/digital-filter?
-
-
-## [ ] Current README problems:
-
-"Alternatives" framing is defensive
-Missing: offline rendering example, testing use case, clear "when to use this vs alternatives"
-What the README should be:
-
-What it is (one line)
-Why it matters (runs everywhere)
-Proof (WPT conformance)
-Install + use (30 seconds to running code)
-When to use what (honest comparison)
+* [ ] All issues in github
+* [ ] Benchmarks: faster than any alternative
+* [ ] Factor out dependencies: dsp/digital-filter?
 
 ## [ ] BLINDSPOTS — What am I not seeing?
 
-Performance ceiling — Pure JS will always be slower than Rust/native. Is this acknowledged honestly? At what graph complexity does it fall behind real-time? Users need to know.
-outStream is non-standard — The one API surface that ISN'T Web Audio spec. It's the escape hatch for output, but it breaks the "it's the same API" promise.
-Browser-only WPT tests — Some WPT tests require MediaElement, actual hardware audio output, etc. The ~1% gap isn't laziness, it's a fundamental environment limitation. This should be stated clearly.
-Maintenance load — WPT evolves. Browsers update. 99% today requires ongoing effort.
+* [ ] Performance ceiling — Pure JS will always be slower than Rust/native. Is this acknowledged honestly? At what graph complexity does it fall behind real-time? Users need to know.
+* [ ] outStream is non-standard — The one API surface that ISN'T Web Audio spec. It's the escape hatch for output, but it breaks the "it's the same API" promise.
+* [ ] Browser-only WPT tests — Some WPT tests require MediaElement, actual hardware audio output, etc. The ~1% gap isn't laziness, it's a fundamental environment limitation. This should be stated clearly.
+* [ ] Maintenance load — WPT evolves. Browsers update. 99% today requires ongoing effort.
 AudioWorklet isolation — In browsers, AudioWorklet runs in a separate thread. In this implementation, it runs synchronously. For most use cases that's fine, but it's a behavioral difference.
 
 ## [ ] Extra value
 
-Extractable DSP kernels: Each node's _dsp() function is a standalone algorithm — biquad filter, FFT, convolution, dynamics compression. These could become independent modules.
-Isomorphic audio: Write audio processing once, run it on client and server. Share audio graph definitions between browser and Node.js.
-Audio as function: OfflineAudioContext turns audio processing into a pure function: graph in → buffer out. Perfect for serverless.
+* [ ] Extractable DSP kernels: Each node's _dsp() function is a standalone algorithm — biquad filter, FFT, convolution, dynamics compression. These could become independent modules.
+* [ ] Isomorphic audio: Write audio processing once, run it on client and server. Share audio graph definitions between browser and Node.js.
+* [ ] Audio as function: OfflineAudioContext turns audio processing into a pure function: graph in → buffer out. Perfect for serverless.
 
 ## [ ] Use cases
 

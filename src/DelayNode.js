@@ -61,16 +61,17 @@ class DelayNode extends AudioNode {
     }
     this._ticking = true
     this._inCycle = false
-    this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
+    let cycle = this.context._cycle || (this.context._cycle = { delayCount: 0, withoutDelay: false, detected: false, deferred: null })
+    cycle.delayCount++
     // Track whether the cycle re-enters through an AudioOutput (not through this._tick re-entry)
-    let prevCycleFlag = this.context._delayCycleDetected
-    this.context._delayCycleDetected = false
+    let prevCycleFlag = cycle.detected
+    cycle.detected = false
     super._tick()
     let inBuf = this._inputs[0]._tick()
 
     // Detect cycle: either via delay._tick re-entry (_inCycle) or via AudioOutput re-entry
-    if (!this._inCycle && this.context._delayCycleDetected) this._inCycle = true
-    this.context._delayCycleDetected = prevCycleFlag
+    if (!this._inCycle && cycle.detected) this._inCycle = true
+    cycle.detected = prevCycleFlag
 
     let sr = this.context.sampleRate
     let delayArr = this.#delayTime._tick()
@@ -121,8 +122,8 @@ class DelayNode extends AudioNode {
       }
       // Defer ring buffer write — input from the cycle is stale;
       // _deferredWrite will re-pull and get the correct cached input
-      if (!this.context._deferredDelays) this.context._deferredDelays = []
-      this.context._deferredDelays.push(this)
+      if (!cycle.deferred) cycle.deferred = []
+      cycle.deferred.push(this)
     } else {
       // Not in a cycle: write input then read (zero-delay passthrough works)
       for (let c = 0; c < ch; c++) {
@@ -149,7 +150,7 @@ class DelayNode extends AudioNode {
       this.#writtenFrames += BLOCK_SIZE
     }
 
-    this.context._delayInCycle = (this.context._delayInCycle || 1) - 1
+    cycle.delayCount--
     this._ticking = false
     return this._outBuf
   }
@@ -157,7 +158,8 @@ class DelayNode extends AudioNode {
   // Called after the full graph pull resolves. Re-pull input (now correctly cached
   // by upstream nodes) and write it to the ring buffer.
   _deferredWrite() {
-    this.context._delayInCycle = (this.context._delayInCycle || 0) + 1
+    let cycle = this.context._cycle || (this.context._cycle = { delayCount: 0, withoutDelay: false, detected: false, deferred: null })
+    cycle.delayCount++
     let inBuf = this._inputs[0]._tick()
     let ch = inBuf.numberOfChannels
     let ringLen = this._ringLen
@@ -174,7 +176,7 @@ class DelayNode extends AudioNode {
     }
     this.#writePos = (wp + BLOCK_SIZE) % ringLen
     this.#writtenFrames += BLOCK_SIZE
-    this.context._delayInCycle = (this.context._delayInCycle || 1) - 1
+    cycle.delayCount--
   }
 }
 

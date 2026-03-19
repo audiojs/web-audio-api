@@ -34,8 +34,18 @@ class PannerNode extends AudioNode {
     this._pannerProvider = new PannerProvider(context)
     this._coneEffect = new ConeEffect()
     this._velocity = new FloatPoint3D(1, 0, 0)
-    this._lastGain = -1
     this._outBuf = new AudioBuffer(2, BLOCK_SIZE, context.sampleRate)
+
+    // Pre-allocate scratch FloatPoint3D instances to avoid per-sample allocations.
+    // _s0/_s1: reused as pos/orient in the per-sample loop.
+    // _s2.._s6: used inside _calculateAzimuthElevation.
+    this._s0 = new FloatPoint3D()
+    this._s1 = new FloatPoint3D()
+    this._s2 = new FloatPoint3D()
+    this._s3 = new FloatPoint3D()
+    this._s4 = new FloatPoint3D()
+    this._s5 = new FloatPoint3D()
+    this._s6 = new FloatPoint3D()
 
     this.#positionX = new AudioParam(this.context, options.positionX ?? 0, 'a')
     this.#positionY = new AudioParam(this.context, options.positionY ?? 0, 'a')
@@ -165,9 +175,12 @@ class PannerNode extends AudioNode {
     // Per-sample spatial processing.
     // Apply panning first (writes to Float32Array, matching spec precision),
     // then multiply by distance/cone gain.
+    // Reuse pre-allocated scratch FloatPoint3D instances to avoid per-sample allocations.
+    let pos = this._s0
+    let orient = this._s1
     for (let i = 0; i < BLOCK_SIZE; i++) {
-      let pos = new FloatPoint3D(px[i], py[i], pz[i])
-      let orient = new FloatPoint3D(ox[i], oy[i], oz[i])
+      pos.set(px[i], py[i], pz[i])
+      orient.set(ox[i], oy[i], oz[i])
 
       let { azimuth } = this._calculateAzimuthElevation(pos, listenerPos, listenerFwd, listenerUp)
 
@@ -196,8 +209,8 @@ class PannerNode extends AudioNode {
     }
 
     // Update cached position/orientation (for external queries)
-    this._position = new FloatPoint3D(px[BLOCK_SIZE - 1], py[BLOCK_SIZE - 1], pz[BLOCK_SIZE - 1])
-    this._orientation = new FloatPoint3D(ox[BLOCK_SIZE - 1], oy[BLOCK_SIZE - 1], oz[BLOCK_SIZE - 1])
+    this._position.set(px[BLOCK_SIZE - 1], py[BLOCK_SIZE - 1], pz[BLOCK_SIZE - 1])
+    this._orientation.set(ox[BLOCK_SIZE - 1], oy[BLOCK_SIZE - 1], oz[BLOCK_SIZE - 1])
 
     return this._outBuf
   }
@@ -227,20 +240,27 @@ class PannerNode extends AudioNode {
   }
 
   _calculateAzimuthElevation(position, listenerPosition, listenerOrientation, listenerUpVector) {
-    let sourceListener = position.sub(listenerPosition)
+    // Use pre-allocated scratch objects (_s2.._s6) to avoid per-sample allocations.
+    let sourceListener = this._s2.setFrom(position).subFrom(listenerPosition)
     sourceListener.normalize()
 
     if (sourceListener.isZero()) return { azimuth: 0, elevation: 0 }
 
-    let listenerRight = listenerOrientation.cross(listenerUpVector)
+    let listenerRight = listenerOrientation.crossInto(listenerUpVector, this._s3)
     listenerRight.normalize()
 
-    let listenerFrontNorm = new FloatPoint3D(listenerOrientation.x, listenerOrientation.y, listenerOrientation.z)
+    let listenerFrontNorm = this._s4.setFrom(listenerOrientation)
     listenerFrontNorm.normalize()
 
-    let up = listenerRight.cross(listenerFrontNorm)
+    let up = listenerRight.crossInto(listenerFrontNorm, this._s5)
     let upProjection = sourceListener.dot(up)
-    let projectedSource = sourceListener.sub(up.mul(upProjection))
+    // projectedSource = sourceListener - up * upProjection
+    let projectedSource = this._s6.setFrom(up).mulSelf(upProjection)
+    projectedSource.set(
+      sourceListener.x - projectedSource.x,
+      sourceListener.y - projectedSource.y,
+      sourceListener.z - projectedSource.z
+    )
 
     // When projectedSource is zero (source directly above/below), azimuth is 0.
     if (projectedSource.isZero()) return { azimuth: 0, elevation: 0 }

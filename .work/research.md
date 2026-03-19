@@ -35,8 +35,7 @@ A "better" audio API. A framework. An opinionated toolkit. The moment it diverge
 ## Moat
 
 1. **Portable** — the only spec-compliant implementation requiring no native compilation (holds for JS today, WASM tomorrow)
-2. **99% WPT** — not an approximation, proven conformance
-3. **`web-audio-api` on npm** — canonical name
+2. **100% WPT** — not an approximation, proven conformance
 4. **Minimal surface** — 4 production dependencies
 5. **audiojs ecosystem** — audio-buffer, audio-decode feed into it
 

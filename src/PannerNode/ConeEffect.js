@@ -18,7 +18,7 @@ class ConeEffect {
     if (!Number.isFinite(innerAngle)) {
       throw new TypeError('Invalid coneInnerAngle')
     }
-    this._innerAngle = (innerAngle - 1) % 360 + 1
+    this._innerAngle = innerAngle
   }
 
   get outerAngle() { return this._outerAngle }
@@ -26,7 +26,7 @@ class ConeEffect {
     if (!Number.isFinite(outerAngle)) {
       throw new TypeError('Invalid coneOuterAngle')
     }
-    this._outerAngle = (outerAngle - 1) % 360 + 1
+    this._outerAngle = outerAngle
   }
 
   get outerGain() { return this._outerGain }

@@ -135,25 +135,24 @@ class AudioOutput extends AudioPort {
 
   _tick() {
     // Cycle detection: if this output is already being pulled, return cached or silence
+    let ctx = this.context
+    let cycle = ctx._cycle || (ctx._cycle = { delayCount: 0, withoutDelay: false, detected: false, deferred: null })
     if (this._ticking) {
       // Spec: cycles without DelayNode must be muted.
-      // Track cycle depth — a DelayNode in the path will set _delayInCycle on context.
-      let ctx = this.context
-      if (!ctx._delayInCycle) ctx._cycleWithoutDelay = true
-      else ctx._delayCycleDetected = true
-      return this._cachedBlock.buffer || new AudioBuffer(1, BLOCK_SIZE, this.context.sampleRate)
+      if (!cycle.delayCount) cycle.withoutDelay = true
+      else cycle.detected = true
+      return this._cachedBlock.buffer || new AudioBuffer(1, BLOCK_SIZE, ctx.sampleRate)
     }
 
-    if (this._cachedBlock.time < this.context.currentTime) {
+    if (this._cachedBlock.time < ctx.currentTime) {
       this._ticking = true
-      let ctx = this.context
-      let prevCycleFlag = ctx._cycleWithoutDelay
-      ctx._cycleWithoutDelay = false
+      let prevCycleFlag = cycle.withoutDelay
+      cycle.withoutDelay = false
       // _tickOutput allows nodes like ChannelSplitterNode to return different buffers per output
       let outBuffer = this.node._tickOutput ? this.node._tickOutput(this.id) : this.node._tick()
       // Spec: if a no-delay cycle was detected, mute this node's output
-      let hasCycleWithoutDelay = ctx._cycleWithoutDelay
-      ctx._cycleWithoutDelay = prevCycleFlag
+      let hasCycleWithoutDelay = cycle.withoutDelay
+      cycle.withoutDelay = prevCycleFlag
       if (hasCycleWithoutDelay) {
         outBuffer = new AudioBuffer(outBuffer.numberOfChannels, BLOCK_SIZE, this.context.sampleRate)
       }

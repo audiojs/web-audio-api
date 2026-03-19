@@ -7,8 +7,6 @@ import AudioContext from '../src/AudioContext.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 import DistanceEffect from '../src/PannerNode/DistanceEffect.js'
 import ConeEffect from '../src/PannerNode/ConeEffect.js'
-import EqualPowerPanner from '../src/PannerNode/EqualPowerPanner.js'
-import Panner from '../src/PannerNode/Panner.js'
 import PannerProvider from '../src/PannerNode/PannerProvider.js'
 import FloatPoint3D from '../src/FloatPoint3D.js'
 import { allAlmost } from './helpers.js'
@@ -52,35 +50,24 @@ test('ConeEffect > gain within inner cone is 1', () => {
   almost(g, 1, 1e-6)
 })
 
-// --- Panner ---
-
-test('Panner > base class pan() throws', () => {
-  let p = new Panner()
-  throws(() => p.pan())
-})
-
 // --- PannerProvider ---
 
-test('PannerProvider > creates equalpower panner', () => {
-  let ctx = new AudioContext()
-  let pp = new PannerProvider(ctx)
+test('PannerProvider > validates equalpower model', () => {
+  let pp = new PannerProvider(new AudioContext())
   pp.panningModel = 'equalpower'
-  ok(pp.panner instanceof EqualPowerPanner)
+  is(pp.panningModel, 'equalpower')
 })
 
-test('PannerProvider > HRTF falls back to equalpower', () => {
-  let ctx = new AudioContext()
-  let pp = new PannerProvider(ctx)
+test('PannerProvider > accepts HRTF model', () => {
+  let pp = new PannerProvider(new AudioContext())
   pp.panningModel = 'HRTF'
   is(pp.panningModel, 'HRTF')
-  ok(pp.panner) // should not throw, uses equalpower fallback
 })
 
-test('PannerProvider > model change creates valid panner', () => {
-  let ctx = new AudioContext()
-  let pp = new PannerProvider(ctx)
-  pp.panningModel = 'equalpower' // re-set same model
-  ok(pp.panner) // panner should be created successfully
+test('PannerProvider > ignores invalid model', () => {
+  let pp = new PannerProvider(new AudioContext())
+  pp.panningModel = 'invalid'
+  is(pp.panningModel, 'equalpower')
 })
 
 // --- PannerNode ---

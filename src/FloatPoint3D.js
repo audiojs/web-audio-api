@@ -102,6 +102,61 @@ class FloatPoint3D {
   }
 
   /**
+   * Copy values from another point into this one (mutating).
+   * @param {FloatPoint3D} a
+   * @return {FloatPoint3D} this
+   */
+  setFrom(a) {
+    this.x = a.x; this.y = a.y; this.z = a.z
+    return this
+  }
+
+  /**
+   * Set x, y, z values directly (mutating).
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   * @return {FloatPoint3D} this
+   */
+  set(x, y, z) {
+    this.x = x; this.y = y; this.z = z
+    return this
+  }
+
+  /**
+   * Subtract another point in-place (mutating).
+   * @param {FloatPoint3D} a
+   * @return {FloatPoint3D} this
+   */
+  subFrom(a) {
+    this.x -= a.x; this.y -= a.y; this.z -= a.z
+    return this
+  }
+
+  /**
+   * Compute cross product of this x b, writing result into out (mutating out).
+   * @param {FloatPoint3D} b
+   * @param {FloatPoint3D} out
+   * @return {FloatPoint3D} out
+   */
+  crossInto(b, out) {
+    out.x = this.y * b.z - this.z * b.y
+    out.y = this.z * b.x - this.x * b.z
+    out.z = this.x * b.y - this.y * b.x
+    return out
+  }
+
+  /**
+   * Scale this point in-place by scalar k (mutating).
+   * @param {number} k
+   * @return {FloatPoint3D} this
+   */
+  mulSelf(k) {
+    this.x *= k; this.y *= k; this.z *= k
+    return this
+  }
+
+  /**
    * @param {FloatPoint3D} y
    * @return {number} - angle as radius.
    */

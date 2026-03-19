@@ -1,4 +1,4 @@
-import { BLOCK_SIZE } from './constants.js'
+import { BLOCK_SIZE, fpCeil } from './constants.js'
 import AudioScheduledSourceNode from './AudioScheduledSourceNode.js'
 import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
@@ -30,7 +30,9 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
       for (let c = 0; c < nch; c++) {
         let snapshot = new Float32Array(val.getChannelData(c))
         copy.getChannelData(c).set(snapshot)
-        // Replace original buffer's channel with a fresh copy of the snapshot
+        // Spec "acquire the content": replace original buffer's channel backing store
+        // so prior getChannelData() references are detached from the buffer.
+        // Uses audio-buffer internal _channels — no public API exists for this.
         if (val._channels) val._channels[c] = new Float32Array(snapshot)
       }
       this.#buffer = copy
@@ -81,7 +83,6 @@ class AudioBufferSourceNode extends AudioScheduledSourceNode {
     // the actual start time falls. This is used to offset the initial cursor.
     let sr = this.context.sampleRate
     let startFrame = this._startTime * sr
-    let fpCeil = v => { let r = Math.round(v); return Math.abs(v - r) < 1e-8 ? r : Math.ceil(v) }
     let firstOutputFrame = fpCeil(startFrame)
     let subSampleOffset = firstOutputFrame - startFrame // how far past the start
     // Snap tiny offsets to zero to avoid fp noise causing an extra sample

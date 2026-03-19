@@ -111,7 +111,11 @@ class ConvolverNode extends AudioNode {
       }
     })
 
-    return { fftSize, numSegs, pairStates }
+    // Pre-allocate product buffers (reused per pair each quantum)
+    let prodRe = new Float64Array(fftSize)
+    let prodIm = new Float64Array(fftSize)
+
+    return { fftSize, numSegs, pairStates, prodRe, prodIm }
   }
 
   _tick() {
@@ -194,7 +198,7 @@ class ConvolverNode extends AudioNode {
       this.#convState = fresh
     }
 
-    let { fftSize, numSegs, pairStates } = this.#convState
+    let { fftSize, numSegs, pairStates, prodRe, prodIm } = this.#convState
 
     for (let c = 0; c < outCh; c++) {
       this._outBuf.getChannelData(c).fill(0)
@@ -220,8 +224,8 @@ class ConvolverNode extends AudioNode {
       // Frequency-domain multiply-accumulate using float32 products
       // to match hardware FFT rounding behavior
       let f = Math.fround
-      let prodRe = new Float64Array(fftSize)
-      let prodIm = new Float64Array(fftSize)
+      prodRe.fill(0)
+      prodIm.fill(0)
 
       for (let s = 0; s < numSegs; s++) {
         let idx = ((ps.inputPos - s) % numSegs + numSegs) % numSegs

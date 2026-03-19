@@ -41,6 +41,8 @@ class BaseAudioContext extends EventTarget {
     this._destination = new AudioDestinationNode(this, numberOfChannels)
     this._listener = new AudioListener(this)
     this.audioWorklet = new AudioWorklet(this)
+    // Cycle detection state: consolidated from ad-hoc properties
+    this._cycle = { delayCount: 0, withoutDelay: false, detected: false, deferred: null }
   }
 
   get destination() { return this._destination }
@@ -77,9 +79,9 @@ class BaseAudioContext extends EventTarget {
       node._outputs.length ? node._outputs[0]._tick() : node._tick()
     // Process delay nodes that deferred their ring buffer update during a cycle.
     // At this point all upstream nodes have cached outputs, so re-pulling gives correct input.
-    if (this._deferredDelays) {
-      let delays = this._deferredDelays
-      this._deferredDelays = null
+    if (this._cycle.deferred) {
+      let delays = this._cycle.deferred
+      this._cycle.deferred = null
       for (let delay of delays) delay._deferredWrite()
     }
     this._frame += BLOCK_SIZE
