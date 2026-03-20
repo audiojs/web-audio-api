@@ -108,12 +108,9 @@ Run any example: `node examples/<name>.js` — real-time examples play sound thr
 | [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform | partial | yes |
 | [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a | yes |
 | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust | partial | yes |
-| [web-audio-engine](https://github.com/mohayonao/web-audio-engine) | JS | Node | none | partial | archived 2019 |
+| [web-audio-engine](https://github.com/mohayonao/web-audio-engine) | JS | Node | none | partial | archived |
 
-**Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.<br>
-**Choose node-web-audio-api** when you need maximum DSP throughput on Node.js and can accept the native dependency.<br>
-**Choose standardized-audio-context** when you target browsers and need a uniform API across vendor differences.<br>
-**Choose web-audio-api-rs** for Rust-native or WASM projects (not an npm package).
+## Benchmark
 
 Rendering 1s of audio at 44.1kHz (`npm run bench:all`):
 
