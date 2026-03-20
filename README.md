@@ -125,12 +125,6 @@ Rendering 1s of audio at 44.1kHz (`npm run bench:all`):
 
 All scenarios run faster than real-time. Pure JS matches Rust on simple graphs; heavier DSP (convolution, compression) is 2&ndash;4&times; slower &mdash; WASM kernels are planned for these paths.
 
-## Limitations
-
-- **Performance** — pure JS is fast for most use cases but won't match native implementations for sustained heavy real-time DSP (dozens of simultaneous convolver/panner nodes). WASM kernels are planned.
-- **`outStream`** — the only API surface outside the W3C spec. It's the bridge to custom audio output (stdout, streams). Default output uses `audio-speaker` and needs no configuration.
-- **AudioWorklet threading** — runs synchronously on the main thread. Browsers use a separate audio thread. Functionally identical, but no thread isolation.
-
 ## FAQ
 
 <dl>
@@ -171,25 +165,11 @@ const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 Supports WAV, MP3, FLAC, OGG, AAC, and [more](https://github.com/audiojs/audio-decode).
 </dd>
 
-<dt>Can I use it as a browser polyfill?</dt>
-<dd>
-
-```js
-import 'web-audio-api/polyfill' // registers AudioContext, OfflineAudioContext, etc. as globals
-```
-</dd>
-
-<dt>What about performance?</dt>
-<dd>
-
-All nodes run faster than real-time on a single thread (`npm run bench`). For heavy real-time workloads (many convolvers/panners), consider [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) which uses Rust.
-</dd>
-
 </dl>
 
 ## Architecture
 
-Pull-based audio graph. `AudioDestinationNode` pulls upstream via `_tick()`, 128-sample render quanta per the spec. DSP kernels separated from graph plumbing for future WASM swap.
+Pull-based audio graph. `AudioDestinationNode` pulls upstream via `_tick()`, 128-sample render quanta per the spec. AudioWorklet runs synchronously (no thread isolation). DSP kernels separated from graph plumbing for future WASM swap.
 
 ```
 EventTarget ← Emitter ← DspObject ← AudioNode ← concrete nodes
