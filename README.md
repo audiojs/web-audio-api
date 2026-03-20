@@ -84,31 +84,30 @@ test('gain halves amplitude', async () => {
 
 Run any example: `node examples/<name>.js` — real-time examples play sound through speakers.
 
-| | Example | |
-|---|---------|---|
-| | [speaker.js](examples/speaker.js) | Hello world — play a tone |
-| | [sweep.js](examples/sweep.js) | Frequency sweep 100Hz → 4kHz |
-| | [subtractive-synth.js](examples/subtractive-synth.js) | Sawtooth → filter sweep → ADSR |
-| | [noise.js](examples/noise.js) | AudioWorklet noise → bandpass filter |
-| | [lfo.js](examples/lfo.js) | Tremolo via LFO modulation |
-| | [spatial.js](examples/spatial.js) | PannerNode — sound moves left to right |
-| | [sequencer.js](examples/sequencer.js) | Step sequencer with precise scheduling |
-| | [worklet.js](examples/worklet.js) | AudioWorkletProcessor with custom param |
-| | [linked-params.js](examples/linked-params.js) | ConstantSourceNode controlling multiple gains |
-| | [fft.js](examples/fft.js) | AnalyserNode — frequency spectrum |
-| | [render-to-buffer.js](examples/render-to-buffer.js) | OfflineAudioContext → buffer |
-| | [process-file.js](examples/process-file.js) | Read audio file → EQ + compress → render |
-| | [pipe-stdout.js](examples/pipe-stdout.js) | Pipe PCM to system player |
+| Example | |
+|---------|---|
+| [speaker.js](examples/speaker.js) | Hello world — play a tone |
+| [sweep.js](examples/sweep.js) | Frequency sweep 100Hz → 4kHz |
+| [subtractive-synth.js](examples/subtractive-synth.js) | Sawtooth → filter sweep → ADSR |
+| [noise.js](examples/noise.js) | AudioWorklet noise → bandpass filter |
+| [lfo.js](examples/lfo.js) | Tremolo via LFO modulation |
+| [spatial.js](examples/spatial.js) | PannerNode — sound moves left to right |
+| [sequencer.js](examples/sequencer.js) | Step sequencer with precise scheduling |
+| [worklet.js](examples/worklet.js) | AudioWorkletProcessor with custom param |
+| [linked-params.js](examples/linked-params.js) | ConstantSourceNode controlling multiple gains |
+| [fft.js](examples/fft.js) | AnalyserNode — frequency spectrum |
+| [render-to-buffer.js](examples/render-to-buffer.js) | OfflineAudioContext → buffer |
+| [process-file.js](examples/process-file.js) | Read audio file → EQ + compress → render |
+| [pipe-stdout.js](examples/pipe-stdout.js) | Pipe PCM to system player |
 
 ## Alternatives
 
-| | [web-audio-api](https://github.com/audiojs/web-audio-api) | [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) |
-|---|---|---|---|---|
-| Language | JS | Rust (napi) | JS | Rust |
-| Runs in | Node, Bun, Deno, browser | Node only | Browser only | Rust / WASM |
-| Native deps | none | platform binary | none | Rust toolchain |
-| WPT compliance | 98% | partial | n/a (wraps native) | partial |
-| Install | `npm install` | `npm install` (downloads binary) | `npm install` | `cargo add` |
+| | Language | Runs in | Native deps | WPT | Install |
+|---|---|---|---|---|---|
+| [web-audio-api](https://github.com/audiojs/web-audio-api) | JS | Node, Bun, Deno, browser | none | 98% | `npm install` |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform binary | partial | `npm install` |
+| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a | `npm install` |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust toolchain | partial | `cargo add` |
 
 **Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.
 **Choose node-web-audio-api** when you need maximum DSP throughput on Node.js and can accept the native dependency.
