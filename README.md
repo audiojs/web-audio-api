@@ -1,6 +1,6 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for any JS environment. 100% [WPT](https://web-platform-tests.org/) conformance.
+Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) implementation. 100% [WPT](https://web-platform-tests.org/) conformance.
 
 ```
 npm install web-audio-api
@@ -104,10 +104,10 @@ Run any example: `node examples/<name>.js` — real-time examples play sound thr
 
 | | Language | Runs in | Native deps | WPT | Maintained |
 |---|---|---|---|---|---|
-| [web-audio-api](https://github.com/audiojs/web-audio-api) | JS | Node, Bun, Deno, browser | none | 100% | yes |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform binary | partial | yes |
-| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a (wraps native) | yes |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust toolchain | partial | yes |
+| [web-audio-api](https://github.com/audiojs/web-audio-api) | JS | Any JS env | none | 100% | yes |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform | partial | yes |
+| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a | yes |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust | partial | yes |
 | [web-audio-engine](https://github.com/mohayonao/web-audio-engine) | JS | Node | none | partial | archived 2019 |
 
 **Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.<br>
