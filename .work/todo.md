@@ -20,7 +20,7 @@
 ## Next up
 
 - [x] Examples (`examples/` directory)
-- [ ] CLI interface — `npx web-audio-api eval "..."` or piping
+- [ ] CLI interface — `npx waa "..."` or piping
 - [ ] Benchmarks — comparative benchmarks against alternatives
 - [ ] Modularization — extract standalone DSP modules (see below)
 
