@@ -26,9 +26,12 @@ bp.type = 'bandpass'
 bp.frequency.value = 1000
 bp.Q.value = 5
 
-let gain = ctx.createGain()
-gain.gain.value = 0.5
+let master = ctx.createGain()
+master.gain.value = 0.5
 
-noise.connect(bp).connect(gain).connect(ctx.destination)
+noise.connect(bp).connect(master).connect(ctx.destination)
 
+let t = ctx.currentTime + duration
+master.gain.setValueAtTime(0.5, t - 0.05)
+master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => ctx.close(), duration * 1000)

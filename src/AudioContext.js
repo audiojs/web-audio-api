@@ -4,6 +4,7 @@ import { BufferEncoder } from './utils.js'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
+
 // Stub stats object for playbackStats / playoutStats
 class PlaybackStats {
   totalDuration = 0; underrunDuration = 0; underrunEvents = 0
@@ -24,6 +25,7 @@ class AudioContext extends BaseAudioContext {
   #bitDepth
   #encoder
   #speaker = null  // audio-speaker write function (default output)
+  #loopDeferred = false
   #sinkId = ''
   #playbackStats = new PlaybackStats()
   #playoutStats = new PlayoutStats()
@@ -110,25 +112,23 @@ class AudioContext extends BaseAudioContext {
     this.#encoder = BufferEncoder(this.format)
     this.outStream = null
 
-    // When a new connection is established, start to pull audio
-    this._destination._inputs[0].on('connection', async () => {
-      if (this.#loopRunning || this._state !== 'running') return
-      // If user set outStream manually, use it; otherwise use audio-speaker
-      if (!this.outStream && !this.#speaker) {
-        this.#speaker = await Speaker({
-          sampleRate: this.sampleRate,
-          channels: this.#numberOfChannels,
-          bitDepth: this.#bitDepth
-        })
-      }
-      this.#loopRunning = true
-      this._renderLoop()
+    // Start render loop when a connection is established.
+    // Deferred via queueMicrotask so user can finish setting up the graph
+    // (connect + start) before rendering begins.
+    this._destination._inputs[0].on('connection', () => {
+      if (this.#loopRunning || this.#loopDeferred || this._state !== 'running') return
+      if (!this.outStream && !this.#speaker) return
+      this.#loopDeferred = true
+      queueMicrotask(() => {
+        this.#loopDeferred = false
+        if (this.#loopRunning || this._state !== 'running') return
+        this.#loopRunning = true
+        this._renderLoop()
+      })
     })
   }
 
   getOutputTimestamp() {
-    // performanceTime = 0 when no audio has been rendered, otherwise reflects
-    // the performance time at which the current audio frame was output
     if (this.currentTime === 0) return { contextTime: 0, performanceTime: 0 }
     let perf = typeof performance !== 'undefined' ? performance.now() : Date.now()
     return { contextTime: this.currentTime, performanceTime: perf }
@@ -165,17 +165,14 @@ class AudioContext extends BaseAudioContext {
       return Promise.resolve()
     }
     if (typeof sinkId === 'string') {
-      // Empty string = default device, always valid
       if (sinkId !== '' && sinkId !== this.#sinkId) {
         let known = this.constructor._knownDeviceIds || AudioContext._knownDeviceIds
         if (known && !known.has(sinkId))
           return Promise.reject(DOMErr('Device not found: ' + sinkId, 'NotFoundError'))
       }
-      // Spec: sinkId only updates when the promise resolves (not before)
       let prev = this.#sinkId
       let self = this
       return new Promise(resolve => {
-        // Use setTimeout to ensure the test can check sinkId before it changes
         setTimeout(() => {
           self.#sinkId = sinkId
           if (prev !== sinkId) self.dispatchEvent(new Event('sinkchange'))
@@ -193,15 +190,23 @@ class AudioContext extends BaseAudioContext {
     return Promise.resolve()
   }
 
-  resume() {
+  async resume() {
     if (this._discarded) return Promise.reject(DOMErr('Document is not fully active', 'InvalidStateError'))
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot resume a closed AudioContext', 'InvalidStateError'))
+    // Create speaker eagerly on resume — starts device with silence so there's
+    // no hardware pop when audio actually begins (same as browsers).
+    if (!this.outStream && !this.#speaker) {
+      this.#speaker = await Speaker({
+        sampleRate: this.sampleRate,
+        channels: this.#numberOfChannels,
+        bitDepth: this.#bitDepth
+      })
+    }
     this._setState('running')
     if (!this.#loopRunning && (this.#speaker || this.outStream) && this._destination._inputs[0].sources.length) {
       this.#loopRunning = true
       this._renderLoop()
     }
-    return Promise.resolve()
   }
 
   close() {
@@ -213,20 +218,25 @@ class AudioContext extends BaseAudioContext {
   }
 
   _closeOutput() {
-    if (this.#speaker) { this.#speaker(null); this.#speaker = null }
+    if (this.#speaker) { this.#speaker.close(); this.#speaker = null }
     if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
   }
 
   _renderLoop() {
-    if (this._state !== 'running') { this.#loopRunning = false; return }
+    if (this._state !== 'running') {
+      this.#loopRunning = false
+      return
+    }
     try {
       let buf = this._renderQuantum()
 
       if (this.#speaker) {
-        // audio-speaker accepts AudioBuffer directly — no PCM encoding needed
-        this.#speaker(buf, () => this._renderLoop())
+        let nch = buf.numberOfChannels
+        let channels = []
+        for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
+        let encoded = this.#encoder(channels)
+        this.#speaker(encoded, () => this._renderLoop())
       } else if (this.outStream) {
-        // Custom outStream: encode to PCM
         let nch = buf.numberOfChannels
         let channels = []
         for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
@@ -236,8 +246,7 @@ class AudioContext extends BaseAudioContext {
         else this.outStream.once('drain', () => this._renderLoop())
       }
     } catch (e) {
-      // Render loop stops on error. The error is dispatched as an 'error' event per spec.
-      // Users must listen for 'error' on the context — without a listener, audio stops silently.
+      console.error('AudioContext render error:', e)
       this.#loopRunning = false
       if (e) { let ev = new Event('error'); ev.error = e; this.dispatchEvent(ev) }
     }

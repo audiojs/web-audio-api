@@ -28,23 +28,6 @@
 
 Runnable files grounded in MDN tutorials. Self-contained, no browser, no DOM.
 
-```
-examples/
-  speaker.js         # node examples/speaker.js
-  pipe-stdout.js     # node examples/pipe-stdout.js | aplay -f cd
-  render-to-buffer.js
-  process-file.js
-  sweep.js
-  subtractive-synth.js
-  noise.js
-  lfo.js
-  spatial.js
-  fft.js
-  worklet.js
-  linked-params.js
-  sequencer.js
-```
-
 ### Getting started
 - [x] **speaker.js** — Hello world. AudioContext + OscillatorNode → speaker.
 - [x] **pipe-stdout.js** — Pipe to system: `node pipe-stdout.js | aplay -f cd`.

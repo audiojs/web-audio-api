@@ -26,7 +26,9 @@ offset.offset.value = 0.5
 let mixer = ctx.createGain()
 mixer.gain.value = 0 // controlled by LFO + offset
 
-carrier.connect(mixer).connect(ctx.destination)
+let master = ctx.createGain()
+
+carrier.connect(mixer).connect(master).connect(ctx.destination)
 lfo.connect(lfoGain).connect(mixer.gain)
 offset.connect(mixer.gain)
 
@@ -34,4 +36,7 @@ carrier.start()
 lfo.start()
 offset.start()
 
+let t = ctx.currentTime + duration
+master.gain.setValueAtTime(1, t - 0.05)
+master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => ctx.close(), duration * 1000)

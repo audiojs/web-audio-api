@@ -3,12 +3,19 @@
 
 import { AudioContext } from 'web-audio-api'
 
+const duration = 2
 const ctx = new AudioContext()
 await ctx.resume()
 
 const osc = ctx.createOscillator()
 osc.frequency.value = 440
-osc.connect(ctx.destination)
+
+const master = ctx.createGain()
+osc.connect(master).connect(ctx.destination)
 osc.start()
 
-setTimeout(() => ctx.close(), 2000)
+// Fade out before closing to avoid click
+let t = ctx.currentTime + duration
+master.gain.setValueAtTime(1, t - 0.05)
+master.gain.linearRampToValueAtTime(0, t)
+setTimeout(() => ctx.close(), duration * 1000)

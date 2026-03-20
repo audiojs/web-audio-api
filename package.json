@@ -33,7 +33,7 @@
   "dependencies": {
     "audio-buffer": "^6.0.0",
     "audio-decode": "^3.1.2",
-    "audio-speaker": "^2.0.1",
+    "audio-speaker": "^2.0.4",
     "automation-events": "^7.1.15",
     "fourier-transform": "^2.2.0"
   },
