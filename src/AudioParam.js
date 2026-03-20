@@ -25,6 +25,9 @@ class AudioParam extends DspObject {
   #automationEventList
   #minValue
   #maxValue
+  #paramVersion = 0   // incremented on every automation mutation
+  #cachedVersion = -1 // version when cache was set
+  #cachedValue = 0    // cached fill value (valid when version matches)
 
   get defaultValue() { return this.#defaultValue }
   get minValue() { return this.#minValue }
@@ -47,6 +50,7 @@ class AudioParam extends DspObject {
     this._assertNotInCurve(t)
     this.#intrinsicValue = newVal
     this.#automationEventList.add(createSetValueAutomationEvent(newVal, t))
+    this.#paramVersion++
   }
 
   // Throws NotSupportedError if time falls within an existing setValueCurve
@@ -82,7 +86,7 @@ class AudioParam extends DspObject {
     this.channelCountMode = 'explicit'
     this._input = new AudioInput(this.context, this, 0)
     this._input._useFloat64 = true
-    this._outBuf = new Float64Array(BLOCK_SIZE)
+    this._outBuf = new Float32Array(BLOCK_SIZE)
   }
 
   setValueAtTime(value, startTime) {
@@ -91,6 +95,7 @@ class AudioParam extends DspObject {
     startTime = Math.max(startTime, this.context.currentTime)
     this._assertNotInCurve(startTime)
     this.#automationEventList.add(createSetValueAutomationEvent(value, startTime))
+    this.#paramVersion++
     return this
   }
 
@@ -100,6 +105,7 @@ class AudioParam extends DspObject {
     endTime = Math.max(endTime, this.context.currentTime)
     this._assertNotInCurve(endTime)
     this.#automationEventList.add(createLinearRampToValueAutomationEvent(value, endTime))
+    this.#paramVersion++
     return this
   }
 
@@ -111,6 +117,7 @@ class AudioParam extends DspObject {
     endTime = Math.max(endTime, this.context.currentTime)
     this._assertNotInCurve(endTime)
     this.#automationEventList.add(createExponentialRampToValueAutomationEvent(value, endTime))
+    this.#paramVersion++
     return this
   }
 
@@ -123,6 +130,7 @@ class AudioParam extends DspObject {
     startTime = Math.max(startTime, this.context.currentTime)
     this._assertNotInCurve(startTime)
     this.#automationEventList.add(createSetTargetAutomationEvent(target, startTime, timeConstant))
+    this.#paramVersion++
     return this
   }
 
@@ -151,6 +159,7 @@ class AudioParam extends DspObject {
       }
     }
     this.#automationEventList.add(createSetValueCurveAutomationEvent(values, startTime, duration))
+    this.#paramVersion++
     return this
   }
 
@@ -188,34 +197,51 @@ class AudioParam extends DspObject {
   _dsp(array) {
     let hasInput = this._input.sources.length > 0
 
-    if (this.#rate === 'a') {
-      if (hasInput) {
-        // Compute in float64 to avoid double-rounding through Float32Array
-        let inputBuf = this._input._tick()
-        let ch0 = inputBuf.getChannelData(0)
-        for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] = this.#getValue(this.context.currentTime + i / this.context.sampleRate) + ch0[i]
-      } else {
-        for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] = this.#getValue(this.context.currentTime + i / this.context.sampleRate)
-      }
-    } else {
-      let val = this.#getValue(this.context.currentTime)
-      if (hasInput) {
-        let inputBuf = this._input._tick()
-        let ch0 = inputBuf.getChannelData(0)
-        // k-rate: use only the first sample of the input
-        let inputVal = ch0[0]
-        val += inputVal
-      }
-      for (let i = 0; i < BLOCK_SIZE; i++)
-        array[i] = val
+    // Fast path: truly static param (no events, no input) — skip getValue entirely
+    if (!hasInput && this.#cachedVersion === this.#paramVersion
+        && !this.#automationEventList._automationEvents.length) {
+      array.fill(this.#cachedValue)
+      this.#intrinsicValue = this.#cachedValue
+      return
     }
 
-    // Spec: flush NaN to default value
-    let def = this.#defaultValue
-    for (let i = 0; i < BLOCK_SIZE; i++)
-      if (isNaN(array[i])) array[i] = def
+    let t0 = this.context.currentTime
+    let sr = this.context.sampleRate
+
+    if (this.#rate === 'a') {
+      if (hasInput) {
+        let inputBuf = this._input._tick()
+        let ch0 = inputBuf.getChannelData(0)
+        for (let i = 0; i < BLOCK_SIZE; i++)
+          array[i] = this.#getValue(t0 + i / sr) + ch0[i]
+        // NaN can enter from input — flush to default
+        let def = this.#defaultValue
+        for (let i = 0; i < BLOCK_SIZE; i++) if (isNaN(array[i])) array[i] = def
+      } else {
+        let v0 = this.#getValue(t0)
+        let v1 = this.#getValue(t0 + (BLOCK_SIZE - 1) / sr)
+        if (v0 === v1) {
+          array.fill(v0)
+          this.#cachedVersion = this.#paramVersion
+          this.#cachedValue = v0
+        } else {
+          this.#cachedVersion = -1
+          for (let i = 0; i < BLOCK_SIZE; i++)
+            array[i] = this.#getValue(t0 + i / sr)
+        }
+      }
+    } else {
+      let val = this.#getValue(t0)
+      if (hasInput) {
+        let inputBuf = this._input._tick()
+        val += inputBuf.getChannelData(0)[0]
+        if (isNaN(val)) val = this.#defaultValue
+      } else if (!this.#automationEventList._automationEvents.length) {
+        this.#cachedVersion = this.#paramVersion
+        this.#cachedValue = val
+      }
+      array.fill(val)
+    }
 
     this.#intrinsicValue = array[BLOCK_SIZE - 1]
   }
@@ -223,6 +249,7 @@ class AudioParam extends DspObject {
   cancelScheduledValues(startTime) {
     _assertTime(startTime)
     this.#automationEventList.add(createCancelScheduledValuesAutomationEvent(startTime))
+    this.#paramVersion++
     return this
   }
 
@@ -247,6 +274,7 @@ class AudioParam extends DspObject {
     }
 
     this.#automationEventList.add(createCancelAndHoldAutomationEvent(cancelTime))
+    this.#paramVersion++
 
     events = this.#automationEventList._automationEvents
 

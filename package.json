@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "linkedom": "^0.18.12",
+    "node-web-audio-api": "^1.0.8",
     "tst": "^9.2.2"
   },
   "license": "MIT",
@@ -48,6 +49,8 @@
   "scripts": {
     "test": "node test/index.js",
     "bench": "node benchmark/run.js",
+    "bench:compare": "node benchmark/compare.js",
+    "bench:all": "node benchmark/run-all.js",
     "wpt": "node test/wpt-runner.js"
   }
 }

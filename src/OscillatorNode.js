@@ -3,6 +3,8 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import PeriodicWave, { TABLE_SIZE } from './PeriodicWave.js'
+
+const MASK = TABLE_SIZE - 1  // 8191 — TABLE_SIZE is 8192 = 2^13, so modulo = bitwise AND
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
@@ -53,44 +55,69 @@ class OscillatorNode extends AudioScheduledSourceNode {
     let nyquist = sr / 2
     let table = this.#periodicWave?.table ?? PeriodicWave.getBuiltIn(this.#type)
     let phase = this.#phase
-    // offset and count are passed by AudioScheduledSourceNode._tick()
 
     // Advance phase for skipped samples (before start within block)
     for (let i = 0; i < offset; i++) {
-      let freq = freqArr[i] * (2 ** (detuneArr[i] / 1200))
-      phase += freq / sr
+      phase += freqArr[i] * (2 ** (detuneArr[i] / 1200)) / sr
       phase -= Math.floor(phase)
     }
 
-    for (let i = 0; i < count; i++) {
-      let freq = freqArr[offset + i] * (2 ** (detuneArr[offset + i] / 1200))
-
-      // Per spec: if computed frequency >= Nyquist, output silence
+    // Fast path: constant frequency and detune across block — compute once
+    if (freqArr[0] === freqArr[BLOCK_SIZE - 1] && detuneArr[0] === detuneArr[BLOCK_SIZE - 1]) {
+      let freq = freqArr[0] * (2 ** (detuneArr[0] / 1200))
       if (Math.abs(freq) >= nyquist) {
-        out[i] = 0
+        out.fill(0, 0, count)
+        phase += freq / sr * count
+        phase -= Math.floor(phase)
+      } else {
+        let phaseInc = freq / sr
+        for (let i = 0; i < count; i++) {
+          let pos = phase * TABLE_SIZE
+          let idx = pos | 0  // pos ∈ [0, TABLE_SIZE) since phase ∈ [0, 1)
+          let frac = pos - idx
+          let y0 = table[(idx + MASK) & MASK]  // idx - 1, wrapping
+          let y1 = table[idx]
+          let y2 = table[(idx + 1) & MASK]
+          let y3 = table[(idx + 2) & MASK]
+          let c0 = y1
+          let c1 = 0.5 * (y2 - y0)
+          let c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3
+          let c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2)
+          out[i] = ((c3 * frac + c2) * frac + c1) * frac + c0
+          phase += phaseInc
+          if (phase >= 1) phase -= 1
+          else if (phase < 0) phase += 1
+        }
+      }
+    } else {
+      // Variable frequency — per-sample computation
+      for (let i = 0; i < count; i++) {
+        let freq = freqArr[offset + i] * (2 ** (detuneArr[offset + i] / 1200))
+
+        // Per spec: if computed frequency >= Nyquist, output silence
+        if (Math.abs(freq) >= nyquist) {
+          out[i] = 0
+          phase += freq / sr
+          phase -= Math.floor(phase)
+          continue
+        }
+
+        let pos = phase * TABLE_SIZE
+        let idx = pos | 0  // pos ∈ [0, TABLE_SIZE) since phase ∈ [0, 1)
+        let frac = pos - idx
+        let y0 = table[(idx + MASK) & MASK]  // idx - 1, wrapping
+        let y1 = table[idx]
+        let y2 = table[(idx + 1) & MASK]
+        let y3 = table[(idx + 2) & MASK]
+        let c0 = y1
+        let c1 = 0.5 * (y2 - y0)
+        let c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3
+        let c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2)
+        out[i] = ((c3 * frac + c2) * frac + c1) * frac + c0
+
         phase += freq / sr
         phase -= Math.floor(phase)
-        continue
       }
-
-      // Cubic (Hermite) interpolation for high-precision wavetable lookup
-      let pos = phase * TABLE_SIZE
-      let idx = Math.floor(pos)
-      let frac = pos - idx
-      let i0 = ((idx - 1) % TABLE_SIZE + TABLE_SIZE) % TABLE_SIZE
-      let i1 = idx % TABLE_SIZE
-      let i2 = (idx + 1) % TABLE_SIZE
-      let i3 = (idx + 2) % TABLE_SIZE
-      let y0 = table[i0], y1 = table[i1], y2 = table[i2], y3 = table[i3]
-      // Hermite interpolation
-      let c0 = y1
-      let c1 = 0.5 * (y2 - y0)
-      let c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3
-      let c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2)
-      out[i] = ((c3 * frac + c2) * frac + c1) * frac + c0
-
-      phase += freq / sr
-      phase -= Math.floor(phase) // keep in [0, 1)
     }
     // Zero remaining samples if producing less than BLOCK_SIZE
     for (let i = count; i < BLOCK_SIZE; i++) out[i] = 0

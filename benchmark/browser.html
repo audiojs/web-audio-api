@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Web Audio API Benchmark — Browser</title>
+<style>
+  body { font-family: monospace; padding: 2em; background: #111; color: #eee; }
+  h2 { color: #aaa; font-weight: normal; }
+  pre { background: #1a1a1a; padding: 1em; border-radius: 4px; overflow-x: auto; }
+  .done { color: #4f4; }
+  .running { color: #fa0; }
+</style>
+</head>
+<body>
+<h2>Web Audio API Benchmark — Browser Native</h2>
+<pre id="out"><span class="running">Running…</span></pre>
+<script>
+const SR = 44100, DURATION = 1, LENGTH = SR * DURATION
+
+const scenarios = [
+  { name: 'silence (baseline)',      channels: 1, setup: ctx => {} },
+  { name: 'OscillatorNode',          channels: 1, setup: ctx => { const o = ctx.createOscillator(); o.connect(ctx.destination); o.start(0) } },
+  { name: 'Osc → Gain',             channels: 1, setup: ctx => { const o = ctx.createOscillator(), g = ctx.createGain(); g.gain.value = 0.5; o.connect(g).connect(ctx.destination); o.start(0) } },
+  { name: 'Osc → BiquadFilter',     channels: 1, setup: ctx => { const o = ctx.createOscillator(), f = ctx.createBiquadFilter(); f.frequency.value = 1000; o.connect(f).connect(ctx.destination); o.start(0) } },
+  { name: 'Osc → StereoPanner',     channels: 2, setup: ctx => { const o = ctx.createOscillator(), p = ctx.createStereoPanner(); p.pan.value = 0.5; o.connect(p).connect(ctx.destination); o.start(0) } },
+  { name: 'DynamicsCompressor',     channels: 1, setup: ctx => { const o = ctx.createOscillator(), c = ctx.createDynamicsCompressor(); o.connect(c).connect(ctx.destination); o.start(0) } },
+  { name: 'ConvolverNode (128-tap)', channels: 1, setup: ctx => {
+    const o = ctx.createOscillator(), c = ctx.createConvolver(); c.normalize = false
+    const ir = ctx.createBuffer(1, 128, SR); ir.getChannelData(0)[0] = 1; c.buffer = ir
+    o.connect(c).connect(ctx.destination); o.start(0)
+  }},
+  { name: 'Osc → Filter → Gain',    channels: 1, setup: ctx => { const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.connect(f).connect(g).connect(ctx.destination); o.start(0) } },
+  { name: '8-voice polyphony',      channels: 1, setup: ctx => {
+    const mix = ctx.createGain(); mix.connect(ctx.destination)
+    for (let i = 0; i < 8; i++) { const o = ctx.createOscillator(); o.frequency.value = 220 * (i + 1); o.connect(mix); o.start(0) }
+  }},
+]
+
+async function bench({ name, channels, setup }) {
+  const ctx = new OfflineAudioContext(channels, LENGTH, SR)
+  setup(ctx)
+  const t0 = performance.now()
+  await ctx.startRendering()
+  const ms = performance.now() - t0
+  const realtime = ms / 1000 / DURATION
+  return { name, ms, realtime }
+}
+
+async function run() {
+  const el = document.getElementById('out')
+  const m = navigator.userAgent.match(/(Chrome|Firefox|Safari)\/(\d+)/)
+  const ua = m ? `${m[1]} ${m[2]}` : 'Browser'
+
+  // warm up
+  await bench(scenarios[0])
+
+  const rows = []
+  for (const s of scenarios) {
+    el.innerHTML = `<span class="running">Running: ${s.name}…</span>`
+    const r = await bench(s)
+    rows.push(r)
+  }
+
+  // expose for Playwright to read
+  window.__benchResults = rows
+  window.__benchUA = ua
+
+  let out = `Browser: ${ua}\n\n`
+  out += 'Scenario'.padEnd(32) + '     Time     Status\n'
+  out += '─'.repeat(55) + '\n'
+  for (const { name, ms, realtime } of rows) {
+    const tag = realtime < 1 ? '✓ real-time' : `${realtime.toFixed(1)}x slower`
+    out += name.padEnd(32) + `${ms.toFixed(1).padStart(8)}ms  ${tag}\n`
+  }
+  el.className = 'done'
+  el.textContent = out
+}
+
+run().catch(e => { document.getElementById('out').textContent = 'Error: ' + e.message })
+</script>
+</body>
+</html>

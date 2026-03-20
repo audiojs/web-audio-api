@@ -42,34 +42,56 @@ class StereoPannerNode extends AudioNode {
     let inCh = inBuf.numberOfChannels
     let PI2 = Math.PI / 2
 
+    // Fast path: constant pan across block — compute trig once
+    let isConst = panArr[0] === panArr[BLOCK_SIZE - 1]
+
     if (inCh === 1) {
       let inp = inBuf.getChannelData(0)
-      for (let i = 0; i < BLOCK_SIZE; i++) {
-        let p = Math.max(-1, Math.min(1, panArr[i]))
+      if (isConst) {
+        let p = Math.max(-1, Math.min(1, panArr[0]))
         let x = (p + 1) / 2 * PI2
-        outL[i] = inp[i] * Math.cos(x)
-        outR[i] = inp[i] * Math.sin(x)
+        let cosX = Math.cos(x), sinX = Math.sin(x)
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          outL[i] = inp[i] * cosX
+          outR[i] = inp[i] * sinX
+        }
+      } else {
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          let p = Math.max(-1, Math.min(1, panArr[i]))
+          let x = (p + 1) / 2 * PI2
+          outL[i] = inp[i] * Math.cos(x)
+          outR[i] = inp[i] * Math.sin(x)
+        }
       }
     } else {
       let inL = inBuf.getChannelData(0), inR = inBuf.getChannelData(1)
-      for (let i = 0; i < BLOCK_SIZE; i++) {
-        let p = Math.max(-1, Math.min(1, panArr[i]))
+      if (isConst) {
+        let p = Math.max(-1, Math.min(1, panArr[0]))
         if (p <= -1) {
-          // Hard left: all to left channel
-          outL[i] = inL[i] + inR[i]
-          outR[i] = 0
+          for (let i = 0; i < BLOCK_SIZE; i++) { outL[i] = inL[i] + inR[i]; outR[i] = 0 }
         } else if (p >= 1) {
-          // Hard right: all to right channel
-          outL[i] = 0
-          outR[i] = inR[i] + inL[i]
+          for (let i = 0; i < BLOCK_SIZE; i++) { outL[i] = 0; outR[i] = inR[i] + inL[i] }
         } else if (p < 0) {
-          let x = -p * PI2
-          outL[i] = inL[i] + inR[i] * Math.sin(x)
-          outR[i] = inR[i] * Math.cos(x)
+          let x = -p * PI2, sinX = Math.sin(x), cosX = Math.cos(x)
+          for (let i = 0; i < BLOCK_SIZE; i++) { outL[i] = inL[i] + inR[i] * sinX; outR[i] = inR[i] * cosX }
         } else {
-          let x = p * PI2
-          outL[i] = inL[i] * Math.cos(x)
-          outR[i] = inR[i] + inL[i] * Math.sin(x)
+          let x = p * PI2, cosX = Math.cos(x), sinX = Math.sin(x)
+          for (let i = 0; i < BLOCK_SIZE; i++) { outL[i] = inL[i] * cosX; outR[i] = inR[i] + inL[i] * sinX }
+        }
+      } else {
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+          let p = Math.max(-1, Math.min(1, panArr[i]))
+          if (p <= -1) {
+            outL[i] = inL[i] + inR[i]; outR[i] = 0
+          } else if (p >= 1) {
+            outL[i] = 0; outR[i] = inR[i] + inL[i]
+          } else if (p < 0) {
+            let x = -p * PI2
+            outL[i] = inL[i] + inR[i] * Math.sin(x); outR[i] = inR[i] * Math.cos(x)
+          } else {
+            let x = p * PI2
+            outL[i] = inL[i] * Math.cos(x); outR[i] = inR[i] + inL[i] * Math.sin(x)
+          }
         }
       }
     }

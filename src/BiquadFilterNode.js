@@ -13,7 +13,7 @@ class BiquadFilterNode extends AudioNode {
   #Q
   #gain
   #type = 'lowpass'
-  #state // per-channel filter state [x1, x2, y1, y2]
+  #state // per-channel filter state: flat Float64Array [x1,x2,y1,y2, x1,x2,y1,y2, ...]
 
   get frequency() { return this.#frequency }
   get detune() { return this.#detune }
@@ -36,7 +36,7 @@ class BiquadFilterNode extends AudioNode {
     let gainMax = Math.fround(Math.fround(40) * Math.fround(Math.log10(3.4028234663852886e38)))
     this.#gain = new AudioParam(this.context, options.gain ?? 0, 'a', undefined, gainMax)
     if (options.type !== undefined) this.type = options.type
-    this.#state = []
+    this.#state = null
     this._outBuf = null
     this._outCh = 0
     this._applyOpts(options)
@@ -95,7 +95,7 @@ class BiquadFilterNode extends AudioNode {
     if (ch !== this._outCh) {
       this._outBuf = new AudioBuffer(ch, BLOCK_SIZE, sr)
       this._outCh = ch
-      this.#state = Array.from({ length: ch }, () => ({ x1: 0, x2: 0, y1: 0, y2: 0 }))
+      this.#state = new Float64Array(ch * 4)  // [x1, x2, y1, y2] per channel
     }
 
     // fast path: if params are constant across block, compute coefficients once
@@ -108,25 +108,31 @@ class BiquadFilterNode extends AudioNode {
       let freq = freqArr[0] * (2 ** (detuneArr[0] / 1200))
       let { b0, b1, b2, a1, a2 } = BiquadFilterNode._coefficients(this.#type, freq, sr, qArr[0], gainArr[0])
       for (let c = 0; c < ch; c++) {
-        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c), s = this.#state[c]
+        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c)
+        let si = c * 4
+        let x1 = this.#state[si], x2 = this.#state[si+1], y1 = this.#state[si+2], y2 = this.#state[si+3]
         for (let i = 0; i < BLOCK_SIZE; i++) {
           let x = inp[i]
-          let y = b0 * x + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2
-          s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y
+          let y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+          x2 = x1; x1 = x; y2 = y1; y1 = y
           out[i] = y
         }
+        this.#state[si] = x1; this.#state[si+1] = x2; this.#state[si+2] = y1; this.#state[si+3] = y2
       }
     } else {
       for (let c = 0; c < ch; c++) {
-        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c), s = this.#state[c]
+        let inp = inBuf.getChannelData(c), out = this._outBuf.getChannelData(c)
+        let si = c * 4
+        let x1 = this.#state[si], x2 = this.#state[si+1], y1 = this.#state[si+2], y2 = this.#state[si+3]
         for (let i = 0; i < BLOCK_SIZE; i++) {
           let freq = freqArr[i] * (2 ** (detuneArr[i] / 1200))
           let { b0, b1, b2, a1, a2 } = BiquadFilterNode._coefficients(this.#type, freq, sr, qArr[i], gainArr[i])
           let x = inp[i]
-          let y = b0 * x + b1 * s.x1 + b2 * s.x2 - a1 * s.y1 - a2 * s.y2
-          s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y
+          let y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+          x2 = x1; x1 = x; y2 = y1; y1 = y
           out[i] = y
         }
+        this.#state[si] = x1; this.#state[si+1] = x2; this.#state[si+2] = y1; this.#state[si+3] = y2
       }
     }
 

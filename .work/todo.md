@@ -21,37 +21,8 @@
 
 - [x] Examples (`examples/` directory)
 - [ ] CLI interface — `npx waa "..."` or piping
-- [ ] Benchmarks — comparative benchmarks against alternatives
+- [x] Benchmarks — comparative benchmarks against alternatives
 - [ ] Modularization — extract standalone DSP modules (see below)
-
-## Examples
-
-Runnable files grounded in MDN tutorials. Self-contained, no browser, no DOM.
-
-### Getting started
-- [x] **speaker.js** — Hello world. AudioContext + OscillatorNode → speaker.
-- [x] **pipe-stdout.js** — Pipe to system: `node pipe-stdout.js | aplay -f cd`.
-
-### Offline rendering
-- [x] **render-to-buffer.js** — OfflineAudioContext → OscillatorNode → AudioBuffer → raw PCM.
-- [x] **process-file.js** — readFile → decodeAudioData → BiquadFilter + DynamicsCompressor → render.
-
-### Synthesis
-- [x] **sweep.js** — OscillatorNode + PeriodicWave + GainNode envelope (linearRamp).
-- [x] **subtractive-synth.js** — Sawtooth → BiquadFilter (lowpass sweep) → GainNode (ADSR).
-- [x] **noise.js** — Procedural white noise → BiquadFilter (bandpass) → shaped noise.
-- [x] **lfo.js** — Sine carrier + square LFO → gain modulation = tremolo.
-
-### Spatial
-- [x] **spatial.js** — PannerNode + AudioListener + positionX automation → stereo render.
-
-### Analysis
-- [x] **fft.js** — AnalyserNode → getFloatFrequencyData → print spectrum.
-
-### Advanced
-- [x] **worklet.js** — AudioWorkletProcessor white noise generator with custom param.
-- [x] **linked-params.js** — ConstantSourceNode controlling multiple GainNodes.
-- [x] **sequencer.js** — Multi-voice step sequencer with currentTime-based scheduling.
 
 ## Modularization
 
@@ -148,4 +119,33 @@ Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS 
 - [x] AudioWorklet threading → README Limitations
 
 #### GitHub issues — all closed except #16
-All 49 issues closed with answers and code examples. #16 (Worker/WASM) kept open for milestone 2.
+- [x] All 49 issues closed with answers and code examples. #16 (Worker/WASM) kept open for milestone 2.
+
+## Examples
+
+Runnable files grounded in MDN tutorials. Self-contained, no browser, no DOM.
+
+### Getting started
+- [x] **speaker.js** — Hello world. AudioContext + OscillatorNode → speaker.
+- [x] **pipe-stdout.js** — Pipe to system: `node pipe-stdout.js | aplay -f cd`.
+
+### Offline rendering
+- [x] **render-to-buffer.js** — OfflineAudioContext → OscillatorNode → AudioBuffer → raw PCM.
+- [x] **process-file.js** — readFile → decodeAudioData → BiquadFilter + DynamicsCompressor → render.
+
+### Synthesis
+- [x] **sweep.js** — OscillatorNode + PeriodicWave + GainNode envelope (linearRamp).
+- [x] **subtractive-synth.js** — Sawtooth → BiquadFilter (lowpass sweep) → GainNode (ADSR).
+- [x] **noise.js** — Procedural white noise → BiquadFilter (bandpass) → shaped noise.
+- [x] **lfo.js** — Sine carrier + square LFO → gain modulation = tremolo.
+
+### Spatial
+- [x] **spatial.js** — PannerNode + AudioListener + positionX automation → stereo render.
+
+### Analysis
+- [x] **fft.js** — AnalyserNode → getFloatFrequencyData → print spectrum.
+
+### Advanced
+- [x] **worklet.js** — AudioWorkletProcessor white noise generator with custom param.
+- [x] **linked-params.js** — ConstantSourceNode controlling multiple GainNodes.
+- [x] **sequencer.js** — Multi-voice step sequencer with currentTime-based scheduling.

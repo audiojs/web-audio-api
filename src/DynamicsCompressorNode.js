@@ -5,6 +5,9 @@ import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
 
+const LN10_20 = Math.log(10) / 20   // dB→linear: Math.exp(-dB * LN10_20)
+const LOG10_20 = 20 / Math.log(10)   // linear→dB: LOG10_20 * Math.log(x)
+
 class DynamicsCompressorNode extends AudioNode {
 
   #threshold
@@ -70,38 +73,44 @@ class DynamicsCompressorNode extends AudioNode {
     let releaseCoeff = release > 0 ? Math.exp(-1 / (release * sr)) : 0
     if (knee < 0) knee = 0
     let halfKnee = knee / 2
-    if (ratio <= 0) ratio = 1 // guard against divide-by-zero
+    if (ratio <= 0) ratio = 1
+    let slope = 1 - 1 / ratio
+    let kneeInv = knee > 0 ? 1 / (4 * knee) : 0
     let env = this.#envelope
 
+    // Hoist channel data refs outside inner loop
+    let inCh = new Array(ch), outCh = new Array(ch)
+    for (let c = 0; c < ch; c++) {
+      inCh[c] = inBuf.getChannelData(c)
+      outCh[c] = this._outBuf.getChannelData(c)
+    }
+
     for (let i = 0; i < BLOCK_SIZE; i++) {
-      // detect peak across all channels
       let peak = 0
-      for (let c = 0; c < ch; c++)
-        peak = Math.max(peak, Math.abs(inBuf.getChannelData(c)[i]))
+      for (let c = 0; c < ch; c++) {
+        let v = inCh[c][i]
+        if (v < 0) v = -v
+        if (v > peak) peak = v
+      }
 
-      let dB = peak > 0 ? 20 * Math.log10(peak) : -120
+      let dB = peak > 0 ? LOG10_20 * Math.log(peak) : -120
 
-      // envelope follower
       let coeff = dB > env ? attackCoeff : releaseCoeff
       env = coeff * env + (1 - coeff) * dB
 
-      // compute gain reduction
       let overshoot = env - threshold
       let gainReduction = 0
-      if (overshoot <= -halfKnee) {
-        gainReduction = 0
-      } else if (overshoot >= halfKnee) {
-        gainReduction = overshoot * (1 - 1 / ratio)
-      } else if (knee > 0) {
-        // soft knee
+      if (overshoot >= halfKnee) {
+        gainReduction = overshoot * slope
+      } else if (overshoot > -halfKnee) {
         let x = overshoot + halfKnee
-        gainReduction = (x * x) / (4 * knee) * (1 - 1 / ratio)
+        gainReduction = x * x * kneeInv * slope
       }
 
-      let gainLin = Math.pow(10, -gainReduction / 20)
+      let gainLin = Math.exp(-gainReduction * LN10_20)
 
       for (let c = 0; c < ch; c++)
-        this._outBuf.getChannelData(c)[i] = inBuf.getChannelData(c)[i] * gainLin
+        outCh[c][i] = inCh[c][i] * gainLin
 
       this.#reduction = -gainReduction
     }

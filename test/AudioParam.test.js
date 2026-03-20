@@ -175,7 +175,7 @@ test('Phase0 > AudioParam > returns reused typed array (no alloc per tick)', () 
 
   let b1 = p._tick()
   let b2 = p._tick()
-  ok(b1 instanceof Float64Array, 'returns Float64Array for precision')
+  ok(b1 instanceof Float32Array, 'returns Float32Array')
   ok(b1 === b2, 'same array reused across ticks')
   is(b1.length, BLOCK_SIZE)
 })

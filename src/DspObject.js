@@ -11,6 +11,7 @@ class DspObject extends Emitter() {
   }
 
   _tick() {
+    if (!this._scheduled.length) return
     let event = this._scheduled.shift()
     let eventsSameTime, eventsToExecute = []
     let previousTime

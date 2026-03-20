@@ -100,12 +100,35 @@ Run any example: `node examples/<name>.js` — real-time examples play sound thr
 | | [process-file.js](examples/process-file.js) | Read audio file → EQ + compress → render |
 | | [pipe-stdout.js](examples/pipe-stdout.js) | Pipe PCM to system player |
 
-## See also
+## Alternatives
 
-- [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) — Rust-backed, native performance, Node.js only
-- [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) — full Rust implementation, also compiles to WASM
-- [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) — browser polyfill normalizing cross-browser differences
-- [web-audio-engine](https://github.com/mohayonao/web-audio-engine) — earlier pure-JS effort (archived 2019), inspiration for this project
+| | [web-audio-api](https://github.com/audiojs/web-audio-api) | [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) |
+|---|---|---|---|---|
+| Language | JS | Rust (napi) | JS | Rust |
+| Runs in | Node, Bun, Deno, browser | Node only | Browser only | Rust / WASM |
+| Native deps | none | platform binary | none | Rust toolchain |
+| WPT compliance | 98% | partial | n/a (wraps native) | partial |
+| Install | `npm install` | `npm install` (downloads binary) | `npm install` | `cargo add` |
+
+**Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.
+**Choose node-web-audio-api** when you need maximum DSP throughput on Node.js and can accept the native dependency.
+**Choose standardized-audio-context** when you target browsers and need a uniform API across vendor differences.
+**Choose web-audio-api-rs** for Rust-native or WASM projects (not an npm package).
+
+Also: [web-audio-engine](https://github.com/mohayonao/web-audio-engine) &mdash; earlier pure-JS effort (archived 2019), inspiration for this project.
+
+Rendering 1s of audio at 44.1kHz (`npm run bench:all`):
+
+| Scenario | web-audio-api (JS) | node-web-audio-api (Rust) | Chrome (native) |
+|---|---|---|---|
+| OscillatorNode | 0.3ms | 0.3ms | 0.4ms |
+| Osc &rarr; Gain | 0.4ms | 0.2ms | 0.4ms |
+| Osc &rarr; BiquadFilter | 0.9ms | 0.4ms | 0.5ms |
+| DynamicsCompressor | 2.0ms | 0.5ms | 1.2ms |
+| ConvolverNode (128-tap) | 4.4ms | 1.6ms | 0.4ms |
+| 8-voice polyphony | 2.3ms | 1.8ms | 1.2ms |
+
+All scenarios run faster than real-time. Pure JS matches Rust on simple graphs; heavier DSP (convolution, compression) is 2&ndash;4&times; slower &mdash; WASM kernels are planned for these paths.
 
 ## Limitations
 
