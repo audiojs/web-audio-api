@@ -102,16 +102,16 @@ Run any example: `node examples/<name>.js` — real-time examples play sound thr
 
 ## Alternatives
 
-| | Language | Runs in | Native deps | WPT | Install |
+| | Language | Runs in | Native deps | WPT | Offline rendering |
 |---|---|---|---|---|---|
-| [web-audio-api](https://github.com/audiojs/web-audio-api) | JS | Node, Bun, Deno, browser | none | 98% | `npm install` |
-| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform binary | partial | `npm install` |
-| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a | `npm install` |
-| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust toolchain | partial | `cargo add` |
+| [web-audio-api](https://github.com/audiojs/web-audio-api) | JS | Node, Bun, Deno, browser | none | 100% | yes |
+| [node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api) | Rust (napi) | Node only | platform binary | partial | yes |
+| [standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context) | JS | Browser only | none | n/a (wraps native) | browser only |
+| [web-audio-api-rs](https://github.com/orottier/web-audio-api-rs) | Rust | Rust / WASM | Rust toolchain | partial | yes |
 
-**Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.
-**Choose node-web-audio-api** when you need maximum DSP throughput on Node.js and can accept the native dependency.
-**Choose standardized-audio-context** when you target browsers and need a uniform API across vendor differences.
+**Choose this package** when you need portable spec-compliant Web Audio in any JS environment &mdash; testing, offline rendering, SSR, or lightweight real-time playback.<br>
+**Choose node-web-audio-api** when you need maximum DSP throughput on Node.js and can accept the native dependency.<br>
+**Choose standardized-audio-context** when you target browsers and need a uniform API across vendor differences.<br>
 **Choose web-audio-api-rs** for Rust-native or WASM projects (not an npm package).
 
 Also: [web-audio-engine](https://github.com/mohayonao/web-audio-engine) &mdash; earlier pure-JS effort (archived 2019), inspiration for this project.
