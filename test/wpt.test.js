@@ -17,11 +17,15 @@ const subdirs = readdirSync(wptRoot, { withFileTypes: true })
 // Some context tests check real-time stats — flaky under parallel CPU contention
 const FLAKY = new Set(['the-audiocontext-interface'])
 
-// Platform-specific vm incompatibilities (cannot fix on our side)
+// Platform-specific skips
 const isDeno = typeof Deno !== 'undefined'
+const isBun = typeof Bun !== 'undefined'
 const SKIP_FILES = new Set([
   // Deno vm: cross-realm __proto__ access returns null, breaking Object.keys(node.__proto__)
   ...(isDeno ? ['audioparam-nominal-range.html'] : []),
+  // Bun: MessagePort callback errors bypass process.on('uncaughtException'), crashing the process.
+  // These tests fail on all runtimes (active processing not implemented) but only crash Bun.
+  ...(isBun ? ['active-processing.https.html'] : []),
 ])
 
 for (const subdir of subdirs) {

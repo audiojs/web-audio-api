@@ -296,7 +296,10 @@ class AudioWorklet {
   get port() { return this.#port }
 
   async addModule(moduleOrSetup) {
-    if (typeof moduleOrSetup === 'function') return moduleOrSetup(this.#scope)
+    if (typeof moduleOrSetup === 'function') {
+      this.#scope.sampleRate = this.#context.sampleRate
+      return moduleOrSetup(this.#scope)
+    }
 
     if (typeof moduleOrSetup !== 'string')
       throw new TypeError('addModule requires a URL string or setup function')
