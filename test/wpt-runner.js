@@ -158,6 +158,10 @@ async function runTest(filePath) {
   // Build sandbox with linkedom's DOM — use actual test HTML so querySelector finds inline script elements
   let { window: domWin, document } = parseHTML(html)
 
+  // Ensure elements testharness.js output handler expects (Bun needs these)
+  if (!document.getElementById('log')) { let el = document.createElement('div'); el.id = 'log'; document.body?.appendChild(el) }
+  if (!document.getElementById('rerun')) { let el = document.createElement('button'); el.id = 'rerun'; document.body?.appendChild(el) }
+
   // Fix linkedom's innerText on script elements: linkedom collapses newlines,
   // but script content must preserve them (single-line // comments break otherwise)
   for (let el of document.querySelectorAll('script'))
@@ -324,7 +328,10 @@ async function runTest(filePath) {
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
     Promise, Proxy, Reflect, Map, Set, WeakMap, WeakSet,
     Error, TypeError, RangeError, SyntaxError, ReferenceError, URIError, DOMException,
-    Event, CustomEvent, MessageChannel, WebAssembly, SharedArrayBuffer,
+    Event, MessageChannel, WebAssembly, SharedArrayBuffer,
+    CustomEvent: typeof CustomEvent !== 'undefined' ? CustomEvent : class CustomEvent extends Event {
+      constructor(type, opts = {}) { super(type, opts); this.detail = opts.detail ?? null }
+    },
     Blob,
     URL: Object.assign(function WPTUrl(...a) { return new URL(...a) }, {
       createObjectURL(blob) {
