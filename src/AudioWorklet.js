@@ -142,7 +142,7 @@ class AudioWorkletNode extends AudioNode {
     } catch (e) {
       // Spec: constructor errors fire onprocessorerror
       queueMicrotask(() => {
-        let ev = new (globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e?.message })
+        let ev = new (this.context._ErrorEvent || globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e?.message })
 
         this.dispatchEvent(ev)
       })
@@ -254,7 +254,7 @@ class AudioWorkletNode extends AudioNode {
       let processFn = this.#processor.process
       if (typeof processFn !== 'function') {
         let e = new TypeError('process is not a function')
-        let ev = new (globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e.message })
+        let ev = new (this.context._ErrorEvent || globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e.message })
         this.dispatchEvent(ev)
         this.#alive = false
         if (this.context._tailNodes) this.context._tailNodes.delete(this)
@@ -262,7 +262,7 @@ class AudioWorkletNode extends AudioNode {
       }
       keepAlive = processFn.call(this.#processor, inputs, outputs, parameters)
     } catch (e) {
-      let ev = new (globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e?.message })
+      let ev = new (this.context._ErrorEvent || globalThis.ErrorEvent || Event)('processorerror', { error: e, message: e?.message })
 
       this.dispatchEvent(ev)
       this.#alive = false

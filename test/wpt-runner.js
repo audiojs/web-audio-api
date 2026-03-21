@@ -163,7 +163,7 @@ async function runTest(filePath) {
   for (let el of document.querySelectorAll('script'))
     Object.defineProperty(el, 'innerText', { get() { return this.textContent } })
 
-  let sandbox = Object.create(null)
+  let sandbox = {}
   // Copy DOM globals from linkedom, but skip JS builtins that vm provides natively
   let vmBuiltins = new Set([
     'Object', 'Function', 'Array', 'Number', 'String', 'Boolean', 'Symbol', 'RegExp',
@@ -327,9 +327,6 @@ async function runTest(filePath) {
     Event, MessageChannel, WebAssembly, SharedArrayBuffer,
     CustomEvent: typeof CustomEvent !== 'undefined' ? CustomEvent : class CustomEvent extends Event {
       constructor(type, opts = {}) { super(type, opts); this.detail = opts.detail ?? null }
-    },
-    ErrorEvent: typeof ErrorEvent !== 'undefined' ? ErrorEvent : class ErrorEvent extends Event {
-      constructor(type, opts = {}) { super(type, opts); this.message = opts.message ?? ''; this.filename = opts.filename ?? ''; this.lineno = opts.lineno ?? 0; this.colno = opts.colno ?? 0; this.error = opts.error ?? null }
     },
     Blob,
     URL: Object.assign(function WPTUrl(...a) { return new URL(...a) }, {
@@ -558,6 +555,15 @@ async function runTest(filePath) {
   // created inside the sandbox (vm literals use vm-internal constructors,
   // which differ from outer-realm constructors set on the sandbox)
   sandbox.Array = vm.runInContext('[].constructor', ctx)
+
+  // Create ErrorEvent inside vm so instanceof checks work cross-realm
+  let VMErrorEvent = vm.runInContext(`(class ErrorEvent extends Event {
+    constructor(type, opts = {}) { super(type, opts); this.message = opts.message ?? ''; this.filename = opts.filename ?? ''; this.lineno = opts.lineno ?? 0; this.colno = opts.colno ?? 0; this.error = opts.error ?? null }
+  })`, ctx)
+  sandbox.ErrorEvent = VMErrorEvent
+  // Pass to WPT contexts so AudioWorkletNode uses vm-realm ErrorEvent
+  WPTAudioContext.prototype._ErrorEvent = VMErrorEvent
+  WPTOfflineAudioContext.prototype._ErrorEvent = VMErrorEvent
 
   try {
     // Run testharness.js, disable DOM output (we capture results via callbacks)
