@@ -213,11 +213,11 @@ noise.connect(ghostBp).connect(ghostG).connect(ctx.destination)
 // Brush: highpass noise with LFO swoosh
 let brushHp = ctx.createBiquadFilter()
 brushHp.type = 'highpass'; brushHp.frequency.value = 6000
-let brushG = ctx.createGain(); brushG.gain.value = 0.012
+let brushG = ctx.createGain(); brushG.gain.value = 0.006
 noise.connect(brushHp).connect(brushG).connect(ctx.destination)
 let swoosh = ctx.createOscillator(); swoosh.type = 'triangle'
 swoosh.frequency.value = bpm / 60 / 2 // half-note swoosh rhythm
-let swooshG = ctx.createGain(); swooshG.gain.value = 0.018
+let swooshG = ctx.createGain(); swooshG.gain.value = 0.005
 swoosh.connect(swooshG).connect(brushG.gain)
 swoosh.start(t0); swoosh.stop(t0 + duration)
 
@@ -230,7 +230,7 @@ let scheduleKick = (when) => {
   osc.frequency.exponentialRampToValueAtTime(50, when + 0.08)
   let env = ctx.createGain()
   env.gain.setValueAtTime(0, when)
-  env.gain.linearRampToValueAtTime(0.12, when + 0.005)
+  env.gain.linearRampToValueAtTime(0.07, when + 0.005)
   env.gain.exponentialRampToValueAtTime(0.001, when + 0.25)
   osc.connect(env).connect(kickOut)
   osc.start(when); osc.stop(when + 0.3)
@@ -315,7 +315,7 @@ for (let c = 0; c < nChords; c++) {
     // Ride: swing pattern "ding...ding-ga"
     for (let [b, accent] of ridePattern) {
       let when = bs + b * beat
-      let vol = (accent ? 0.06 : 0.035) * (0.5 + e * 0.5)
+      let vol = (accent ? 0.04 : 0.022) * (0.5 + e * 0.5)
       rideG.gain.setValueAtTime(vol, when)
       rideG.gain.exponentialRampToValueAtTime(0.001, when + (accent ? 0.15 : 0.1))
     }
