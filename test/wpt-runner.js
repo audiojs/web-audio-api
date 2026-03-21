@@ -158,10 +158,6 @@ async function runTest(filePath) {
   // Build sandbox with linkedom's DOM — use actual test HTML so querySelector finds inline script elements
   let { window: domWin, document } = parseHTML(html)
 
-  // Ensure elements testharness.js output handler expects (Bun needs these)
-  if (!document.getElementById('log')) { let el = document.createElement('div'); el.id = 'log'; document.body?.appendChild(el) }
-  if (!document.getElementById('rerun')) { let el = document.createElement('button'); el.id = 'rerun'; document.body?.appendChild(el) }
-
   // Fix linkedom's innerText on script elements: linkedom collapses newlines,
   // but script content must preserve them (single-line // comments break otherwise)
   for (let el of document.querySelectorAll('script'))
@@ -189,7 +185,7 @@ async function runTest(filePath) {
   sandbox.window = sandbox
   sandbox.parent = sandbox
   sandbox.top = sandbox
-  sandbox.location = { href: 'https://localhost/', protocol: 'https:', search: '', pathname: '/' }
+  sandbox.location = { href: 'https://localhost/', protocol: 'https:', search: '', pathname: '/', toString() { return this.href } }
 
   // --- Browser API shims ---
 
@@ -331,6 +327,9 @@ async function runTest(filePath) {
     Event, MessageChannel, WebAssembly, SharedArrayBuffer,
     CustomEvent: typeof CustomEvent !== 'undefined' ? CustomEvent : class CustomEvent extends Event {
       constructor(type, opts = {}) { super(type, opts); this.detail = opts.detail ?? null }
+    },
+    ErrorEvent: typeof ErrorEvent !== 'undefined' ? ErrorEvent : class ErrorEvent extends Event {
+      constructor(type, opts = {}) { super(type, opts); this.message = opts.message ?? ''; this.filename = opts.filename ?? ''; this.lineno = opts.lineno ?? 0; this.colno = opts.colno ?? 0; this.error = opts.error ?? null }
     },
     Blob,
     URL: Object.assign(function WPTUrl(...a) { return new URL(...a) }, {
@@ -561,8 +560,9 @@ async function runTest(filePath) {
   sandbox.Array = vm.runInContext('[].constructor', ctx)
 
   try {
-    // Run testharness.js
+    // Run testharness.js, disable DOM output (we capture results via callbacks)
     vm.runInContext(testharnessCode, ctx, { filename: 'testharness.js' })
+    vm.runInContext('setup({ output: false })', ctx)
 
     // Patch assert_throws_dom to check by name (our DOMExceptions come from a different realm)
     vm.runInContext(`
