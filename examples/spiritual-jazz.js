@@ -25,7 +25,17 @@ let noteName = f => { let m = Math.round(12 * Math.log2(f / 440) + 69); return n
 
 // Modal movement weights: 4ths dominate (spiritual), half-steps add color
 let moves = [5, 5, 5, 3, 3, -1, -1, 4, -2, 7, 1]
-let m9 = [0, 3, 7, 10, 14] // m9 voicing
+// Voicing palette — spiritual jazz: quartal stacks, rootless extensions, suspended colors
+// Voicing palette — spiritual jazz: quartal stacks, rootless extensions, suspended colors
+let voicings = [
+  { v: [0, 5, 10, 15, 19], name: 'quartal' },
+  { v: [0, 5, 10, 14, 19], name: 'quartal maj7' },
+  { v: [0, 3, 10, 14, 17], name: 'm11' },
+  { v: [0, 3, 7, 14, 21],  name: 'madd9add13' },
+  { v: [0, 5, 7, 10, 14],  name: 'sus4 m9' },
+  { v: [0, 3, 7, 10, 17],  name: 'm7 add11' },
+  { v: [0, 7, 10, 14, 19], name: 'shell' },
+]
 let penta = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22] // minor pentatonic, 2 octaves
 let dorian = [0, 2, 3, 5, 7, 10, 12, 14] // dorian scale for walking bass
 
@@ -82,6 +92,12 @@ let cells = [
   { name: 'cry',       iv: [4, -1],            dur: [1.5, 1] },           // leap up, step back
   { name: 'turn',      iv: [1, -1, -1, 1],    dur: [.5, .5, .5, .5] },   // upper neighbor turn
   { name: 'pendulum',  iv: [2, -3, 2],         dur: [.75, .75, 1] },      // wide swing
+  // Bursty arpeggio licks — 16th note flurries
+  { name: 'arp-burst', iv: [2, 2, 2, -1, -2],         dur: [.25, .25, .25, .25, .5] },  // sweep up, step back
+  { name: 'arp-down',  iv: [-2, -2, -2, 1],            dur: [.25, .25, .25, .5] },       // fast descending arp
+  { name: 'flurry',    iv: [1, 1, 1, 1, -1, -1, -1],  dur: [.25, .25, .25, .25, .25, .25, .5] }, // up-down sweep
+  { name: 'bebop',     iv: [1, -2, 1, 2, -1],          dur: [.25, .25, .25, .25, .5] },  // enclosure + resolve
+  { name: 'cascade',   iv: [2, -1, 2, -1, 2],          dur: [.25, .25, .25, .25, .75] }, // staircase shimmer
 ]
 
 // Melody improviser — Markov intervals, jazz cells, serial avoidance, motif repetition
@@ -102,10 +118,11 @@ let improvise = (root, cs, beats, e) => {
       continue
     }
 
-    // Jazz cell — 25% chance to play a melodic pattern from the vocabulary
-    if (Math.random() < 0.25) {
-      let cell = pick(cells)
-      // Cry only at high energy; runs more likely at high energy
+    // Jazz cell — 30% chance, biased to arpeggio bursts at high energy
+    if (Math.random() < 0.3) {
+      let cell = e > 0.5 && Math.random() < 0.4
+        ? pick(cells.slice(-5))  // arpeggio licks at high energy
+        : pick(cells)
       if (cell.name === 'cry' && e < 0.6) cell = pick(cells.slice(0, 5))
       let ok = true
       for (let i = 0; i < cell.iv.length; i++) {
@@ -183,11 +200,15 @@ bassLp.type = 'lowpass'; bassLp.frequency.value = 350
 let bassOut = ctx.createGain(); bassOut.gain.value = 0.3
 bassLp.connect(bassOut).connect(ctx.destination)
 
-let vib = ctx.createOscillator(); vib.frequency.value = 5
-let vibG = ctx.createGain(); vibG.gain.value = 4
+// Guitar chain: warm lowpass → output (hollow-body jazz tone)
+let guitLp = ctx.createBiquadFilter()
+guitLp.type = 'lowpass'; guitLp.frequency.value = 2200; guitLp.Q.value = 0.7
+let guitOut = ctx.createGain(); guitOut.gain.value = 0.25
+guitLp.connect(guitOut).connect(ctx.destination)
+// Subtle vibrato — only noticeable on longer notes
+let vib = ctx.createOscillator(); vib.frequency.value = 5.5
+let vibG = ctx.createGain(); vibG.gain.value = 2
 vib.connect(vibG); vib.start(t0); vib.stop(t0 + duration)
-let melOut = ctx.createGain(); melOut.gain.value = 0.22
-melOut.connect(ctx.destination)
 
 // --- Percussion chains (all share the noise worklet, gated by gain automation) ---
 let noise = new AudioWorkletNode(ctx, 'noise')
@@ -241,18 +262,21 @@ let scheduleKick = (when) => {
 let ridePattern = [[0, false], [1, true], [1 + 2/3, false], [2, false], [3, true], [3 + 2/3, false]]
 
 // --- Schedule chords ---
+let chordLog = []
 for (let c = 0; c < nChords; c++) {
   let root = roots[c], e = energy(c)
   let cs = t0 + c * bpc * beat, ce = cs + bpc * beat
 
-  // Pad: m9 sawtooth — filter opens with energy
+  // Pad: random voicing per chord — filter opens with energy
   padLp.frequency.setValueAtTime(700 + e * 500, cs)
-  let detunes = [-5, 3, -2, 4, -3]
-  for (let v = 0; v < 5; v++) {
+  let vc = pick(voicings)
+  chordLog.push(noteName(root) + 'm ' + vc.name)
+  let detunes = [-5, 3, -2, 4, -3, 2, -4]
+  for (let v = 0; v < vc.v.length; v++) {
     let osc = ctx.createOscillator()
     osc.type = 'sawtooth'
-    osc.frequency.value = semi(root, m9[v])
-    osc.detune.value = detunes[v]
+    osc.frequency.value = semi(root, vc.v[v])
+    osc.detune.value = detunes[v % detunes.length]
     let env = ctx.createGain()
     env.gain.setValueAtTime(0, cs)
     env.gain.linearRampToValueAtTime(1, cs + beat)
@@ -281,31 +305,38 @@ for (let c = 0; c < nChords; c++) {
     osc.start(when); osc.stop(when + dur + 0.01)
   }
 
-  // Flute solo
+  // Jazz guitar solo — plucked, warm, hollow-body
   for (let { f, t, dur } of improvise(root, cs, bpc, e)) {
-    let atk = Math.min(0.12, dur * 0.3), rel = Math.min(0.15, dur * 0.3)
-
+    // Fundamental: triangle — warm, round
     let osc = ctx.createOscillator()
-    osc.frequency.setValueAtTime(f - 8, t)
-    osc.frequency.linearRampToValueAtTime(f, t + 0.06)
-    vibG.connect(osc.frequency)
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(f, t)
+    if (dur > beat * 0.8) vibG.connect(osc.frequency) // vibrato only on sustained notes
 
+    // 2nd harmonic: quiet square for body/bite
     let osc2 = ctx.createOscillator()
-    osc2.frequency.setValueAtTime(f * 2 - 16, t)
-    osc2.frequency.linearRampToValueAtTime(f * 2, t + 0.06)
-    vibG.connect(osc2.frequency)
-    let h = ctx.createGain(); h.gain.value = 0.15
+    osc2.type = 'square'
+    osc2.frequency.setValueAtTime(f * 2, t)
+    let h2 = ctx.createGain(); h2.gain.value = 0.08
 
+    // 3rd harmonic: adds string character
+    let osc3 = ctx.createOscillator()
+    osc3.type = 'square'
+    osc3.frequency.setValueAtTime(f * 3, t)
+    let h3 = ctx.createGain(); h3.gain.value = 0.03
+
+    // Plucked envelope: fast attack, natural exponential decay
     let env = ctx.createGain()
     env.gain.setValueAtTime(0, t)
-    env.gain.linearRampToValueAtTime(1, t + atk)
-    env.gain.setValueAtTime(1, t + dur - rel)
-    env.gain.linearRampToValueAtTime(0, t + dur)
+    env.gain.linearRampToValueAtTime(1, t + 0.008)
+    env.gain.setValueAtTime(0.7, t + 0.03)
+    env.gain.exponentialRampToValueAtTime(0.01, t + dur)
 
-    osc.connect(env); osc2.connect(h).connect(env)
-    env.connect(melOut)
+    osc.connect(env); osc2.connect(h2).connect(env); osc3.connect(h3).connect(env)
+    env.connect(guitLp)
     osc.start(t); osc.stop(t + dur + 0.01)
     osc2.start(t); osc2.stop(t + dur + 0.01)
+    osc3.start(t); osc3.stop(t + dur + 0.01)
   }
 
   // Percussion — schedule per chord section (2 bars)
@@ -342,6 +373,6 @@ for (let c = 0; c < nChords; c++) {
   }
 }
 
-console.log(`♪ ${bpm} BPM, ${(duration / 60).toFixed(1)} min — ` + roots.map(r => noteName(r) + 'm').join(' → '))
+console.log(`♪ ${bpm} BPM, ${(duration / 60).toFixed(1)} min\n` + chordLog.join(' → '))
 
 setTimeout(() => ctx.close(), duration * 1000 + 500)
