@@ -58,6 +58,7 @@ function loadHelpers(html, testDir) {
     if (!src || !src.endsWith('.js')) continue
     if (src.includes('testharness')) continue // already loaded
     if (src.includes('testdriver')) continue // browser-only test driver
+    if (src.startsWith('/common/') || src.startsWith('/html/')) continue // browser-only WPT infra
     // resolve relative to WPT root
     let path = src.startsWith('/') ? join(join(__dirname, 'wpt'), src.slice(1)) : join(testDir, src)
     try { code += readFileSync(path, 'utf8') + '\n' } catch {}

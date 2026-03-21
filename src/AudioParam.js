@@ -205,21 +205,21 @@ class AudioParam extends DspObject {
       return
     }
 
-    let t0 = this.context.currentTime
     let sr = this.context.sampleRate
+    let f0 = this.context._frame ?? Math.round(this.context.currentTime * sr)
 
     if (this.#rate === 'a') {
       if (hasInput) {
         let inputBuf = this._input._tick()
         let ch0 = inputBuf.getChannelData(0)
         for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] = this.#getValue(t0 + i / sr) + ch0[i]
+          array[i] = this.#getValue((f0 + i) / sr) + ch0[i]
         // NaN can enter from input — flush to default
         let def = this.#defaultValue
         for (let i = 0; i < BLOCK_SIZE; i++) if (isNaN(array[i])) array[i] = def
       } else {
-        let v0 = this.#getValue(t0)
-        let v1 = this.#getValue(t0 + (BLOCK_SIZE - 1) / sr)
+        let v0 = this.#getValue(f0 / sr)
+        let v1 = this.#getValue((f0 + BLOCK_SIZE - 1) / sr)
         if (v0 === v1) {
           array.fill(v0)
           this.#cachedVersion = this.#paramVersion
@@ -227,11 +227,11 @@ class AudioParam extends DspObject {
         } else {
           this.#cachedVersion = -1
           for (let i = 0; i < BLOCK_SIZE; i++)
-            array[i] = this.#getValue(t0 + i / sr)
+            array[i] = this.#getValue((f0 + i) / sr)
         }
       }
     } else {
-      let val = this.#getValue(t0)
+      let val = this.#getValue(f0 / sr)
       if (hasInput) {
         let inputBuf = this._input._tick()
         val += inputBuf.getChannelData(0)[0]
