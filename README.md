@@ -149,13 +149,6 @@ All scenarios render faster than real-time. Pure JS matches Rust napi on simple 
 
 </dl>
 
-## Alternatives
-
-- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** — Rust napi bindings. Faster heavy DSP, but Node-only with native compilation and partial spec.
-- **[standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context)** — Browser-only. Normalizes cross-browser quirks.
-- **[web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)** — Pure Rust / WASM.
-- **[web-audio-engine](https://github.com/mohayonao/web-audio-engine)** — Archived. Partial spec coverage.
-
 ## Architecture
 
 Pull-based audio graph. `AudioDestinationNode` pulls upstream via `_tick()`, 128-sample render quanta per spec. AudioWorklet runs synchronously (no thread isolation). DSP kernels separated from graph plumbing for future WASM swap.
@@ -165,6 +158,13 @@ EventTarget ← Emitter ← DspObject ← AudioNode ← concrete nodes
                                     ← AudioParam
 EventTarget ← Emitter ← AudioPort ← AudioInput / AudioOutput
 ```
+
+## Alternatives
+
+- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** — Rust napi bindings. Faster heavy DSP, but Node-only with native compilation and partial spec.
+- **[standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context)** — Browser-only. Normalizes cross-browser quirks.
+- **[web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)** — Pure Rust / WASM.
+- **[web-audio-engine](https://github.com/mohayonao/web-audio-engine)** — Archived. Partial spec coverage.
 
 ## License
 
