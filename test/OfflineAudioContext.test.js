@@ -11,8 +11,8 @@ import { BLOCK_SIZE } from '../src/constants.js'
 // --- BaseAudioContext ---
 
 test('BaseAudioContext > AudioContext extends it', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }; ctx[Symbol.dispose]()
+  let ctx = new AudioContext({ sinkId: { type: 'none' } })
+  ctx[Symbol.dispose]()
   ok(ctx instanceof BaseAudioContext, 'AudioContext is BaseAudioContext')
 })
 

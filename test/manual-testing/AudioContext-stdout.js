@@ -1,12 +1,9 @@
-// if (require.main === module) { // Just to avoid mocha running this
-
 import fs from 'fs'
-import AudioContext from '../../src/AudioContext'
-import context = new AudioContext
+import AudioContext from '../../src/AudioContext.js'
 
-context.outStream = process.stdout
+const context = new AudioContext({ sinkId: process.stdout })
 
-fs.readFile(__dirname + '/sounds/powerpad.wav', function(err, buffer) {
+fs.readFile(new URL('./sounds/powerpad.wav', import.meta.url), function(err, buffer) {
   if (err) throw err
   context.decodeAudioData(buffer, function(audioBuffer) {
     var bufferNode = context.createBufferSource()

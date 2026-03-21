@@ -1,21 +1,9 @@
-// if (require.main === module) { // Just to avoid mocha running this
-
 import fs from 'fs'
 import AudioContext from '../../src/AudioContext.js'
 import Speaker from 'speaker'
 
-const context = new AudioContext
-
-console.log('encoding format : '
-  + context.format.numberOfChannels + ' channels ; '
-  + context.format.bitDepth + ' bits ; '
-  + context.sampleRate + ' Hz'
-)
-context.outStream = new Speaker({
-  channels: context.format.numberOfChannels,
-  bitDepth: context.format.bitDepth,
-  sampleRate: context.sampleRate
-})
+const speaker = new Speaker({ channels: 2, bitDepth: 16, sampleRate: 44100 })
+const context = new AudioContext({ sinkId: speaker })
 
 fs.readFile(new URL('./sounds/powerpad.wav', import.meta.url), function(err, buffer) {
   if (err) throw err

@@ -223,8 +223,7 @@ test('enum setters > silently ignore invalid values per spec', () => {
 })
 
 test('AudioContext > onstatechange as event handler property', async () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
+  let ctx = new AudioContext({ sinkId: { type: 'none' } })
   let states = []
 
   // set via property

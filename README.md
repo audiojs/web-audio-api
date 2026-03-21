@@ -40,10 +40,10 @@ const buffer = await ctx.startRendering()
 
 ### Custom output stream
 
-For piping to external tools or custom sinks, set `outStream` to any writable:
+Pass any writable stream as `sinkId` to pipe PCM to external tools:
 
 ```js
-ctx.outStream = myWritableStream
+const ctx = new AudioContext({ sinkId: process.stdout })
 ```
 
 ```sh
@@ -166,6 +166,16 @@ Supports WAV, MP3, FLAC, OGG, AAC, and [more](https://github.com/audiojs/audio-d
 </dd>
 
 </dl>
+
+## Node extensions
+
+These APIs extend the Web Audio spec for Node.js use cases. Code using them is not directly portable to browsers.
+
+| API | What it does | Browser equivalent |
+|---|---|---|
+| `addModule(fn)` | Register processor via callback | `addModule(url)` &mdash; URL string only |
+| `sinkId: writableStream` | Pipe PCM to any writable stream | N/A (hardware output) |
+| `numberOfChannels`, `bitDepth` | Constructor options for output format | N/A (hardware-determined) |
 
 ## Architecture
 

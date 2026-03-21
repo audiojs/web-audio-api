@@ -4,15 +4,10 @@ import AudioContext from '../src/AudioContext.js'
 import AudioNode from '../src/AudioNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
-let mkCtx = () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { end() {} }
-  return ctx
-}
+let mkCtx = () => new AudioContext({ sinkId: { type: 'none' } })
 
 test('AudioContext > graph traversal collects all connected nodes', () => {
-  let ctx = new AudioContext()
-  ctx.outStream = { write() { return true }, once() {} }
+  let ctx = new AudioContext({ sinkId: { write() { return true }, once() {} } })
 
   let n1a = new AudioNode(ctx, 2, 1)
   let n1b = new AudioNode(ctx, 0, 1)
@@ -65,8 +60,8 @@ test('AudioContext > sampleRate is read-only', () => {
 })
 
 test('AudioContext > sampleRate from constructor option', () => {
-  let ctx = new AudioContext({ sampleRate: 48000 })
-  ctx.outStream = { end() {} }; ctx[Symbol.dispose]()
+  let ctx = new AudioContext({ sampleRate: 48000, sinkId: { type: 'none' } })
+  ctx[Symbol.dispose]()
   is(ctx.sampleRate, 48000)
 })
 

@@ -14,6 +14,8 @@ jobs:
         node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -25,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: denoland/setup-deno@v2
       - uses: actions/setup-node@v4
         with:
@@ -37,6 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun test/index.js

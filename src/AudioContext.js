@@ -25,6 +25,7 @@ class AudioContext extends BaseAudioContext {
   #bitDepth
   #encoder
   #speaker = null  // audio-speaker write function (default output)
+  #stream = null   // writable stream sink (when sinkId is a stream)
   #loopDeferred = false
   #sinkId = ''
   #playbackStats = new PlaybackStats()
@@ -70,9 +71,10 @@ class AudioContext extends BaseAudioContext {
     }
 
     // Validate sinkId option
-    if (opts.sinkId !== undefined) {
-      if (typeof opts.sinkId === 'object' && opts.sinkId !== null) {
-        if (opts.sinkId.type !== 'none')
+    let sinkId = opts.sinkId
+    if (sinkId !== undefined) {
+      if (typeof sinkId === 'object' && sinkId !== null && typeof sinkId.write !== 'function') {
+        if (sinkId.type !== 'none')
           throw new TypeError("Failed to construct 'AudioContext': Invalid AudioSinkOptions.type value.")
       }
     }
@@ -86,38 +88,39 @@ class AudioContext extends BaseAudioContext {
     this.#bitDepth = opts.bitDepth || 16
 
     // Handle sinkId from constructor options
-    if (opts.sinkId !== undefined) {
-      if (typeof opts.sinkId === 'object' && opts.sinkId !== null) {
-        this.#sinkId = { type: opts.sinkId.type }
-      } else if (typeof opts.sinkId === 'string') {
-        // Validate against known devices if a registry exists
+    if (sinkId !== undefined) {
+      if (typeof sinkId === 'object' && sinkId !== null) {
+        if (typeof sinkId.write === 'function') {
+          this.#stream = sinkId
+        } else {
+          this.#sinkId = { type: sinkId.type }
+        }
+      } else if (typeof sinkId === 'string') {
         let known = this.constructor._knownDeviceIds || AudioContext._knownDeviceIds
-        if (opts.sinkId !== '' && known && !known.has(opts.sinkId)) {
-          // Invalid device ID: dispatch onerror asynchronously per spec
+        if (sinkId !== '' && known && !known.has(sinkId)) {
           setTimeout(() => this.dispatchEvent(new Event('error')), 0)
         } else {
-          this.#sinkId = opts.sinkId
+          this.#sinkId = sinkId
         }
       }
     }
 
-    this.format = {
+    let format = {
       numberOfChannels: this.#numberOfChannels,
       bitDepth: this.#bitDepth,
       sampleRate: this.sampleRate
     }
-    if (opts.bufferSize) this.format.bufferSize = opts.bufferSize
-    if (opts.numBuffers) this.format.numBuffers = opts.numBuffers
+    if (opts.bufferSize) format.bufferSize = opts.bufferSize
+    if (opts.numBuffers) format.numBuffers = opts.numBuffers
 
-    this.#encoder = BufferEncoder(this.format)
-    this.outStream = null
+    this.#encoder = BufferEncoder(format)
 
     // Start render loop when a connection is established.
     // Deferred via queueMicrotask so user can finish setting up the graph
     // (connect + start) before rendering begins.
     this._destination._inputs[0].on('connection', () => {
       if (this.#loopRunning || this.#loopDeferred || this._state !== 'running') return
-      if (!this.outStream && !this.#speaker) return
+      if (!this.#stream && !this.#speaker) return
       this.#loopDeferred = true
       queueMicrotask(() => {
         this.#loopDeferred = false
@@ -156,6 +159,14 @@ class AudioContext extends BaseAudioContext {
     if (this._state === 'closed')
       return Promise.reject(DOMErr('Cannot setSinkId on a closed AudioContext', 'InvalidStateError'))
     if (typeof sinkId === 'object' && sinkId !== null) {
+      if (typeof sinkId.write === 'function') {
+        // Writable stream as sink
+        if (this.#speaker) { this.#speaker.close(); this.#speaker = null }
+        let prev = this.#stream
+        this.#stream = sinkId
+        if (prev !== sinkId) this.dispatchEvent(new Event('sinkchange'))
+        return Promise.resolve()
+      }
       if (sinkId.type !== 'none')
         return Promise.reject(new TypeError('Invalid AudioSinkOptions.type value.'))
       let prev = this.#sinkId
@@ -195,7 +206,8 @@ class AudioContext extends BaseAudioContext {
     if (this._state === 'closed') return Promise.reject(DOMErr('Cannot resume a closed AudioContext', 'InvalidStateError'))
     // Create speaker eagerly on resume — starts device with silence so there's
     // no hardware pop when audio actually begins (same as browsers).
-    if (!this.outStream && !this.#speaker) {
+    let isNone = typeof this.#sinkId === 'object' && this.#sinkId?.type === 'none'
+    if (!this.#stream && !this.#speaker && !isNone) {
       this.#speaker = await Speaker({
         sampleRate: this.sampleRate,
         channels: this.#numberOfChannels,
@@ -203,7 +215,7 @@ class AudioContext extends BaseAudioContext {
       })
     }
     this._setState('running')
-    if (!this.#loopRunning && (this.#speaker || this.outStream) && this._destination._inputs[0].sources.length) {
+    if (!this.#loopRunning && (this.#speaker || this.#stream) && this._destination._inputs[0].sources.length) {
       this.#loopRunning = true
       this._renderLoop()
     }
@@ -219,7 +231,7 @@ class AudioContext extends BaseAudioContext {
 
   _closeOutput() {
     if (this.#speaker) { this.#speaker.close(); this.#speaker = null }
-    if (this.outStream) (this.outStream.close ?? this.outStream.end)?.call(this.outStream)
+    if (this.#stream) { (this.#stream.close ?? this.#stream.end)?.call(this.#stream); this.#stream = null }
   }
 
   _renderLoop() {
@@ -230,20 +242,17 @@ class AudioContext extends BaseAudioContext {
     try {
       let buf = this._renderQuantum()
 
+      let nch = buf.numberOfChannels
+      let channels = []
+      for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
+      let encoded = this.#encoder(channels)
+
       if (this.#speaker) {
-        let nch = buf.numberOfChannels
-        let channels = []
-        for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
-        let encoded = this.#encoder(channels)
         this.#speaker(encoded, () => this._renderLoop())
-      } else if (this.outStream) {
-        let nch = buf.numberOfChannels
-        let channels = []
-        for (let c = 0; c < nch; c++) channels.push(buf.getChannelData(c))
-        let encoded = this.#encoder(channels)
-        let ok = this.outStream.write(encoded)
-        if (ok || !this.outStream.once) setTimeout(() => this._renderLoop(), 0)
-        else this.outStream.once('drain', () => this._renderLoop())
+      } else if (this.#stream) {
+        let ok = this.#stream.write(encoded)
+        if (ok || !this.#stream.once) setTimeout(() => this._renderLoop(), 0)
+        else this.#stream.once('drain', () => this._renderLoop())
       }
     } catch (e) {
       console.error('AudioContext render error:', e)

@@ -87,7 +87,7 @@ export class BaseAudioContext extends EventTarget {
 }
 
 export class AudioContext extends BaseAudioContext {
-  constructor(options?: { sampleRate?: number; numberOfChannels?: number; bitDepth?: number; latencyHint?: 'interactive' | 'balanced' | 'playback' | number; sinkId?: string | { type: 'none' } });
+  constructor(options?: { sampleRate?: number; numberOfChannels?: number; bitDepth?: number; bufferSize?: number; numBuffers?: number; latencyHint?: 'interactive' | 'balanced' | 'playback' | number; sinkId?: string | { type: 'none' } | { write(chunk: Uint8Array): boolean; once?(event: string, fn: () => void): void; end?(): void; close?(): void } });
   readonly numberOfChannels: number;
   readonly baseLatency: number;
   readonly outputLatency: number;
@@ -95,11 +95,9 @@ export class AudioContext extends BaseAudioContext {
   readonly sinkId: string | { type: string };
   readonly playbackStats: { totalDuration: number; underrunDuration: number; underrunEvents: number; minimumLatency: number; maximumLatency: number; averageLatency: number };
   readonly playoutStats: { totalFramesDuration: number; fallbackFramesDuration: number; fallbackFramesEvents: number; minimumLatency: number; maximumLatency: number; averageLatency: number };
-  outStream: any;
-  format: { numberOfChannels: number; bitDepth: number; sampleRate: number };
   onsinkchange: ((event: Event) => void) | null;
   getOutputTimestamp(): { contextTime: number; performanceTime: number };
-  setSinkId(sinkId: string | { type: 'none' }): Promise<void>;
+  setSinkId(sinkId: string | { type: 'none' } | { write(chunk: Uint8Array): boolean }): Promise<void>;
   suspend(): Promise<void>;
   resume(): Promise<void>;
   close(): Promise<void>;

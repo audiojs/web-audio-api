@@ -5,7 +5,7 @@
 import { AudioContext } from 'web-audio-api'
 
 const duration = 2
-const ctx = new AudioContext()
+const ctx = new AudioContext({ sinkId: process.stdout })
 await ctx.resume()
 
 const osc = ctx.createOscillator()

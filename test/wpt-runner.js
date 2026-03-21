@@ -102,7 +102,6 @@ function createWPTContexts(testDir, activeContexts, blobStore) {
     #explicitSuspend = false
     constructor(opts) {
       super(opts)
-      this.outStream = { write: () => true, once() {}, end() {} }
       this._basePath = testDir
       this._readModule = testReadModule.bind(this)
       activeContexts.push(this)
@@ -114,7 +113,14 @@ function createWPTContexts(testDir, activeContexts, blobStore) {
       })
     }
     suspend() { this.#explicitSuspend = true; return super.suspend() }
-    resume() { this.#explicitSuspend = false; return super.resume() }
+    resume() {
+      this.#explicitSuspend = false
+      // Skip speaker creation — WPT tests don't need audio output
+      if (this._discarded) return Promise.reject(new DOMException('Document is not fully active', 'InvalidStateError'))
+      if (this._state === 'closed') return Promise.reject(new DOMException('Cannot resume a closed AudioContext', 'InvalidStateError'))
+      this._setState('running')
+      return Promise.resolve()
+    }
     _renderLoop() {}
   }
   WPTAudioContext._knownDeviceIds = new Set(['', 'device-1'])
