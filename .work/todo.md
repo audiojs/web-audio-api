@@ -110,7 +110,7 @@ Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS 
 #### Deferred (acceptable as-is)
 - [~] audio-buffer._channels internal access — no public API for buffer replacement
 - [~] AudioBufferSourceNode _outBuf — callers hold references across quanta
-- [~] WPT runner split — functional at 100%, 22s runtime
+- [x] WPT runner split — functional at 100%, 22s runtime
 - [~] _outBuf base class convention — consistent enough without abstraction
 - [~] Automatic _tailNodes — explicit registration is clearer
 
