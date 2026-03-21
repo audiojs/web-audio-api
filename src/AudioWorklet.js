@@ -128,11 +128,8 @@ class AudioWorkletNode extends AudioNode {
     this.#procPort = channel.port2
 
     // Build resolved options dict for processor constructor (per spec)
-    let procOptions = {
-      numberOfInputs,
-      numberOfOutputs,
-      outputChannelCount: outputChannelCount.slice(),
-    }
+    let procOptions = { numberOfInputs, numberOfOutputs }
+    if (options.outputChannelCount) procOptions.outputChannelCount = outputChannelCount.slice()
     if (options.parameterData) procOptions.parameterData = options.parameterData
     if (options.processorOptions !== undefined) procOptions.processorOptions = options.processorOptions
 
