@@ -1,22 +1,33 @@
-// EventTarget mixin — shared by DspObject and AudioPort
-// Adds on/off/once/emit/removeAllListeners/listenerCount to any EventTarget subclass
+// Tiny event emitter — extends EventTarget for instanceof conformance,
+// but overrides addEventListener/removeEventListener/dispatchEvent with own tracking.
+// No Node.js maxListeners warnings, no duplicate tracking, no platform dependency.
 
-export default (Base = EventTarget) => class Emitter extends Base {
-  #listeners = []
+export default () => class Emitter extends EventTarget {
+  #events = new Map()
 
-  on(type, fn) {
-    this.#listeners.push({ type, fn })
-    this.addEventListener(type, fn)
+  addEventListener(type, fn) {
+    if (!fn) return
+    let s = this.#events.get(type)
+    if (!s) this.#events.set(type, s = new Set())
+    s.add(fn)
   }
 
-  off(type, fn) {
-    this.#listeners = this.#listeners.filter(l => !(l.type === type && l.fn === fn))
-    this.removeEventListener(type, fn)
+  removeEventListener(type, fn) {
+    this.#events.get(type)?.delete(fn)
   }
+
+  dispatchEvent(event) {
+    let s = this.#events.get(event.type)
+    if (s) for (let fn of s) fn.call(this, event)
+    return true
+  }
+
+  on(type, fn) { this.addEventListener(type, fn) }
+  off(type, fn) { this.removeEventListener(type, fn) }
 
   once(type, fn) {
-    let wrapper = (e) => { fn(e); this.off(type, wrapper) }
-    this.on(type, wrapper)
+    let w = (e) => { fn(e); this.off(type, w) }
+    this.on(type, w)
   }
 
   emit(type, detail) {
@@ -25,17 +36,10 @@ export default (Base = EventTarget) => class Emitter extends Base {
     this.dispatchEvent(e)
   }
 
-  listenerCount(type) {
-    return this.#listeners.filter(l => l.type === type).length
-  }
+  listenerCount(type) { return this.#events.get(type)?.size || 0 }
 
   removeAllListeners(type) {
-    if (type) {
-      for (let l of this.#listeners) if (l.type === type) this.removeEventListener(l.type, l.fn)
-      this.#listeners = this.#listeners.filter(l => l.type !== type)
-    } else {
-      for (let l of this.#listeners) this.removeEventListener(l.type, l.fn)
-      this.#listeners = []
-    }
+    if (type) this.#events.delete(type)
+    else this.#events.clear()
   }
 }

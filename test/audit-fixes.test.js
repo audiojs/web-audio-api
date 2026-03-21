@@ -134,6 +134,26 @@ test('listener cleanup > disconnect only removes own handler', () => {
   is(output.listenerCount('_numberOfChannels'), 0, 'all cleaned up')
 })
 
+test('listener cleanup > fan-out beyond 10 connections emits no warning', () => {
+  let ctx = { sampleRate: 44100 }
+  let output = new AudioOutput(ctx, {}, 0)
+  let inputs = Array.from({ length: 16 }, () =>
+    new AudioInput(ctx, { channelCount: 1, channelCountMode: 'max', channelInterpretation: 'discrete' }, 0))
+
+  // connect 16 inputs to same output — must not trigger MaxListenersExceededWarning
+  let warned = false
+  let onWarn = (w) => { if (w.name === 'MaxListenersExceededWarning') warned = true }
+  process.on('warning', onWarn)
+  for (let inp of inputs) inp.connect(output)
+  is(output.listenerCount('_numberOfChannels'), 16, '16 listeners registered')
+  ok(!warned, 'no MaxListenersExceededWarning')
+
+  // cleanup
+  for (let inp of inputs) inp.disconnect(output)
+  is(output.listenerCount('_numberOfChannels'), 0, 'all cleaned up after disconnect')
+  process.off('warning', onWarn)
+})
+
 test.mute('cancelScheduledValues > removes future events', () => {
   let ctx = { currentTime: 0, sampleRate: 44100 }
   let p = new AudioParam(ctx, 0, 'a')
