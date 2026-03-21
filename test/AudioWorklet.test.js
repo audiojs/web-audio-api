@@ -129,6 +129,36 @@ test('AudioWorklet > rejects unregistered processor', async () => {
   throws(() => new AudioWorkletNode(ctx, 'nonexistent'))
 })
 
+test('AudioWorklet > addModule with data URI', async () => {
+  let ctx = await mkCtx()
+
+  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(`
+    class P extends AudioWorkletProcessor {
+      process(_, outputs) { outputs[0][0].fill(0.42); return true }
+    }; registerProcessor('data-uri-proc', P)
+  `))
+
+  let node = new AudioWorkletNode(ctx, 'data-uri-proc')
+  let src = new AudioNode(ctx, 0, 1)
+  src.connect(node)
+  src._tick = () => AudioBuffer.filledWithVal(0, 1, BLOCK_SIZE, 44100)
+
+  ctx._state = 'running'
+  let buf = node._tick()
+  almost(buf.getChannelData(0)[0], 0.42, 0.01, 'data URI processor runs')
+})
+
+test('AudioWorklet > addModule with base64 data URI', async () => {
+  let ctx = await mkCtx()
+  let code = `class P extends AudioWorkletProcessor {
+    process() { return true }
+  }; registerProcessor('b64-proc', P)`
+
+  await ctx.audioWorklet.addModule('data:text/javascript;base64,' + btoa(code))
+  let node = new AudioWorkletNode(ctx, 'b64-proc')
+  ok(node, 'base64 data URI works')
+})
+
 test('AudioWorklet > message ports are entangled', async () => {
   let ctx = await mkCtx()
   await ctx.audioWorklet.addModule(scope => scope.registerProcessor('msg', AudioWorkletProcessor))

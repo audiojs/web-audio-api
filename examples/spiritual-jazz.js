@@ -1,14 +1,20 @@
 // Spiritual jazz meditation — modal ostinato, warm chord pad, pentatonic melody, brush texture.
 // Run: node examples/spiritual-jazz.js
-// Browser: paste into DevTools console (uses native AudioContext)
+// Browser: paste into DevTools console
 
-import { AudioContext } from 'web-audio-api'
+import { AudioContext, AudioWorkletNode } from 'web-audio-api'
 const bpm = 88
 const beat = 60 / bpm
 const bars = 4
 const duration = bars * 4 * beat
 const ctx = new AudioContext()
 await ctx.resume()
+
+// Noise worklet via data URI — works in Node, Deno, Bun, and browser
+await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(`
+class N extends AudioWorkletProcessor {
+  process(_, outputs) { for (let i = 0, o = outputs[0][0]; i < o.length; i++) o[i] = Math.random() * 2 - 1; return true }
+}; registerProcessor('noise', N)`))
 
 let t = ctx.currentTime
 
@@ -41,7 +47,7 @@ for (let bar = 0; bar < bars; bar++) {
   }
 }
 
-// --- Pad: Dm9 → G9 (sawtooth → lowpass, slow swell, chord glides down) ---
+// --- Pad: Dm9 → Cmaj9 (sawtooth → lowpass, slow swell, chord glides down) ---
 let padLp = ctx.createBiquadFilter()
 padLp.type = 'lowpass'
 padLp.frequency.value = 800
@@ -127,15 +133,8 @@ for (let [freq, startBeat, dur] of melody) {
   osc2.start(when); osc2.stop(when + len + 0.01)
 }
 
-// --- Brush texture: noise buffer → highpass, subtle ---
-let noiseLen = ctx.sampleRate * duration | 0
-let noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate)
-let noiseData = noiseBuf.getChannelData(0)
-for (let i = 0; i < noiseLen; i++) noiseData[i] = Math.random() * 2 - 1
-
-let noise = ctx.createBufferSource()
-noise.buffer = noiseBuf
-
+// --- Brush texture: worklet noise → highpass, subtle ---
+let noise = new AudioWorkletNode(ctx, 'noise')
 let brushHp = ctx.createBiquadFilter()
 brushHp.type = 'highpass'
 brushHp.frequency.value = 6000
@@ -143,6 +142,5 @@ brushHp.frequency.value = 6000
 let brushOut = ctx.createGain()
 brushOut.gain.value = 0.04
 noise.connect(brushHp).connect(brushOut).connect(ctx.destination)
-noise.start(t)
 
 setTimeout(() => ctx.close(), duration * 1000 + 500)

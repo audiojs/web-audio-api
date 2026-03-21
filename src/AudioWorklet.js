@@ -348,6 +348,15 @@ class AudioWorklet {
     // Allow custom reader (e.g. for test runners with vm sandboxes or blob URLs)
     if (this.#context._readModule) return this.#context._readModule(url)
 
+    // data: URI — inline module code
+    if (url.startsWith('data:')) {
+      let comma = url.indexOf(',')
+      if (comma < 0) throw new Error('Invalid data URI')
+      let meta = url.slice(5, comma).toLowerCase()
+      let body = url.slice(comma + 1)
+      return meta.includes('base64') ? atob(body) : decodeURIComponent(body)
+    }
+
     // Dynamic import fs/path — works in Node.js, throws in browser
     let fs, path
     try { fs = await import('fs'); path = await import('path') } catch {
