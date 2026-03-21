@@ -99,7 +99,7 @@ Run any example: `node examples/<name>.js` — real-time examples play sound thr
 | [render-to-buffer.js](examples/render-to-buffer.js) | OfflineAudioContext → buffer |
 | [process-file.js](examples/process-file.js) | Read audio file → EQ + compress → render |
 | [pipe-stdout.js](examples/pipe-stdout.js) | Pipe PCM to system player |
-| [spiritual-jazz.js](examples/spiritual-jazz.js) | Generative modal jazz — different every time |
+| [spiritual-jazz.js](examples/spiritual-jazz.js) | Generative modal jazz — different every run |
 
 ## Alternatives
 
