@@ -31,7 +31,7 @@
     "dsp"
   ],
   "dependencies": {
-    "audio-buffer": "^6.0.0",
+    "audio-buffer": "^6.0.1",
     "audio-decode": "^3.1.2",
     "audio-speaker": "^2.0.5",
     "automation-events": "^7.1.15",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "linkedom": "^0.18.12",
     "node-web-audio-api": "^1.0.8",
-    "tst": "^9.2.2"
+    "tst": "^9.4.0"
   },
   "license": "MIT",
   "engines": {
@@ -51,6 +51,8 @@
     "bench": "node benchmark/run.js",
     "bench:compare": "node benchmark/compare.js",
     "bench:all": "node benchmark/run-all.js",
-    "wpt": "node test/wpt-runner.js"
+    "wpt": "node test/wpt-runner.js",
+    "wpt:parallel": "TST_PARALLEL=8 node test/wpt.test.js",
+    "prepublishOnly": "npm test"
   }
 }

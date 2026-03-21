@@ -14,12 +14,10 @@ import * as waa from '../index.js'
 import { AudioWorklet } from '../src/AudioWorklet.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const __filename = fileURLToPath(import.meta.url)
 const WPT_DIR = join(__dirname, 'wpt/webaudio')
 const RESOURCES_DIR = join(__dirname, 'wpt/resources')
 const WAA_RESOURCES = join(WPT_DIR, 'resources')
-
-process.on('unhandledRejection', () => {})
-process.on('uncaughtException', () => {})
 
 const testharnessCode = readFileSync(join(RESOURCES_DIR, 'testharness.js'), 'utf8')
 
@@ -675,42 +673,48 @@ async function runTest(filePath) {
   return { file: relative(WPT_DIR, filePath), tests }
 }
 
-// Main
-// Skip directories that cause Node.js native crashes (heavy vm context + Audit class)
-let pattern = process.argv[2] || null
-let files = findTests(join(WPT_DIR, 'the-audio-api'), pattern)
-console.log(`WPT web-audio: ${files.length} files${pattern ? ` (filter: ${pattern})` : ''}\n`)
+export { runTest, findTests, WPT_DIR }
 
-let totalPass = 0, totalFail = 0, totalSkip = 0
-let CONCURRENCY = parseInt(process.env.WPT_CONCURRENCY) || 8
+// CLI entry point
+if (process.argv[1] === __filename) {
+  process.on('unhandledRejection', () => {})
+  process.on('uncaughtException', () => {})
+  ;(async () => {
+    let pattern = process.argv[2] || null
+    let files = findTests(join(WPT_DIR, 'the-audio-api'), pattern)
+    console.log(`WPT web-audio: ${files.length} files${pattern ? ` (filter: ${pattern})` : ''}\n`)
 
-// Run tests in parallel batches
-for (let i = 0; i < files.length; i += CONCURRENCY) {
-  let batch = files.slice(i, i + CONCURRENCY)
-  let results = await Promise.all(batch.map(async file => {
-    try { return await runTest(file) }
-    catch(e) { return { file: relative(WPT_DIR, file), tests: [{ name: 'runner', status: 2, message: e.message }] } }
-  }))
+    let totalPass = 0, totalFail = 0, totalSkip = 0
+    let CONCURRENCY = parseInt(process.env.WPT_CONCURRENCY) || 8
 
-  for (let result of results) {
-    if (result.status === 'skip') { totalSkip++; continue }
-    let pass = result.tests.filter(t => t.status === 0).length
-    let fail = result.tests.filter(t => t.status !== 0).length
-    totalPass += pass
-    totalFail += fail
+    for (let i = 0; i < files.length; i += CONCURRENCY) {
+      let batch = files.slice(i, i + CONCURRENCY)
+      let results = await Promise.all(batch.map(async file => {
+        try { return await runTest(file) }
+        catch(e) { return { file: relative(WPT_DIR, file), tests: [{ name: 'runner', status: 2, message: e.message }] } }
+      }))
 
-    if (fail) {
-      console.log(`\u2717 ${result.file} (${pass}/${pass + fail})`)
-      if (!process.env.WPT_QUIET)
-        for (let t of result.tests.filter(t => t.status !== 0))
-          console.log(`    ${['PASS','FAIL','ERR','SKIP'][t.status]}: ${t.name} \u2014 ${(t.message || '').slice(0, 120)}`)
-    } else if (pass) {
-      console.log(`\u2713 ${result.file} (${pass} tests)`)
+      for (let result of results) {
+        if (result.status === 'skip') { totalSkip++; continue }
+        let pass = result.tests.filter(t => t.status === 0).length
+        let fail = result.tests.filter(t => t.status !== 0).length
+        totalPass += pass
+        totalFail += fail
+
+        if (fail) {
+          console.log(`\u2717 ${result.file} (${pass}/${pass + fail})`)
+          if (!process.env.WPT_QUIET)
+            for (let t of result.tests.filter(t => t.status !== 0))
+              console.log(`    ${['PASS','FAIL','ERR','SKIP'][t.status]}: ${t.name} \u2014 ${(t.message || '').slice(0, 120)}`)
+        } else if (pass) {
+          console.log(`\u2713 ${result.file} (${pass} tests)`)
+        }
+      }
     }
-  }
-}
 
-console.log(`\n\u2500\u2500\u2500 WPT Summary \u2500\u2500\u2500`)
-console.log(`Pass: ${totalPass}  Fail: ${totalFail}  Skip: ${totalSkip}`)
-console.log(`Rate: ${totalPass + totalFail > 0 ? (100 * totalPass / (totalPass + totalFail)).toFixed(1) : 0}%`)
-process.exit(totalFail > 0 ? 1 : 0)
+    console.log(`\n\u2500\u2500\u2500 WPT Summary \u2500\u2500\u2500`)
+    console.log(`Pass: ${totalPass}  Fail: ${totalFail}  Skip: ${totalSkip}`)
+    console.log(`Rate: ${totalPass + totalFail > 0 ? (100 * totalPass / (totalPass + totalFail)).toFixed(1) : 0}%`)
+    process.exit(totalFail > 0 ? 1 : 0)
+  })()
+}

@@ -86,7 +86,7 @@ class AudioParam extends DspObject {
     this.channelCountMode = 'explicit'
     this._input = new AudioInput(this.context, this, 0)
     this._input._useFloat64 = true
-    this._outBuf = new Float32Array(BLOCK_SIZE)
+    this._outBuf = new Float64Array(BLOCK_SIZE)
   }
 
   setValueAtTime(value, startTime) {

@@ -71,10 +71,11 @@ class AudioInput extends AudioPort {
   }
 
   _tick() {
-    let inBuffers = this.sources.map(source => source._tick())
+    let sources = this.sources.slice()
+    let inBuffers = sources.map(source => source._tick())
 
     if (this.computedNumberOfChannels === null) {
-      let maxUp = this.sources.length
+      let maxUp = sources.length
         ? inBuffers.reduce((m, buf) => Math.max(m, buf.numberOfChannels), 0)
         : 0
       this._computeNumberOfChannels(maxUp)

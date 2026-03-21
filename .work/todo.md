@@ -40,6 +40,7 @@ Extractable standalone modules (each useful outside Web Audio API):
 
 Principle: WAA imports these as deps. Each works standalone. Graph infrastructure stays in WAA.
 
+
 ## Milestone 2 — WASM DSP
 
 Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS fallbacks.
@@ -68,12 +69,13 @@ Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS 
 2. Performance benchmarks (latency, throughput, memory)
 3. Stress tests (large graphs, long sessions, real-time)
 
-## Ideas
+## Future
 
 - AI agents + audio: agents know Web Audio from MDN training data → this makes it work in CLI
 - Agent skill: audio remastering, sound generation, preprocessing for transcription
 - Isomorphic audio: share graph definitions between browser and server
 - Audio as function: OfflineAudioContext = pure function (graph in → buffer out)
+- Agent / script for updating to match the standard
 
 ---
 
