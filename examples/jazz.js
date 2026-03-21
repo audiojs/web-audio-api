@@ -1,5 +1,5 @@
-// Generative spiritual jazz — randomized modal progressions, pentatonic flute improvisation.
-// Different every time. 4-5 minutes. Run: node examples/spiritual-jazz.js
+// Generative jazz — randomized modal progressions, pentatonic improvisation.
+// Different every time. 4-5 minutes. Run: node examples/jazz.js
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
 
@@ -23,10 +23,9 @@ let pick = a => a[Math.random() * a.length | 0]
 let noteOf = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 let noteName = f => { let m = Math.round(12 * Math.log2(f / 440) + 69); return noteOf[m % 12] + (m / 12 - 1 | 0) }
 
-// Modal movement weights: 4ths dominate (spiritual), half-steps add color
+// Modal movement weights: 4ths dominate, half-steps add color
 let moves = [5, 5, 5, 3, 3, -1, -1, 4, -2, 7, 1]
-// Voicing palette — spiritual jazz: quartal stacks, rootless extensions, suspended colors
-// Voicing palette — spiritual jazz: quartal stacks, rootless extensions, suspended colors
+// Voicing palette: quartal stacks, rootless extensions, suspended colors
 let voicings = [
   { v: [0, 5, 10, 15, 19], name: 'quartal' },
   { v: [0, 5, 10, 14, 19], name: 'quartal maj7' },
@@ -82,22 +81,20 @@ let walkBass = (root, nextRoot, cs) => {
 }
 
 // Jazz melodic cells — common interval patterns from real solos (scale steps, not semitones).
-// These are transposition-invariant: they work over any chord root.
 let cells = [
-  { name: 'run-up',    iv: [1, 1, 1, 1],     dur: [.5, .5, .5, .75] },   // ascending scale run
-  { name: 'run-down',  iv: [-1, -1, -1, -1],  dur: [.5, .5, .5, .75] },   // descending run
-  { name: 'enclosure', iv: [1, -2, 1],         dur: [.5, .5, 1] },         // above, below, target
-  { name: '1-3-5',     iv: [2, 2],             dur: [.75, .75] },          // triad arpeggio up
-  { name: '5-3-1',     iv: [-2, -2],           dur: [.75, .75] },          // triad arpeggio down
-  { name: 'cry',       iv: [4, -1],            dur: [1.5, 1] },           // leap up, step back
-  { name: 'turn',      iv: [1, -1, -1, 1],    dur: [.5, .5, .5, .5] },   // upper neighbor turn
-  { name: 'pendulum',  iv: [2, -3, 2],         dur: [.75, .75, 1] },      // wide swing
-  // Bursty arpeggio licks — 16th note flurries
-  { name: 'arp-burst', iv: [2, 2, 2, -1, -2],         dur: [.25, .25, .25, .25, .5] },  // sweep up, step back
-  { name: 'arp-down',  iv: [-2, -2, -2, 1],            dur: [.25, .25, .25, .5] },       // fast descending arp
-  { name: 'flurry',    iv: [1, 1, 1, 1, -1, -1, -1],  dur: [.25, .25, .25, .25, .25, .25, .5] }, // up-down sweep
-  { name: 'bebop',     iv: [1, -2, 1, 2, -1],          dur: [.25, .25, .25, .25, .5] },  // enclosure + resolve
-  { name: 'cascade',   iv: [2, -1, 2, -1, 2],          dur: [.25, .25, .25, .25, .75] }, // staircase shimmer
+  { name: 'run-up',    iv: [1, 1, 1, 1],     dur: [.5, .5, .5, .75] },
+  { name: 'run-down',  iv: [-1, -1, -1, -1],  dur: [.5, .5, .5, .75] },
+  { name: 'enclosure', iv: [1, -2, 1],         dur: [.5, .5, 1] },
+  { name: '1-3-5',     iv: [2, 2],             dur: [.75, .75] },
+  { name: '5-3-1',     iv: [-2, -2],           dur: [.75, .75] },
+  { name: 'cry',       iv: [4, -1],            dur: [1.5, 1] },
+  { name: 'turn',      iv: [1, -1, -1, 1],    dur: [.5, .5, .5, .5] },
+  { name: 'pendulum',  iv: [2, -3, 2],         dur: [.75, .75, 1] },
+  { name: 'arp-burst', iv: [2, 2, 2, -1, -2],         dur: [.25, .25, .25, .25, .5] },
+  { name: 'arp-down',  iv: [-2, -2, -2, 1],            dur: [.25, .25, .25, .5] },
+  { name: 'flurry',    iv: [1, 1, 1, 1, -1, -1, -1],  dur: [.25, .25, .25, .25, .25, .25, .5] },
+  { name: 'bebop',     iv: [1, -2, 1, 2, -1],          dur: [.25, .25, .25, .25, .5] },
+  { name: 'cascade',   iv: [2, -1, 2, -1, 2],          dur: [.25, .25, .25, .25, .75] },
 ]
 
 // Melody improviser — Markov intervals, jazz cells, serial avoidance, motif repetition
@@ -105,23 +102,21 @@ let improvise = (root, cs, beats, e) => {
   let notes = [], pos = 4, lastIv = 0, motif = [], used = new Set()
   let t = cs + beat * (0.25 + Math.random() * 0.5)
   let end = cs + beats * beat - beat * 0.3
-  if (e < 0.05) return notes // silence only at extreme low energy
+  if (e < 0.05) return notes
 
   let restP = 0.25 * (1 - e * 0.5)
   let fastP = e * 0.4
 
   while (t < end) {
-    // Breathe between phrases
     if (Math.random() < restP) {
       t += pick([0.75, 1, 1.5]) * beat
       motif = []
       continue
     }
 
-    // Jazz cell — 30% chance, biased to arpeggio bursts at high energy
     if (Math.random() < 0.3) {
       let cell = e > 0.5 && Math.random() < 0.4
-        ? pick(cells.slice(-5))  // arpeggio licks at high energy
+        ? pick(cells.slice(-5))
         : pick(cells)
       if (cell.name === 'cry' && e < 0.6) cell = pick(cells.slice(0, 5))
       let ok = true
@@ -144,7 +139,6 @@ let improvise = (root, cs, beats, e) => {
       }
     }
 
-    // Motif repetition — replay last phrase fragment transposed
     if (motif.length >= 3 && Math.random() < 0.2) {
       for (let iv of motif) {
         pos = Math.max(0, Math.min(penta.length - 1, pos + iv))
@@ -157,13 +151,11 @@ let improvise = (root, cs, beats, e) => {
       continue
     }
 
-    // Interval — Markov: step back after leap
     let iv
     if (Math.abs(lastIv) >= 3) iv = Math.random() < 0.8 ? -Math.sign(lastIv) : pick([-1, 1])
     else iv = Math.random() < 0.65 ? pick([-1, 1]) : pick([-2, 2, -3, 3])
     if (e > 0.8 && Math.random() < 0.15 && pos < 7) iv = pick([3, 4])
 
-    // Serial pitch avoidance — prefer unused pitch classes (Schoenberg-lite)
     let newPos = Math.max(0, Math.min(penta.length - 1, pos + iv))
     let pc = penta[newPos] % 12
     if (used.has(pc) && Math.random() < 0.7) {
@@ -187,6 +179,23 @@ let improvise = (root, cs, beats, e) => {
   return notes
 }
 
+// Karplus-Strong pluck — pre-render string into AudioBuffer
+let pluck = (freq, dur) => {
+  let len = Math.round(ctx.sampleRate / freq)
+  let ring = new Float32Array(len)
+  for (let i = 0; i < len; i++) ring[i] = Math.random() * 2 - 1
+  let n = Math.ceil(ctx.sampleRate * dur) + 128
+  let buf = ctx.createBuffer(1, n, ctx.sampleRate)
+  let d = buf.getChannelData(0)
+  for (let i = 0, p = 0; i < n; i++) {
+    let nx = (p + 1) % len
+    ring[p] = (ring[p] + ring[nx]) * 0.498
+    d[i] = ring[p]
+    p = nx
+  }
+  return buf
+}
+
 let t0 = ctx.currentTime
 
 // --- Audio chains ---
@@ -205,10 +214,6 @@ let guitLp = ctx.createBiquadFilter()
 guitLp.type = 'lowpass'; guitLp.frequency.value = 2200; guitLp.Q.value = 0.7
 let guitOut = ctx.createGain(); guitOut.gain.value = 0.25
 guitLp.connect(guitOut).connect(ctx.destination)
-// Subtle vibrato — only noticeable on longer notes
-let vib = ctx.createOscillator(); vib.frequency.value = 5.5
-let vibG = ctx.createGain(); vibG.gain.value = 2
-vib.connect(vibG); vib.start(t0); vib.stop(t0 + duration)
 
 // --- Percussion chains (all share the noise worklet, gated by gain automation) ---
 let noise = new AudioWorkletNode(ctx, 'noise')
@@ -237,12 +242,12 @@ brushHp.type = 'highpass'; brushHp.frequency.value = 6000
 let brushG = ctx.createGain(); brushG.gain.value = 0.006
 noise.connect(brushHp).connect(brushG).connect(ctx.destination)
 let swoosh = ctx.createOscillator(); swoosh.type = 'triangle'
-swoosh.frequency.value = bpm / 60 / 2 // half-note swoosh rhythm
+swoosh.frequency.value = bpm / 60 / 2
 let swooshG = ctx.createGain(); swooshG.gain.value = 0.005
 swoosh.connect(swooshG).connect(brushG.gain)
 swoosh.start(t0); swoosh.stop(t0 + duration)
 
-// Kick: sine with pitch envelope (scheduled per hit)
+// Kick: sine with pitch envelope
 let kickOut = ctx.createGain(); kickOut.gain.value = 1
 kickOut.connect(ctx.destination)
 let scheduleKick = (when) => {
@@ -258,7 +263,6 @@ let scheduleKick = (when) => {
 }
 
 // Ride pattern per bar: classic "ding...ding-ga" swing
-//   beat:  1      2    2+     3      4    4+
 let ridePattern = [[0, false], [1, true], [1 + 2/3, false], [2, false], [3, true], [3 + 2/3, false]]
 
 // --- Schedule chords ---
@@ -305,45 +309,21 @@ for (let c = 0; c < nChords; c++) {
     osc.start(when); osc.stop(when + dur + 0.01)
   }
 
-  // Jazz guitar solo — plucked, warm, hollow-body
+  // Jazz guitar — Karplus-Strong plucked string through hollow-body filter
   for (let { f, t, dur } of improvise(root, cs, bpc, e)) {
-    // Fundamental: triangle — warm, round
-    let osc = ctx.createOscillator()
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(f, t)
-    if (dur > beat * 0.8) vibG.connect(osc.frequency) // vibrato only on sustained notes
-
-    // 2nd harmonic: quiet square for body/bite
-    let osc2 = ctx.createOscillator()
-    osc2.type = 'square'
-    osc2.frequency.setValueAtTime(f * 2, t)
-    let h2 = ctx.createGain(); h2.gain.value = 0.08
-
-    // 3rd harmonic: adds string character
-    let osc3 = ctx.createOscillator()
-    osc3.type = 'square'
-    osc3.frequency.setValueAtTime(f * 3, t)
-    let h3 = ctx.createGain(); h3.gain.value = 0.03
-
-    // Plucked envelope: fast attack, natural exponential decay
+    let src = ctx.createBufferSource()
+    src.buffer = pluck(f, dur)
     let env = ctx.createGain()
-    env.gain.setValueAtTime(0, t)
-    env.gain.linearRampToValueAtTime(1, t + 0.008)
-    env.gain.setValueAtTime(0.7, t + 0.03)
+    env.gain.setValueAtTime(1, t)
     env.gain.exponentialRampToValueAtTime(0.01, t + dur)
-
-    osc.connect(env); osc2.connect(h2).connect(env); osc3.connect(h3).connect(env)
-    env.connect(guitLp)
-    osc.start(t); osc.stop(t + dur + 0.01)
-    osc2.start(t); osc2.stop(t + dur + 0.01)
-    osc3.start(t); osc3.stop(t + dur + 0.01)
+    src.connect(env).connect(guitLp)
+    src.start(t); src.stop(t + dur + 0.01)
   }
 
   // Percussion — schedule per chord section (2 bars)
   for (let bar = 0; bar < bpc / 4; bar++) {
     let bs = cs + bar * 4 * beat
 
-    // Ride: swing pattern "ding...ding-ga"
     for (let [b, accent] of ridePattern) {
       let when = bs + b * beat
       let vol = (accent ? 0.04 : 0.022) * (0.5 + e * 0.5)
@@ -351,14 +331,12 @@ for (let c = 0; c < nChords; c++) {
       rideG.gain.exponentialRampToValueAtTime(0.001, when + (accent ? 0.15 : 0.1))
     }
 
-    // Hi-hat on 2 & 4
     for (let b of [1, 3]) {
       let when = bs + b * beat
       hhG.gain.setValueAtTime(0.04 * e, when)
       hhG.gain.exponentialRampToValueAtTime(0.001, when + 0.06)
     }
 
-    // Ghost snares — random, very soft
     for (let b = 0; b < 4; b++) {
       if (Math.random() < 0.2 * e) {
         let when = bs + (b + Math.random() * 0.5) * beat
@@ -367,7 +345,6 @@ for (let c = 0; c < nChords; c++) {
       }
     }
 
-    // Kick on beat 1 (soft, not every bar at low energy)
     if (e > 0.15 && (bar === 0 || Math.random() < e * 0.6))
       scheduleKick(bs)
   }
