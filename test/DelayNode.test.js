@@ -2,6 +2,7 @@ import test from 'tst'
 import { ok, almost, throws } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import DelayNode from '../src/DelayNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -12,7 +13,7 @@ test.mute('DelayNode > zero delay passthrough', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let node = new DelayNode(c)
   node.delayTime.value = 0
-  wire(c, node, AudioBuffer.filledWithVal(0.7, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.7))
   c.currentTime = 1; let buf = node._tick()
   almost(buf.getChannelData(0)[0], 0.7, 0.01, 'passthrough')
 })

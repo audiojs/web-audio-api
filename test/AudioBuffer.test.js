@@ -1,6 +1,7 @@
 import test from 'tst'
 import { is, ok, throws, almost } from 'tst'
 import AudioBuffer from 'audio-buffer'
+import { concat, slice, set, fill, from } from 'audio-buffer/util'
 
 test('AudioBuffer > constructor', () => {
   let buf = new AudioBuffer(3, 100, 44100)
@@ -32,7 +33,7 @@ test('AudioBuffer > getChannelData returns view (not copy)', () => {
 })
 
 test.mute('AudioBuffer > filledWithVal', () => {
-  let buf = AudioBuffer.filledWithVal(0.7, 2, 50, 44100)
+  let buf = fill(new AudioBuffer(2, 50, 44100), 0.7)
   is(buf.numberOfChannels, 2)
   is(buf.length, 50)
   for (let i = 0; i < 50; i++) {
@@ -43,7 +44,7 @@ test.mute('AudioBuffer > filledWithVal', () => {
 
 test('AudioBuffer > fromArray', () => {
   let arr = [new Float32Array([1, 2, 3]), new Float32Array([4, 5, 6])]
-  let buf = AudioBuffer.fromArray(arr, 44100)
+  let buf = from(arr, { sampleRate: 44100 })
   is(buf.numberOfChannels, 2)
   is(buf.length, 3)
   is(buf.getChannelData(0)[0], 1)
@@ -52,17 +53,17 @@ test('AudioBuffer > fromArray', () => {
 
 test('AudioBuffer > slice', () => {
   let arr = [new Float32Array([1, 2, 3, 4, 5])]
-  let buf = AudioBuffer.fromArray(arr, 44100)
-  let sliced = buf.slice(1, 3)
+  let buf = from(arr, { sampleRate: 44100 })
+  let sliced = slice(buf, 1, 3)
   is(sliced.length, 2)
   is(sliced.getChannelData(0)[0], 2)
   is(sliced.getChannelData(0)[1], 3)
 })
 
 test('AudioBuffer > concat', () => {
-  let a = AudioBuffer.fromArray([new Float32Array([1, 2])], 44100)
-  let b = AudioBuffer.fromArray([new Float32Array([3, 4])], 44100)
-  let c = a.concat(b)
+  let a = from([new Float32Array([1, 2])], { sampleRate: 44100 })
+  let b = from([new Float32Array([3, 4])], { sampleRate: 44100 })
+  let c = concat(a, b)
   is(c.length, 4)
   is(c.getChannelData(0)[2], 3)
 })
@@ -70,13 +71,13 @@ test('AudioBuffer > concat', () => {
 test('AudioBuffer > concat > rejects mismatched sampleRate', () => {
   let a = new AudioBuffer(1, 10, 44100)
   let b = new AudioBuffer(1, 10, 22050)
-  throws(() => a.concat(b))
+  throws(() => concat(a, b))
 })
 
 test('AudioBuffer > set', () => {
   let a = new AudioBuffer(1, 10, 44100)
-  let b = AudioBuffer.fromArray([new Float32Array([0.5, 0.6])], 44100)
-  a.set(b, 3)
+  let b = from([new Float32Array([0.5, 0.6])], { sampleRate: 44100 })
+  set(a, b, 3)
   almost(a.getChannelData(0)[3], 0.5, 1e-6)
   almost(a.getChannelData(0)[4], 0.6, 1e-6)
 })

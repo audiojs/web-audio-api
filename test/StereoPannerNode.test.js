@@ -2,6 +2,7 @@ import test from 'tst'
 import { is, ok, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import StereoPannerNode from '../src/StereoPannerNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -15,7 +16,7 @@ test('StereoPannerNode > mono: full left/center/right', () => {
     let c = { sampleRate: SR, currentTime: 0 }
     let node = new StereoPannerNode(c)
     node.pan.value = p
-    wire(c, node, AudioBuffer.filledWithVal(1, 1, BLOCK_SIZE, SR))
+    wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 1))
     c.currentTime = 1; let buf = node._tick()
     almost(buf.getChannelData(0)[0], expL, 0.01, label + ' L')
     almost(buf.getChannelData(1)[0], expR, 0.01, label + ' R')

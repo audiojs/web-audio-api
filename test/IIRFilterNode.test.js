@@ -2,6 +2,7 @@ import test from 'tst'
 import { ok, throws, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import IIRFilterNode from '../src/IIRFilterNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -11,7 +12,7 @@ let wire = (c, node, buf) => { let s = new AudioNode(c, 0, 1); s.connect(node); 
 test('IIRFilterNode > identity passthrough', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let node = new IIRFilterNode(c, { feedforward: [1], feedback: [1] })
-  wire(c, node, AudioBuffer.filledWithVal(0.7, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.7))
   c.currentTime = 1; almost(node._tick().getChannelData(0)[0], 0.7, 1e-6)
 })
 
@@ -27,7 +28,7 @@ test('IIRFilterNode > getFrequencyResponse', () => {
 test.mute('IIRFilterNode > 1-pole lowpass converges on DC', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let node = new IIRFilterNode(c, { feedforward: [0.1], feedback: [1, -0.9] })
-  wire(c, node, AudioBuffer.filledWithVal(1, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 1))
   for (let i = 0; i < 50; i++) { c.currentTime = i; node._tick() }
   c.currentTime = 50; almost(node._tick().getChannelData(0)[BLOCK_SIZE - 1], 1, 0.05, 'DC converges')
 })

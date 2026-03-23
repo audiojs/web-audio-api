@@ -3,6 +3,7 @@ import { is, ok, almost } from 'tst'
 import AudioContext from '../src/AudioContext.js'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from '../src/MediaStreamAudioSourceNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -37,7 +38,7 @@ test('MediaStreamAudioDestinationNode > captures audio to stream', () => {
   let dest = new MediaStreamAudioDestinationNode(ctx, { numberOfChannels: 1 })
   let src = new AudioNode(ctx, 0, 1)
   src.connect(dest)
-  src._tick = () => AudioBuffer.filledWithVal(0.7, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0.7)
 
   ctx._state = 'running'
   dest._tick()

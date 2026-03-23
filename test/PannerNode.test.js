@@ -8,6 +8,7 @@ import { BLOCK_SIZE } from '../src/constants.js'
 import DistanceEffect from '../src/PannerNode/DistanceEffect.js'
 import ConeEffect from '../src/PannerNode/ConeEffect.js'
 import FloatPoint3D from '../src/FloatPoint3D.js'
+import { fill } from 'audio-buffer/util'
 import { allAlmost } from './helpers.js'
 
 // --- DistanceEffect ---
@@ -122,7 +123,7 @@ test('PannerNode > _tick outputs stereo', () => {
   let p = new PannerNode(ctx)
   let src = new AudioNode(ctx, 0, 1)
   src.connect(p)
-  src._tick = () => AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0.5)
 
   let block = p._tick()
   is(block.numberOfChannels, 2)

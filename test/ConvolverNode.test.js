@@ -2,6 +2,7 @@ import test from 'tst'
 import { ok, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import ConvolverNode from '../src/ConvolverNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -11,7 +12,7 @@ let wire = (c, node, buf) => { let s = new AudioNode(c, 0, 1); s.connect(node); 
 test('ConvolverNode > passthrough when no buffer', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let node = new ConvolverNode(c)
-  wire(c, node, AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.5))
   c.currentTime = 1; almost(node._tick().getChannelData(0)[0], 0.5, 1e-6)
 })
 
@@ -21,7 +22,7 @@ test.mute('ConvolverNode > unit impulse IR = passthrough', () => {
   node.normalize = false
   let ir = new AudioBuffer(1, 1, SR); ir.getChannelData(0)[0] = 1
   node.buffer = ir
-  wire(c, node, AudioBuffer.filledWithVal(0.7, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.7))
   c.currentTime = 1; almost(node._tick().getChannelData(0)[0], 0.7, 0.01, 'passthrough')
 })
 

@@ -3,6 +3,7 @@ import { is, ok, almost } from 'tst'
 import { AudioInput, AudioOutput } from '../src/audioports.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../src/constants.js'
+import { fill } from 'audio-buffer/util'
 import { allAlmost, channelsEqual, makeOutput } from './helpers.js'
 
 let ctx = { sampleRate: 44100 }
@@ -206,7 +207,7 @@ test('AudioOutput > _tick > caches block and avoids redundant pulls', () => {
   let tctx = { sampleRate: 44100, currentTime: 12 }
   let node = { channelCount: 3 }
   let out = new AudioOutput(tctx, node, 0)
-  let buf = AudioBuffer.filledWithVal(0.24, 1, BLOCK_SIZE, 44100)
+  let buf = fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0.24)
   let pulls = 0
 
   node._tick = () => { pulls++; return buf }

@@ -2,6 +2,7 @@ import test from 'tst'
 import { is, ok, throws, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import BiquadFilterNode from '../src/BiquadFilterNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -22,7 +23,7 @@ test('BiquadFilterNode > type validation', () => {
 test.mute('BiquadFilterNode > lowpass passes DC', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let f = new BiquadFilterNode(c); f.type = 'lowpass'; f.frequency.value = 1000
-  wire(c, f, AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, SR))
+  wire(c, f, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.5))
   for (let i = 0; i < 20; i++) { c.currentTime = i; f._tick() }
   c.currentTime = 20; let buf = f._tick()
   almost(buf.getChannelData(0)[BLOCK_SIZE - 1], 0.5, 0.05, 'DC passes')
@@ -31,7 +32,7 @@ test.mute('BiquadFilterNode > lowpass passes DC', () => {
 test.mute('BiquadFilterNode > highpass blocks DC', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let f = new BiquadFilterNode(c); f.type = 'highpass'; f.frequency.value = 1000
-  wire(c, f, AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, SR))
+  wire(c, f, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.5))
   for (let i = 0; i < 20; i++) { c.currentTime = i; f._tick() }
   c.currentTime = 20; let buf = f._tick()
   almost(buf.getChannelData(0)[BLOCK_SIZE - 1], 0, 0.05, 'DC blocked')

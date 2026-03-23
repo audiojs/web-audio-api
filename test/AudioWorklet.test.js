@@ -3,6 +3,7 @@ import { is, ok, almost, throws } from 'tst'
 import AudioContext from '../src/AudioContext.js'
 import { AudioWorkletNode, AudioWorkletProcessor } from '../src/AudioWorklet.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import AudioNode from '../src/AudioNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -54,7 +55,7 @@ test('AudioWorklet > processes audio', async () => {
   let node = new AudioWorkletNode(ctx, 'half')
   let src = new AudioNode(ctx, 0, 1)
   src.connect(node)
-  src._tick = () => AudioBuffer.filledWithVal(0.8, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0.8)
 
   ctx._state = 'running'
   let buf = node._tick()
@@ -101,7 +102,7 @@ test('AudioWorklet > process returning false kills node, outputs silence', async
   let node = new AudioWorkletNode(ctx, 'oneshot')
   let src = new AudioNode(ctx, 0, 1)
   src.connect(node)
-  src._tick = () => AudioBuffer.filledWithVal(0, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0)
 
   ctx._state = 'running'
   node._tick() // calls=1
@@ -141,7 +142,7 @@ test('AudioWorklet > addModule with data URI', async () => {
   let node = new AudioWorkletNode(ctx, 'data-uri-proc')
   let src = new AudioNode(ctx, 0, 1)
   src.connect(node)
-  src._tick = () => AudioBuffer.filledWithVal(0, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0)
 
   ctx._state = 'running'
   let buf = node._tick()

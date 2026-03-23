@@ -4,6 +4,7 @@ import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from '../src/constants.js'
 import GainNode from '../src/GainNode.js'
 import AudioNode from '../src/AudioNode.js'
+import { fill } from 'audio-buffer/util'
 import { allAlmost } from './helpers.js'
 
 test.mute('GainNode > applies gain to input', () => {
@@ -11,7 +12,7 @@ test.mute('GainNode > applies gain to input', () => {
   let gain = new GainNode(ctx)
   let src = new AudioNode(ctx, 0, 1)
   src.connect(gain)
-  src._tick = () => AudioBuffer.filledWithVal(1, 2, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(2, BLOCK_SIZE, 44100), 1)
 
   // gain=1: output=1
   ctx.currentTime++
@@ -30,7 +31,7 @@ test.mute('GainNode > applies gain to input', () => {
 
   // different input + gain=0.3: output=0.15
   ctx.currentTime++
-  src._tick = () => AudioBuffer.filledWithVal(0.5, 3, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(3, BLOCK_SIZE, 44100), 0.5)
   gain.gain.value = 0.3
   block = gain._tick()
   is(block.numberOfChannels, 3)
@@ -46,7 +47,7 @@ test('Phase0 > GainNode > reuses output buffer across ticks', () => {
   let gain = new GainNode(ctx)
   let src = new AudioNode(ctx, 0, 1)
   src.connect(gain)
-  src._tick = () => AudioBuffer.filledWithVal(1, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 1)
 
   ctx.currentTime = 1
   let b1 = gain._tick()

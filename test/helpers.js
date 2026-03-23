@@ -1,4 +1,5 @@
 import { is, almost } from 'tst'
+import { from } from 'audio-buffer/util'
 
 const EPS = 1e-4
 
@@ -31,11 +32,6 @@ export const channelsEqual = (buf, values) => {
 // helper: create output port that returns buffer with given channel values
 export const makeOutput = (AudioOutput, AudioBuffer, ctx, values) => {
   let out = new AudioOutput(ctx, { channelCount: values.length }, 0)
-  let arr = values.map(v => {
-    let a = new Float32Array(128)
-    a.fill(v)
-    return a
-  })
-  out._tick = () => AudioBuffer.fromArray(arr, 44100)
+  out._tick = () => from(128, (s, i, ch) => values[ch], { numberOfChannels: values.length, sampleRate: 44100 })
   return out
 }

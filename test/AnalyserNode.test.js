@@ -2,6 +2,7 @@ import test from 'tst'
 import { is, ok, throws, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import AnalyserNode from '../src/AnalyserNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
@@ -24,7 +25,7 @@ test('AnalyserNode > fftSize validation', () => {
 test.mute('AnalyserNode > passthrough', () => {
   let c = { sampleRate: SR, currentTime: 0 }
   let node = new AnalyserNode(c)
-  wire(c, node, AudioBuffer.filledWithVal(0.5, 1, BLOCK_SIZE, SR))
+  wire(c, node, fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.5))
   c.currentTime = 1; almost(node._tick().getChannelData(0)[0], 0.5, 1e-6, 'passthrough')
 })
 

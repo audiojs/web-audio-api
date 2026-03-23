@@ -1,5 +1,5 @@
-import AudioBuffer from 'audio-buffer'
 import decode from 'audio-decode'
+import { from as audioBufferFrom } from 'audio-buffer/util'
 
 // polyfill Symbol.dispose
 Symbol.dispose ||= Symbol('dispose')
@@ -9,7 +9,7 @@ Symbol.dispose ||= Symbol('dispose')
 export async function decodeAudioData(buffer, done) {
   try {
     let { channelData, sampleRate } = await decode(buffer)
-    let audioBuffer = AudioBuffer.fromArray(channelData, sampleRate)
+    let audioBuffer = audioBufferFrom(channelData, { sampleRate })
     if (done) done(null, audioBuffer)
     return audioBuffer
   } catch (err) {

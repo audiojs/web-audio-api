@@ -1,6 +1,7 @@
 import { BLOCK_SIZE } from './constants.js'
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { from, concat, slice } from 'audio-buffer/util'
 
 
 class ScriptProcessorNode extends AudioNode {
@@ -34,24 +35,22 @@ class ScriptProcessorNode extends AudioNode {
 
       let inBlock = this._inputs[0]._tick()
       // Clone the input block since AudioInput reuses its internal mix buffer
-      let cloned = new AudioBuffer(inBlock.numberOfChannels, inBlock.length, this.context.sampleRate)
-      for (let c = 0; c < inBlock.numberOfChannels; c++)
-        cloned.getChannelData(c).set(inBlock.getChannelData(c))
-      inputBuffer = inputBuffer ? inputBuffer.concat(cloned) : cloned
+      let cloned = from(inBlock)
+      inputBuffer = inputBuffer ? concat(inputBuffer, cloned) : cloned
 
       if (inputBuffer.length === this.bufferSize) {
         let event = this._processingEvent(inputBuffer)
         onaudioprocess(event)
         inputBuffer = null
-        outputBuffer = outputBuffer ? outputBuffer.concat(event.outputBuffer) : event.outputBuffer
+        outputBuffer = outputBuffer ? concat(outputBuffer, event.outputBuffer) : event.outputBuffer
       } else if (inputBuffer.length >= this.bufferSize) throw new Error('this shouldnt happen')
 
       frameCount += BLOCK_SIZE
 
       // Enforce 2*bufferSize latency: don't emit output until enough frames have passed
       if (frameCount > latency && outputBuffer && outputBuffer.length >= BLOCK_SIZE) {
-        let returned = outputBuffer.slice(0, BLOCK_SIZE)
-        outputBuffer = outputBuffer.length > BLOCK_SIZE ? outputBuffer.slice(BLOCK_SIZE) : null
+        let returned = slice(outputBuffer, 0, BLOCK_SIZE)
+        outputBuffer = outputBuffer.length > BLOCK_SIZE ? slice(outputBuffer, BLOCK_SIZE) : null
         return returned
       }
       return new AudioBuffer(this.numberOfOutputChannels, BLOCK_SIZE, this.context.sampleRate)

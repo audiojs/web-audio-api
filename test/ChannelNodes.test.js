@@ -2,6 +2,7 @@ import test from 'tst'
 import { is, ok, almost } from 'tst'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import ChannelSplitterNode from '../src/ChannelSplitterNode.js'
 import ChannelMergerNode from '../src/ChannelMergerNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
@@ -36,8 +37,8 @@ test.mute('ChannelMergerNode > merges mono to stereo', () => {
   let node = new ChannelMergerNode(c, { numberOfInputs: 2 })
   let s0 = new AudioNode(c, 0, 1), s1 = new AudioNode(c, 0, 1)
   s0.connect(node, 0, 0); s1.connect(node, 0, 1)
-  s0._tick = () => AudioBuffer.filledWithVal(0.2, 1, BLOCK_SIZE, SR)
-  s1._tick = () => AudioBuffer.filledWithVal(0.8, 1, BLOCK_SIZE, SR)
+  s0._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.2)
+  s1._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, SR), 0.8)
   c.currentTime = 1; let buf = node._tick()
   is(buf.numberOfChannels, 2)
   almost(buf.getChannelData(0)[0], 0.2, 1e-6, 'ch0'); almost(buf.getChannelData(1)[0], 0.8, 1e-6, 'ch1')

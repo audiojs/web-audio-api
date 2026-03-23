@@ -4,6 +4,7 @@ import AudioContext from '../src/AudioContext.js'
 import OfflineAudioContext from '../src/OfflineAudioContext.js'
 import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import { fill } from 'audio-buffer/util'
 import AudioBufferSourceNode from '../src/AudioBufferSourceNode.js'
 import AudioParam from '../src/AudioParam.js'
 import GainNode from '../src/GainNode.js'
@@ -149,13 +150,13 @@ test.mute('GainNode > adapts to channel count changes', () => {
   src.connect(gain)
 
   // mono input
-  src._tick = () => AudioBuffer.filledWithVal(1, 1, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 1)
   ctx.currentTime = 1
   let buf1 = gain._tick()
   is(buf1.numberOfChannels, 1, 'mono')
 
   // switch to stereo
-  src._tick = () => AudioBuffer.filledWithVal(1, 2, BLOCK_SIZE, 44100)
+  src._tick = () => fill(new AudioBuffer(2, BLOCK_SIZE, 44100), 1)
   ctx.currentTime = 2
   let buf2 = gain._tick()
   is(buf2.numberOfChannels, 2, 'stereo')
