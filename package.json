@@ -18,7 +18,8 @@
     "src",
     "index.js",
     "index.d.ts",
-    "polyfill.js"
+    "polyfill.js",
+    "README.md"
   ],
   "keywords": [
     "audio",
