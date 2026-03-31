@@ -1,31 +1,7 @@
 import test from 'tst'
-import { is, ok, throws, rejects } from 'tst'
+import { is, ok, rejects } from 'tst'
 import { readFileSync } from 'node:fs'
-import { validateFormat, decodeAudioData, BufferEncoder } from '../src/utils.js'
-
-test('validateFormat > applies defaults', () => {
-  let fmt = validateFormat({ numberOfChannels: 2 })
-  is(fmt.bitDepth, 16)
-  is(fmt.endianness, 'LE')
-  is(fmt.signed, true)
-  is(fmt.numberOfChannels, 2)
-})
-
-test('validateFormat > rejects invalid bitDepth', () => {
-  throws(() => validateFormat({ numberOfChannels: 2, bitDepth: 24 }))
-  throws(() => validateFormat({ numberOfChannels: 2, bitDepth: 'x' }))
-})
-
-test('validateFormat > rejects missing numberOfChannels', () => {
-  throws(() => validateFormat({}))
-})
-
-test('BufferEncoder > encodes float to PCM', () => {
-  let encoder = BufferEncoder({ numberOfChannels: 1, bitDepth: 16 })
-  let data = [new Float32Array([0.5, -0.5, 0, 1])]
-  let result = encoder(data)
-  ok(result.length === 8, 'correct byte length (4 samples * 2 bytes)')
-})
+import { decodeAudioData } from '../src/utils.js'
 
 // --- decodeAudioData (audio-decode) ---
 

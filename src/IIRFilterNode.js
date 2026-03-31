@@ -2,6 +2,7 @@ import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
+import iir from 'digital-filter/core/iir.js'
 
 const MAX_COEF = 20
 
@@ -135,33 +136,17 @@ class IIRFilterNode extends AudioNode {
     let inBuf = this._inputs[0]._tick()
     let ch = inBuf.numberOfChannels
     let sr = this.context.sampleRate
-    let ff = this.#feedforward, fb = this.#feedback
-    let order = Math.max(ff.length, fb.length)
 
     if (ch !== this._outCh) {
       this._outBuf = new AudioBuffer(ch, BLOCK_SIZE, sr)
       this._outCh = ch
-      this.#state = Array.from({ length: ch }, () => new Float64Array(order))
+      this.#state = Array.from({ length: ch }, () => ({ b: this.#feedforward, a: this.#feedback }))
     }
 
-    // Direct Form II Transposed
     for (let c = 0; c < ch; c++) {
-      let inp = inBuf.getChannelData(c)
       let out = this._outBuf.getChannelData(c)
-      let w = this.#state[c]
-
-      for (let i = 0; i < BLOCK_SIZE; i++) {
-        let x = inp[i]
-        let y = ff[0] * x + w[0]
-
-        for (let j = 0; j < order - 1; j++) {
-          w[j] = (j + 1 < ff.length ? ff[j + 1] * x : 0)
-               - (j + 1 < fb.length ? fb[j + 1] * y : 0)
-               + (j + 1 < order ? w[j + 1] : 0)
-        }
-
-        out[i] = y
-      }
+      out.set(inBuf.getChannelData(c))
+      iir(out, this.#state[c])
     }
 
     return this._outBuf

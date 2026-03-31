@@ -1,6 +1,6 @@
 import BaseAudioContext from './BaseAudioContext.js'
 import Speaker from 'audio-speaker'
-import { BufferEncoder } from './utils.js'
+import convert from 'pcm-convert'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
@@ -113,7 +113,8 @@ class AudioContext extends BaseAudioContext {
     if (opts.bufferSize) format.bufferSize = opts.bufferSize
     if (opts.numBuffers) format.numBuffers = opts.numBuffers
 
-    this.#encoder = BufferEncoder(format)
+    let dtype = 'int' + this.#bitDepth
+    this.#encoder = channels => new Uint8Array(convert(channels, 'float32 planar', `${dtype} interleaved le`).buffer)
 
     // Start render loop when a connection is established.
     // Deferred via queueMicrotask so user can finish setting up the graph

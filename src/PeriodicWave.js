@@ -1,6 +1,7 @@
 // PeriodicWave — custom waveforms for OscillatorNode
 // Stores wavetable generated from Fourier coefficients (W3C spec convention)
 import { DOMErr } from './errors.js'
+import buildWavetable from 'periodic-function/wavetable.js'
 
 export const TABLE_SIZE = 8192
 
@@ -48,24 +49,7 @@ class PeriodicWave {
   // W3C Web Audio spec §1.31 OscillatorNode:
   // x(n) = Σ[ real[k]·cos(2πkn/N) + imag[k]·sin(2πkn/N) ]
   static buildTable(real, imag, disableNormalization = false) {
-    let n = real.length
-    let table = new Float32Array(TABLE_SIZE)
-
-    for (let t = 0; t < TABLE_SIZE; t++) {
-      let phase = (t / TABLE_SIZE) * 2 * Math.PI
-      let val = 0
-      for (let k = 0; k < n; k++)
-        val += real[k] * Math.cos(k * phase) + imag[k] * Math.sin(k * phase)
-      table[t] = val
-    }
-
-    if (!disableNormalization) {
-      let max = 0
-      for (let i = 0; i < TABLE_SIZE; i++) max = Math.max(max, Math.abs(table[i]))
-      if (max > 0) for (let i = 0; i < TABLE_SIZE; i++) table[i] /= max
-    }
-
-    return table
+    return buildWavetable(real, imag, { size: TABLE_SIZE, normalize: !disableNormalization })
   }
 
   static _builtIn = {}

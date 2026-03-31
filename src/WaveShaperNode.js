@@ -1,13 +1,13 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import halfBand from 'digital-filter/multirate/half-band.js'
 
 const OVERSAMPLES = ['none', '2x', '4x']
 
-// Half-band lowpass FIR for oversampling (linear phase, 15 taps, unity DC gain)
-const HB_RAW = [-0.0125, 0, 0.0625, 0, -0.1875, 0, 0.6375, 1, 0.6375, 0, -0.1875, 0, 0.0625, 0, -0.0125]
-const HB_SUM = HB_RAW.reduce((a, b) => a + b, 0)
-const HALFBAND = new Float32Array(HB_RAW.map(v => v / HB_SUM))
+// Half-band lowpass FIR for oversampling (15-tap Kaiser-windowed, normalized to unity DC gain)
+const _hb = halfBand(15), _hbSum = _hb.reduce((s, v) => s + v, 0)
+const HALFBAND = new Float32Array(_hb.map(v => v / _hbSum))
 const HB_LEN = HALFBAND.length
 const HB_CENTER = (HB_LEN - 1) / 2
 

@@ -30,13 +30,13 @@ Extractable standalone modules (each useful outside Web Audio API):
 
 - [ ] Consider inlining `automation-events` — brings `@babel/runtime` + `tslib` (runtime polyfills for Node 18+ target); the most complex AudioParam code is workarounds for this library; ~200 lines to inline
 
-- [ ] **biquad-coefficients** — Audio EQ Cookbook. `coefficients(type, freq, sr, Q, gain) → {b0,b1,b2,a1,a2}`. ~100 lines, zero deps.
-- [ ] **pcm-encode** — DataView-based PCM encoding. `encode(channels, format) → Uint8Array`. ~40 lines, zero deps.
-- [ ] **channel-mixing** — W3C-compliant N→M channel mixing. speakers/discrete. ~130 lines.
-- [ ] **spatial-audio** — FloatPoint3D + DistanceEffect + ConeEffect. ~280 lines, zero deps.
-- [ ] **periodic-wave** — Fourier wavetable synthesis + built-in waveforms. ~40 lines.
-- [ ] **dynamics-compressor** — Envelope follower + soft knee. ~30 lines.
-- [ ] **iir-filter** — Direct Form II Transposed + frequency response. ~50 lines.
+- [x] **biquad-coefficients** — covered by `digital-filter/iir/biquad.js` (v2.3.0)
+- [x] **pcm-encode** — covered by `pcm-convert` (v3.1.1)
+- [x] **channel-mixing** — already covered by `audio-buffer/util.remix` (all 12 W3C speaker cases correct)
+- [~] **spatial-audio** — not worth extracting; no external consumer
+- [x] **periodic-wave** — covered by `periodic-function/wavetable.js` (v2.0.0); `PeriodicWave.buildTable` delegates to it
+- [~] **dynamics-compressor** — not an audio filter; keep inline (no external consumer)
+- [x] **iir-filter** — covered by `digital-filter/core/iir.js` (v2.3.0)
 
 Principle: WAA imports these as deps. Each works standalone. Graph infrastructure stays in WAA.
 

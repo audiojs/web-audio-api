@@ -3,6 +3,7 @@ import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
+import * as biquad from 'digital-filter/iir/biquad.js'
 
 const TYPES = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass']
 
@@ -139,117 +140,19 @@ class BiquadFilterNode extends AudioNode {
     return this._outBuf
   }
 
-  // Web Audio spec coefficients — matches WPT reference (biquad-filters.js)
-  // f0 in Hz, sr = sampleRate, Q = AudioParam value, gain in dB
+  // Web Audio spec coefficients — delegates to digital-filter biquad
+  // with Q adaptation (lowpass/highpass use dB-based Q, shelves use S=1 slope)
   static _coefficients(type, f0, sr, Q, gain) {
-    // Normalized frequency: 0 = DC, 1 = Nyquist
-    let freq = f0 / (sr / 2)
-    let b0, b1, b2, a0, a1, a2
-
     switch (type) {
-      case 'lowpass': {
-        if (freq >= 1) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (freq <= 0) return { b0: 0, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Math.pow(10, Q / 20))
-        let cosw = Math.cos(w0)
-        let beta = (1 - cosw) / 2
-        b0 = beta; b1 = 2 * beta; b2 = beta
-        a0 = 1 + alpha; a1 = -2 * cosw; a2 = 1 - alpha
-        break
-      }
-      case 'highpass': {
-        if (freq >= 1) return { b0: 0, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (freq <= 0) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Math.pow(10, Q / 20))
-        let cosw = Math.cos(w0)
-        let beta = (1 + cosw) / 2
-        b0 = beta; b1 = -2 * beta; b2 = beta
-        a0 = 1 + alpha; a1 = -2 * cosw; a2 = 1 - alpha
-        break
-      }
-      case 'bandpass': {
-        if (freq <= 0 || freq >= 1) return { b0: 0, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (Q <= 0) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Q)
-        let k = Math.cos(w0)
-        b0 = alpha; b1 = 0; b2 = -alpha
-        a0 = 1 + alpha; a1 = -2 * k; a2 = 1 - alpha
-        break
-      }
-      case 'lowshelf': {
-        let A = Math.pow(10, gain / 40)
-        if (freq >= 1) return { b0: A * A, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (freq <= 0) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let S = 1
-        let alpha = 0.5 * Math.sin(w0) * Math.sqrt((A + 1 / A) * (1 / S - 1) + 2)
-        let k = Math.cos(w0)
-        let k2 = 2 * Math.sqrt(A) * alpha
-        let Ap1 = A + 1, Am1 = A - 1
-        b0 = A * (Ap1 - Am1 * k + k2)
-        b1 = 2 * A * (Am1 - Ap1 * k)
-        b2 = A * (Ap1 - Am1 * k - k2)
-        a0 = Ap1 + Am1 * k + k2
-        a1 = -2 * (Am1 + Ap1 * k)
-        a2 = Ap1 + Am1 * k - k2
-        break
-      }
-      case 'highshelf': {
-        let A = Math.pow(10, gain / 40)
-        if (freq >= 1) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (freq <= 0) return { b0: A * A, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let S = 1
-        let alpha = 0.5 * Math.sin(w0) * Math.sqrt((A + 1 / A) * (1 / S - 1) + 2)
-        let k = Math.cos(w0)
-        let k2 = 2 * Math.sqrt(A) * alpha
-        let Ap1 = A + 1, Am1 = A - 1
-        b0 = A * (Ap1 + Am1 * k + k2)
-        b1 = -2 * A * (Am1 + Ap1 * k)
-        b2 = A * (Ap1 + Am1 * k - k2)
-        a0 = Ap1 - Am1 * k + k2
-        a1 = 2 * (Am1 - Ap1 * k)
-        a2 = Ap1 - Am1 * k - k2
-        break
-      }
-      case 'peaking': {
-        let A = Math.pow(10, gain / 40)
-        if (freq <= 0 || freq >= 1) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (Q <= 0) return { b0: A * A, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Q)
-        let k = Math.cos(w0)
-        b0 = 1 + alpha * A; b1 = -2 * k; b2 = 1 - alpha * A
-        a0 = 1 + alpha / A; a1 = -2 * k; a2 = 1 - alpha / A
-        break
-      }
-      case 'notch': {
-        if (freq <= 0 || freq >= 1) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (Q <= 0) return { b0: 0, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Q)
-        let k = Math.cos(w0)
-        b0 = 1; b1 = -2 * k; b2 = 1
-        a0 = 1 + alpha; a1 = -2 * k; a2 = 1 - alpha
-        break
-      }
-      case 'allpass': {
-        if (freq <= 0 || freq >= 1) return { b0: 1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        if (Q <= 0) return { b0: -1, b1: 0, b2: 0, a1: 0, a2: 0 }
-        let w0 = Math.PI * freq
-        let alpha = Math.sin(w0) / (2 * Q)
-        let k = Math.cos(w0)
-        b0 = 1 - alpha; b1 = -2 * k; b2 = 1 + alpha
-        a0 = 1 + alpha; a1 = -2 * k; a2 = 1 - alpha
-        break
-      }
+      case 'lowpass':  return biquad.lowpass(f0, 10 ** (Q / 20), sr)
+      case 'highpass': return biquad.highpass(f0, 10 ** (Q / 20), sr)
+      case 'bandpass': return biquad.bandpass2(f0, Q, sr)
+      case 'lowshelf': return biquad.lowshelf(f0, Math.SQRT1_2, sr, gain)
+      case 'highshelf': return biquad.highshelf(f0, Math.SQRT1_2, sr, gain)
+      case 'peaking':  return biquad.peaking(f0, Q, sr, gain)
+      case 'notch':    return biquad.notch(f0, Q, sr)
+      case 'allpass':  return biquad.allpass(f0, Q, sr)
     }
-
-    let scale = 1 / a0
-    return { b0: b0 * scale, b1: b1 * scale, b2: b2 * scale, a1: a1 * scale, a2: a2 * scale }
   }
 }
 
