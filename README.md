@@ -1,6 +1,13 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
 
-Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) for Node.js. No native dependencies. 100% [WPT](https://web-platform-tests.org/) conformance.
+[Web Audio API](https://webaudio.github.io/web-audio-api/) in pure JavaScript. 100% [WPT](https://web-platform-tests.org/) conformance, no native deps.
+
+* Full W3C spec runs outside browsers — audio becomes a JS capability, not a browser feature.
+* Same code in browser and Node — nothing new to learn, nothing to compile.
+* Test audio without speakers — `OfflineAudioContext` + any test runner.
+* Server-side rendering — generate audio from APIs, bots, pipelines.
+* CLI audio scripting — pipe, process, synthesize from the terminal.
+* Tone.js and other Web Audio libraries work in Node unchanged.
 
 ```
 npm install web-audio-api
