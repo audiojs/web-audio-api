@@ -5,8 +5,8 @@
 * Same audio code **works in browser and Node**.
 * **Test audio in CI** — `OfflineAudioContext` renders without speakers.
 * **CLI audio scripting** – pipe, process, synthesize from terminal.
-* **Server-side rendering audio** – generate from APIs, bots, pipelines.
-* **Tone.js and other web audio libraries** work in Node as-is.
+* **Server-side audio** – generate from APIs, bots, pipelines.
+* **Tone.js and web audio libs** work in Node as-is.
 
 ```
 npm install web-audio-api
