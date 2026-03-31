@@ -3,10 +3,8 @@ import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
+import compressor from 'audio-effect/dynamics/compressor.js'
 
-
-const LN10_20 = Math.log(10) / 20   // dB→linear: Math.exp(-dB * LN10_20)
-const LOG10_20 = 20 / Math.log(10)   // linear→dB: LOG10_20 * Math.log(x)
 
 class DynamicsCompressorNode extends AudioNode {
 
@@ -16,7 +14,7 @@ class DynamicsCompressorNode extends AudioNode {
   #attack
   #release
   #reduction = 0
-  #envelope = -120 // start at silence floor, not 0dB
+  #envelope = -120  // running dB envelope state
 
   get threshold() { return this.#threshold }
   get knee() { return this.#knee }
@@ -59,63 +57,28 @@ class DynamicsCompressorNode extends AudioNode {
     let sr = this.context.sampleRate
 
     let threshold = this.#threshold._tick()[0]
-    let knee = this.#knee._tick()[0]
-    let ratio = this.#ratio._tick()[0]
-    let attack = this.#attack._tick()[0]
-    let release = this.#release._tick()[0]
+    let knee      = this.#knee._tick()[0]
+    let ratio     = this.#ratio._tick()[0]
+    let attack    = this.#attack._tick()[0]
+    let release   = this.#release._tick()[0]
 
     if (ch !== this._outCh) {
       this._outBuf = new AudioBuffer(ch, BLOCK_SIZE, sr)
       this._outCh = ch
     }
 
-    let attackCoeff = attack > 0 ? Math.exp(-1 / (attack * sr)) : 0
-    let releaseCoeff = release > 0 ? Math.exp(-1 / (release * sr)) : 0
-    if (knee < 0) knee = 0
-    let halfKnee = knee / 2
-    if (ratio <= 0) ratio = 1
-    let slope = 1 - 1 / ratio
-    let kneeInv = knee > 0 ? 1 / (4 * knee) : 0
-    let env = this.#envelope
-
-    // Hoist channel data refs outside inner loop
-    let inCh = new Array(ch), outCh = new Array(ch)
+    let channels = []
     for (let c = 0; c < ch; c++) {
-      inCh[c] = inBuf.getChannelData(c)
-      outCh[c] = this._outBuf.getChannelData(c)
+      let oc = this._outBuf.getChannelData(c)
+      oc.set(inBuf.getChannelData(c))
+      channels.push(oc)
     }
 
-    for (let i = 0; i < BLOCK_SIZE; i++) {
-      let peak = 0
-      for (let c = 0; c < ch; c++) {
-        let v = inCh[c][i]
-        if (v < 0) v = -v
-        if (v > peak) peak = v
-      }
+    let params = { threshold, knee, ratio, attack, release, fs: sr, _env: this.#envelope }
+    compressor(channels, params)
+    this.#envelope = params._env
+    this.#reduction = params._reduction ?? 0
 
-      let dB = peak > 0 ? LOG10_20 * Math.log(peak) : -120
-
-      let coeff = dB > env ? attackCoeff : releaseCoeff
-      env = coeff * env + (1 - coeff) * dB
-
-      let overshoot = env - threshold
-      let gainReduction = 0
-      if (overshoot >= halfKnee) {
-        gainReduction = overshoot * slope
-      } else if (overshoot > -halfKnee) {
-        let x = overshoot + halfKnee
-        gainReduction = x * x * kneeInv * slope
-      }
-
-      let gainLin = Math.exp(-gainReduction * LN10_20)
-
-      for (let c = 0; c < ch; c++)
-        outCh[c][i] = inCh[c][i] * gainLin
-
-      this.#reduction = -gainReduction
-    }
-
-    this.#envelope = env
     return this._outBuf
   }
 }

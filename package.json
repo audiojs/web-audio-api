@@ -31,6 +31,7 @@
     "dsp"
   ],
   "dependencies": {
+    "audio-effect": "^1.0.0",
     "audio-buffer": "^7.3.0",
     "audio-decode": "^3.1.2",
     "audio-speaker": "^2.0.5",
