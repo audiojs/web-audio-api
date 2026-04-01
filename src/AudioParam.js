@@ -158,34 +158,12 @@ class AudioParam extends DspObject {
           throw DOMErr('setValueCurveAtTime overlaps an existing event', 'NotSupportedError')
       }
     }
+    // Store as regular Array to ensure float64 interpolation during truncation
+    // (Float32Array.slice preserves type, causing float32 precision loss)
+    if (ArrayBuffer.isView(values)) values = Array.from(values)
     this.#automationEventList.add(createSetValueCurveAutomationEvent(values, startTime, duration))
     this.#paramVersion++
     return this
-  }
-
-  // Wraps AutomationEventList.getValue to fix exponentialRamp with opposite-sign
-  // or zero start values. The spec says: if v0 and v1 have opposite signs or v0
-  // is zero, v(t) = v0 for T0 <= t < T1. The library returns 0 in this case.
-  #getValue(time) {
-    let val = this.#automationEventList.getValue(time)
-    if (val === 0) {
-      let events = this.#automationEventList._automationEvents
-      for (let i = 0; i < events.length; i++) {
-        let e = events[i]
-        if (e.type === 'exponentialRampToValue' && time < e.endTime) {
-          // Find the previous event's end value (the ramp's start value)
-          let prev = events[i - 1]
-          let v0 = prev === undefined ? this.#defaultValue
-            : prev.type === 'setValueCurve' ? prev.values[prev.values.length - 1]
-            : prev.value
-          // Spec: opposite signs or v0 == 0 → hold v0
-          if ((v0 > 0 && e.value < 0) || (v0 < 0 && e.value > 0) || v0 === 0)
-            return v0
-          break
-        }
-      }
-    }
-    return val
   }
 
   _tick() {
@@ -213,13 +191,13 @@ class AudioParam extends DspObject {
         let inputBuf = this._input._tick()
         let ch0 = inputBuf.getChannelData(0)
         for (let i = 0; i < BLOCK_SIZE; i++)
-          array[i] = this.#getValue((f0 + i) / sr) + ch0[i]
+          array[i] = this.#automationEventList.getValue((f0 + i) / sr) + ch0[i]
         // NaN can enter from input — flush to default
         let def = this.#defaultValue
         for (let i = 0; i < BLOCK_SIZE; i++) if (isNaN(array[i])) array[i] = def
       } else {
-        let v0 = this.#getValue(f0 / sr)
-        let v1 = this.#getValue((f0 + BLOCK_SIZE - 1) / sr)
+        let v0 = this.#automationEventList.getValue(f0 / sr)
+        let v1 = this.#automationEventList.getValue((f0 + BLOCK_SIZE - 1) / sr)
         if (v0 === v1) {
           array.fill(v0)
           this.#cachedVersion = this.#paramVersion
@@ -227,11 +205,11 @@ class AudioParam extends DspObject {
         } else {
           this.#cachedVersion = -1
           for (let i = 0; i < BLOCK_SIZE; i++)
-            array[i] = this.#getValue((f0 + i) / sr)
+            array[i] = this.#automationEventList.getValue((f0 + i) / sr)
         }
       }
     } else {
-      let val = this.#getValue(f0 / sr)
+      let val = this.#automationEventList.getValue(f0 / sr)
       if (hasInput) {
         let inputBuf = this._input._tick()
         val += inputBuf.getChannelData(0)[0]
@@ -256,54 +234,13 @@ class AudioParam extends DspObject {
   cancelAndHoldAtTime(cancelTime) {
     _assertTime(cancelTime)
 
-    // Snapshot setValueCurve events that span cancelTime so we can fix
-    // truncation precision after the library processes the cancelAndHold.
-    let events = this.#automationEventList._automationEvents
-    let origCurve = null
-    for (let e of events) {
-      if (e.type === 'setValueCurve' &&
-          e.startTime < cancelTime &&
-          e.startTime + e.duration > cancelTime) {
-        origCurve = {
-          values: Array.from(e.values),  // copy as float64
-          startTime: e.startTime,
-          duration: e.duration
-        }
-        break
-      }
-    }
-
     this.#automationEventList.add(createCancelAndHoldAutomationEvent(cancelTime))
     this.#paramVersion++
 
-    events = this.#automationEventList._automationEvents
-
-    // Fix truncated setValueCurve precision: the library resamples curve values
-    // through Float32Array which loses precision. Recompute in float64.
-    if (origCurve) {
-      let last = events[events.length - 1]
-      if (last && last.type === 'setValueCurve' &&
-          last.startTime === origCurve.startTime) {
-        let newDuration = cancelTime - origCurve.startTime
-        let ratio = (origCurve.values.length - 1) / origCurve.duration
-        let length = Math.max(2, 1 + Math.ceil(newDuration * ratio))
-        let fraction = (newDuration / (length - 1)) * ratio
-        let values = origCurve.values.slice(0, length)
-        if (fraction < 1) {
-          for (let i = 1; i < length; i++) {
-            let factor = (fraction * i) % 1
-            values[i] = origCurve.values[i - 1] * (1 - factor) + origCurve.values[i] * factor
-          }
-        }
-        last.values = values
-        last.duration = newDuration
-      }
-    }
-
-    // The library stores held values (truncated ramp endpoints, setValue for
-    // setTarget) in float64. But the Web Audio spec outputs through Float32Array,
-    // so subsequent automations should start from the float32-rounded held value.
-    // Apply Math.fround to the last event's value to match spec precision.
+    // The library stores held values in float64, but Web Audio spec outputs
+    // through Float32Array — subsequent automations must start from the
+    // float32-rounded held value. Apply Math.fround to match spec precision.
+    let events = this.#automationEventList._automationEvents
     let last = events[events.length - 1]
     if (last) {
       if ((last.type === 'linearRampToValue' || last.type === 'exponentialRampToValue')
