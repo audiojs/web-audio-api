@@ -1,4 +1,4 @@
-# web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml)
+# web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
 [Web Audio API](https://webaudio.github.io/web-audio-api/) in pure JavaScript. 100% [WPT](https://web-platform-tests.org/) conformance, no native deps.
 
