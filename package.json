@@ -45,6 +45,7 @@
   "devDependencies": {
     "linkedom": "^0.18.12",
     "node-web-audio-api": "^1.0.8",
+    "tone": "^15.1.22",
     "tst": "^9.4.0"
   },
   "license": "MIT",

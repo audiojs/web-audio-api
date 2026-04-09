@@ -58,3 +58,22 @@ test('index.js > all types exported', async () => {
     'ScriptProcessorNode', 'PannerNode', 'AudioListener'
   ]) ok(mod[name], name)
 })
+
+test('Tone.js > Synth renders audio via OfflineAudioContext', async () => {
+  // Polyfill sets globalThis.window — required by standardized-audio-context (Tone.js dep)
+  // for instanceof checks (window.AudioParam, window.AudioNode, etc.).
+  // Must run before Tone.js is imported since SAC captures window at load time.
+  await import('../polyfill.js')
+  let Tone = await import('tone')
+
+  let ctx = new OfflineAudioContext(1, SR, SR)
+  Tone.setContext(ctx)
+
+  let synth = new Tone.Synth().toDestination()
+  synth.triggerAttackRelease('C4', '8n')
+
+  let buf = await ctx.startRendering()
+  let data = buf.getChannelData(0), peak = 0
+  for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]))
+  ok(peak > 0.1, `Tone.js synth peak: ${peak.toFixed(3)}`)
+})

@@ -116,11 +116,24 @@ Per [W3C spec](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audioc
 <dt>Does it work with Tone.js?</dt>
 <dd>
 
+Yes. Tone.js uses `standardized-audio-context` which needs `window.AudioParam` etc. for `instanceof` checks. The polyfill sets that up — just load Tone.js after it:
+
 ```js
-import { AudioContext } from 'web-audio-api'
-import * as Tone from 'tone'
+import 'web-audio-api/polyfill'
+const Tone = await import('tone')
+
 Tone.setContext(new AudioContext())
+const synth = new Tone.Synth().toDestination()
+synth.triggerAttackRelease('C4', '8n')
 ```
+
+Tone.js must be a dynamic `import()` — static imports get hoisted before the polyfill runs. Alternatively, use `--import`:
+
+```sh
+node --import web-audio-api/polyfill app.js
+```
+
+Then static `import * as Tone from 'tone'` works in `app.js`.
 </dd>
 
 <dt>How do I decode audio files?</dt>
