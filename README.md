@@ -1,6 +1,6 @@
 # web-audio-api [![test](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/test.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-Portable [Web Audio API](https://webaudio.github.io/web-audio-api/).
+Portable [Web Audio API](https://webaudio.github.io/web-audio-api/) / polyfill.
 
 * **100% [WPT](https://web-platform-tests.org/) conformance**, no native deps.
 * **Audio in CI** — `OfflineAudioContext` renders without speakers.
