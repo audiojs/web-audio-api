@@ -1,15 +1,8 @@
 # web-audio-api
 
-- [ ] CLI interface — `npx waa "..."` or piping?
+- [x] ~~CLI interface — `npx waa "..."` or piping?~~ not worth it, use audio
 
-- [ ] Consider inlining `automation-events` — brings `@babel/runtime` + `tslib` (runtime polyfills for Node 18+ target); the most complex AudioParam code is workarounds for this library; ~200 lines to inline
-  - [ ] Fix `AudioParam.#getValue` upstream — move exponential ramp opposite-sign fix into `automation-events` instead of wrapping in AudioParam
-  - [ ] Fix `cancelAndHoldAtTime` upstream — precision truncation fix (60 lines) compensates for `automation-events` float32 resampling; fix in library, remove workaround
-
-## Milestone 2 — WASM DSP
-
-Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS fallbacks.
-
+- [ ] Compile kernels with jz
 - [ ] #16 DSP in separate thread (Worker + SharedArrayBuffer)
 
 ### Phase 1: toolchain
@@ -45,8 +38,9 @@ Goal: rewrite hot-path DSP kernels in jz (JS subset → WASM), maintain pure-JS 
 
 ## Archive
 
-## [ ] v1
-
+- [x] Consider inlining `automation-events` — brings `@babel/runtime` + `tslib` (runtime polyfills for Node 18+ target); the most complex AudioParam code is workarounds for this library; ~200 lines to inline
+  - [x] Fix `AudioParam.#getValue` upstream — move exponential ramp opposite-sign fix into `automation-events` instead of wrapping in AudioParam
+  - [x] Fix `cancelAndHoldAtTime` upstream — precision truncation fix (60 lines) compensates for `automation-events` float32 resampling; fix in library, remove workaround
 - [x] Delete `.travis.yml` — dead CI config from 0.x era (Node 4-7), replaced by GitHub Actions
 - [x] Complete `index.d.ts` — OfflineAudioContext suspend/resume, AudioContext setSinkId/getOutputTimestamp/sinkId/stats/renderQuantumSize, AudioListener/PannerNode AudioParam getters, AudioParam automationRate/minValue/maxValue, MediaStreamAudioSourceNode.mediaStream, OfflineAudioContext options dict, PeriodicWave spec constructor, MediaElementAudioSourceNode, AudioWorkletNode.onprocessorerror
 - [x] Add project AGENTS.md — test commands, WPT invariant, float precision rules, rendering contract, cycle detection flow
