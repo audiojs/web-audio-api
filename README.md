@@ -184,6 +184,7 @@ EventTarget ← Emitter ← AudioPort ← AudioInput / AudioOutput
 - **[standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context)** — Browser-only. Normalizes cross-browser quirks.
 - **[web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)** — Pure Rust / WASM.
 - **[web-audio-engine](https://github.com/mohayonao/web-audio-engine)** — Archived. Partial spec coverage.
+- **[react-native-audio-api](https://github.com/software-mansion/react-native-audio-api)** – React native partial implementation.
 
 ## License
 
