@@ -2,28 +2,34 @@
 // X = accent, x = hit, - = rest.
 // Run: node examples/metronome.js 120 X-x-X-x-
 // Run: node examples/metronome.js 120..240 10m Xxx
-// Run: node examples/metronome.js bpm=90 dur=30s pat=Xxx hi=800 lo=1600
+// Run: node examples/metronome.js bpm=90 -d 30s pat=Xxx hi=1200 lo=600
 //   Waltz: Xxx   Rock: X-x-X-x-   Reggaeton: X--x--x-
+// Keys: space pause · ←/→ tempo ±2 BPM · ↑/↓ cycle sound · t tap-tempo · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let semi = 'C.D.EF.G.A.B'
-let num = v => { v += ''; let m = v.match(/^([A-G])([#b])?(\d)$/i); return m ? 440 * 2 ** ((semi.indexOf(m[1].toUpperCase()) + (m[2]==='#') - (m[2]==='b') + 12*(+m[3]+1) - 69) / 12) : parseFloat(v) * (/k$/i.test(v) ? 1e3 : 1) }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
+let { pos, $ } = args()
 
-// BPM: number or range (120..240)
 let bpmTok = pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t))
 let [bpm0, bpm1] = (bpmTok || $('bpm', '120')).toString().split('..').map(Number)
 if (!bpm1) bpm1 = bpm0
 
-let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '8'))
-let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X---')).split('')
+let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '60'))
+let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X-x-x-x-')).split('')
+let hi = num($('hi', 800)), lo = num($('lo', 500))
 
-// Tone: hi/lo freq for accent/ghost (default: woodblock-like click)
-let hi = num($('hi', 1000)), lo = num($('lo', 2500))
+// Sound presets: [accent-freq, ghost-freq, decay, sustain?, name]
+let sounds = [
+  { a: hi,   g: lo,   decay: 0.03,  sustain: false, name: 'click'   },
+  { a: 1600, g: 800,  decay: 0.04,  sustain: false, name: 'wood'    },
+  { a: 2400, g: 1200, decay: 0.06,  sustain: false, name: 'cowbell' },
+  { a: 5000, g: 3000, decay: 0.015, sustain: false, name: 'tick'    },
+  { a: 400,  g: 200,  decay: 0.08,  sustain: false, name: 'low'     },
+  { a: 2500, g: 1800, decay: 0.06,  sustain: true,  name: 'beep'    },
+  { a: 880,  g: 440,  decay: 0.07,  sustain: true,  name: 'signal'  },
+]
+let sIdx = 0
 
 let ctx = new AudioContext()
 await ctx.resume()
@@ -31,27 +37,71 @@ await ctx.resume()
 let click = (when, ch) => {
   if (ch === '-' || ch === '.') return
   let strong = ch === 'X'
-  let f = strong ? hi : lo
+  let s = sounds[sIdx]
+  let f = strong ? s.a : s.g
   let osc = ctx.createOscillator()
+  osc.type = s.sustain ? 'sine' : 'sine'
   osc.frequency.setValueAtTime(f, when)
-  osc.frequency.exponentialRampToValueAtTime(f * 0.5, when + (strong ? 0.01 : 0.005))
+  if (!s.sustain) osc.frequency.exponentialRampToValueAtTime(f * 0.5, when + s.decay / 3)
   let env = ctx.createGain()
-  env.gain.setValueAtTime(strong ? 0.8 : 0.3, when)
-  env.gain.exponentialRampToValueAtTime(0.001, when + (strong ? 0.03 : 0.015))
+  let peak = strong ? 0.6 : 0.25
+  env.gain.setValueAtTime(0, when)
+  env.gain.linearRampToValueAtTime(peak, when + 0.003)
+  if (s.sustain) {
+    env.gain.setValueAtTime(peak, when + s.decay - 0.02)
+    env.gain.linearRampToValueAtTime(0, when + s.decay)
+  } else {
+    env.gain.exponentialRampToValueAtTime(0.001, when + s.decay)
+  }
   osc.connect(env).connect(ctx.destination)
-  osc.start(when); osc.stop(when + 0.05)
+  osc.start(when); osc.stop(when + s.decay + 0.02)
 }
 
-// Schedule with interpolated tempo
-let t = ctx.currentTime, end = t + dur, i = 0
-while (t < end) {
-  let progress = (t - ctx.currentTime) / dur
-  let bpm = bpm0 + (bpm1 - bpm0) * progress
-  let step = 30 / bpm
-  click(t, pat[i % pat.length])
-  t += step; i++
-}
+let t0 = ctx.currentTime
+let userOffset = 0
+let tapTimes = []
+let next = t0, i = 0
+let curBpm = bpm0
+let schedAhead = 0.15
 
-let label = bpm0 === bpm1 ? `♩ = ${bpm0}` : `♩ = ${bpm0}→${bpm1}`
-console.log(`${label}  [${pat.join('')}]  (${dur}s)`)
-setTimeout(() => ctx.close(), dur * 1000 + 200)
+let sched = setInterval(() => {
+  if (ctx.state !== 'running') return
+  while (next < ctx.currentTime + schedAhead && ctx.currentTime < t0 + dur) {
+    let p = Math.min((next - t0) / dur, 1)
+    curBpm = Math.max(20, bpm0 + (bpm1 - bpm0) * p + userOffset)
+    click(next, pat[i % pat.length])
+    next += 30 / curBpm
+    i++
+  }
+}, 25)
+
+let render = status()
+let draw = () => {
+  let p = Math.min((ctx.currentTime - t0) / dur, 1)
+  let bar = '█'.repeat(Math.floor(p * 20)).padEnd(20, '░')
+  render(`♩ ${curBpm.toFixed(1).padStart(6)} · [${pat.join('')}] · ${sounds[sIdx].name.padEnd(7)} ${bar} ${(p * 100).toFixed(0).padStart(3)}%${pausedTag(ctx)}`)
+}
+let ui = setInterval(draw, 50)
+
+keys({
+  left: () => { userOffset -= 2 },
+  right: () => { userOffset += 2 },
+  up: () => { sIdx = (sIdx + 1) % sounds.length },
+  down: () => { sIdx = (sIdx - 1 + sounds.length) % sounds.length },
+  t: () => {
+    let now = Date.now()
+    tapTimes.push(now)
+    if (tapTimes.length > 4) tapTimes.shift()
+    if (tapTimes.length >= 2) {
+      let diffs = tapTimes.slice(1).map((t, k) => t - tapTimes[k])
+      let avg = diffs.reduce((a, b) => a + b) / diffs.length
+      let tapped = 60000 / avg
+      userOffset = tapped - (bpm0 + (bpm1 - bpm0) * Math.min((ctx.currentTime - t0) / dur, 1))
+    }
+  },
+}, () => { clearInterval(sched); clearInterval(ui); clearLine(); ctx.close() }, ctx)
+
+let header = bpm0 === bpm1 ? `♩ = ${bpm0}` : `♩ = ${bpm0}→${bpm1}`
+console.log(`${header}  [${pat.join('')}]  (${dur}s)  space pause · ← → tempo · ↑ ↓ sound · t tap · q quit`)
+
+setTimeout(() => { clearInterval(sched); clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000 + 200)

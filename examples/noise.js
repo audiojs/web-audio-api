@@ -1,16 +1,16 @@
 // Colored noise — white, pink, brown, blue, violet.
 // Run: node examples/noise.js pink 2s
-// Run: node examples/noise.js color=brown dur=5s
+// Run: node examples/noise.js color=brown -d 5s
+// Keys: ↑/↓ cycle color · q quit
 
 import { AudioContext, AudioWorkletNode, AudioWorkletProcessor } from 'web-audio-api'
+import { args, sec, keys, status, clearLine, pausedTag } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
-let color = pos.find(t => /^[a-z]/i.test(t)) || $('color', 'white')
-let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '2'))
+let { pos, $ } = args()
+let colors = ['white', 'pink', 'brown', 'blue', 'violet']
+let color = pos.find(t => colors.includes(t)) || $('color', 'white')
+let cIdx = colors.indexOf(color); if (cIdx < 0) cIdx = 0
+let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 
 let ctx = new AudioContext()
 await ctx.resume()
@@ -20,9 +20,10 @@ await ctx.audioWorklet.addModule(scope => {
     constructor(opts) {
       super()
       this.color = opts.processorOptions?.color || 'white'
-      this.b = new Float64Array(7) // pink noise filter state
+      this.b = new Float64Array(7)
       this.brown = 0
       this.prev = [0, 0]
+      this.port.onmessage = e => { this.color = e.data }
     }
     process(_, outputs) {
       let out = outputs[0][0], b = this.b
@@ -30,7 +31,7 @@ await ctx.audioWorklet.addModule(scope => {
         let w = Math.random() * 2 - 1
         switch (this.color) {
           case 'white': out[i] = w; break
-          case 'pink': // Paul Kellet's filter
+          case 'pink':
             b[0] = 0.99886 * b[0] + w * 0.0555179
             b[1] = 0.99332 * b[1] + w * 0.0750759
             b[2] = 0.96900 * b[2] + w * 0.1538520
@@ -40,15 +41,15 @@ await ctx.audioWorklet.addModule(scope => {
             out[i] = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + w * 0.5362) * 0.11
             b[6] = w * 0.115926
             break
-          case 'brown': // integrated white noise
+          case 'brown':
             this.brown = (this.brown + 0.02 * w) / 1.02
             out[i] = this.brown * 3.5
             break
-          case 'blue': // differentiated white noise
+          case 'blue':
             out[i] = w - this.prev[0]
             this.prev[0] = w
             break
-          case 'violet': // double-differentiated white noise
+          case 'violet':
             out[i] = w - 2 * this.prev[0] + this.prev[1]
             this.prev[1] = this.prev[0]
             this.prev[0] = w
@@ -61,13 +62,20 @@ await ctx.audioWorklet.addModule(scope => {
   scope.registerProcessor('noise', Noise)
 })
 
-let noise = new AudioWorkletNode(ctx, 'noise', { processorOptions: { color } })
-
+let noise = new AudioWorkletNode(ctx, 'noise', { processorOptions: { color: colors[cIdx] } })
 let master = ctx.createGain()
 master.gain.value = 0.5
 noise.connect(master).connect(ctx.destination)
 
+let render = status()
+let ui = setInterval(() => render(`noise · ${colors[cIdx].padEnd(7)} · space pause · ↑↓ color · q quit${pausedTag(ctx)}`), 80)
+
+keys({
+  up: () => { cIdx = (cIdx + 1) % colors.length; noise.port.postMessage(colors[cIdx]) },
+  down: () => { cIdx = (cIdx - 1 + colors.length) % colors.length; noise.port.postMessage(colors[cIdx]) },
+}, () => { clearInterval(ui); clearLine(); ctx.close() }, ctx)
+
 let t = ctx.currentTime + dur
 master.gain.setValueAtTime(0.5, t - 0.05)
 master.gain.linearRampToValueAtTime(0, t)
-setTimeout(() => ctx.close(), dur * 1000)
+setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

@@ -1,16 +1,12 @@
 // Frequency sweep — hear the audible range.
 // Run: node examples/sweep.js 20..20k exp 3s
-// Run: node examples/sweep.js ..4k lin 5s
+// Run: node examples/sweep.js ..4k lin -d 5s
+// Keys: space pause · r restart · ←/→ halve/double duration · m toggle lin/exp · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let semi = 'C.D.EF.G.A.B'
-let num = v => { v += ''; let m = v.match(/^([A-G])([#b])?(\d)$/i); return m ? 440 * 2 ** ((semi.indexOf(m[1].toUpperCase()) + (m[2]==='#') - (m[2]==='b') + 12*(+m[3]+1) - 69) / 12) : parseFloat(v) * (/k$/i.test(v) ? 1e3 : 1) }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
+let { pos, $ } = args()
 let min = 20, max = 20000
 let range = pos.find(t => t.includes('..'))
 if (range) { let [a, b] = range.split('..'); if (a) min = num(a); if (b) max = num(b) }
@@ -21,19 +17,38 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let osc = ctx.createOscillator()
-let t = ctx.currentTime
-osc.frequency.setValueAtTime(min, t)
-if (mode[0] === 'l') osc.frequency.linearRampToValueAtTime(max, t + dur)
-else osc.frequency.exponentialRampToValueAtTime(max, t + dur)
+let osc, gain, t0
+let start = () => {
+  if (osc) try { osc.stop() } catch {}
+  osc = ctx.createOscillator()
+  gain = ctx.createGain()
+  t0 = ctx.currentTime
+  osc.frequency.setValueAtTime(min, t0)
+  if (mode[0] === 'l') osc.frequency.linearRampToValueAtTime(max, t0 + dur)
+  else osc.frequency.exponentialRampToValueAtTime(max, t0 + dur)
+  gain.gain.setValueAtTime(0, t0)
+  gain.gain.linearRampToValueAtTime(0.5, t0 + 0.1)
+  gain.gain.setValueAtTime(0.5, t0 + dur - 0.2)
+  gain.gain.linearRampToValueAtTime(0, t0 + dur)
+  osc.connect(gain).connect(ctx.destination)
+  osc.start()
+}
+start()
 
-let gain = ctx.createGain()
-gain.gain.setValueAtTime(0, t)
-gain.gain.linearRampToValueAtTime(1, t + 0.1)
-gain.gain.setValueAtTime(1, t + dur - 0.5)
-gain.gain.linearRampToValueAtTime(0, t + dur)
+let render = status()
+let ui = setInterval(() => {
+  let p = Math.min(Math.max((ctx.currentTime - t0) / dur, 0), 1)
+  let f = mode[0] === 'l' ? min + (max - min) * p : min * (max / min) ** p
+  let bar = '█'.repeat(Math.floor(p * 20)).padEnd(20, '░')
+  render(`${mode[0] === 'l' ? 'lin' : 'exp'} ${min}→${max}Hz · ${f.toFixed(0).padStart(6)}Hz ${bar} ${(p * 100).toFixed(0).padStart(3)}% · ${dur}s${pausedTag(ctx)}`)
+}, 50)
 
-osc.connect(gain).connect(ctx.destination)
-osc.start()
+keys({
+  r: () => start(),
+  left: () => { dur = Math.max(0.5, dur / 2); start() },
+  right: () => { dur = Math.min(60, dur * 2); start() },
+  m: () => { mode = mode[0] === 'l' ? 'exp' : 'lin'; start() },
+}, () => { clearInterval(ui); clearLine(); ctx.close() }, ctx)
 
-setTimeout(() => ctx.close(), dur * 1000)
+console.log(`sweep ${min}→${max}Hz ${mode} (${dur}s)  space pause · r restart · ←→ speed · m mode · q quit`)
+setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000 * 3 + 1000)

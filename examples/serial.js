@@ -4,12 +4,9 @@
 // Run: node examples/serial.js tempo=100 dur=1m
 
 import { AudioContext } from 'web-audio-api'
+import { args, sec, keys, clearLine } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
+let { pos, $ } = args()
 let tempo = +(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t)) || $('tempo', 72))
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 
@@ -75,5 +72,6 @@ while (t < end) {
   t += beat * pick([0.5, 1, 1.5])
 }
 
-console.log(`12-tone row: [${row.join(' ')}], ~${tempo} BPM`)
-setTimeout(() => ctx.close(), dur * 1000 + 500)
+keys({}, () => { clearLine(); ctx.close() }, ctx)
+console.log(`12-tone row: [${row.join(' ')}], ~${tempo} BPM (${dur}s)  space pause · q quit`)
+setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, dur * 1000 + 500)

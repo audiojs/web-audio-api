@@ -1,32 +1,41 @@
 // Reference tone — the A440 of audio testing.
 // Run: node examples/tone.js sine 440 2s
-// Run: node examples/tone.js wave=triangle freq=1k dur=5s
+// Run: node examples/tone.js wave=triangle freq=1k -d 5s
+// Keys: ↑/↓ ±semitone · ←/→ cycle waveform · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let semi = 'C.D.EF.G.A.B'
-let num = v => { v += ''; let m = v.match(/^([A-G])([#b])?(\d)$/i); return m ? 440 * 2 ** ((semi.indexOf(m[1].toUpperCase()) + (m[2]==='#') - (m[2]==='b') + 12*(+m[3]+1) - 69) / 12) : parseFloat(v) * (/k$/i.test(v) ? 1e3 : 1) }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
-let wave = pos.find(t => /^[a-z]/i.test(t) && !/^[A-G][#b]?\d$/i.test(t)) || $('wave', 'sine')
+let { pos, $ } = args()
+let waves = ['sine', 'triangle', 'square', 'sawtooth']
+let wave = pos.find(t => waves.includes(t)) || $('wave', 'sine')
+let wIdx = waves.indexOf(wave); if (wIdx < 0) wIdx = 0
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 440))
-let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '2'))
+let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 
 let ctx = new AudioContext()
 await ctx.resume()
 
 let osc = ctx.createOscillator()
-osc.type = wave
+osc.type = waves[wIdx]
 osc.frequency.value = f
 
 let master = ctx.createGain()
+master.gain.value = 0.3
 osc.connect(master).connect(ctx.destination)
 osc.start()
 
+let render = status()
+let ui = setInterval(() => render(`${waves[wIdx].padEnd(9)} ${f.toFixed(2).padStart(8)}Hz ${noteName(f).padEnd(4)} · space pause · ↑↓ semi · ←→ wave · q quit${pausedTag(ctx)}`), 80)
+
+keys({
+  up: () => { f *= 2 ** (1/12); osc.frequency.setTargetAtTime(f, ctx.currentTime, 0.02) },
+  down: () => { f *= 2 ** (-1/12); osc.frequency.setTargetAtTime(f, ctx.currentTime, 0.02) },
+  right: () => { wIdx = (wIdx + 1) % waves.length; osc.type = waves[wIdx] },
+  left: () => { wIdx = (wIdx - 1 + waves.length) % waves.length; osc.type = waves[wIdx] },
+}, () => { clearInterval(ui); clearLine(); ctx.close() }, ctx)
+
 let t = ctx.currentTime + dur
-master.gain.setValueAtTime(1, t - 0.05)
+master.gain.setValueAtTime(0.3, t - 0.05)
 master.gain.linearRampToValueAtTime(0, t)
-setTimeout(() => ctx.close(), dur * 1000)
+setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

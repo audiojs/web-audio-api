@@ -2,6 +2,7 @@
 // Different every time. 4-5 minutes. Run: node examples/jazz.js
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
+import { keys, clearLine } from './_util.js'
 
 let bpm = 76 + (Math.random() * 16 | 0)
 let beat = 60 / bpm
@@ -350,6 +351,7 @@ for (let c = 0; c < nChords; c++) {
   }
 }
 
-console.log(`♪ ${bpm} BPM, ${(duration / 60).toFixed(1)} min\n` + chordLog.join(' → '))
+keys({}, () => { clearLine(); ctx.close() }, ctx)
+console.log(`♪ ${bpm} BPM, ${(duration / 60).toFixed(1)} min — space pause · q quit\n` + chordLog.join(' → '))
 
-setTimeout(() => ctx.close(), duration * 1000 + 500)
+setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, duration * 1000 + 500)

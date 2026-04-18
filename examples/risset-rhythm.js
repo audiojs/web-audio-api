@@ -1,15 +1,13 @@
 // Risset rhythm — infinitely accelerating or decelerating beat.
 // The rhythmic analog of the Shepard tone.
 // Run: node examples/risset-rhythm.js up 120 20s
-// Run: node examples/risset-rhythm.js dir=down bpm=90 dur=30s
+// Run: node examples/risset-rhythm.js dir=down bpm=90 -d 30s
+// Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
+import { args, sec, keys, clearLine } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
+let { pos, $ } = args()
 let dir = pos.find(t => /^(up|down)$/i.test(t)) || $('dir', 'up')
 let bpm = +(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t)) || $('bpm', 120))
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '20'))
@@ -18,9 +16,7 @@ let sign = dir === 'down' ? -1 : 1
 let ctx = new AudioContext()
 await ctx.resume()
 
-let nVoices = 6
-let period = 10  // seconds per tempo octave
-let sigma = 0.35 // Gaussian width — controls crossfade smoothness
+let nVoices = 6, period = 10, sigma = 0.35
 
 let click = (when, amp) => {
   if (amp < 0.01) return
@@ -47,5 +43,6 @@ for (let v = 0; v < nVoices; v++) {
   }
 }
 
-console.log(`Risset rhythm: ${dir}, ~${bpm} BPM center (${dur}s)`)
-setTimeout(() => ctx.close(), dur * 1000 + 500)
+keys({}, () => { clearLine(); ctx.close() }, ctx)
+console.log(`Risset rhythm: ${dir}, ~${bpm} BPM center (${dur}s)  space pause · q quit`)
+setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, dur * 1000 + 500)

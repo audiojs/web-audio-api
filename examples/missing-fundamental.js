@@ -4,14 +4,9 @@
 // Run: node examples/missing-fundamental.js freq=80 dur=5s
 
 import { AudioContext } from 'web-audio-api'
+import { args, num, sec, keys, clearLine } from './_util.js'
 
-let args = process.argv.slice(2), kv = {}, pos = []
-for (let s of args) { let e = s.indexOf('='); e > 0 ? kv[s.slice(0, e)] = s.slice(e + 1) : pos.push(s) }
-let $ = (k, d) => { for (let p in kv) if (k.startsWith(p) || p.startsWith(k)) return kv[p]; return d }
-let semi = 'C.D.EF.G.A.B'
-let num = v => { v += ''; let m = v.match(/^([A-G])([#b])?(\d)$/i); return m ? 440 * 2 ** ((semi.indexOf(m[1].toUpperCase()) + (m[2]==='#') - (m[2]==='b') + 12*(+m[3]+1) - 69) / 12) : parseFloat(v) * (/k$/i.test(v) ? 1e3 : 1) }
-let sec = v => (v += '', parseFloat(v) * ({s:1,m:60,h:3600}[v.slice(-1)] || 1))
-
+let { pos, $ } = args()
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 100))
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 
@@ -33,10 +28,11 @@ for (let h = 2; h <= 6; h++) {
   osc.stop(ctx.currentTime + dur + 0.01)
 }
 
+keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Harmonics of ${f}Hz: ${[2, 3, 4, 5, 6].map(h => f * h + 'Hz').join(', ')}`)
-console.log(`You hear ${f}Hz — but it's not there.`)
+console.log(`You hear ${f}Hz — but it's not there.  space pause · q quit`)
 
 let t = ctx.currentTime + dur
 master.gain.setValueAtTime(0.15, t - 0.05)
 master.gain.linearRampToValueAtTime(0, t)
-setTimeout(() => ctx.close(), dur * 1000)
+setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, dur * 1000)
