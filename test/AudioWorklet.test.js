@@ -167,3 +167,57 @@ test('AudioWorklet > message ports are entangled', async () => {
   ok(node.port, 'node has port')
   ok(node.port !== null, 'port is not null')
 })
+
+test('AudioWorklet > parameterData seeds AudioParam initial value', async () => {
+  let ctx = await mkCtx()
+
+  class P extends AudioWorkletProcessor {
+    static get parameterDescriptors() {
+      return [
+        { name: 'gain', defaultValue: 0.5, minValue: 0, maxValue: 1, automationRate: 'k-rate' },
+        { name: 'pan',  defaultValue: 0,   minValue: -1, maxValue: 1, automationRate: 'a-rate' }
+      ]
+    }
+    process() { return true }
+  }
+  await ctx.audioWorklet.addModule(scope => scope.registerProcessor('seeded', P))
+
+  // Per spec: parameterData entries override the descriptor's defaultValue on the AudioParam.
+  let node = new AudioWorkletNode(ctx, 'seeded', { parameterData: { gain: 0.25, pan: -0.5 } })
+  almost(node.parameters.get('gain').value, 0.25, 1e-6, 'gain seeded from parameterData')
+  almost(node.parameters.get('pan').value, -0.5, 1e-6, 'pan seeded from parameterData')
+
+  // Unspecified params keep their descriptor default.
+  let node2 = new AudioWorkletNode(ctx, 'seeded', { parameterData: { gain: 0.1 } })
+  almost(node2.parameters.get('gain').value, 0.1, 1e-6, 'gain seeded')
+  almost(node2.parameters.get('pan').value, 0, 1e-6, 'pan keeps default')
+})
+
+test('AudioWorklet > closure addModule exposes AudioWorkletProcessor on scope', async () => {
+  let ctx = await mkCtx()
+  let captured
+
+  await ctx.audioWorklet.addModule(scope => {
+    captured = scope
+    // The same identifiers available in the URL/data-URI path must be reachable
+    // here — otherwise users defining a class inside the closure must import
+    // AudioWorkletProcessor themselves, which is a needless asymmetry.
+    ok(typeof scope.AudioWorkletProcessor === 'function', 'AudioWorkletProcessor on scope')
+    ok(typeof scope.registerProcessor === 'function', 'registerProcessor on scope')
+    is(scope.sampleRate, ctx.sampleRate, 'sampleRate on scope')
+    ok('currentTime' in scope, 'currentTime on scope')
+    ok('currentFrame' in scope, 'currentFrame on scope')
+
+    class P extends scope.AudioWorkletProcessor {
+      process() { return true }
+    }
+    scope.registerProcessor('via-scope', P)
+  })
+
+  let node = new AudioWorkletNode(ctx, 'via-scope')
+  ok(node, 'node created from class extending scope.AudioWorkletProcessor')
+
+  // currentTime must read live from context, not be a snapshot
+  ctx._frame = 1234
+  is(captured.currentFrame, ctx._frame, 'currentFrame is live')
+})

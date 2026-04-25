@@ -31,7 +31,21 @@ class AudioWorkletProcessor {
 // AudioWorkletGlobalScope — processor registry + global scope for worklet code
 class AudioWorkletGlobalScope {
   #processors = new Map()
+  #context
   port = null // MessagePort — wired by AudioWorklet.addModule
+
+  constructor(context) {
+    this.#context = context
+  }
+
+  // Per spec, AudioWorkletGlobalScope exposes sampleRate, currentTime, currentFrame
+  // and AudioWorkletProcessor as bare identifiers. The closure-style addModule
+  // path passes this scope object to user code, so these must be live + present
+  // for symmetry with the URL/data-URI path (which injects them via `with`).
+  get sampleRate() { return this.#context.sampleRate }
+  get currentTime() { return this.#context.currentTime }
+  get currentFrame() { return this.#context._frame }
+  get AudioWorkletProcessor() { return AudioWorkletProcessor }
 
   registerProcessor(name, processorClass) {
     if (this.#processors.has(name))
@@ -148,9 +162,14 @@ class AudioWorkletNode extends AudioNode {
     _pendingPort = null
 
     // create AudioParams from parameterDescriptors
+    // Per spec, parameterData entries override the descriptor's defaultValue
+    // for the AudioParam's current value, while defaultValue itself remains
+    // the descriptor default (exposed as AudioParam.defaultValue).
     let descriptors = ProcessorClass.parameterDescriptors || []
+    let parameterData = options.parameterData || {}
     for (let desc of descriptors) {
       let param = new AudioParam(context, desc.defaultValue ?? 0, desc.automationRate === 'k-rate' ? 'k' : 'a', desc.minValue, desc.maxValue)
+      if (parameterData[desc.name] !== undefined) param.value = parameterData[desc.name]
       this.#paramMap.set(desc.name, param)
     }
 
@@ -278,7 +297,7 @@ class AudioWorkletNode extends AudioNode {
 
 // AudioWorklet — attached to context, provides addModule()
 class AudioWorklet {
-  #scope = new AudioWorkletGlobalScope()
+  #scope
   #context
   #loadedModules = new Set()
 
@@ -286,6 +305,7 @@ class AudioWorklet {
 
   constructor(context) {
     this.#context = context
+    this.#scope = new AudioWorkletGlobalScope(context)
     context._workletScope = this.#scope
     // Wire up global scope port
     let channel = new MessageChannel()
@@ -297,7 +317,6 @@ class AudioWorklet {
 
   async addModule(moduleOrSetup) {
     if (typeof moduleOrSetup === 'function') {
-      this.#scope.sampleRate = this.#context.sampleRate
       return moduleOrSetup(this.#scope)
     }
 
