@@ -120,7 +120,10 @@ class BaseAudioContext extends EventTarget {
   createAnalyser() { return new AnalyserNode(this) }
   createScriptProcessor(bufferSize, inCh, outCh) { return new ScriptProcessorNode(this, bufferSize, inCh, outCh) }
   createPanner() { return new PannerNode(this) }
-  createMediaStreamSource(mediaStream) { return new MediaStreamAudioSourceNode(this, { mediaStream }) }
+  createMediaStreamSource(mediaStream) {
+    let channels = mediaStream?.getAudioTracks?.()[0]?.getSettings?.().channelCount
+    return new MediaStreamAudioSourceNode(this, { mediaStream, numberOfChannels: channels })
+  }
   createMediaStreamDestination() { return new MediaStreamAudioDestinationNode(this) }
   createMediaElementSource(mediaElement) { return new MediaElementAudioSourceNode(this, { mediaElement }) }
 }

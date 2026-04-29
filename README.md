@@ -94,6 +94,8 @@ Beyond the spec, for Node.js. Not portable to browsers.
 - **`addModule(fn)`** — register a processor via callback instead of URL, no file needed
 - **`sinkId: stream`** — pipe PCM to any writable: `new AudioContext({ sinkId: process.stdout })` then `node synth.js | aplay -f cd`
 - **`numberOfChannels`, `bitDepth`** — control output format in the constructor
+- **`navigator.mediaDevices.getUserMedia({ audio: true })`** — browser-parity microphone capture in Node. Load `web-audio-api/polyfill` and install [`audio-mic`](https://github.com/audiojs/audio-mic); browser mic code then runs verbatim. See the [mic FAQ](#how-do-i-capture-audio-from-the-microphone).
+- **`createMediaStream(pcmSource, opts?)`** — wrap any PCM source (callback reader / async iterable / Node `Readable` / sync iterable) into a `MediaStream` usable with the spec-standard `ctx.createMediaStreamSource()`. Chunks may be `Float32Array` / `Float32Array[]` / interleaved Int16/24/32 PCM `Buffer`.
 
 ## FAQ
 
@@ -149,32 +151,46 @@ WAV, MP3, FLAC, OGG, AAC via [audio-decode](https://github.com/audiojs/audio-dec
 <dt>How do I capture audio from the microphone?</dt>
 <dd>
 
-`navigator.mediaDevices.getUserMedia()` is browser-only and out of scope for this library. In Node, pair it with [`audio-mic`](https://github.com/audiojs/audio-mic) (cross-platform PCM capture) and push frames into a `MediaStreamAudioSourceNode`:
+Load the polyfill and install [`audio-mic`](https://github.com/audiojs/audio-mic) — `navigator.mediaDevices.getUserMedia()` then works identically to the browser:
+
+```sh
+npm install audio-mic
+```
 
 ```js
-import { AudioContext, MediaStreamAudioSourceNode } from 'web-audio-api'
+import 'web-audio-api/polyfill'
+
+const ctx = new AudioContext()
+await ctx.resume()
+
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+const src = ctx.createMediaStreamSource(stream)
+src.connect(ctx.destination) // live monitor
+
+// Stop later: stream.getTracks().forEach(t => t.stop())
+```
+
+Constraints map to `audio-mic` options: `{ audio: { sampleRate, channelCount, sampleSize } }`.
+
+Without the polyfill, use `createMediaStream()` to wrap any PCM source into a spec-shaped `MediaStream`:
+
+```js
+import { AudioContext, createMediaStream } from 'web-audio-api'
 import mic from 'audio-mic'
 
 const ctx = new AudioContext()
 await ctx.resume()
 
-const src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
-src.connect(ctx.destination) // live monitor
-
-// audio-mic → Int16 PCM → Float32 → graph
-const read = mic({ sampleRate: ctx.sampleRate, channels: 1, bitDepth: 16 })
-read((err, buf) => {
-  if (err || !buf) return
-  const frames = buf.length / 2
-  const f32 = new Float32Array(frames)
-  for (let i = 0; i < frames; i++) f32[i] = buf.readInt16LE(i * 2) / 32768
-  src.pushData(f32)
-})
+const stream = createMediaStream(
+  mic({ sampleRate: ctx.sampleRate, channels: 1, bitDepth: 16 }),
+  { channels: 1, bitDepth: 16 }
+)
+ctx.createMediaStreamSource(stream).connect(ctx.destination)
 ```
 
-For stereo, push `[leftFloat32, rightFloat32]`. See [examples/mic.js](examples/mic.js) for a full runnable demo with gain control and a VU meter.
+`createMediaStream` accepts callback readers, async iterables, sync iterables, or Node `Readable` streams. Chunks may be `Float32Array` (mono), `Float32Array[]` (planar), or interleaved Int16/24/32 PCM `Buffer`/`Uint8Array`.
 
-To record the graph to a buffer instead, use `OfflineAudioContext.startRendering()`. To capture a live graph as a stream, use `ctx.createMediaStreamDestination()`.
+See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU meter. To record the graph to a buffer, use `OfflineAudioContext.startRendering()`. To capture live graph output as a stream, use `ctx.createMediaStreamDestination()`.
 </dd>
 
 <dt>How do I use it as a polyfill?</dt>

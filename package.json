@@ -48,6 +48,14 @@
     "tone": "^15.1.22",
     "tst": "^9.4.0"
   },
+  "peerDependencies": {
+    "audio-mic": "*"
+  },
+  "peerDependenciesMeta": {
+    "audio-mic": {
+      "optional": true
+    }
+  },
   "license": "MIT",
   "engines": {
     "node": ">=18"

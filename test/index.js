@@ -38,6 +38,7 @@ import './audit-fixes.test.js'
 import './OfflineAudioContext.test.js'
 import './AudioWorklet.test.js'
 import './MediaStreamNodes.test.js'
+import './polyfill.test.js'
 
 // Edge cases & validation
 import './edge-cases.test.js'

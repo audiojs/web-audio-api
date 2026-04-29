@@ -1,69 +1,58 @@
-// Live microphone pass-through — mic → gain → speakers, with RMS meter.
-// Requires the `audio-mic` package (cross-platform Node mic capture):
-//   npm i audio-mic
-// Run: node examples/mic.js
-// Run: node examples/mic.js gain=0.8
-// Keys: space pause · + / - adjust gain · q quit
+// Live microphone → speakers with an RMS VU meter.
+// Requires `audio-mic` (optional peer dep):  npm install audio-mic
+//
+// Run:   node examples/mic.js
+// Keys:  ↑/↓ gain · space pause · q quit
+//
+// Two equivalent paths:
+//  (1) Browser-parity — via polyfill + navigator.mediaDevices.getUserMedia (below)
+//  (2) Node-native    — via `createMediaStream(mic(...), opts)` (see README mic FAQ)
 
-import { AudioContext, MediaStreamAudioSourceNode } from 'web-audio-api'
-import mic from 'audio-mic'
+import 'web-audio-api/polyfill'
 import { args, keys, status, clearLine, pausedTag } from './_util.js'
 
 let { $ } = args()
-let gainVal = parseFloat($('gain', '1'))
-let sampleRate = parseInt($('rate', '44100'))
-let channels = parseInt($('ch', '1'))
+let channels = +$('ch', '1')
+let bitDepth = +$('bit', '16')
 
-const ctx = new AudioContext({ sampleRate })
+const ctx = new AudioContext()
 await ctx.resume()
 
-// MediaStreamAudioSourceNode accepts externally-pushed Float32 PCM blocks via pushData().
-// We feed it from audio-mic, converting Int16 → Float32 per channel.
-const src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: channels })
-const gain = ctx.createGain()
-gain.gain.value = gainVal
-src.connect(gain).connect(ctx.destination)
-
-// audio-mic yields interleaved Int16 PCM Buffers. Deinterleave + normalize.
-let read = mic({ sampleRate, channels, bitDepth: 16 })
-let peak = 0
-read((err, buf) => {
-  if (err) return
-  if (!buf) return
-  let samples = buf.length / 2 // Int16 = 2 bytes
-  let frames = samples / channels
-  let chans = []
-  for (let c = 0; c < channels; c++) chans.push(new Float32Array(frames))
-  for (let i = 0; i < frames; i++) {
-    for (let c = 0; c < channels; c++) {
-      let s = buf.readInt16LE((i * channels + c) * 2) / 32768
-      chans[c][i] = s
-      let a = Math.abs(s); if (a > peak) peak = a
-    }
-  }
-  src.pushData(channels === 1 ? chans[0] : chans)
-})
-
-let print = status()
-let tick = setInterval(() => {
-  let db = peak > 0 ? 20 * Math.log10(peak) : -Infinity
-  let bars = Math.max(0, Math.min(30, Math.round((db + 60) / 2)))
-  let meter = '█'.repeat(bars) + '·'.repeat(30 - bars)
-  print(`mic → gain ${gain.gain.value.toFixed(2)} → out  [${meter}] ${db > -Infinity ? db.toFixed(1) : '-∞'}dB${pausedTag(ctx)}  space · +/- · q`)
-  peak *= 0.85
-}, 50)
-
-const cleanup = () => {
-  clearInterval(tick)
-  try { read(null) } catch {}
-  clearLine()
-  ctx.close()
+let stream
+try {
+  stream = await navigator.mediaDevices.getUserMedia({
+    audio: { sampleRate: ctx.sampleRate, channelCount: channels, sampleSize: bitDepth }
+  })
+} catch (err) {
+  console.error(err.message)
+  process.exit(1)
 }
 
-keys({
-  '+': () => { gain.gain.value = Math.min(4, gain.gain.value * 1.25) },
-  '=': () => { gain.gain.value = Math.min(4, gain.gain.value * 1.25) },
-  '-': () => { gain.gain.value = Math.max(0, gain.gain.value / 1.25) },
-}, cleanup, ctx)
+const src = ctx.createMediaStreamSource(stream)
+const gain = ctx.createGain()
+const analyser = ctx.createAnalyser()
+analyser.fftSize = 1024
+src.connect(gain).connect(analyser).connect(ctx.destination)
 
-console.log(`mic → ${channels}ch @ ${sampleRate}Hz (backend: ${read.backend || 'auto'})`)
+const buf = new Float32Array(analyser.fftSize)
+const render = status()
+let interval = setInterval(() => {
+  analyser.getFloatTimeDomainData(buf)
+  let sum = 0
+  for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
+  let db = 20 * Math.log10(Math.max(Math.sqrt(sum / buf.length), 1e-6))
+  let meter = '█'.repeat(Math.max(0, Math.min(30, Math.round((db + 60) / 2))))
+  render(`mic  gain ${gain.gain.value.toFixed(2)}  ${db.toFixed(1).padStart(6)} dB  ${meter}${pausedTag(ctx)}`)
+}, 50)
+
+keys({
+  up: () => { gain.gain.value = Math.min(4, gain.gain.value * 1.2) },
+  down: () => { gain.gain.value = Math.max(0.01, gain.gain.value / 1.2) },
+}, () => {
+  clearInterval(interval)
+  stream.getTracks().forEach(t => t.stop())
+  clearLine()
+  ctx.close()
+}, ctx)
+
+console.log('mic → speakers  ↑/↓ gain · space pause · q quit')

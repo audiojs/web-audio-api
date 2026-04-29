@@ -82,7 +82,7 @@ export class BaseAudioContext extends EventTarget {
   createAnalyser(): AnalyserNode;
   createScriptProcessor(bufferSize: number, numberOfInputChannels: number, numberOfOutputChannels: number): ScriptProcessorNode;
   createPanner(): PannerNode;
-  createMediaStreamSource(mediaStream: any): MediaStreamAudioSourceNode;
+  createMediaStreamSource(mediaStream: MediaStream): MediaStreamAudioSourceNode;
   createMediaStreamDestination(): MediaStreamAudioDestinationNode;
 }
 
@@ -259,7 +259,6 @@ export class AudioWorkletProcessor {
 
 export class MediaStreamAudioSourceNode extends AudioNode {
   readonly mediaStream: any;
-  pushData(channelData: Float32Array | Float32Array[]): void;
 }
 
 export class MediaStreamAudioDestinationNode extends AudioNode {
@@ -269,6 +268,19 @@ export class MediaStreamAudioDestinationNode extends AudioNode {
 export class MediaElementAudioSourceNode extends AudioNode {
   readonly mediaElement: any;
 }
+
+// Node extension: wrap any PCM source as a MediaStream for `createMediaStreamSource`.
+// Accepts a callback reader `fn(cb)`, async iterable, sync iterable, or Node Readable.
+// Chunks: Float32Array (mono), Float32Array[] (planar), or interleaved Int PCM Buffer.
+export function createMediaStream(
+  source:
+    | ((cb: (err: Error | null, chunk: Float32Array | Float32Array[] | Uint8Array | null) => void) => void)
+    | AsyncIterable<Float32Array | Float32Array[] | Uint8Array>
+    | Iterable<Float32Array | Float32Array[] | Uint8Array>
+    | { on(event: 'data', fn: (chunk: Uint8Array | Float32Array | Float32Array[]) => void): any },
+  options?: { channels?: number; bitDepth?: 16 | 24 | 32 }
+): MediaStream;
+
 
 // Error types
 export class InvalidStateError extends Error { readonly name: 'InvalidStateError' }
