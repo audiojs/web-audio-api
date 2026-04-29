@@ -5,7 +5,6 @@ import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { fill } from 'audio-buffer/util'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from '../src/MediaStreamAudioSourceNode.js'
-import createMediaStream from '../src/createMediaStream.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
 let mkCtx = () => new AudioContext()
@@ -69,40 +68,15 @@ test('ctx.createMediaStreamSource > rejects non-MediaStream input', () => {
   let ctx = mkCtx()
   let threw = false
   try { ctx.createMediaStreamSource([]) } catch { threw = true }
-  ok(threw, 'plain array rejected (use createMediaStream to wrap)')
+  ok(threw, 'plain array rejected')
 })
 
-// createMediaStream(): Node-side adapter that wraps a PCM source into a spec-shaped
-// MediaStream, usable with the spec-standard ctx.createMediaStreamSource(stream).
-
-test('createMediaStream > produces spec-compliant MediaStream shape', () => {
-  let stream = createMediaStream([new Float32Array(BLOCK_SIZE)])
-  let tracks = stream.getAudioTracks()
-  is(tracks.length, 1, 'has exactly one audio track')
-  is(tracks[0].kind, 'audio', 'track kind is audio')
-  ok(typeof stream.getTracks === 'function', 'getTracks() available')
-  is(stream.getVideoTracks().length, 0, 'no video tracks')
+test('MediaStreamAudioSourceNode > pushData converts Int16 PCM buffer', () => {
   let ctx = mkCtx()
-  ok(ctx.createMediaStreamSource(stream), 'accepted by createMediaStreamSource')
-})
-
-test('createMediaStream > Float32Array (mono) → graph', () => {
-  let ctx = mkCtx()
-  let block = new Float32Array(BLOCK_SIZE).fill(0.5)
-  let stream = createMediaStream([block])
-  let src = ctx.createMediaStreamSource(stream)
-
-  ctx._state = 'running'
-  let out = src._tick()
-  almost(out.getChannelData(0)[0], 0.5, 1e-6, 'Float32Array flows through graph')
-})
-
-test('createMediaStream > Int16 LE PCM Buffer (audio-mic shape) → mono Float32', () => {
-  let ctx = mkCtx()
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
   let pcm = Buffer.alloc(BLOCK_SIZE * 2)
   for (let i = 0; i < BLOCK_SIZE; i++) pcm.writeInt16LE(Math.round(0.5 * 32767), i * 2)
-  let stream = createMediaStream([pcm], { channels: 1, bitDepth: 16 })
-  let src = ctx.createMediaStreamSource(stream)
+  src.pushData(pcm, { channels: 1, bitDepth: 16 })
 
   ctx._state = 'running'
   let out = src._tick()
@@ -110,15 +84,15 @@ test('createMediaStream > Int16 LE PCM Buffer (audio-mic shape) → mono Float32
   almost(out.getChannelData(0)[BLOCK_SIZE - 1], 0.5, 1e-4, 'last sample preserved')
 })
 
-test('createMediaStream > stereo interleaved Int16 PCM → planar Float32', () => {
+test('MediaStreamAudioSourceNode > pushData deinterleaves stereo PCM buffer', () => {
   let ctx = mkCtx()
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 2 })
   let pcm = Buffer.alloc(BLOCK_SIZE * 2 * 2)
   for (let i = 0; i < BLOCK_SIZE; i++) {
     pcm.writeInt16LE(Math.round(0.3 * 32767), (i * 2) * 2)
     pcm.writeInt16LE(Math.round(-0.4 * 32767), (i * 2 + 1) * 2)
   }
-  let stream = createMediaStream([pcm], { channels: 2, bitDepth: 16 })
-  let src = ctx.createMediaStreamSource(stream)
+  src.pushData(pcm, { channels: 2, bitDepth: 16 })
 
   ctx._state = 'running'
   let out = src._tick()
@@ -127,37 +101,30 @@ test('createMediaStream > stereo interleaved Int16 PCM → planar Float32', () =
   almost(out.getChannelData(1)[0], -0.4, 1e-4, 'right channel preserved')
 })
 
-test('createMediaStream > callback-style reader (audio-mic shape)', async () => {
+test('MediaStreamAudioSourceNode > queued chunks drain in order', () => {
   let ctx = mkCtx()
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
   let values = [0.1, 0.2, 0.3]
-  let idx = 0
-  let read = (cb) => {
-    if (idx >= values.length) return cb(null, null)
-    let chunk = new Float32Array(BLOCK_SIZE).fill(values[idx++])
-    queueMicrotask(() => cb(null, chunk))
-  }
-  let stream = createMediaStream(read)
-  let src = ctx.createMediaStreamSource(stream)
+  for (let v of values) src.pushData(new Float32Array(BLOCK_SIZE).fill(v))
 
-  await new Promise(r => setTimeout(r, 10))
   ctx._state = 'running'
   for (let v of values) {
-    almost(src._tick().getChannelData(0)[0], v, 1e-6, `chunk ${v} drained in order`)
+    let out = src._tick()
+    almost(out.getChannelData(0)[0], v, 1e-6, `chunk ${v} drained in order`)
   }
   is(src._tick().getChannelData(0)[0], 0, 'silence after reader EOF')
 })
 
-test('createMediaStream > async iterable source', async () => {
+test('MediaStreamAudioSourceNode > short chunks fill the same quantum', () => {
   let ctx = mkCtx()
-  async function* gen() {
-    yield new Float32Array(BLOCK_SIZE).fill(0.25)
-    yield new Float32Array(BLOCK_SIZE).fill(-0.25)
-  }
-  let stream = createMediaStream(gen())
-  let src = ctx.createMediaStreamSource(stream)
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  src.pushData(new Float32Array(32).fill(0.25))
+  src.pushData(new Float32Array(BLOCK_SIZE - 32).fill(-0.25))
 
-  await new Promise(r => setTimeout(r, 10))
   ctx._state = 'running'
-  almost(src._tick().getChannelData(0)[0], 0.25, 1e-6, 'first chunk')
-  almost(src._tick().getChannelData(0)[0], -0.25, 1e-6, 'second chunk')
+  let out = src._tick().getChannelData(0)
+  almost(out[0], 0.25, 1e-6, 'first chunk starts quantum')
+  almost(out[31], 0.25, 1e-6, 'first chunk ends at its length')
+  almost(out[32], -0.25, 1e-6, 'second chunk continues in same quantum')
+  almost(out[BLOCK_SIZE - 1], -0.25, 1e-6, 'second chunk fills quantum')
 })

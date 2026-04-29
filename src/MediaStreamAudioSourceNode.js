@@ -1,15 +1,44 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
+import convert from 'pcm-convert'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
 
 // Make a minimal MediaStreamTrack-shaped object (used by destination node below)
 let nextId = 0
-let makeTrack = (kind = 'audio') => ({
+let makeTrack = (kind = 'audio', settings = {}) => ({
   id: 'track-' + (++nextId), kind, enabled: true, readyState: 'live',
   stop() { this.readyState = 'ended' },
-  clone() { return makeTrack(this.kind) },
+  clone() { return makeTrack(this.kind, settings) },
+  getSettings: () => ({ ...settings }),
 })
+
+let splitPlanar = (data, channels) => {
+  if (channels === 1) return data
+  let frames = data.length / channels
+  let planes = []
+  for (let ch = 0; ch < channels; ch++) planes.push(data.subarray(ch * frames, (ch + 1) * frames))
+  return planes
+}
+
+let isFloatChunk = chunk =>
+  chunk instanceof Float32Array ||
+  (Array.isArray(chunk) && chunk.every(ch => ch instanceof Float32Array))
+
+let normalizeChunk = (chunk, channels, bitDepth) => {
+  if (isFloatChunk(chunk)) return chunk
+  if (![8, 16, 32].includes(bitDepth))
+    throw new TypeError('pushData PCM conversion supports 8, 16, or 32-bit integer samples')
+  if (!chunk?.buffer && !(chunk instanceof ArrayBuffer))
+    throw new TypeError('pushData expects Float32Array, Float32Array[], or interleaved PCM data')
+
+  let bytes = chunk instanceof ArrayBuffer
+    ? chunk
+    : chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength)
+  let data = convert(bytes, { dtype: `int${bitDepth}`, channels, interleaved: true, endianness: 'le' },
+    { dtype: 'float32', channels, interleaved: false })
+  return splitPlanar(data, channels)
+}
 
 // Reads audio from a MediaStream-shaped source into the graph
 class MediaStreamAudioSourceNode extends AudioNode {
@@ -17,6 +46,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
   #pending = null  // current chunk being drained
   #pos = 0
   #channels
+  #bitDepth
 
   get mediaStream() { return this.#stream }
 
@@ -30,31 +60,52 @@ class MediaStreamAudioSourceNode extends AudioNode {
     super(context, 0, 1, channels, 'max', 'speakers')
     this.#stream = ms
     this.#channels = channels
+    this.#bitDepth = options.bitDepth ?? 16
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
   }
 
-  // For tests / external pushers: enqueue a chunk directly onto the stream's buffer.
-  pushData(chunk) { (this.#stream ??= { _buffers: [] })._buffers ??= []; this.#stream._buffers.push(chunk) }
+  pushData(chunk, options = {}) {
+    ;(this.#stream ??= { _buffers: [] })._buffers ??= []
+    this.#stream._buffers.push(normalizeChunk(
+      chunk,
+      options.channels ?? options.numberOfChannels ?? this.#channels,
+      options.bitDepth ?? this.#bitDepth
+    ))
+  }
 
   _tick() {
     super._tick()
     let out = this._outBuf
     for (let ch = 0; ch < this.#channels; ch++) out.getChannelData(ch).fill(0)
 
-    if (!this.#pending) this.#pending = this.#stream?._buffers?.shift() ?? null
-    if (!this.#pending) return out
+    let offset = 0
+    while (offset < BLOCK_SIZE) {
+      if (!this.#pending) this.#pending = this.#stream?._buffers?.shift() ?? null
+      if (!this.#pending) break
 
-    let chunk = this.#pending
-    let len = Array.isArray(chunk) ? chunk[0].length : chunk.length
-    let count = Math.min(BLOCK_SIZE, len - this.#pos)
-    for (let ch = 0; ch < Math.min(this.#channels, Array.isArray(chunk) ? chunk.length : 1); ch++) {
-      let src = Array.isArray(chunk) ? chunk[ch] : chunk
-      let dst = out.getChannelData(ch)
-      for (let i = 0; i < count; i++) dst[i] = src[this.#pos + i]
+      let chunk = this.#pending
+      let len = Array.isArray(chunk) ? chunk[0]?.length ?? 0 : chunk.length
+      if (this.#pos >= len) {
+        this.#pending = null
+        this.#pos = 0
+        continue
+      }
+
+      let count = Math.min(BLOCK_SIZE - offset, len - this.#pos)
+      for (let ch = 0; ch < Math.min(this.#channels, Array.isArray(chunk) ? chunk.length : 1); ch++) {
+        let src = Array.isArray(chunk) ? chunk[ch] : chunk
+        let dst = out.getChannelData(ch)
+        for (let i = 0; i < count; i++) dst[offset + i] = src[this.#pos + i]
+      }
+
+      offset += count
+      this.#pos += count
+      if (this.#pos >= len) {
+        this.#pending = null
+        this.#pos = 0
+      }
     }
-    this.#pos += count
-    if (this.#pos >= len) { this.#pending = null; this.#pos = 0 }
     return out
   }
 }
@@ -68,7 +119,7 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     options = AudioNode._checkOpts(options)
     let channels = options.numberOfChannels ?? 2
     super(context, 1, 0, channels, 'explicit', 'speakers')
-    let track = makeTrack('audio')
+    let track = makeTrack('audio', { channelCount: channels, sampleRate: context.sampleRate })
     this.#stream = {
       _buffers: [],
       read() { return this._buffers.shift() || null },
