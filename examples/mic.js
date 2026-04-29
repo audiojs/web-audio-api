@@ -5,7 +5,7 @@
 // Run: node examples/mic.js gain=0.8
 // Keys: space pause · + / - adjust gain · q quit
 
-import { AudioContext, MediaStreamAudioSourceNode } from 'web-audio-api'
+import { AudioContext, MediaStreamAudioSourceNode, MediaStream, MediaStreamTrack } from 'web-audio-api'
 import mic from 'audio-mic'
 import { args, keys, status, clearLine, pausedTag } from './_util.js'
 
@@ -18,7 +18,10 @@ let bitDepth = parseInt($('bit', '16'))
 const ctx = new AudioContext({ sampleRate })
 await ctx.resume()
 
-const src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: channels, bitDepth })
+const track = new MediaStreamTrack('audio', 'mic', { channelCount: channels, sampleSize: bitDepth, sampleRate })
+const stream = new MediaStream([track])
+
+const src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
 const gain = ctx.createGain()
 const analyser = ctx.createAnalyser()
 gain.gain.value = gainVal
@@ -28,7 +31,7 @@ src.connect(gain).connect(analyser).connect(ctx.destination)
 let read = mic({ sampleRate, channels, bitDepth })
 read((err, buf) => {
   if (err || !buf) return
-  src.pushData(buf, { channels, bitDepth })
+  track.pushData(buf, { channels, bitDepth })
 })
 
 let samples = new Float32Array(analyser.fftSize)

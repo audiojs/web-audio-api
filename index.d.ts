@@ -259,7 +259,6 @@ export class AudioWorkletProcessor {
 
 export class MediaStreamAudioSourceNode extends AudioNode {
   readonly mediaStream: any;
-  pushData(channelData: Float32Array | Float32Array[] | ArrayBuffer | ArrayBufferView, options?: { channels?: number; numberOfChannels?: number; bitDepth?: 8 | 16 | 32 }): void;
 }
 
 export class MediaStreamAudioDestinationNode extends AudioNode {
@@ -268,6 +267,29 @@ export class MediaStreamAudioDestinationNode extends AudioNode {
 
 export class MediaElementAudioSourceNode extends AudioNode {
   readonly mediaElement: any;
+}
+
+export class MediaStreamTrack extends EventTarget {
+  readonly id: string;
+  readonly kind: string;
+  readonly label: string;
+  enabled: boolean;
+  readonly readyState: 'live' | 'ended';
+  stop(): void;
+  clone(): MediaStreamTrack;
+  getSettings(): Record<string, any>;
+  pushData(channelData: Float32Array | Float32Array[] | ArrayBuffer | ArrayBufferView, options?: { channels?: number; numberOfChannels?: number; bitDepth?: 8 | 16 | 32 }): void;
+}
+
+export class MediaStream extends EventTarget {
+  readonly id: string;
+  readonly active: boolean;
+  constructor(tracks?: MediaStreamTrack[] | MediaStream);
+  getTracks(): MediaStreamTrack[];
+  getAudioTracks(): MediaStreamTrack[];
+  getVideoTracks(): MediaStreamTrack[];
+  addTrack(track: MediaStreamTrack): void;
+  removeTrack(track: MediaStreamTrack): void;
 }
 
 // Error types

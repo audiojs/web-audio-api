@@ -5,17 +5,24 @@ import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { fill } from 'audio-buffer/util'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from '../src/MediaStreamAudioSourceNode.js'
+import { MediaStream, MediaStreamTrack } from '../src/MediaStream.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
 let mkCtx = () => new AudioContext()
 
+let mkStream = (opts) => {
+  let track = new MediaStreamTrack('audio', '', opts)
+  return new MediaStream([track])
+}
+
 test('MediaStreamAudioSourceNode > outputs pushed data', () => {
   let ctx = mkCtx()
-  let node = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  let stream = mkStream({ channelCount: 1 })
+  let node = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
 
   let data = new Float32Array(BLOCK_SIZE)
   data.fill(0.6)
-  node.pushData(data)
+  stream.getAudioTracks()[0].pushData(data)
 
   ctx._state = 'running'
   let buf = node._tick()
@@ -25,7 +32,8 @@ test('MediaStreamAudioSourceNode > outputs pushed data', () => {
 
 test('MediaStreamAudioSourceNode > outputs silence when no data', () => {
   let ctx = mkCtx()
-  let node = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  let stream = mkStream({ channelCount: 1 })
+  let node = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
 
   ctx._state = 'running'
   let buf = node._tick()
@@ -73,10 +81,11 @@ test('ctx.createMediaStreamSource > rejects non-MediaStream input', () => {
 
 test('MediaStreamAudioSourceNode > pushData converts Int16 PCM buffer', () => {
   let ctx = mkCtx()
-  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  let stream = mkStream({ channelCount: 1 })
+  let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
   let pcm = Buffer.alloc(BLOCK_SIZE * 2)
   for (let i = 0; i < BLOCK_SIZE; i++) pcm.writeInt16LE(Math.round(0.5 * 32767), i * 2)
-  src.pushData(pcm, { channels: 1, bitDepth: 16 })
+  stream.getAudioTracks()[0].pushData(pcm, { channels: 1, bitDepth: 16 })
 
   ctx._state = 'running'
   let out = src._tick()
@@ -86,13 +95,14 @@ test('MediaStreamAudioSourceNode > pushData converts Int16 PCM buffer', () => {
 
 test('MediaStreamAudioSourceNode > pushData deinterleaves stereo PCM buffer', () => {
   let ctx = mkCtx()
-  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 2 })
+  let stream = mkStream({ channelCount: 2 })
+  let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
   let pcm = Buffer.alloc(BLOCK_SIZE * 2 * 2)
   for (let i = 0; i < BLOCK_SIZE; i++) {
     pcm.writeInt16LE(Math.round(0.3 * 32767), (i * 2) * 2)
     pcm.writeInt16LE(Math.round(-0.4 * 32767), (i * 2 + 1) * 2)
   }
-  src.pushData(pcm, { channels: 2, bitDepth: 16 })
+  stream.getAudioTracks()[0].pushData(pcm, { channels: 2, bitDepth: 16 })
 
   ctx._state = 'running'
   let out = src._tick()
@@ -103,9 +113,10 @@ test('MediaStreamAudioSourceNode > pushData deinterleaves stereo PCM buffer', ()
 
 test('MediaStreamAudioSourceNode > queued chunks drain in order', () => {
   let ctx = mkCtx()
-  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  let stream = mkStream({ channelCount: 1 })
+  let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
   let values = [0.1, 0.2, 0.3]
-  for (let v of values) src.pushData(new Float32Array(BLOCK_SIZE).fill(v))
+  for (let v of values) stream.getAudioTracks()[0].pushData(new Float32Array(BLOCK_SIZE).fill(v))
 
   ctx._state = 'running'
   for (let v of values) {
@@ -117,9 +128,10 @@ test('MediaStreamAudioSourceNode > queued chunks drain in order', () => {
 
 test('MediaStreamAudioSourceNode > short chunks fill the same quantum', () => {
   let ctx = mkCtx()
-  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
-  src.pushData(new Float32Array(32).fill(0.25))
-  src.pushData(new Float32Array(BLOCK_SIZE - 32).fill(-0.25))
+  let stream = mkStream({ channelCount: 1 })
+  let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
+  stream.getAudioTracks()[0].pushData(new Float32Array(32).fill(0.25))
+  stream.getAudioTracks()[0].pushData(new Float32Array(BLOCK_SIZE - 32).fill(-0.25))
 
   ctx._state = 'running'
   let out = src._tick().getChannelData(0)

@@ -1,44 +1,8 @@
 import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
-import convert from 'pcm-convert'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
-
-// Make a minimal MediaStreamTrack-shaped object (used by destination node below)
-let nextId = 0
-let makeTrack = (kind = 'audio', settings = {}) => ({
-  id: 'track-' + (++nextId), kind, enabled: true, readyState: 'live',
-  stop() { this.readyState = 'ended' },
-  clone() { return makeTrack(this.kind, settings) },
-  getSettings: () => ({ ...settings }),
-})
-
-let splitPlanar = (data, channels) => {
-  if (channels === 1) return data
-  let frames = data.length / channels
-  let planes = []
-  for (let ch = 0; ch < channels; ch++) planes.push(data.subarray(ch * frames, (ch + 1) * frames))
-  return planes
-}
-
-let isFloatChunk = chunk =>
-  chunk instanceof Float32Array ||
-  (Array.isArray(chunk) && chunk.every(ch => ch instanceof Float32Array))
-
-let normalizeChunk = (chunk, channels, bitDepth) => {
-  if (isFloatChunk(chunk)) return chunk
-  if (![8, 16, 32].includes(bitDepth))
-    throw new TypeError('pushData PCM conversion supports 8, 16, or 32-bit integer samples')
-  if (!chunk?.buffer && !(chunk instanceof ArrayBuffer))
-    throw new TypeError('pushData expects Float32Array, Float32Array[], or interleaved PCM data')
-
-  let bytes = chunk instanceof ArrayBuffer
-    ? chunk
-    : chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength)
-  let data = convert(bytes, { dtype: `int${bitDepth}`, channels, interleaved: true, endianness: 'le' },
-    { dtype: 'float32', channels, interleaved: false })
-  return splitPlanar(data, channels)
-}
+import { MediaStreamTrack } from './MediaStream.js'
 
 // Reads audio from a MediaStream-shaped source into the graph
 class MediaStreamAudioSourceNode extends AudioNode {
@@ -46,7 +10,6 @@ class MediaStreamAudioSourceNode extends AudioNode {
   #pending = null  // current chunk being drained
   #pos = 0
   #channels
-  #bitDepth
 
   get mediaStream() { return this.#stream }
 
@@ -56,22 +19,14 @@ class MediaStreamAudioSourceNode extends AudioNode {
     if (ms && (ms.getAudioTracks?.() ?? []).length === 0)
       throw DOMErr('MediaStream has no audio tracks', 'InvalidStateError')
 
-    let channels = options.numberOfChannels ?? 1
+    let track = ms?.getAudioTracks?.()[0]
+    let settings = track?.getSettings?.()
+    let channels = options.numberOfChannels ?? settings?.channelCount ?? 1
     super(context, 0, 1, channels, 'max', 'speakers')
     this.#stream = ms
     this.#channels = channels
-    this.#bitDepth = options.bitDepth ?? 16
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
-  }
-
-  pushData(chunk, options = {}) {
-    ;(this.#stream ??= { _buffers: [] })._buffers ??= []
-    this.#stream._buffers.push(normalizeChunk(
-      chunk,
-      options.channels ?? options.numberOfChannels ?? this.#channels,
-      options.bitDepth ?? this.#bitDepth
-    ))
   }
 
   _tick() {
@@ -79,9 +34,12 @@ class MediaStreamAudioSourceNode extends AudioNode {
     let out = this._outBuf
     for (let ch = 0; ch < this.#channels; ch++) out.getChannelData(ch).fill(0)
 
+    let track = this.#stream?.getAudioTracks?.()[0]
+    let buffers = track?._buffers ?? this.#stream?._buffers
+
     let offset = 0
     while (offset < BLOCK_SIZE) {
-      if (!this.#pending) this.#pending = this.#stream?._buffers?.shift() ?? null
+      if (!this.#pending) this.#pending = buffers?.shift() ?? null
       if (!this.#pending) break
 
       let chunk = this.#pending
@@ -119,7 +77,7 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     options = AudioNode._checkOpts(options)
     let channels = options.numberOfChannels ?? 2
     super(context, 1, 0, channels, 'explicit', 'speakers')
-    let track = makeTrack('audio', { channelCount: channels, sampleRate: context.sampleRate })
+    let track = new MediaStreamTrack('audio', '', { channelCount: channels, sampleRate: context.sampleRate })
     this.#stream = {
       _buffers: [],
       read() { return this._buffers.shift() || null },
