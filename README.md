@@ -85,6 +85,7 @@ const buffer = await ctx.startRendering()
 | [render-to-buffer.js](examples/render-to-buffer.js) | Offline render → buffer |
 | [process-file.js](examples/process-file.js) | Audio file → EQ + compress → render |
 | [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout — pipe to `aplay`, `sox`, etc. |
+| [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
 
 ## Node extensions
 
@@ -143,6 +144,37 @@ Then static `import * as Tone from 'tone'` works in `app.js`.
 const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 ```
 WAV, MP3, FLAC, OGG, AAC via [audio-decode](https://github.com/audiojs/audio-decode).
+</dd>
+
+<dt>How do I capture audio from the microphone?</dt>
+<dd>
+
+`navigator.mediaDevices.getUserMedia()` is browser-only and out of scope for this library. In Node, pair it with [`audio-mic`](https://github.com/audiojs/audio-mic) (cross-platform PCM capture) and push frames into a `MediaStreamAudioSourceNode`:
+
+```js
+import { AudioContext, MediaStreamAudioSourceNode } from 'web-audio-api'
+import mic from 'audio-mic'
+
+const ctx = new AudioContext()
+await ctx.resume()
+
+const src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+src.connect(ctx.destination) // live monitor
+
+// audio-mic → Int16 PCM → Float32 → graph
+const read = mic({ sampleRate: ctx.sampleRate, channels: 1, bitDepth: 16 })
+read((err, buf) => {
+  if (err || !buf) return
+  const frames = buf.length / 2
+  const f32 = new Float32Array(frames)
+  for (let i = 0; i < frames; i++) f32[i] = buf.readInt16LE(i * 2) / 32768
+  src.pushData(f32)
+})
+```
+
+For stereo, push `[leftFloat32, rightFloat32]`. See [examples/mic.js](examples/mic.js) for a full runnable demo with gain control and a VU meter.
+
+To record the graph to a buffer instead, use `OfflineAudioContext.startRendering()`. To capture a live graph as a stream, use `ctx.createMediaStreamDestination()`.
 </dd>
 
 <dt>How do I use it as a polyfill?</dt>
