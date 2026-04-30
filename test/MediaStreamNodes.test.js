@@ -5,13 +5,13 @@ import AudioNode from '../src/AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { fill } from 'audio-buffer/util'
 import { MediaStreamAudioSourceNode, MediaStreamAudioDestinationNode } from '../src/MediaStreamAudioSourceNode.js'
-import { MediaStream, MediaStreamTrack } from '../src/MediaStream.js'
+import { MediaStream, CustomMediaStreamTrack } from '../src/MediaStream.js'
 import { BLOCK_SIZE } from '../src/constants.js'
 
 let mkCtx = () => new AudioContext()
 
-let mkStream = (opts) => {
-  let track = new MediaStreamTrack('audio', '', opts)
+let mkStream = (settings) => {
+  let track = new CustomMediaStreamTrack({ kind: 'audio', settings })
   return new MediaStream([track])
 }
 

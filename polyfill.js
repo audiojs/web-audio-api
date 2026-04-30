@@ -9,3 +9,4 @@ if (typeof window === 'undefined') globalThis.window = globalThis
 
 globalThis.MediaStreamTrack ??= waa.MediaStreamTrack
 globalThis.MediaStream ??= waa.MediaStream
+globalThis.CustomMediaStreamTrack ??= waa.CustomMediaStreamTrack

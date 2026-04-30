@@ -278,7 +278,12 @@ export class MediaStreamTrack extends EventTarget {
   stop(): void;
   clone(): MediaStreamTrack;
   getSettings(): Record<string, any>;
+}
+
+export class CustomMediaStreamTrack extends MediaStreamTrack {
+  constructor(options?: { kind?: string; label?: string; settings?: Record<string, any> });
   pushData(channelData: Float32Array | Float32Array[] | ArrayBuffer | ArrayBufferView, options?: { channels?: number; numberOfChannels?: number; bitDepth?: 8 | 16 | 32 }): void;
+  clone(): CustomMediaStreamTrack;
 }
 
 export class MediaStream extends EventTarget {

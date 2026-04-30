@@ -28,14 +28,15 @@ let normalizeChunk = (chunk, channels, bitDepth) => {
   return splitPlanar(data, channels)
 }
 
+// Per W3C Media Capture spec, MediaStreamTrack has no public constructor.
+// We provide one as base class for subclassing (like CanvasCaptureMediaStreamTrack).
 export class MediaStreamTrack extends EventTarget {
   id = 'track-' + (++nextId)
-  kind
-  label
+  kind = 'audio'
+  label = ''
   enabled = true
   readyState = 'live'
-  #settings
-  _buffers = []
+  #settings = {}
 
   constructor(kind = 'audio', label = '', settings = {}) {
     super()
@@ -53,12 +54,25 @@ export class MediaStreamTrack extends EventTarget {
   clone() { return new MediaStreamTrack(this.kind, this.label, this.#settings) }
 
   getSettings() { return { ...this.#settings } }
+}
+
+// Node extension: custom track with public constructor and pushData().
+// Prior art: CanvasCaptureMediaStreamTrack extends MediaStreamTrack.
+export class CustomMediaStreamTrack extends MediaStreamTrack {
+  _buffers = []
+
+  constructor({ kind = 'audio', label = '', settings = {} } = {}) {
+    super(kind, label, settings)
+  }
 
   pushData(chunk, options = {}) {
-    let channels = options.channels ?? options.numberOfChannels ?? this.#settings.channelCount ?? 1
-    let bitDepth = options.bitDepth ?? this.#settings.sampleSize ?? 16
+    let settings = this.getSettings()
+    let channels = options.channels ?? options.numberOfChannels ?? settings.channelCount ?? 1
+    let bitDepth = options.bitDepth ?? settings.sampleSize ?? settings.bitDepth ?? 16
     this._buffers.push(normalizeChunk(chunk, channels, bitDepth))
   }
+
+  clone() { return new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() }) }
 }
 
 export class MediaStream extends EventTarget {

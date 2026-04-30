@@ -93,8 +93,8 @@ Beyond the spec, for Node.js. Not portable to browsers.
 
 - **`addModule(fn)`** — register a processor via callback instead of URL, no file needed
 - **`sinkId: stream`** — pipe PCM to any writable: `new AudioContext({ sinkId: process.stdout })` then `node synth.js | aplay -f cd`
-- **`numberOfChannels`, `bitDepth`** — control output format in the constructor
-- **`MediaStreamTrack`, `MediaStream`** — exposed from `web-audio-api`. `MediaStreamTrack` has a `pushData(chunk, options)` method to feed audio (e.g. from a microphone). See the [mic FAQ](#how-do-i-capture-audio-from-the-microphone).
+- **`numberOfChannels`, `bitDepth`** — control output format in the constructor.
+- **`CustomMediaStreamTrack`** — extends `MediaStreamTrack` with a public constructor and `pushData(chunk, options)` to feed audio data (e.g. from a microphone). Prior art: `CanvasCaptureMediaStreamTrack`. See the [mic FAQ](#how-do-i-capture-audio-from-the-microphone).
 
 ## FAQ
 
@@ -150,20 +150,24 @@ WAV, MP3, FLAC, OGG, AAC via [audio-decode](https://github.com/audiojs/audio-dec
 <dt id="how-do-i-capture-audio-from-the-microphone">How do I capture audio from the microphone?</dt>
 <dd>
 
-In Node, pair [`audio-mic`](https://github.com/audiojs/audio-mic) with `MediaStreamTrack.pushData()`:
+In Node, pair [`audio-mic`](https://github.com/audiojs/audio-mic) with `CustomMediaStreamTrack`:
 
 ```sh
 npm install audio-mic
 ```
 
 ```js
-import { AudioContext, MediaStreamAudioSourceNode, MediaStreamTrack, MediaStream } from 'web-audio-api'
+import { AudioContext, MediaStreamAudioSourceNode, CustomMediaStreamTrack, MediaStream } from 'web-audio-api'
 import mic from 'audio-mic'
 
 const ctx = new AudioContext()
 await ctx.resume()
 
-const track = new MediaStreamTrack('audio', 'mic', { channelCount: 1, sampleSize: 16, sampleRate: ctx.sampleRate })
+const track = new CustomMediaStreamTrack({
+  kind: 'audio',
+  label: 'mic',
+  settings: { channelCount: 1, sampleSize: 16, sampleRate: ctx.sampleRate }
+})
 const stream = new MediaStream([track])
 
 const src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
@@ -176,7 +180,7 @@ read((err, buf) => {
 })
 ```
 
-`track.pushData()` accepts `Float32Array`, `Float32Array[]`, or interleaved 8/16/32-bit integer PCM buffers. Integer PCM conversion uses `pcm-convert`.
+`track.pushData()` accepts `Float32Array`, `Float32Array[]`, or interleaved 8/16/32-bit integer PCM buffers. Integer PCM conversion uses `pcm-convert`. `CustomMediaStreamTrack` extends `MediaStreamTrack` — prior art: `CanvasCaptureMediaStreamTrack`.
 
 See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU meter. To record the graph to a buffer, use `OfflineAudioContext.startRendering()`. To capture live graph output as a stream, use `ctx.createMediaStreamDestination()`.
 </dd>
