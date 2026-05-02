@@ -72,7 +72,11 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
     this._buffers.push(normalizeChunk(chunk, channels, bitDepth))
   }
 
-  clone() { return new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() }) }
+  clone() {
+    let clone = new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() })
+    clone._buffers = this._buffers
+    return clone
+  }
 }
 
 export class MediaStream extends EventTarget {
