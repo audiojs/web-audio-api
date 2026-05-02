@@ -2,7 +2,7 @@ import AudioNode from './AudioNode.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
-import { MediaStreamTrack } from './MediaStream.js'
+import { CustomMediaStreamTrack } from './MediaStream.js'
 
 // Reads audio from a MediaStream-shaped source into the graph
 class MediaStreamAudioSourceNode extends AudioNode {
@@ -82,17 +82,19 @@ class MediaStreamAudioSourceNode extends AudioNode {
 // Captures graph output into a MediaStream for external consumers.
 class MediaStreamAudioDestinationNode extends AudioNode {
   #stream
+  #track
   get stream() { return this.#stream }
 
   constructor(context, options) {
     options = AudioNode._checkOpts(options)
     let channels = options.numberOfChannels ?? 2
     super(context, 1, 0, channels, 'explicit', 'speakers')
-    let track = new MediaStreamTrack('audio', '', { channelCount: channels, sampleRate: context.sampleRate })
+    let track = new CustomMediaStreamTrack({ kind: 'audio', settings: { channelCount: channels, sampleRate: context.sampleRate } })
+    this.#track = track
     this.#stream = {
-      _buffers: [],
-      read() { return this._buffers.shift() || null },
-      get readable() { return this._buffers.length > 0 },
+      get _buffers() { return track._buffers },
+      read() { return track._buffers.shift() || null },
+      get readable() { return track._buffers.length > 0 },
       getTracks: () => [track],
       getAudioTracks: () => [track],
       getVideoTracks: () => [],
@@ -106,7 +108,7 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     let inBuf = this._inputs[0]._tick()
     let chunk = []
     for (let ch = 0; ch < inBuf.numberOfChannels; ch++) chunk.push(new Float32Array(inBuf.getChannelData(ch)))
-    this.#stream._buffers.push(chunk)
+    this.#track._buffers.push(chunk)
     return inBuf
   }
 }
