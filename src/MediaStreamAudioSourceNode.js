@@ -110,7 +110,7 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     this._applyOpts(options)
     context._tailNodes?.add(this)
   }
-
+    if (this.#track?.readyState !== 'ended') this.#track._pushNormalized(chunk)
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()
