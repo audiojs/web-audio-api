@@ -11,9 +11,34 @@ globalThis.MediaStreamTrack ??= waa.MediaStreamTrack
 globalThis.MediaStream ??= waa.MediaStream
 globalThis.CustomMediaStreamTrack ??= waa.CustomMediaStreamTrack
 
-if (typeof waa.getUserMedia === 'function') {
-  globalThis.navigator ??= {}
-  globalThis.navigator.mediaDevices ??= {}
-  globalThis.navigator.mediaDevices.getUserMedia ??= waa.getUserMedia.bind(waa)
-  globalThis.navigator.getUserMedia ??= globalThis.navigator.mediaDevices.getUserMedia
+globalThis.navigator ??= {}
+globalThis.navigator.mediaDevices ??= {}
+
+const legacyGetUserMedia = typeof globalThis.navigator.getUserMedia === 'function'
+  ? globalThis.navigator.getUserMedia.bind(globalThis.navigator)
+  : undefined
+
+const installedGetUserMedia =
+  typeof waa.getUserMedia === 'function'
+    ? waa.getUserMedia.bind(waa)
+    : typeof legacyGetUserMedia === 'function'
+      ? (constraints) =>
+          new Promise((resolve, reject) => {
+            legacyGetUserMedia(constraints, resolve, reject)
+          })
+      : () =>
+          Promise.reject(
+            new TypeError('navigator.mediaDevices.getUserMedia is not implemented')
+          )
+
+globalThis.navigator.mediaDevices.getUserMedia ??= installedGetUserMedia
+globalThis.navigator.getUserMedia ??= function (constraints, successCallback, errorCallback) {
+  globalThis.navigator.mediaDevices.getUserMedia(constraints).then(
+    (stream) => {
+      if (typeof successCallback === 'function') successCallback(stream)
+    },
+    (error) => {
+      if (typeof errorCallback === 'function') errorCallback(error)
+    }
+  )
 }
