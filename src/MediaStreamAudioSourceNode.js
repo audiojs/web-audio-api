@@ -7,6 +7,7 @@ import { CustomMediaStreamTrack } from './MediaStream.js'
 // Reads audio from a MediaStream-shaped source into the graph
 class MediaStreamAudioSourceNode extends AudioNode {
   #stream
+  #track   // cached first audio track — avoids per-quantum getAudioTracks() allocation
   #pending = null  // current chunk being drained
   #pos = 0
   #channels
@@ -24,6 +25,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
     let channels = options.numberOfChannels ?? settings?.channelCount ?? 1
     super(context, 0, 1, channels, 'max', 'speakers')
     this.#stream = ms
+    this.#track = track ?? null
     this.#channels = channels
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
@@ -34,7 +36,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
     let out = this._outBuf
     for (let ch = 0; ch < this.#channels; ch++) out.getChannelData(ch).fill(0)
 
-    let track = this.#stream?.getAudioTracks?.()[0]
+    let track = this.#track
 
     // go silent and clear state if track has ended
     if (track?.readyState === 'ended') {
@@ -108,7 +110,7 @@ class MediaStreamAudioDestinationNode extends AudioNode {
     let inBuf = this._inputs[0]._tick()
     let chunk = []
     for (let ch = 0; ch < inBuf.numberOfChannels; ch++) chunk.push(new Float32Array(inBuf.getChannelData(ch)))
-    this.#track._buffers.push(chunk)
+    this.#track._pushNormalized(chunk)
     return inBuf
   }
 }

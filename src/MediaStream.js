@@ -66,9 +66,16 @@ export class MediaStreamTrack extends EventTarget {
 // Prior art: CanvasCaptureMediaStreamTrack extends MediaStreamTrack.
 export class CustomMediaStreamTrack extends MediaStreamTrack {
   _buffers = []
+  #clones = new Set()
 
   constructor({ kind = 'audio', label = '', settings = {} } = {}) {
     super(kind, label, settings)
+  }
+
+  // Internal: fan out an already-normalised chunk to this track and all live clones.
+  _pushNormalized(chunk) {
+    this._buffers.push(chunk)
+    for (let clone of this.#clones) clone._pushNormalized(chunk)
   }
 
   pushData(chunk, options = {}) {
@@ -76,12 +83,14 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
     let settings = this.getSettings()
     let channels = options.channels ?? options.numberOfChannels ?? settings.channelCount ?? 1
     let bitDepth = options.bitDepth ?? settings.sampleSize ?? settings.bitDepth ?? 16
-    this._buffers.push(normalizeChunk(chunk, channels, bitDepth))
+    this._pushNormalized(normalizeChunk(chunk, channels, bitDepth))
   }
 
   clone() {
     let clone = new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() })
-    clone._buffers = this._buffers
+    this.#clones.add(clone)
+    // Remove from fan-out set when the clone ends to avoid memory leaks.
+    clone.addEventListener('ended', () => this.#clones.delete(clone), { once: true })
     return clone
   }
 }
