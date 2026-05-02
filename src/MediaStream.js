@@ -54,7 +54,6 @@ export class MediaStreamTrack extends EventTarget {
   stop() {
     if (this.#readyState === 'ended') return
     this.#readyState = 'ended'
-    this.dispatchEvent(new Event('ended'))
   }
 
   clone() {
