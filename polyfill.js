@@ -1,8 +1,7 @@
 // Web Audio API globals for Node: `import 'web-audio-api/polyfill'`
-// Also exposes `navigator.mediaDevices.getUserMedia()` + MediaStream/Track so
-// browser mic code runs verbatim. Requires optional peer dep `audio-mic`.
+// Also exposes `navigator.mediaDevices.getUserMedia()` backed by the optional
+// peer dep `audio-mic` so browser mic code runs verbatim.
 import * as waa from './index.js'
-import convert from 'pcm-convert'
 
 for (let [name, value] of Object.entries(waa))
   if (typeof value === 'function' && !(name in globalThis)) globalThis[name] = value
@@ -10,62 +9,17 @@ for (let [name, value] of Object.entries(waa))
 // Tone.js / standardized-audio-context checks `instanceof window.AudioParam`
 if (typeof window === 'undefined') globalThis.window = globalThis
 
-// --- MediaStream / MediaStreamTrack --------------------------------------
-// Minimal spec-shaped classes for `instanceof` + track.stop() in Node.
+globalThis.MediaStreamTrack ??= waa.MediaStreamTrack
+globalThis.MediaStream ??= waa.MediaStream
+globalThis.CustomMediaStreamTrack ??= waa.CustomMediaStreamTrack
 
-let nextId = 0
-class MediaStreamTrack extends EventTarget {
-  kind; label; enabled = true; readyState = 'live'
-  id = 'track-' + (++nextId)
-  #settings
-  constructor(kind = 'audio', label = '', settings = {}) {
-    super(); this.kind = kind; this.label = label; this.#settings = settings
-  }
-  stop() {
-    if (this.readyState === 'ended') return
-    this.readyState = 'ended'
-    this.dispatchEvent(new Event('ended'))
-  }
-  clone() { return new MediaStreamTrack(this.kind, this.label, this.#settings) }
-  getSettings() { return { ...this.#settings } }
-}
-
-class MediaStream {
-  id = 'stream-' + Math.random().toString(36).slice(2)
-  #tracks
-  _buffers = []
-  constructor(tracks = []) { this.#tracks = [...(tracks instanceof MediaStream ? tracks.getTracks() : tracks)] }
-  get active() { return this.#tracks.some(t => t.readyState === 'live') }
-  getTracks() { return [...this.#tracks] }
-  getAudioTracks() { return this.#tracks.filter(t => t.kind === 'audio') }
-  getVideoTracks() { return this.#tracks.filter(t => t.kind === 'video') }
-  addTrack(t) { if (!this.#tracks.includes(t)) this.#tracks.push(t) }
-  removeTrack(t) { let i = this.#tracks.indexOf(t); if (i >= 0) this.#tracks.splice(i, 1) }
-}
-
-globalThis.MediaStreamTrack ??= MediaStreamTrack
-globalThis.MediaStream ??= MediaStream
+globalThis.navigator ??= {}
+globalThis.navigator.mediaDevices ??= {}
 
 // --- navigator.mediaDevices.getUserMedia ---------------------------------
+// Backed by the optional 'audio-mic' peer dep.  Install: npm install audio-mic
 
 let pick = v => v == null ? undefined : typeof v === 'number' ? v : (v.ideal ?? v.exact ?? v.min ?? v.max)
-let splitPlanar = (data, channels) => {
-  if (channels === 1) return data
-  let frames = data.length / channels
-  return Array.from({ length: channels }, (_, ch) => data.subarray(ch * frames, (ch + 1) * frames))
-}
-
-let toFloat32 = (chunk, opts) => {
-  if (chunk instanceof Float32Array || Array.isArray(chunk)) return chunk
-  if (![8, 16, 32].includes(opts.bitDepth))
-    throw new TypeError('getUserMedia PCM conversion supports 8, 16, or 32-bit integer samples')
-  let bytes = chunk instanceof ArrayBuffer
-    ? chunk
-    : chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength)
-  let data = convert(bytes, { dtype: `int${opts.bitDepth}`, channels: opts.channels, interleaved: true, endianness: 'le' },
-    { dtype: 'float32', channels: opts.channels, interleaved: false })
-  return splitPlanar(data, opts.channels)
-}
 
 async function getUserMedia(constraints = {}) {
   if (!constraints.audio) throw Object.assign(new Error(
@@ -82,23 +36,44 @@ async function getUserMedia(constraints = {}) {
   if (![8, 16, 32].includes(opts.bitDepth)) throw Object.assign(new Error(
     'getUserMedia supports 8, 16, or 32-bit integer PCM samples in Node'),
     { name: 'NotSupportedError' })
+
   let read = mic(opts)
-  let track = new MediaStreamTrack('audio', 'Default audio input',
-    { sampleRate: opts.sampleRate, channelCount: opts.channels, sampleSize: opts.bitDepth })
-  let stream = new MediaStream([track])
-  let live = true
+  let track = new waa.CustomMediaStreamTrack({
+    kind: 'audio', label: 'Default audio input',
+    settings: { sampleRate: opts.sampleRate, channelCount: opts.channels, sampleSize: opts.bitDepth }
+  })
+  let stream = new waa.MediaStream([track])
+
   let pump = () => read((err, chunk) => {
-    if (!live || err || !chunk) return
-    stream._buffers.push(toFloat32(chunk, opts))
+    if (track.readyState === 'ended' || err || !chunk) return
+    track.pushData(chunk, { channels: opts.channels, bitDepth: opts.bitDepth })
     pump()
   })
   pump()
 
   let origStop = track.stop.bind(track)
-  track.stop = () => { live = false; try { read(null); read.close?.() } catch {} origStop() }
+  track.stop = () => {
+    // Best-effort mic close — errors here (e.g. already closed) are harmless.
+    try { read(null); read.close?.() } catch {}
+    origStop()
+  }
   return stream
 }
 
-globalThis.navigator ??= {}
-globalThis.navigator.mediaDevices ??= {}
-globalThis.navigator.mediaDevices.getUserMedia ??= getUserMedia
+const legacyGetUserMedia = typeof globalThis.navigator.getUserMedia === 'function'
+  ? globalThis.navigator.getUserMedia.bind(globalThis.navigator)
+  : undefined
+
+globalThis.navigator.mediaDevices.getUserMedia ??=
+  typeof legacyGetUserMedia === 'function'
+    ? (constraints) => new Promise((resolve, reject) => legacyGetUserMedia(constraints, resolve, reject))
+    : getUserMedia
+
+globalThis.navigator.getUserMedia ??= function (constraints, successCallback, errorCallback) {
+  Promise.resolve()
+    .then(() => globalThis.navigator.mediaDevices.getUserMedia(constraints))
+    .then(
+      (stream) => { if (typeof successCallback === 'function') successCallback(stream) },
+      (error) => { if (typeof errorCallback === 'function') errorCallback(error) }
+    )
+}
