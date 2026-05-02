@@ -32,22 +32,28 @@ let normalizeChunk = (chunk, channels, bitDepth) => {
 // We provide one as base class for subclassing (like CanvasCaptureMediaStreamTrack).
 export class MediaStreamTrack extends EventTarget {
   id = 'track-' + (++nextId)
-  kind = 'audio'
-  label = ''
+  #kind = 'audio'
+  #label = ''
   enabled = true
-  readyState = 'live'
+  #readyState = 'live'
   #settings = {}
 
   constructor(kind = 'audio', label = '', settings = {}) {
     super()
-    this.kind = kind
-    this.label = label
+    this.#kind = kind
+    this.#label = label
     this.#settings = settings
   }
 
+  get kind() { return this.#kind }
+
+  get label() { return this.#label }
+
+  get readyState() { return this.#readyState }
+
   stop() {
-    if (this.readyState === 'ended') return
-    this.readyState = 'ended'
+    if (this.#readyState === 'ended') return
+    this.#readyState = 'ended'
     this.dispatchEvent(new Event('ended'))
   }
 
