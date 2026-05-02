@@ -40,3 +40,8 @@ test('polyfill > createMediaStreamSource accepts polyfill MediaStream', () => {
   let node = ctx.createMediaStreamSource(s)
   is(node.mediaStream, s)
 })
+
+test('polyfill > navigator.mediaDevices.getUserMedia is a function', () => {
+  ok(typeof globalThis.navigator.mediaDevices.getUserMedia === 'function',
+    'getUserMedia installed on mediaDevices')
+})

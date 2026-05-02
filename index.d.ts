@@ -259,6 +259,7 @@ export class AudioWorkletProcessor {
 
 export class MediaStreamAudioSourceNode extends AudioNode {
   readonly mediaStream: any;
+  pushData(channelData: Float32Array | Float32Array[] | ArrayBuffer | ArrayBufferView, options?: { channels?: number; numberOfChannels?: number; bitDepth?: 8 | 16 | 32 }): void;
 }
 
 export class MediaStreamAudioDestinationNode extends AudioNode {

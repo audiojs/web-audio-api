@@ -140,3 +140,64 @@ test('MediaStreamAudioSourceNode > short chunks fill the same quantum', () => {
   almost(out[32], -0.25, 1e-6, 'second chunk continues in same quantum')
   almost(out[BLOCK_SIZE - 1], -0.25, 1e-6, 'second chunk fills quantum')
 })
+
+test('MediaStreamAudioSourceNode > pushData() compat: works without MediaStream', () => {
+  let ctx = mkCtx()
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1 })
+  src.pushData(new Float32Array(BLOCK_SIZE).fill(0.5))
+
+  ctx._state = 'running'
+  let out = src._tick()
+  almost(out.getChannelData(0)[0], 0.5, 1e-6, 'legacy pushData() still works')
+})
+
+test('MediaStreamAudioDestinationNode > stops capturing after track.stop()', () => {
+  let ctx = mkCtx()
+  let dest = new MediaStreamAudioDestinationNode(ctx, { numberOfChannels: 1 })
+  let src = new AudioNode(ctx, 0, 1)
+  src.connect(dest)
+  src._tick = () => { let b = new AudioBuffer(1, BLOCK_SIZE, 44100); b.getChannelData(0).fill(0.7); return b }
+
+  ctx._state = 'running'
+  dest._tick()
+  ok(dest.stream.readable, 'has data before stop')
+
+  // drain the queue then stop the track
+  while (dest.stream.readable) dest.stream.read()
+  dest.stream.getAudioTracks()[0].stop()
+  dest._tick()
+  ok(!dest.stream.readable, 'no new data after track.stop()')
+})
+
+test('CustomMediaStreamTrack > clone fan-out: clone receives future chunks', () => {
+  let track = new CustomMediaStreamTrack({})
+  let clone = track.clone()
+
+  track.pushData(new Float32Array(BLOCK_SIZE).fill(0.3))
+  is(clone._buffers.length, 1, 'clone receives pushed chunk')
+  almost(clone._buffers[0][0], 0.3, 1e-6, 'clone chunk has correct data')
+})
+
+test('CustomMediaStreamTrack > clone fan-out: stop() unsubscribes clone', () => {
+  let track = new CustomMediaStreamTrack({})
+  let clone = track.clone()
+  clone.stop()
+
+  track.pushData(new Float32Array(BLOCK_SIZE).fill(0.3))
+  is(clone._buffers.length, 0, 'stopped clone no longer receives data')
+})
+
+test('MediaStream > addTrack / removeTrack fire events with event.track', () => {
+  let stream = new MediaStream()
+  let track = new CustomMediaStreamTrack({ kind: 'audio' })
+
+  let added = null, removed = null
+  stream.addEventListener('addtrack', e => { added = e.track })
+  stream.addEventListener('removetrack', e => { removed = e.track })
+
+  stream.addTrack(track)
+  ok(added === track, 'addtrack event fired with correct track')
+
+  stream.removeTrack(track)
+  ok(removed === track, 'removetrack event fired with correct track')
+})

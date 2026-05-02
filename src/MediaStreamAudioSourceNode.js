@@ -20,15 +20,21 @@ class MediaStreamAudioSourceNode extends AudioNode {
     if (ms && (ms.getAudioTracks?.() ?? []).length === 0)
       throw DOMErr('MediaStream has no audio tracks', 'InvalidStateError')
 
-    let track = ms?.getAudioTracks?.()[0]
+    let track = ms?.getAudioTracks?.()[0] ?? null
     let settings = track?.getSettings?.()
     let channels = options.numberOfChannels ?? settings?.channelCount ?? 1
     super(context, 0, 1, channels, 'max', 'speakers')
     this.#stream = ms
-    this.#track = track ?? null
+    // When no MediaStream is given, create an internal track so pushData() still works.
+    this.#track = track ?? new CustomMediaStreamTrack({ settings: { channelCount: channels } })
     this.#channels = channels
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
+  }
+
+  // Backward-compatible entry point: delegates to the track's pushData().
+  pushData(chunk, options = {}) {
+    this.#track.pushData(chunk, options)
   }
 
   _tick() {
@@ -39,16 +45,16 @@ class MediaStreamAudioSourceNode extends AudioNode {
     let track = this.#track
 
     // go silent and clear state if track has ended
-    if (track?.readyState === 'ended') {
+    if (track.readyState === 'ended') {
       this.#pending = null
       this.#pos = 0
       return out
     }
 
     // go silent without draining if track is disabled (resumes on re-enable)
-    if (track && !track.enabled) return out
+    if (!track.enabled) return out
 
-    let buffers = track?._buffers ?? this.#stream?._buffers
+    let buffers = track._buffers ?? this.#stream?._buffers
 
     let offset = 0
     while (offset < BLOCK_SIZE) {
@@ -108,9 +114,11 @@ class MediaStreamAudioDestinationNode extends AudioNode {
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()
-    let chunk = []
-    for (let ch = 0; ch < inBuf.numberOfChannels; ch++) chunk.push(new Float32Array(inBuf.getChannelData(ch)))
-    this.#track._pushNormalized(chunk)
+    if (this.#track.readyState !== 'ended') {
+      let chunk = []
+      for (let ch = 0; ch < inBuf.numberOfChannels; ch++) chunk.push(new Float32Array(inBuf.getChannelData(ch)))
+      this.#track._pushNormalized(chunk)
+    }
     return inBuf
   }
 }

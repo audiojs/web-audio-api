@@ -66,7 +66,9 @@ export class MediaStreamTrack extends EventTarget {
 // Prior art: CanvasCaptureMediaStreamTrack extends MediaStreamTrack.
 export class CustomMediaStreamTrack extends MediaStreamTrack {
   _buffers = []
-  #clones = new Set()
+  // WeakRef-based fan-out: clones can be GC'd when no external reference is held.
+  #clones = new Set()  // Set<WeakRef<CustomMediaStreamTrack>>
+  #registry = new FinalizationRegistry(ref => this.#clones.delete(ref))
 
   constructor({ kind = 'audio', label = '', settings = {} } = {}) {
     super(kind, label, settings)
@@ -75,7 +77,11 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
   // Internal: fan out an already-normalised chunk to this track and all live clones.
   _pushNormalized(chunk) {
     this._buffers.push(chunk)
-    for (let clone of this.#clones) clone._pushNormalized(chunk)
+    for (let ref of this.#clones) {
+      let clone = ref.deref()
+      if (clone) clone._pushNormalized(chunk)
+      else this.#clones.delete(ref)
+    }
   }
 
   pushData(chunk, options = {}) {
@@ -88,9 +94,14 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
 
   clone() {
     let clone = new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() })
-    this.#clones.add(clone)
-    // Remove from fan-out set when the clone ends to avoid memory leaks.
-    clone.addEventListener('ended', () => this.#clones.delete(clone), { once: true })
+    let ref = new WeakRef(clone)
+    this.#clones.add(ref)
+    this.#registry.register(clone, ref, clone)
+    // Also eagerly clean up when the clone is explicitly stopped.
+    clone.addEventListener('ended', () => {
+      this.#registry.unregister(clone)
+      this.#clones.delete(ref)
+    }, { once: true })
     return clone
   }
 }
