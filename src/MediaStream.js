@@ -57,7 +57,12 @@ export class MediaStreamTrack extends EventTarget {
     this.dispatchEvent(new Event('ended'))
   }
 
-  clone() { return new MediaStreamTrack(this.kind, this.label, this.#settings) }
+  clone() {
+    let track = new MediaStreamTrack(this.kind, this.label, this.#settings)
+    track.enabled = this.enabled
+    if (this.#readyState === 'ended') track.#readyState = 'ended'
+    return track
+  }
 
   getSettings() { return { ...this.#settings } }
 }
