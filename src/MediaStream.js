@@ -66,6 +66,7 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
   }
 
   pushData(chunk, options = {}) {
+    if (this.readyState === 'ended') return
     let settings = this.getSettings()
     let channels = options.channels ?? options.numberOfChannels ?? settings.channelCount ?? 1
     let bitDepth = options.bitDepth ?? settings.sampleSize ?? settings.bitDepth ?? 16

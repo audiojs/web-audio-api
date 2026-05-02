@@ -35,6 +35,17 @@ class MediaStreamAudioSourceNode extends AudioNode {
     for (let ch = 0; ch < this.#channels; ch++) out.getChannelData(ch).fill(0)
 
     let track = this.#stream?.getAudioTracks?.()[0]
+
+    // go silent and clear state if track has ended
+    if (track?.readyState === 'ended') {
+      this.#pending = null
+      this.#pos = 0
+      return out
+    }
+
+    // go silent without draining if track is disabled (resumes on re-enable)
+    if (track && !track.enabled) return out
+
     let buffers = track?._buffers ?? this.#stream?._buffers
 
     let offset = 0
