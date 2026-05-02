@@ -41,7 +41,23 @@ test('polyfill > createMediaStreamSource accepts polyfill MediaStream', () => {
   is(node.mediaStream, s)
 })
 
-test('polyfill > navigator.mediaDevices.getUserMedia is a function', () => {
+test('polyfill > navigator.mediaDevices.getUserMedia acquires or meaningfully rejects microphone streams', async () => {
   ok(typeof globalThis.navigator.mediaDevices.getUserMedia === 'function',
     'getUserMedia installed on mediaDevices')
+
+  let result = globalThis.navigator.mediaDevices.getUserMedia({ audio: true })
+  ok(result && typeof result.then === 'function',
+    'getUserMedia returns a promise')
+
+  try {
+    let stream = await result
+    ok(stream instanceof MediaStream, 'resolved value is a MediaStream')
+    ok(stream.getAudioTracks().length > 0,
+      'resolved stream exposes at least one audio track')
+  } catch (err) {
+    ok(err instanceof Error || (err && typeof err === 'object'),
+      'rejection is Error-like')
+    ok(!!(err && typeof err.message === 'string' && err.message.length > 0),
+      'rejection includes a non-empty message')
+  }
 })
