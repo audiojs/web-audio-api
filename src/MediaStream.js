@@ -98,6 +98,7 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
 
   clone() {
     let clone = new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() })
+    clone.enabled = this.enabled
     let ref = new WeakRef(clone)
     this.#clones.add(ref)
     this.#registry.register(clone, ref, clone)
