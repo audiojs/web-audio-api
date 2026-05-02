@@ -23,10 +23,16 @@ class MediaStreamAudioSourceNode extends AudioNode {
     let track = ms?.getAudioTracks?.()[0] ?? null
     let settings = track?.getSettings?.()
     let channels = options.numberOfChannels ?? settings?.channelCount ?? 1
+    let bitDepth = options.bitDepth ?? settings?.bitDepth
     super(context, 0, 1, channels, 'max', 'speakers')
     this.#stream = ms
     // When no MediaStream is given, create an internal track so pushData() still works.
-    this.#track = track ?? new CustomMediaStreamTrack({ settings: { channelCount: channels } })
+    this.#track = track ?? new CustomMediaStreamTrack({
+      settings: {
+        channelCount: channels,
+        ...(bitDepth == null ? {} : { bitDepth })
+      }
+    })
     this.#channels = channels
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
