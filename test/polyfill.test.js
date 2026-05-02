@@ -55,9 +55,13 @@ test('polyfill > navigator.mediaDevices.getUserMedia acquires or meaningfully re
     ok(stream.getAudioTracks().length > 0,
       'resolved stream exposes at least one audio track')
   } catch (err) {
-    ok(err instanceof Error || (err && typeof err === 'object'),
-      'rejection is Error-like')
-    ok(!!(err && typeof err.message === 'string' && err.message.length > 0),
+    ok(err && typeof err === 'object',
+      'rejection is object-like')
+    ok(typeof err.name === 'string',
+      'rejection includes an error name')
+    ok(err.name === 'NotSupportedError' || err.name === 'NotFoundError',
+      'rejection uses a supported getUserMedia error name')
+    ok(typeof err.message === 'string' && err.message.length > 0,
       'rejection includes a non-empty message')
   }
 })
