@@ -83,8 +83,9 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
     this._buffers.push(chunk)
     for (let ref of this.#clones) {
       let clone = ref.deref()
-      if (clone) clone._pushNormalized(chunk)
-      else this.#clones.delete(ref)
+      // Lazily remove dead WeakRefs and clones that have been explicitly stopped.
+      if (!clone || clone.readyState === 'ended') this.#clones.delete(ref)
+      else clone._pushNormalized(chunk)
     }
   }
 
@@ -99,25 +100,13 @@ export class CustomMediaStreamTrack extends MediaStreamTrack {
   clone() {
     let clone = new CustomMediaStreamTrack({ kind: this.kind, label: this.label, settings: this.getSettings() })
     clone.enabled = this.enabled
+    if (this.readyState === 'ended') {
+      clone.stop()
+      return clone
+    }
     let ref = new WeakRef(clone)
     this.#clones.add(ref)
     this.#registry.register(clone, ref, clone)
-
-    let stopCloneWhenSourceEnds = () => {
-      if (clone.readyState !== 'ended') clone.stop()
-    }
-
-    // Clones are fed through this source track, so they must end when the source ends.
-    this.addEventListener('ended', stopCloneWhenSourceEnds, { once: true })
-
-    // Also eagerly clean up when the clone is explicitly stopped or is ended via the source.
-    clone.addEventListener('ended', () => {
-      this.#registry.unregister(clone)
-      this.#clones.delete(ref)
-    }, { once: true })
-
-    if (this.readyState === 'ended') stopCloneWhenSourceEnds()
-
     return clone
   }
 }

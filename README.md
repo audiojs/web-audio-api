@@ -192,6 +192,23 @@ See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU mete
 import 'web-audio-api/polyfill'
 // AudioContext, GainNode, etc. are now global
 ```
+
+The polyfill also installs `navigator.mediaDevices.getUserMedia({ audio: true })`, backed by the optional [`audio-mic`](https://github.com/audiojs/audio-mic) peer dependency. This lets browser mic-capture code run verbatim in Node:
+
+```js
+import 'web-audio-api/polyfill'
+// npm install audio-mic
+
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+const ctx = new AudioContext()
+const src = ctx.createMediaStreamSource(stream)
+src.connect(ctx.destination)
+
+// stop capture
+stream.getAudioTracks()[0].stop()
+```
+
+Without `audio-mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
 </dd>
 
 <dt>Can I unit-test audio code?</dt>
