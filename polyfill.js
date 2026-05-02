@@ -70,8 +70,10 @@ globalThis.navigator.mediaDevices.getUserMedia ??=
     : getUserMedia
 
 globalThis.navigator.getUserMedia ??= function (constraints, successCallback, errorCallback) {
-  globalThis.navigator.mediaDevices.getUserMedia(constraints).then(
-    (stream) => { if (typeof successCallback === 'function') successCallback(stream) },
-    (error) => { if (typeof errorCallback === 'function') errorCallback(error) }
-  )
+  Promise.resolve()
+    .then(() => globalThis.navigator.mediaDevices.getUserMedia(constraints))
+    .then(
+      (stream) => { if (typeof successCallback === 'function') successCallback(stream) },
+      (error) => { if (typeof errorCallback === 'function') errorCallback(error) }
+    )
 }
