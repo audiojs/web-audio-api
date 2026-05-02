@@ -34,6 +34,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
       }
     })
     this.#channels = channels
+    this._ended = false
     this._outBuf = new AudioBuffer(channels, BLOCK_SIZE, context.sampleRate)
     this._applyOpts(options)
   }
@@ -52,6 +53,7 @@ class MediaStreamAudioSourceNode extends AudioNode {
 
     // go silent and clear state if track has ended
     if (track.readyState === 'ended') {
+      this._ended = true
       this.#pending = null
       this.#pos = 0
       return out
