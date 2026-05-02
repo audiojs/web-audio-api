@@ -95,10 +95,27 @@ export class MediaStream extends EventTarget {
     this.#tracks = [...(tracks instanceof MediaStream ? tracks.getTracks() : tracks)]
   }
 
+  #dispatchTrackEvent(type, track) {
+    let event = new Event(type)
+    Object.defineProperty(event, 'track', { value: track, enumerable: true })
+    this.dispatchEvent(event)
+  }
+
   get active() { return this.#tracks.some(t => t.readyState === 'live') }
   getTracks() { return [...this.#tracks] }
   getAudioTracks() { return this.#tracks.filter(t => t.kind === 'audio') }
   getVideoTracks() { return this.#tracks.filter(t => t.kind === 'video') }
-  addTrack(t) { if (!this.#tracks.includes(t)) this.#tracks.push(t) }
-  removeTrack(t) { let i = this.#tracks.indexOf(t); if (i >= 0) this.#tracks.splice(i, 1) }
+  addTrack(t) {
+    if (!this.#tracks.includes(t)) {
+      this.#tracks.push(t)
+      this.#dispatchTrackEvent('addtrack', t)
+    }
+  }
+  removeTrack(t) {
+    let i = this.#tracks.indexOf(t)
+    if (i >= 0) {
+      this.#tracks.splice(i, 1)
+      this.#dispatchTrackEvent('removetrack', t)
+    }
+  }
 }
