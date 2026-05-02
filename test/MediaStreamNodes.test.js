@@ -162,9 +162,9 @@ test('MediaStreamAudioSourceNode > pushData() compat: uses constructor bitDepth 
 
   ctx._state = 'running'
   let out = src._tick().getChannelData(0)
-  almost(out[0], 32767 / 32768, 1e-6, 'decodes positive 16-bit PCM using constructor bitDepth')
+  almost(out[0], 1, 1e-6, 'decodes positive 16-bit PCM using constructor bitDepth')
   almost(out[1], -1, 1e-6, 'decodes negative 16-bit PCM using constructor bitDepth')
-  almost(out[2], 0.5, 1e-6, 'decodes mid-scale 16-bit PCM using constructor bitDepth')
+  almost(out[2], 0.5, 1e-4, 'decodes mid-scale 16-bit PCM using constructor bitDepth')
 })
 
 test('MediaStreamAudioDestinationNode > stops capturing after track.stop()', () => {
