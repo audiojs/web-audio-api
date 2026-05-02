@@ -151,6 +151,22 @@ test('MediaStreamAudioSourceNode > pushData() compat: works without MediaStream'
   almost(out.getChannelData(0)[0], 0.5, 1e-6, 'legacy pushData() still works')
 })
 
+test('MediaStreamAudioSourceNode > pushData() compat: uses constructor bitDepth for raw PCM when call options are omitted', () => {
+  let ctx = mkCtx()
+  let src = new MediaStreamAudioSourceNode(ctx, { numberOfChannels: 1, bitDepth: 16 })
+  let samples = new Int16Array(BLOCK_SIZE)
+  samples[0] = 32767
+  samples[1] = -32768
+  samples[2] = 16384
+  src.pushData(samples)
+
+  ctx._state = 'running'
+  let out = src._tick().getChannelData(0)
+  almost(out[0], 32767 / 32768, 1e-6, 'decodes positive 16-bit PCM using constructor bitDepth')
+  almost(out[1], -1, 1e-6, 'decodes negative 16-bit PCM using constructor bitDepth')
+  almost(out[2], 0.5, 1e-6, 'decodes mid-scale 16-bit PCM using constructor bitDepth')
+})
+
 test('MediaStreamAudioDestinationNode > stops capturing after track.stop()', () => {
   let ctx = mkCtx()
   let dest = new MediaStreamAudioDestinationNode(ctx, { numberOfChannels: 1 })
