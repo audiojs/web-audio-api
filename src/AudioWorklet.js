@@ -376,6 +376,10 @@ class AudioWorklet {
       return meta.includes('base64') ? atob(body) : decodeURIComponent(body)
     }
 
+    if (url.startsWith('blob:')) {
+      return await fetch(url).then(res => res.text())
+    }
+
     // Dynamic import fs/path — works in Node.js, throws in browser
     let fs, path
     try { fs = await import('fs'); path = await import('path') } catch {
