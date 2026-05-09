@@ -160,6 +160,22 @@ test('AudioWorklet > addModule with base64 data URI', async () => {
   ok(node, 'base64 data URI works')
 })
 
+test('AudioWorklet > addModule with blob URI', async () => {
+  let ctx = await mkCtx()
+  let code = `class P extends AudioWorkletProcessor {
+    process() { return true }
+  }; registerProcessor('blob-proc', P)`
+  let url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }))
+
+  try {
+    await ctx.audioWorklet.addModule(url)
+    let node = new AudioWorkletNode(ctx, 'blob-proc')
+    ok(node, 'blob URI works')
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+})
+
 test('AudioWorklet > message ports are entangled', async () => {
   let ctx = await mkCtx()
   await ctx.audioWorklet.addModule(scope => scope.registerProcessor('msg', AudioWorkletProcessor))
