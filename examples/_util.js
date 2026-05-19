@@ -56,13 +56,28 @@ export let keys = (bindings = {}, onQuit, ctx) => {
   return quit
 }
 
+// Truncate to a visible column count, stepping over ANSI escapes so colors aren't cut mid-sequence.
+let clip = (s, w) => {
+  let out = '', vis = 0
+  for (let i = 0; i < s.length;) {
+    if (s[i] === '\x1b') {
+      let j = s.indexOf('m', i)
+      if (j < 0) break
+      out += s.slice(i, j + 1); i = j + 1
+    } else if (vis < w) { out += s[i++]; vis++ }
+    else return out + '\x1b[0m'
+  }
+  return out
+}
+
 // Live single-line status: returns a function that overwrites the same terminal line.
+// Clipped to the terminal width — a status longer than one line would wrap and pile up.
 export let status = () => {
   let last = ''
   return s => {
     if (s === last) return
     last = s
-    if (process.stdout.isTTY) process.stdout.write('\r\x1b[K' + s)
+    if (process.stdout.isTTY) process.stdout.write('\r\x1b[K' + clip(s, (process.stdout.columns || 80) - 1))
     else process.stdout.write(s + '\n')
   }
 }

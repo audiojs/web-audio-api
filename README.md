@@ -58,6 +58,7 @@ const buffer = await ctx.startRendering()
 | [dtmf.js](examples/dtmf.js) | Dial a phone number — `5551234` |
 | [stereo-test.js](examples/stereo-test.js) | Left, right, center — `1k 1s` |
 | [metronome.js](examples/metronome.js) | Programmable click — `120..240 10m X-x-` |
+| [tuner.js](examples/tuner.js) | Guitar tuner — mic pitch in cents — `440` (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
 | **Illusions** | |
 | [shepard.js](examples/shepard.js) | Pitch that rises forever — `up 15s` |
 | [risset-rhythm.js](examples/risset-rhythm.js) | Beat that accelerates forever — `up 120 20s` |
@@ -86,6 +87,7 @@ const buffer = await ctx.startRendering()
 | [process-file.js](examples/process-file.js) | Audio file → EQ + compress → render |
 | [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout — pipe to `aplay`, `sox`, etc. |
 | [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
+| [recorder.js](examples/recorder.js) | Record the mic to a WAV file, with a level meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
 
 ## FAQ
 
@@ -164,16 +166,21 @@ const stream = new MediaStream([track])
 const src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
 src.connect(ctx.destination) // live monitor
 
+// audio-mic's read(cb) is single-shot — re-arm from inside the callback to keep draining the device.
 const read = mic({ sampleRate: ctx.sampleRate, channels: 1, bitDepth: 16 })
-read((err, buf) => {
+const pump = () => read((err, buf) => {
   if (err || !buf) return
   track.pushData(buf, { channels: 1, bitDepth: 16 })
+  pump()
 })
+pump()
 ```
 
 `track.pushData()` accepts `Float32Array`, `Float32Array[]`, or interleaved 8/16/32-bit integer PCM buffers. Integer PCM conversion uses `pcm-convert`. `CustomMediaStreamTrack` extends `MediaStreamTrack` — prior art: `CanvasCaptureMediaStreamTrack`.
 
 See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU meter. To record the graph to a buffer, use `OfflineAudioContext.startRendering()`. To capture live graph output as a stream, use `ctx.createMediaStreamDestination()`.
+
+If the mic opens but delivers silence on macOS (a known issue with audio-mic's prebuilt CoreAudio binding under some TCC configurations), pass `backend: 'process'` to use `sox`/`ffmpeg` instead: `mic({ ..., backend: 'process' })`. All bundled examples accept `backend=process` on the command line.
 </dd>
 
 <dt>How do I use it as a polyfill?</dt>

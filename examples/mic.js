@@ -14,6 +14,7 @@ let gainVal = parseFloat($('gain', '1'))
 let sampleRate = parseInt($('rate', '44100'))
 let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
+let backend = $('backend')   // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
 
 const ctx = new AudioContext({ sampleRate })
 await ctx.resume()
@@ -28,11 +29,14 @@ gain.gain.value = gainVal
 analyser.fftSize = 1024
 src.connect(gain).connect(analyser).connect(ctx.destination)
 
-let read = mic({ sampleRate, channels, bitDepth })
-read((err, buf) => {
+// audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
+let read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })
+let pump = () => read((err, buf) => {
   if (err || !buf) return
   track.pushData(buf, { channels, bitDepth })
+  pump()
 })
+pump()
 
 let samples = new Float32Array(analyser.fftSize)
 let print = status()
