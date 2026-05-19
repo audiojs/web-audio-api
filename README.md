@@ -87,15 +87,6 @@ const buffer = await ctx.startRendering()
 | [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout — pipe to `aplay`, `sox`, etc. |
 | [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
 
-## Node extensions
-
-Beyond the spec, for Node.js. Not portable to browsers.
-
-- **`addModule(fn)`** — register a processor via callback instead of URL, no file needed
-- **`sinkId: stream`** — pipe PCM to any writable: `new AudioContext({ sinkId: process.stdout })` then `node synth.js | aplay -f cd`
-- **`numberOfChannels`, `bitDepth`** — control output format in the constructor.
-- **`CustomMediaStreamTrack`** — extends `MediaStreamTrack` with a public constructor and `pushData(chunk, options)` to feed audio data (e.g. from a microphone). Prior art: `CanvasCaptureMediaStreamTrack`. See the [mic FAQ](#how-do-i-capture-audio-from-the-microphone).
-
 ## FAQ
 
 <dl>
@@ -235,9 +226,18 @@ EventTarget ← Emitter ← DspObject ← AudioNode ← concrete nodes
 EventTarget ← Emitter ← AudioPort ← AudioInput / AudioOutput
 ```
 
+## Node extensions
+
+Beyond the spec, for Node.js. Not portable to browsers.
+
+- **`addModule(fn)`** — register a processor via callback instead of URL, no file needed
+- **`sinkId: stream`** — pipe PCM to any writable: `new AudioContext({ sinkId: process.stdout })` then `node synth.js | aplay -f cd`
+- **`numberOfChannels`, `bitDepth`** — control output format in the constructor.
+- **`CustomMediaStreamTrack`** — extends `MediaStreamTrack` with a public constructor and `pushData(chunk, options)` to feed audio data (e.g. from a microphone). Prior art: `CanvasCaptureMediaStreamTrack`. See the [mic FAQ](#how-do-i-capture-audio-from-the-microphone).
+
 ## Alternatives
 
-- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** — Rust napi bindings. Faster heavy DSP, but Node-only with native compilation and partial spec.
+- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** — Rust napi bindings. Faster heavy DSP, but node-only with compilation step and partial spec.
 - **[standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context)** — Browser-only. Normalizes cross-browser quirks.
 - **[web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)** — Pure Rust / WASM.
 - **[web-audio-engine](https://github.com/mohayonao/web-audio-engine)** — Archived. Partial spec coverage.
