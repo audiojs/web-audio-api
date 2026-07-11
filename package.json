@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "1.5.1",
+  "version": "1.5.3",
   "description": "Portable Web Audio API",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
@@ -68,5 +68,6 @@
     "wpt": "node test/wpt-runner.js",
     "wpt:parallel": "TST_PARALLEL=8 node test/wpt.test.js",
     "prepublishOnly": "npm test"
-  }
+  },
+  "funding": "https://github.com/sponsors/audiojs"
 }
