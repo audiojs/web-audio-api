@@ -57,7 +57,7 @@ const buffer = await ctx.startRendering()
 | [impulse.js](examples/impulse.js) | Dirac click — `5 0.5s` |
 | [dtmf.js](examples/dtmf.js) | Dial a phone number — `5551234` |
 | [stereo-test.js](examples/stereo-test.js) | Left, right, center — `1k 1s` |
-| [metronome.js](examples/metronome.js) | Programmable click — `120..240 10m X-x-` |
+| [metronome.js](examples/metronome.js) | Programmable stick click — `80..240 10m X-x-x-x-` |
 | [tuner.js](examples/tuner.js) | Guitar tuner — mic pitch in cents — `440` (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
 | **Illusions** | |
 | [shepard.js](examples/shepard.js) | Pitch that rises forever — `up 15s` |

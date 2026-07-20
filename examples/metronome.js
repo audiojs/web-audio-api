@@ -1,8 +1,8 @@
 // Metronome — programmable click pattern (drum tab notation).
 // X = accent, x = hit, - = rest; each character is an eighth note.
-// Default practice session: 10 minutes, accelerating from 120 to 240 BPM.
+// Default practice session: 10 minutes, accelerating from 80 to 240 BPM.
 // Run: node examples/metronome.js 120 X-x-X-x-
-// Run: node examples/metronome.js 120..240 10m X-x-
+// Run: node examples/metronome.js 80..240 10m X-x-x-x-
 // Run: node examples/metronome.js bpm=90 -d 30s pat=X-x-x- sound=wood
 //   Waltz: X-x-x-   Rock: X-x-X-x-   Reggaeton: X--x--x-
 // Keys: space pause · ←/→ tempo ±2 BPM · ↑/↓ cycle sound · t tap-tempo · q quit
@@ -12,14 +12,14 @@ import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_uti
 
 help({
   description: 'run a programmable practice metronome',
-  usage: ['', '[bpm|start..end] [duration] [pattern]', '120 X-x-X-x-', '120..240 10m X-x-', 'bpm=90 dur=30s pat=X-x-x- sound=wood'],
+  usage: ['', '[bpm|start..end] [duration] [pattern]', '120 X-x-X-x-', '80..240 10m X-x-x-x-', 'bpm=90 dur=30s pat=X-x-x- sound=wood'],
   options: [
-    ['bpm=<bpm|start..end>', 'fixed tempo or linear tempo ramp (default: 120..240)'],
+    ['bpm=<bpm|start..end>', 'fixed tempo or linear tempo ramp (default: 80..240)'],
     ['-d, --duration <time>', 'session length with optional s/m/h suffix (default: 10m)'],
-    ['pat=<pattern>', 'X accent, x regular click, - or . rest; each character is an eighth note (default: X-x-)'],
-    ['sound=<preset>', 'classic (default), wood, bell, beep, or signal'],
-    ['hi=<hz>', 'classic accent resonance (default: 1900)'],
-    ['lo=<hz>', 'classic regular-click resonance (default: 1250)'],
+    ['pat=<pattern>', 'X accent, x regular click, - or . rest; each character is an eighth note (default: X-x-x-x-)'],
+    ['sound=<preset>', 'classic stick (default), wood, bell, beep, or signal'],
+    ['hi=<hz>', 'classic stick accent resonance (default: 1900)'],
+    ['lo=<hz>', 'classic stick regular resonance (default: 1250)'],
   ],
   controls: [
     ['Space', 'pause/resume'], ['← / →', 'offset tempo by −/+2 BPM'], ['↑ / ↓', 'cycle sound preset'],
@@ -34,18 +34,18 @@ help({
 let { pos, $ } = args()
 
 let bpmTok = pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t))
-let [bpm0, bpm1] = (bpmTok || $('bpm', '120..240')).toString().split('..').map(Number)
+let [bpm0, bpm1] = (bpmTok || $('bpm', '80..240')).toString().split('..').map(Number)
 if (!bpm1) bpm1 = bpm0
 
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '10m'))
-let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X-x-')).split('')
+let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X-x-x-x-')).split('')
 let hi = num($('hi', 1900)), lo = num($('lo', 1250))
 
 // These are different instruments, not small variations on one click model:
-// a dry escapement, a hollow block, a ringing bell, a square-wave beep, and the
-// pure 880/440 Hz signal from the original example.
+// a dry stick, a hollow block, a ringing bell, a square-wave beep, and the pure
+// 880/440 Hz signal from the original example.
 let sounds = [
-  { name: 'classic', kind: 'click',  a: hi,   g: lo },
+  { name: 'classic', kind: 'stick',  a: hi,   g: lo },
   { name: 'wood',    kind: 'wood',   a: 1400, g: 700 },
   { name: 'bell',    kind: 'bell',   a: 1760, g: 880 },
   { name: 'beep',    kind: 'beep',   a: 2600, g: 1700 },
@@ -88,19 +88,23 @@ let click = (when, ch) => {
   let s = sounds[sIdx]
   let f = strong ? s.a : s.g
 
-  if (s.kind === 'click') {
-    // Dry clockwork: a steep pitch fall and a tiny high-frequency crack.
-    let duration = strong ? 0.038 : 0.025
-    let osc = ctx.createOscillator()
-    let env = ctx.createGain()
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(f, when)
-    osc.frequency.exponentialRampToValueAtTime(f * 0.48, when + duration * 0.55)
-    env.gain.setValueAtTime(strong ? 0.36 : 0.22, when)
-    env.gain.exponentialRampToValueAtTime(0.001, when + duration)
-    osc.connect(env).connect(master)
-    osc.start(when); osc.stop(when + duration + 0.005)
-    noiseHit(when, f * 2.5, strong ? 0.010 : 0.007, strong ? 0.20 : 0.12, 'highpass')
+  if (s.kind === 'stick') {
+    // Classic metronome stick: a hard tip attack with two very short wood modes.
+    let duration = strong ? 0.028 : 0.020
+    let body = ctx.createGain()
+    body.gain.setValueAtTime(strong ? 0.28 : 0.18, when)
+    body.gain.exponentialRampToValueAtTime(0.001, when + duration)
+    body.connect(master)
+    for (let [ratio, level] of [[1, 1], [1.63, 0.36]]) {
+      let osc = ctx.createOscillator()
+      let modeGain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = f * ratio
+      modeGain.gain.value = level
+      osc.connect(modeGain).connect(body)
+      osc.start(when); osc.stop(when + duration + 0.005)
+    }
+    noiseHit(when, f * 2.2, strong ? 0.008 : 0.006, strong ? 0.16 : 0.10, 'bandpass')
     return
   }
 
