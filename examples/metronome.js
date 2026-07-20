@@ -67,6 +67,14 @@ let noiseBuffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate), ctx.sampleRate)
 let noiseData = noiseBuffer.getChannelData(0)
 for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1
 
+// Source nodes dispose themselves after they end, but the filters/gains downstream
+// stay connected to master unless we release the tail of each transient graph.
+// Hundreds of stale click graphs otherwise make a long accelerating session fall
+// behind real time even while the displayed (audio-clock) BPM keeps increasing.
+let releaseOnEnd = (source, tail) => {
+  source.onended = () => tail.disconnect()
+}
+
 let noiseHit = (when, frequency, duration, gain, type) => {
   let burst = ctx.createBufferSource()
   burst.buffer = noiseBuffer
@@ -78,6 +86,7 @@ let noiseHit = (when, frequency, duration, gain, type) => {
   env.gain.setValueAtTime(gain, when)
   env.gain.exponentialRampToValueAtTime(0.001, when + duration)
   burst.connect(filter).connect(env).connect(master)
+  releaseOnEnd(burst, env)
   burst.start(when, Math.random() * (noiseBuffer.duration - duration))
   burst.stop(when + duration)
 }
@@ -95,8 +104,9 @@ let click = (when, ch) => {
     body.gain.setValueAtTime(strong ? 0.28 : 0.18, when)
     body.gain.exponentialRampToValueAtTime(0.001, when + duration)
     body.connect(master)
+    let lastOsc
     for (let [ratio, level] of [[1, 1], [1.63, 0.36]]) {
-      let osc = ctx.createOscillator()
+      let osc = lastOsc = ctx.createOscillator()
       let modeGain = ctx.createGain()
       osc.type = 'sine'
       osc.frequency.value = f * ratio
@@ -104,6 +114,7 @@ let click = (when, ch) => {
       osc.connect(modeGain).connect(body)
       osc.start(when); osc.stop(when + duration + 0.005)
     }
+    releaseOnEnd(lastOsc, body)
     noiseHit(when, f * 2.2, strong ? 0.008 : 0.006, strong ? 0.16 : 0.10, 'bandpass')
     return
   }
@@ -115,14 +126,16 @@ let click = (when, ch) => {
     body.gain.setValueAtTime(strong ? 0.34 : 0.24, when)
     body.gain.exponentialRampToValueAtTime(0.001, when + duration)
     body.connect(master)
+    let lastOsc
     for (let [ratio, level] of [[1, 1], [1.67, 0.30]]) {
-      let osc = ctx.createOscillator()
+      let osc = lastOsc = ctx.createOscillator()
       let modeGain = ctx.createGain()
       osc.frequency.value = f * ratio
       modeGain.gain.value = level
       osc.connect(modeGain).connect(body)
       osc.start(when); osc.stop(when + duration + 0.005)
     }
+    releaseOnEnd(lastOsc, body)
     noiseHit(when, f * 2.2, 0.012, strong ? 0.08 : 0.05, 'lowpass')
     return
   }
@@ -135,14 +148,16 @@ let click = (when, ch) => {
     body.gain.linearRampToValueAtTime(strong ? 0.17 : 0.11, when + 0.0015)
     body.gain.exponentialRampToValueAtTime(0.001, when + duration)
     body.connect(master)
+    let lastOsc
     for (let [ratio, level] of [[1, 1], [1.48, 0.52], [2.09, 0.27], [2.63, 0.13]]) {
-      let osc = ctx.createOscillator()
+      let osc = lastOsc = ctx.createOscillator()
       let modeGain = ctx.createGain()
       osc.frequency.value = f * ratio
       modeGain.gain.value = level
       osc.connect(modeGain).connect(body)
       osc.start(when); osc.stop(when + duration + 0.01)
     }
+    releaseOnEnd(lastOsc, body)
     return
   }
 
@@ -158,6 +173,7 @@ let click = (when, ch) => {
     env.gain.setValueAtTime(strong ? 0.15 : 0.09, when + duration - 0.006)
     env.gain.linearRampToValueAtTime(0, when + duration)
     osc.connect(env).connect(master)
+    releaseOnEnd(osc, env)
     osc.start(when); osc.stop(when + duration + 0.005)
     return
   }
@@ -174,6 +190,7 @@ let click = (when, ch) => {
   env.gain.setValueAtTime(peak, when + duration - 0.020)
   env.gain.linearRampToValueAtTime(0, when + duration)
   osc.connect(env).connect(master)
+  releaseOnEnd(osc, env)
   osc.start(when); osc.stop(when + duration + 0.005)
 }
 
