@@ -4,7 +4,18 @@
 // Keys: ↑/↓ ±semitone · ←/→ cycle waveform · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, noteName, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
+
+help({
+  description: 'play a reference tone',
+  usage: ['', '[wave] [frequency] [duration]', 'wave=triangle freq=1k dur=5s'],
+  options: [
+    ['wave=<type>', 'sine (default), triangle, square, or sawtooth'],
+    ['freq=<hz|note>', 'frequency or note name such as 440, 1k, A4, or C#3 (default: 440)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['↑ / ↓', 'move one semitone'], ['← / →', 'cycle waveform'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let waves = ['sine', 'triangle', 'square', 'sawtooth']

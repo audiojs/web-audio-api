@@ -4,7 +4,14 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'play the minimal Web Audio “hello world” tone',
+  usage: ['', '-d 5s'],
+  options: [['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 2s)']],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { $ } = args()
 let duration = sec($('dur', '2'))

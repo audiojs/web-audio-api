@@ -4,7 +4,17 @@
 // Keys: space pause · f fire impulse · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'fire single-sample impulses for response testing',
+  usage: ['', '[count] [interval]', 'count=3 interval=1s'],
+  options: [
+    ['count=<number>', 'number of scheduled impulses (default: 1)'],
+    ['interval=<time>', 'gap between impulses with optional s/m/h suffix (default: 0.5s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['F', 'fire another impulse'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let nums = pos.filter(t => /^\d/.test(t))

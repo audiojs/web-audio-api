@@ -9,7 +9,24 @@
 // Keys: 1-6 play a string's reference tone · space stop it · ↑/↓ nudge A ±1 Hz · q quit
 
 import { AudioContext, MediaStreamAudioSourceNode, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import { args, keys, status, clearLine } from './_util.js'
+import { args, keys, status, clearLine, help } from './_util.js'
+
+help({
+  description: 'tune a guitar from the microphone or reference tones',
+  usage: ['', '[A4-frequency]', 'a=440 rate=48000 ch=1 backend=process'],
+  options: [
+    ['a=<hz>', 'reference pitch for A4 (default: 432; use 440 for concert pitch)'],
+    ['rate=<hz>', 'microphone sample rate (default: 44100)'],
+    ['ch=<number>', 'input channels (default: 1)'],
+    ['bit=<number>', 'input PCM bit depth (default: 16)'],
+    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+  ],
+  controls: [
+    ['1–6', 'play that guitar string’s reference tone'], ['0 / Space', 'stop the reference tone'],
+    ['↑ / ↓', 'change A4 by 1 Hz'], ['Q / Esc', 'quit'],
+  ],
+  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+})
 
 let { pos, $ } = args()
 let a4 = parseFloat(pos.find(t => /^\d+(\.\d+)?$/.test(t)) || $('a', '432'))

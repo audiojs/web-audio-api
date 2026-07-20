@@ -3,6 +3,14 @@
 
 import { readFileSync } from 'node:fs'
 import { OfflineAudioContext } from 'web-audio-api'
+import { help } from './_util.js'
+
+help({
+  description: 'decode an audio file, apply EQ and compression, and render it',
+  usage: ['<audio-file>'],
+  options: [['audio-file', 'path to any format supported by decodeAudioData()']],
+  notes: ['The example reports the rendered buffer and peak level; it does not write an output file.'],
+})
 
 let file = process.argv[2]
 if (!file) { console.log('Usage: node examples/process-file.js <audio-file>'); process.exit(1) }

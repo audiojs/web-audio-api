@@ -11,6 +11,31 @@ export let num = v => {
 
 export let sec = v => (v += '', parseFloat(v) * ({ s: 1, m: 60, h: 3600 }[v.slice(-1)] || 1))
 
+// Print consistent CLI documentation before an example opens audio or other I/O.
+// Entries in options/controls are [syntax, explanation] pairs.
+export let help = ({ description, usage = [''], options = [], controls = [], notes = [] }, argv = process.argv.slice(2)) => {
+  if (!argv.includes('-h') && !argv.includes('--help')) return false
+
+  let file = (process.argv[1] || 'example.js').split(/[\\/]/).pop()
+  let command = `node examples/${file}`
+  let lines = [`${file} — ${description}`, '', 'Usage:']
+  for (let form of usage) lines.push(`  ${command}${form ? ' ' + form : ''}`)
+
+  let section = (title, entries) => {
+    if (!entries.length) return
+    let width = Math.max(...entries.map(([syntax]) => syntax.length))
+    lines.push('', `${title}:`)
+    for (let [syntax, explanation] of entries)
+      lines.push(`  ${syntax.padEnd(width)}  ${explanation}`)
+  }
+  section('Options', options)
+  section('Controls', controls)
+  if (notes.length) lines.push('', ...notes.map(note => `Note: ${note}`))
+  lines.push('', '  -h, --help  Show this help')
+  console.log(lines.join('\n'))
+  process.exit(0)
+}
+
 // parse argv: positional tokens + k=v pairs + -d/--duration/--key=val long flags
 export let args = (argv = process.argv.slice(2)) => {
   let kv = {}, pos = []

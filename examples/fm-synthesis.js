@@ -4,7 +4,19 @@
 // Keys: ←/→ ±0.5 ratio · ↑/↓ ±1 index · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'explore DX7-style frequency modulation synthesis',
+  usage: ['', '[carrier] [ratio] [index] [duration]', 'carrier=440 ratio=2 index=5 dur=3s'],
+  options: [
+    ['carrier=<hz|note>', 'carrier frequency (default: 440)'],
+    ['ratio=<number>', 'modulator/carrier frequency ratio (default: 2)'],
+    ['index=<number>', 'modulation index (default: 5)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['← / →', 'change ratio by 0.5'], ['↑ / ↓', 'change index by 1'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let nums = pos.filter(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t))

@@ -2,6 +2,13 @@
 // Run: node examples/fft.js
 
 import { OfflineAudioContext } from 'web-audio-api'
+import { help } from './_util.js'
+
+help({
+  description: 'render a two-tone signal and inspect its FFT spectrum',
+  usage: [''],
+  notes: ['Renders 440 Hz + 880 Hz offline, then prints spectral peaks above −40 dB.'],
+})
 
 const sr = 44100
 const ctx = new OfflineAudioContext(1, sr, sr) // 1 second

@@ -2,6 +2,13 @@
 // Run: node examples/render-to-buffer.js
 
 import { OfflineAudioContext } from 'web-audio-api'
+import { help } from './_util.js'
+
+help({
+  description: 'render audio offline into an AudioBuffer',
+  usage: [''],
+  notes: ['Renders a two-second stereo 440 Hz tone and prints buffer metadata and samples.'],
+})
 
 const sr = 44100
 const ctx = new OfflineAudioContext(2, sr * 2, sr) // 2 seconds, stereo

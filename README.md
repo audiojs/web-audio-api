@@ -46,7 +46,7 @@ const buffer = await ctx.startRendering()
 
 ## Examples
 
-`node examples/<name>.js` — all parametric. Positional args or `key=value` with prefix matching (`f=440`, `freq=440` both work). Note names (`A4`, `C#3`, `Eb5`), `k` for kHz (`20k`), `s`/`m`/`h` for duration (`10m`).
+`node examples/<name>.js` — each default run demonstrates the example directly. Use `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation. Parametric examples accept positional args or `key=value` with prefix matching (`f=440`, `freq=440` both work). Note names (`A4`, `C#3`, `Eb5`), `k` for kHz (`20k`), and `s`/`m`/`h` for duration (`10m`) are supported.
 
 | Example | |
 |---|---|

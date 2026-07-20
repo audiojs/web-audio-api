@@ -4,7 +4,17 @@
 // Keys: ↑/↓ cycle color · q quit
 
 import { AudioContext, AudioWorkletNode, AudioWorkletProcessor } from 'web-audio-api'
-import { args, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'listen to colored noise',
+  usage: ['', '[color] [duration]', 'color=brown dur=5s'],
+  options: [
+    ['color=<type>', 'white (default), pink, brown, blue, or violet'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['↑ / ↓', 'cycle color'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let colors = ['white', 'pink', 'brown', 'blue', 'violet']

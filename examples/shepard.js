@@ -4,7 +4,18 @@
 // Keys: space pause · ←/→ ±0.1 oct/s rate · r reverse direction · q quit
 
 import { AudioContext, AudioWorkletNode, AudioWorkletProcessor } from 'web-audio-api'
-import { args, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'play an endlessly rising or falling pitch illusion',
+  usage: ['', '[up|down] [rate] [duration]', 'dir=down rate=0.3 dur=20s'],
+  options: [
+    ['dir=<up|down>', 'movement direction (default: up)'],
+    ['rate=<octaves/s>', 'movement speed (default: 0.5)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['← / →', 'change rate by 0.1 oct/s'], ['R', 'reverse direction'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let dir = pos.find(t => /^(up|down)$/i.test(t)) || $('dir', 'up')

@@ -4,7 +4,14 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'move a tone from left to right through 3D space',
+  usage: ['', '-d 5s'],
+  options: [['-d, --duration <time>', 'pan time with optional s/m/h suffix (default: 3s)']],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { $ } = args()
 let duration = sec($('dur', '3'))

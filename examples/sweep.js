@@ -4,7 +4,18 @@
 // Keys: space pause · r restart · ←/→ halve/double duration · m toggle lin/exp · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'sweep across a frequency range',
+  usage: ['', '[start]..[end] [exp|lin] [duration]', '..4k lin -d 5s'],
+  options: [
+    ['start..end', 'range in Hz; either endpoint may be omitted (default: 20..20k)'],
+    ['mode=<exp|lin>', 'exponential (default) or linear sweep'],
+    ['-d, --duration <time>', 'time per sweep with optional s/m/h suffix (default: 3s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['R', 'restart'], ['← / →', 'halve/double duration'], ['M', 'toggle linear/exponential'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let min = 20, max = 20000

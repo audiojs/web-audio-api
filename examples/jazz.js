@@ -2,7 +2,14 @@
 // Different every time. 4-5 minutes. Run: node examples/jazz.js
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
-import { keys, clearLine } from './_util.js'
+import { keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'generate a complete modal jazz performance',
+  usage: [''],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+  notes: ['Every 4–5 minute performance uses a new tempo, progression, voicings, and improvisation.'],
+})
 
 let bpm = 76 + (Math.random() * 16 | 0)
 let beat = 60 / bpm

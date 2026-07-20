@@ -6,8 +6,21 @@
 // Keys: space pause · + / - adjust gain · q quit
 
 import { AudioContext, MediaStreamAudioSourceNode, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import mic from 'audio-mic'
-import { args, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'monitor a live microphone through the audio graph',
+  usage: ['', 'gain=0.8 rate=48000 ch=2 backend=process'],
+  options: [
+    ['gain=<number>', 'input gain (default: 1)'],
+    ['rate=<hz>', 'sample rate (default: 44100)'],
+    ['ch=<number>', 'input channels (default: 1)'],
+    ['bit=<number>', 'input PCM bit depth (default: 16)'],
+    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+  ],
+  controls: [['Space', 'pause/resume'], ['+ / −', 'adjust input gain'], ['Q / Esc', 'quit']],
+  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+})
 
 let { $ } = args()
 let gainVal = parseFloat($('gain', '1'))
@@ -15,6 +28,11 @@ let sampleRate = parseInt($('rate', '44100'))
 let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
 let backend = $('backend')   // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
+
+// audio-mic is optional; keep --help usable even when it is not installed.
+let mic
+try { mic = (await import('audio-mic')).default }
+catch { console.error('Microphone capture needs the audio-mic package:\n  npm i audio-mic'); process.exit(1) }
 
 const ctx = new AudioContext({ sampleRate })
 await ctx.resume()

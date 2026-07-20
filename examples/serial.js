@@ -4,7 +4,17 @@
 // Run: node examples/serial.js tempo=100 dur=1m
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'generate pointillistic music from a random twelve-tone row',
+  usage: ['', '[tempo] [duration]', 'tempo=100 dur=1m'],
+  options: [
+    ['tempo=<bpm>', 'approximate tempo (default: 72)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let tempo = +(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t)) || $('tempo', 72))

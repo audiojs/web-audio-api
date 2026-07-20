@@ -5,7 +5,18 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'play an endlessly accelerating or decelerating rhythm illusion',
+  usage: ['', '[up|down] [bpm] [duration]', 'dir=down bpm=90 dur=30s'],
+  options: [
+    ['dir=<up|down>', 'movement direction (default: up)'],
+    ['bpm=<number>', 'center tempo (default: 120)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 20s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let dir = pos.find(t => /^(up|down)$/i.test(t)) || $('dir', 'up')

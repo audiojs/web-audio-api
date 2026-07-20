@@ -11,14 +11,29 @@ import { writeFileSync } from 'node:fs'
 import readline from 'node:readline'
 import { AudioContext, MediaStream, CustomMediaStreamTrack, MediaStreamAudioSourceNode } from 'web-audio-api'
 import convert from 'pcm-convert'
-import { args, status, clearLine } from './_util.js'
+import { args, status, clearLine, help } from './_util.js'
+
+help({
+  description: 'record the microphone to a PCM WAV file with a level meter',
+  usage: ['', '[filename]', 'take1 gain=2', 'rate=48000 ch=2 bit=24 backend=process'],
+  options: [
+    ['filename', 'suggested output name; .wav is added if needed'],
+    ['gain=<number>', 'input gain (default: 1)'],
+    ['rate=<hz>', 'sample rate (default: 44100)'],
+    ['ch=<number>', 'input channels (default: 1)'],
+    ['bit=<number>', 'PCM bit depth (default: 16)'],
+    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+  ],
+  controls: [['Enter', 'stop and choose the output filename'], ['+ / −', 'adjust input gain'], ['Q / Esc', 'cancel without saving']],
+  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+})
 
 let { pos, $ } = args()
 let sampleRate = parseInt($('rate', '44100'))
 let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
 let backend = $('backend')                    // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
-let nameArg = pos.find(t => !/^\d/.test(t))   // first non-numeric positional → default filename
+let nameArg = pos[0]                          // positional → default filename
 
 // audio-mic is an optional peer dependency — fail with a hint, not a stack trace.
 let mic

@@ -4,7 +4,17 @@
 // Keys: 0-9 * # A-D dial live · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'dial telephone DTMF tones',
+  usage: ['', '[digits] [tone-duration]', 'digits=*67 speed=0.15'],
+  options: [
+    ['digits=<sequence>', 'digits to dial; supports 0–9, *, and # (default: interactive)'],
+    ['speed=<time>', 'length of each tone and following gap (default: 0.12s)'],
+  ],
+  controls: [['0–9, *, #, A–D', 'play a tone'], ['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let digits = pos.find(t => /^[\d*#]+$/.test(t)) || $('digits', '')

@@ -4,7 +4,22 @@
 // Keys: ←/→ ±0.5 Hz rate · ↑/↓ ±0.05 depth · w cycle LFO wave · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'modulate a 440 Hz carrier with an LFO tremolo',
+  usage: ['', 'rate=5 depth=0.5 wave=square dur=10s'],
+  options: [
+    ['rate=<hz>', 'LFO frequency (default: 5)'],
+    ['depth=<0..1>', 'tremolo depth (default: 0.5)'],
+    ['wave=<type>', 'sine, square (default), triangle, or sawtooth'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [
+    ['Space', 'pause/resume'], ['← / →', 'change rate by 0.5 Hz'], ['↑ / ↓', 'change depth by 0.05'],
+    ['W', 'cycle LFO waveform'], ['Q / Esc', 'quit'],
+  ],
+})
 
 let { $ } = args()
 let dur = sec($('dur', '30'))

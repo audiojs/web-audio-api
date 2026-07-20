@@ -2,6 +2,13 @@
 // Run: node examples/linked-params.js
 
 import { OfflineAudioContext } from 'web-audio-api'
+import { help } from './_util.js'
+
+help({
+  description: 'control multiple AudioParams from one ConstantSourceNode',
+  usage: [''],
+  notes: ['Renders two seconds offline and prints RMS measurements for the shared gain envelope.'],
+})
 
 const sr = 44100
 const duration = 2

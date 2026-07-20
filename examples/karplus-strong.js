@@ -4,7 +4,17 @@
 // Keys: space pause · p pluck · ↑/↓ ±semitone · q quit
 
 import { AudioContext, AudioWorkletNode, AudioWorkletProcessor } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, noteName, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
+
+help({
+  description: 'synthesize a plucked string from noise and feedback',
+  usage: ['', '[frequency] [duration]', 'freq=A4 dur=2s'],
+  options: [
+    ['freq=<hz|note>', 'string frequency (default: 220)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['P', 'pluck again'], ['↑ / ↓', 'move one semitone and pluck'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 220))

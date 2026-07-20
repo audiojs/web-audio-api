@@ -2,6 +2,13 @@
 // Run: node examples/worklet.js
 
 import { OfflineAudioContext, AudioWorkletNode, AudioWorkletProcessor } from 'web-audio-api'
+import { help } from './_util.js'
+
+help({
+  description: 'render white noise from a custom AudioWorkletProcessor',
+  usage: [''],
+  notes: ['Renders one second offline and prints RMS measurements through an automated fade.'],
+})
 
 const sr = 44100
 const duration = 1

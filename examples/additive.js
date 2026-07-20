@@ -4,7 +4,19 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, clearLine } from './_util.js'
+import { args, num, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'build a waveform from individual harmonics',
+  usage: ['', '[square|saw|triangle] [frequency] [harmonics] [duration]', 'wave=saw freq=1k n=32 dur=5s'],
+  options: [
+    ['wave=<type>', 'square (default), saw, or triangle'],
+    ['freq=<hz|note>', 'fundamental frequency (default: 220)'],
+    ['n=<number>', 'number of harmonics (default: 16)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 3s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let wave = pos.find(t => /^[a-z]/i.test(t) && !/^[A-G][#b]?\d$/i.test(t)) || $('wave', 'square')

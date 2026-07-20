@@ -4,7 +4,14 @@
 // Keys: space pause · r retrigger · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'demonstrate sawtooth, filter-envelope, and ADSR synthesis',
+  usage: ['', '-d 5s'],
+  options: [['-d, --duration <time>', 'note length with optional s/m/h suffix (default: 2s)']],
+  controls: [['Space', 'pause/resume'], ['R', 'retrigger the note'], ['Q / Esc', 'quit']],
+})
 
 let { $ } = args()
 let dur = sec($('dur', '2'))

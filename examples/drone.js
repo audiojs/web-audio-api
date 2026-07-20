@@ -5,7 +5,20 @@
 // Keys: space pause · ↑/↓ ±semitone · ←/→ ±5 cents · 1-7 scale degrees · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, noteName, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
+
+help({
+  description: 'play a tanpura-like four-string harmonic drone',
+  usage: ['', '[frequency] [duration]', 'freq=C3 dur=2m'],
+  options: [
+    ['freq=<hz|note>', 'Sa frequency or note name (default: 130.81 / C3)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 5m)'],
+  ],
+  controls: [
+    ['Space', 'pause/resume'], ['↑ / ↓', 'move one semitone'], ['← / →', 'move 5 cents'],
+    ['1–7', 'select a major-scale degree above the current base'], ['Q / Esc', 'quit'],
+  ],
+})
 
 let { pos, $ } = args()
 

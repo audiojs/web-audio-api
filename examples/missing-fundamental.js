@@ -4,7 +4,17 @@
 // Run: node examples/missing-fundamental.js freq=80 dur=5s
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, clearLine } from './_util.js'
+import { args, num, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'hear a fundamental frequency that is not being played',
+  usage: ['', '[fundamental] [duration]', 'freq=80 dur=5s'],
+  options: [
+    ['freq=<hz|note>', 'implied fundamental; only harmonics 2–6 are played (default: 100)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 3s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 100))

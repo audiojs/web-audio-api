@@ -4,7 +4,17 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine } from './_util.js'
+import { args, sec, keys, clearLine, help } from './_util.js'
+
+help({
+  description: 'schedule a precise 16-step note sequence',
+  usage: ['', 'bpm=140 dur=10s'],
+  options: [
+    ['bpm=<number>', 'tempo (default: 140)'],
+    ['-d, --duration <time>', 'run time; defaults to one 16-step loop'],
+  ],
+  controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
+})
 
 let { $ } = args()
 let bpm = +$('bpm', 140)

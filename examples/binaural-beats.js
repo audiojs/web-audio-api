@@ -4,7 +4,19 @@
 // Keys: ←/→ ±0.5 Hz beat · ↑/↓ ±semitone carrier · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'create a binaural difference tone (headphones required)',
+  usage: ['', '[carrier] [beat] [duration]', 'freq=200 beat=10 dur=10s'],
+  options: [
+    ['freq=<hz|note>', 'left-ear carrier frequency (default: 200)'],
+    ['beat=<hz>', 'right-ear frequency offset (default: 10)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 60s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['← / →', 'change beat by 0.5 Hz'], ['↑ / ↓', 'move carrier one semitone'], ['Q / Esc', 'quit']],
+  notes: ['Use headphones; speakers do not isolate the left and right tones.'],
+})
 
 let { pos, $ } = args()
 let nums = pos.filter(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t))

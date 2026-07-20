@@ -4,7 +4,18 @@
 // Keys: ←/→ ±0.5 Hz beat · ↑/↓ ±semitone carrier · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag } from './_util.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+
+help({
+  description: 'hear beating between two nearby frequencies',
+  usage: ['', '[carrier] [difference] [duration]', 'freq=440 diff=3 dur=5s'],
+  options: [
+    ['freq=<hz|note>', 'lower carrier frequency (default: 440)'],
+    ['diff=<hz>', 'difference/beat frequency (default: 3)'],
+    ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
+  ],
+  controls: [['Space', 'pause/resume'], ['← / →', 'change difference by 0.5 Hz'], ['↑ / ↓', 'move carrier one semitone'], ['Q / Esc', 'quit']],
+})
 
 let { pos, $ } = args()
 let nums = pos.filter(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t))
