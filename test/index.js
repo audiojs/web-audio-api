@@ -33,6 +33,7 @@ import './AnalyserNode.test.js'
 import './math.test.js'
 import './utils.test.js'
 import './audit-fixes.test.js'
+import './tuner.test.js'
 
 // Phase 3
 import './OfflineAudioContext.test.js'

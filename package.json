@@ -43,6 +43,7 @@
     "periodic-function": "^2.1.0"
   },
   "devDependencies": {
+    "@audio/pitch-yin": "^1.0.4",
     "linkedom": "^0.18.12",
     "node-web-audio-api": "^1.0.8",
     "tone": "^15.1.22",

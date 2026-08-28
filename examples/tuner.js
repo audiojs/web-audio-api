@@ -1,6 +1,6 @@
 // Guitar tuner — listen through the mic, show the note and how far off it is, in cents.
-// Pitch is found by time-domain autocorrelation (McLeod) — accurate to ~1 cent,
-// where raw FFT bins (~11 Hz wide here) are far too coarse.
+// Pitch is found with audiojs' YIN detector, then stabilized across frames so
+// changing overtones and isolated octave errors do not make the display jump.
 // Requires the `audio-mic` package (cross-platform Node mic capture):
 //   npm i audio-mic
 // Run: node examples/tuner.js          # A = 432 Hz
@@ -10,6 +10,7 @@
 
 import { AudioContext, MediaStreamAudioSourceNode, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
 import { args, keys, status, clearLine, help } from './_util.js'
+import { detectPitch, createPitchTracker } from './_tuner-pitch.js'
 
 help({
   description: 'tune a guitar from the microphone or reference tones',
@@ -54,48 +55,6 @@ let STRINGS = [
   { num: 1, midi: 64, tag: 'high E' },
 ]
 
-// --- pitch detection: McLeod NSDF + parabolic interpolation ---
-function detect(buf, sr) {
-  let n = buf.length, mean = 0
-  for (let i = 0; i < n; i++) mean += buf[i]
-  mean /= n
-  let x = new Float32Array(n), rms = 0
-  for (let i = 0; i < n; i++) { x[i] = buf[i] - mean; rms += x[i] * x[i] }
-  if (Math.sqrt(rms / n) < 0.003) return null // silence
-
-  let minLag = Math.floor(sr / 520)            // ignore anything above ~C5
-  let maxLag = Math.min(Math.ceil(sr / 60), n - 2) // ...or below ~B1
-  let nsdf = new Float32Array(maxLag + 1)
-  for (let tau = 0; tau <= maxLag; tau++) {
-    let ac = 0, m = 0
-    for (let i = 0; i < n - tau; i++) {
-      let a = x[i], b = x[i + tau]
-      ac += a * b
-      m += a * a + b * b
-    }
-    nsdf[tau] = m > 0 ? 2 * ac / m : 0
-  }
-
-  let tau = 1
-  while (tau < maxLag && nsdf[tau] > 0) tau++   // step past the central lobe
-  let cands = [], best = 0
-  for (; tau < maxLag; tau++)
-    if (nsdf[tau] > nsdf[tau - 1] && nsdf[tau] >= nsdf[tau + 1]) {
-      cands.push(tau)
-      if (nsdf[tau] > best) best = nsdf[tau]
-    }
-  if (best < 0.6) return null                   // no clear periodicity
-
-  // McLeod pick: first peak within 90% of the strongest — beats octave errors
-  let peak = cands.find(t => nsdf[t] >= 0.9 * best)
-  if (peak === undefined || peak < minLag) return null
-
-  let y0 = nsdf[peak - 1], y1 = nsdf[peak], y2 = nsdf[peak + 1]
-  let d = y0 - 2 * y1 + y2
-  let period = peak + (d !== 0 ? 0.5 * (y0 - y2) / d : 0)
-  return { freq: sr / period }
-}
-
 // --- audio graph: mic → analyser (not routed to speakers, so no echo) ---
 let ctx = new AudioContext({ sampleRate })
 await ctx.resume()
@@ -103,7 +62,8 @@ await ctx.resume()
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
 let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: new MediaStream([track]) })
 let analyser = ctx.createAnalyser()
-analyser.fftSize = 4096
+// Keep enough low-E cycles for a reliable estimate even at 48 kHz.
+analyser.fftSize = 8192
 let mute = ctx.createGain()
 mute.gain.value = 0
 src.connect(analyser).connect(mute).connect(ctx.destination) // silent path — drives the render loop, no echo
@@ -164,20 +124,24 @@ function line(freq) {
 }
 
 let frame = new Float32Array(analyser.fftSize)
+let tracker = createPitchTracker()
 let smoothed = null, lastHit = 0
 let render = status()
 let tick = setInterval(() => {
   analyser.getFloatTimeDomainData(frame)
-  let p = detect(frame, ctx.sampleRate)
+  let p = detectPitch(frame, ctx.sampleRate)
   let now = Date.now()
-  if (p) {
+  let stable = tracker.update(p, a4)
+  if (stable !== null) {
     lastHit = now
-    smoothed = smoothed && Math.abs(Math.log2(p.freq / smoothed)) < 0.08
-      ? smoothed * 0.78 + p.freq * 0.22  // settle a stable note
-      : p.freq                           // snap to a new string
+    smoothed = stable
+  }
+  if (smoothed && now - lastHit > 1500) {
+    smoothed = null
+    tracker.reset()
   }
   let suffix = `  A=${a4}${ref ? ` ♪${noteOf(ref.s.midi)}` : ''}`
-  if (!smoothed || now - lastHit > 1500)
+  if (!smoothed)
     render(`  ${paint('· · ·', 90)}  listening — pluck a single string and let it ring${suffix}`)
   else
     render(line(smoothed) + suffix)
