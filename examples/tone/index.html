@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reference tone with Web Audio API · Browser and Node</title>
+  <meta name="description" content="Play a reference pitch with selectable waveform and frequency. Run it in the browser, inspect the complete Node CLI source, and adapt the graph for CI.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/tone/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/web-audio-api/examples/tone/">
+  <meta property="og:title" content="Reference tone · web-audio-api example">
+  <meta property="og:description" content="Play a reference pitch with selectable waveform and frequency.">
+  <meta property="og:site_name" content="web-audio-api examples">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Orbitron:wght@700&amp;display=swap">
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../site.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Reference tone · web-audio-api example","description":"Play a reference pitch with selectable waveform and frequency.","url":"https://audiojs.dev/web-audio-api/examples/tone/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/tone.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Reference tone","description":"Play a reference pitch with selectable waveform and frequency.","tool":{"@type":"SoftwareApplication","name":"web-audio-api"},"step":[{"@type":"HowToStep","name":"Run the browser demo","text":"Start the graph after a user gesture and inspect its output."},{"@type":"HowToStep","name":"Run the Node program","text":"node examples/tone.js sine A4 2s"},{"@type":"HowToStep","name":"Adapt the graph core","text":"Keep graph construction and replace only the runtime adapter."}]}]}</script>
+</head>
+<body data-example="tone">
+  <a class="skip-link" href="#example">Skip to example</a>
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="brand" href="../../" aria-label="web-audio-api home"><span class="brand-parent">audio JS</span><span class="brand-slash" aria-hidden="true">/</span><span>web-audio-api</span></a>
+      <nav class="desktop-nav" aria-label="Primary"><a href="../../#jobs">Use cases</a><a href="../">Examples</a><a href="../../#compatibility">Compatibility</a><a href="../../#faq">FAQ</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav>
+      <a class="nav-install" href="https://npmjs.com/package/web-audio-api">npm&nbsp;i</a>
+      <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile"><a href="../../">Home</a><a href="../">Examples</a><a href="../../#compatibility">Compatibility</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav></details>
+    </div>
+  </header>
+
+  <main id="example">
+    <section class="example-head">
+      <div class="example-head-inner">
+        <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Home</a><span aria-hidden="true">/</span><a href="../">Examples</a><span aria-hidden="true">/</span><span>Reference tone</span></nav>
+        <p class="example-kicker">Test signals · Generate · Live</p>
+        <h1>Reference tone</h1>
+        <p>Play a reference pitch with selectable waveform and frequency.</p>
+      </div>
+    </section>
+
+    <div class="example-main">
+      <div class="example-layout">
+        <section class="demo-panel" aria-labelledby="demo-heading">
+          <div class="workbench-head"><span id="demo-heading">Browser demo</span><span>native AudioContext</span></div>
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div>
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-actions" id="demo-result"></div>
+          </div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-fields" id="demo-fields"></div>
+            <div class="demo-actions" id="demo-actions"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p>
+          </form>
+        </section>
+
+        <aside class="example-sidebar">
+          <div><h2 class="visually-small">Graph</h2><p class="graph-path">Oscillator → Gain → Destination</p></div>
+          <dl class="example-specs">
+            <div><dt>Input</dt><dd>Waveform · frequency</dd></div>
+            <div><dt>Output</dt><dd>Speaker audio</dd></div>
+            <div><dt>Runtime</dt><dd>Browser preview · Node CLI</dd></div>
+            <div><dt>Command</dt><dd><code>node examples/tone.js sine A4 2s</code></dd></div>
+          </dl>
+          <div><h3>CLI options</h3><dl class="cli-options"><div><dt><code>wave=&lt;type&gt;</code></dt><dd>sine, triangle, square, or sawtooth</dd></div><div><dt><code>freq=&lt;hz|note&gt;</code></dt><dd>frequency or note name in the CLI (default: 440)</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 30s)</dd></div></dl></div>
+          <div><h3>APIs used</h3><p class="api-list"><code>AudioContext</code><code>OscillatorNode</code><code>GainNode</code></p></div>
+          <a class="example-source-link" href="https://github.com/audiojs/web-audio-api/blob/master/examples/tone.js">Open source on GitHub →</a>
+        </aside>
+      </div>
+      
+      
+
+      <section class="code-stage" aria-labelledby="code-heading">
+        <h2 id="code-heading">Code</h2>
+        <div class="code-toolbar">
+          <span>JavaScript</span>
+          <button class="copy-button copy-button--dark code-copy" type="button" data-copy="#example-code"><span>Copy code</span></button>
+        </div>
+        <pre class="code-output"><code class="language-javascript" id="example-code">Loading graph code…</code></pre>
+        <p class="source-note">This is the graph-building function. Browser and CI options are comments at the top. Shared helpers live in <a href="https://github.com/audiojs/web-audio-api/blob/master/examples/_portable.js"><code>examples/_portable.js</code></a>; the sidebar links the runnable CLI.</p>
+      </section>
+
+      <section class="related" aria-labelledby="related-heading"><h2 id="related-heading">Related examples</h2><div class="related-list"><a href="../sweep/"><strong>Frequency sweep</strong><span>Test signals</span></a><a href="../noise/"><strong>Colored noise</strong><span>Test signals</span></a><a href="../impulse/"><strong>Dirac impulse</strong><span>Test signals</span></a><a href="../dtmf/"><strong>DTMF dialer</strong><span>Test signals</span></a></div></section>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="footer-inner"><p class="footer-statement">Web Audio API<br>example.</p><p class="footer-audiojs"><strong>web-audio-api</strong> is part of <a href="https://audiojs.dev/">AudioJS</a>, the open audio stack for JavaScript.</p><div class="footer-meta"><span>MIT · v1.5.4</span><nav aria-label="Footer"><a href="../">Examples</a><a href="https://npmjs.com/package/web-audio-api">npm</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a><a href="https://audiojs.dev/">AudioJS</a></nav></div></div></footer>
+  <script type="module" src="../_web.js"></script>
+</body>
+</html>

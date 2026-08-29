@@ -2,6 +2,7 @@
 // Run: node examples/render-to-buffer.js
 
 import { OfflineAudioContext } from 'web-audio-api'
+import { buildTone } from './_portable.js'
 import { help } from './_util.js'
 
 help({
@@ -13,11 +14,7 @@ help({
 const sr = 44100
 const ctx = new OfflineAudioContext(2, sr * 2, sr) // 2 seconds, stereo
 
-const osc = ctx.createOscillator()
-osc.frequency.value = 440
-osc.connect(ctx.destination)
-osc.start()
-osc.stop(2)
+buildTone(ctx, { frequency: 440, duration: 2, gain: 1, when: 0 })
 
 const buffer = await ctx.startRendering()
 

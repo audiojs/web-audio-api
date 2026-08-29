@@ -1,0 +1,57 @@
+name: pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'index.html'
+      - 'site.css'
+      - 'site.js'
+      - 'syntax.js'
+      - 'tokens.css'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'site-metrics.json'
+      - 'examples/**'
+      - 'guides/**'
+      - 'scripts/build-site.mjs'
+      - 'package.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run site:stage
+      - run: npm run test:site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

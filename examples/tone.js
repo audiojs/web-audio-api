@@ -4,6 +4,7 @@
 // Keys: ↑/↓ ±semitone · ←/→ cycle waveform · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { buildTone } from './_portable.js'
 import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
 
 help({
@@ -27,14 +28,8 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let osc = ctx.createOscillator()
-osc.type = waves[wIdx]
-osc.frequency.value = f
-
-let master = ctx.createGain()
-master.gain.value = 0.3
-osc.connect(master).connect(ctx.destination)
-osc.start()
+let demo = buildTone(ctx, { frequency: f, waveform: waves[wIdx], duration: dur, gain: 0.3 })
+let osc = demo.sources[0]
 
 let render = status()
 let ui = setInterval(() => render(`${waves[wIdx].padEnd(9)} ${f.toFixed(2).padStart(8)}Hz ${noteName(f).padEnd(4)} · space pause · ↑↓ semi · ←→ wave · q quit${pausedTag(ctx)}`), 80)
@@ -46,7 +41,4 @@ keys({
   left: () => { wIdx = (wIdx - 1 + waves.length) % waves.length; osc.type = waves[wIdx] },
 }, () => { clearInterval(ui); clearLine(); ctx.close() }, ctx)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.3, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

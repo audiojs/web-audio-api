@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://audiojs.dev/web-audio-api/sitemap.xml

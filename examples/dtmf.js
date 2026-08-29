@@ -4,6 +4,7 @@
 // Keys: 0-9 * # A-D dial live · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { scheduleDtmfDigit } from './_portable.js'
 import { args, sec, keys, clearLine, help } from './_util.js'
 
 help({
@@ -20,26 +21,10 @@ let { pos, $ } = args()
 let digits = pos.find(t => /^[\d*#]+$/.test(t)) || $('digits', '')
 let speed = sec(pos.find(t => /^\d/.test(t) && !/^[\d*#]+$/.test(t)) || $('speed', '0.12'))
 
-let lo = { 1:697,2:697,3:697,A:697, 4:770,5:770,6:770,B:770, 7:852,8:852,9:852,C:852, '*':941,0:941,'#':941,D:941 }
-let hi = { 1:1209,2:1336,3:1477,A:1633, 4:1209,5:1336,6:1477,B:1633, 7:1209,8:1336,9:1477,C:1633, '*':1209,0:1336,'#':1477,D:1633 }
-
 let ctx = new AudioContext()
 await ctx.resume()
 
-let play = (d, t) => {
-  if (!lo[d]) return
-  for (let f of [lo[d], hi[d]]) {
-    let osc = ctx.createOscillator()
-    osc.frequency.value = f
-    let env = ctx.createGain()
-    env.gain.setValueAtTime(0, t)
-    env.gain.linearRampToValueAtTime(0.3, t + 0.005)
-    env.gain.setValueAtTime(0.3, t + speed - 0.005)
-    env.gain.linearRampToValueAtTime(0, t + speed)
-    osc.connect(env).connect(ctx.destination)
-    osc.start(t); osc.stop(t + speed + 0.01)
-  }
-}
+let play = (digit, when) => scheduleDtmfDigit(ctx, digit, { when, duration: speed, gain: 0.3 })
 
 let t = ctx.currentTime
 for (let d of digits) { play(d, t); t += speed * 2 }

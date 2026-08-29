@@ -47,6 +47,7 @@ import './spec-compliance.test.js'
 
 // Integration
 import './integration.test.js'
+import './site.test.js'
 
 // W3C Web Platform Tests
 import './wpt.test.js'

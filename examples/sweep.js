@@ -4,6 +4,7 @@
 // Keys: space pause · r restart · ←/→ halve/double duration · m toggle lin/exp · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { buildSweep } from './_portable.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
 
 help({
@@ -28,21 +29,12 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let osc, gain, t0
+let osc, t0
 let start = () => {
   if (osc) try { osc.stop() } catch {}
-  osc = ctx.createOscillator()
-  gain = ctx.createGain()
   t0 = ctx.currentTime
-  osc.frequency.setValueAtTime(min, t0)
-  if (mode[0] === 'l') osc.frequency.linearRampToValueAtTime(max, t0 + dur)
-  else osc.frequency.exponentialRampToValueAtTime(max, t0 + dur)
-  gain.gain.setValueAtTime(0, t0)
-  gain.gain.linearRampToValueAtTime(0.5, t0 + 0.1)
-  gain.gain.setValueAtTime(0.5, t0 + dur - 0.2)
-  gain.gain.linearRampToValueAtTime(0, t0 + dur)
-  osc.connect(gain).connect(ctx.destination)
-  osc.start()
+  let demo = buildSweep(ctx, { from: min, to: max, mode: mode[0] === 'l' ? 'linear' : 'exponential', duration: dur, gain: 0.5, when: t0 })
+  osc = demo.sources[0]
 }
 start()
 

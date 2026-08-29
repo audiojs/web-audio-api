@@ -4,6 +4,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
+import { buildTone } from './_portable.js'
 import { args, sec, keys, clearLine, help } from './_util.js'
 
 help({
@@ -19,16 +20,7 @@ let duration = sec($('dur', '2'))
 const ctx = new AudioContext()
 await ctx.resume()
 
-const osc = ctx.createOscillator()
-osc.frequency.value = 440
-
-const master = ctx.createGain()
-osc.connect(master).connect(ctx.destination)
-osc.start()
-
-let t = ctx.currentTime + duration
-master.gain.setValueAtTime(1, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
+buildTone(ctx, { frequency: 440, duration, gain: 1 })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`440Hz (${duration}s)  space pause · q quit`)

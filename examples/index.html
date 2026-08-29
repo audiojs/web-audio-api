@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Web Audio API examples · Browser demos and Node programs</title>
+  <meta name="description" content="33 practical Web Audio examples. Run each graph in the browser, inspect its Node CLI source, and adapt it for CI.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Web Audio API examples · Browser demos and Node programs">
+  <meta property="og:description" content="Test signals, synthesis, generative audio, analysis, files, streams, microphones, and offline rendering.">
+  <meta property="og:url" content="https://audiojs.dev/web-audio-api/examples/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Orbitron:wght@700&amp;display=swap">
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body data-catalog>
+  <a class="skip-link" href="#catalog">Skip to examples</a>
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="brand" href="../" aria-label="web-audio-api home">
+        <span class="brand-parent">audio JS</span><span class="brand-slash" aria-hidden="true">/</span><span>web-audio-api</span>
+      </a>
+      <nav class="desktop-nav" aria-label="Primary">
+        <a href="../#jobs">Use cases</a>
+        <a href="./" aria-current="page">Examples</a>
+        <a href="../#compatibility">Compatibility</a>
+        <a href="../#faq">FAQ</a>
+        <a href="https://github.com/audiojs/web-audio-api">GitHub</a>
+      </nav>
+      <a class="nav-install" href="https://npmjs.com/package/web-audio-api">npm&nbsp;i</a>
+      <details class="mobile-nav">
+        <summary>Menu</summary>
+        <nav aria-label="Mobile">
+          <a href="../">Home</a><a href="../#jobs">Use cases</a><a href="../#compatibility">Compatibility</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+
+  <main id="catalog">
+    <section class="catalog-hero">
+      <div class="catalog-hero-inner">
+        <h1>Examples</h1>
+        <p>Run each example in the browser, inspect the graph code, and open the complete Node program.</p>
+      </div>
+    </section>
+
+    <div class="catalog-main">
+      <div class="catalog-controls">
+        <label class="catalog-search-label" for="catalog-search">
+          <span>Search examples</span>
+          <input class="catalog-search" id="catalog-search" type="search" autocomplete="off" placeholder="Try “render”, “microphone”, or “filter”">
+        </label>
+        <div class="filter-row" role="group" aria-label="Filter by category">
+          <button class="filter-button" type="button" data-filter="all" aria-pressed="true">All</button>
+          <button class="filter-button" type="button" data-filter="Test signals" aria-pressed="false">Signals</button>
+          <button class="filter-button" type="button" data-filter="Illusions" aria-pressed="false">Illusions</button>
+          <button class="filter-button" type="button" data-filter="Synthesis" aria-pressed="false">Synthesis</button>
+          <button class="filter-button" type="button" data-filter="Generative" aria-pressed="false">Generative</button>
+          <button class="filter-button" type="button" data-filter="API" aria-pressed="false">API</button>
+        </div>
+        <p class="catalog-status" id="catalog-status" role="status" aria-live="polite">33 examples</p>
+      </div>
+
+      <div class="catalog-groups" id="catalog-groups">
+        <!-- GENERATED:catalog:start -->
+        <section class="catalog-group" data-category="Test signals">
+          <h2>Test signals</h2>
+          <div class="example-list">
+            <a href="./tone/" data-search="reference tone play a reference pitch with selectable waveform and frequency. generate test signals oscillator → gain → destination audiocontext oscillatornode gainnode"><strong>Reference tone</strong><span class="example-mode">Live</span><span class="example-description">Play a reference pitch with selectable waveform and frequency.</span><code>node examples/tone.js sine A4 2s</code></a>
+            <a href="./sweep/" data-search="frequency sweep sweep across a frequency range with linear or exponential automation. measure test signals oscillator.frequency automation → gain → destination audiocontext oscillatornode audioparam"><strong>Frequency sweep</strong><span class="example-mode">Live</span><span class="example-description">Sweep across a frequency range with linear or exponential automation.</span><code>node examples/sweep.js 20..20k exp 3s</code></a>
+            <a href="./noise/" data-search="colored noise generate white, pink, brown, blue, or violet noise. generate test signals noise source → gain → destination audiocontext audiobuffersourcenode gainnode"><strong>Colored noise</strong><span class="example-mode">Live</span><span class="example-description">Generate white, pink, brown, blue, or violet noise.</span><code>node examples/noise.js pink 2s</code></a>
+            <a href="./impulse/" data-search="dirac impulse fire a one-sample impulse for response and signal-path testing. measure test signals one-sample audiobuffer → destination audiocontext audiobuffer audiobuffersourcenode"><strong>Dirac impulse</strong><span class="example-mode">Live</span><span class="example-description">Fire a one-sample impulse for response and signal-path testing.</span><code>node examples/impulse.js 5 0.5s</code></a>
+            <a href="./dtmf/" data-search="dtmf dialer synthesize telephone keypad tones from paired row and column frequencies. generate test signals 2 oscillators → envelope → destination audiocontext oscillatornode gainnode"><strong>DTMF dialer</strong><span class="example-mode">Live</span><span class="example-description">Synthesize telephone keypad tones from paired row and column frequencies.</span><code>node examples/dtmf.js 5551234</code></a>
+            <a href="./stereo-test/" data-search="stereo channel test identify left, right, and center channels with a panned reference tone. measure test signals oscillator → stereopanner → envelope → destination audiocontext stereopannernode gainnode"><strong>Stereo channel test</strong><span class="example-mode">Live</span><span class="example-description">Identify left, right, and center channels with a panned reference tone.</span><code>node examples/stereo-test.js 1k 1s</code></a>
+            <a href="./metronome/" data-search="programmable metronome schedule a click pattern with accents, rests, tempo control, and instrument presets. create test signals scheduled transients → master gain → destination audiocontext audiobuffersourcenode biquadfilternode audioparam"><strong>Programmable metronome</strong><span class="example-mode">Live</span><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><code>node examples/metronome.js 120 X-x-X-x-</code></a>
+            <a href="./tuner/" data-search="microphone tuner estimate microphone pitch, nearest note, and tuning error in cents. analyze test signals microphone → analyser → pitch detector mediastreamaudiosourcenode analysernode"><strong>Microphone tuner</strong><span class="example-mode">Microphone</span><span class="example-description">Estimate microphone pitch, nearest note, and tuning error in cents.</span><code>node examples/tuner.js 440</code></a>
+          </div>
+        </section>
+        <section class="catalog-group" data-category="Illusions">
+          <h2>Illusions</h2>
+          <div class="example-list">
+            <a href="./shepard/" data-search="shepard tone layer octave-spaced voices to create a pitch that appears to rise or fall forever. explore illusions octave bank → gaussian gains → destination audiocontext oscillatornode gainnode"><strong>Shepard tone</strong><span class="example-mode">Live</span><span class="example-description">Layer octave-spaced voices to create a pitch that appears to rise or fall forever.</span><code>node examples/shepard.js up 15s</code></a>
+            <a href="./risset-rhythm/" data-search="risset rhythm layer tempo cycles to create a beat that appears to accelerate or decelerate forever. explore illusions scheduled click layers → destination audiocontext oscillatornode audioparam"><strong>Risset rhythm</strong><span class="example-mode">Live</span><span class="example-description">Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.</span><code>node examples/risset-rhythm.js up 120 20s</code></a>
+            <a href="./binaural-beats/" data-search="binaural beats send nearby frequencies to opposite ears and hear their difference. explore illusions 2 oscillators → hard l/r pan → destination audiocontext stereopannernode"><strong>Binaural beats</strong><span class="example-mode">Live</span><span class="example-description">Send nearby frequencies to opposite ears and hear their difference.</span><code>node examples/binaural-beats.js 200 10 10s</code></a>
+            <a href="./missing-fundamental/" data-search="missing fundamental play harmonics 2–6 while omitting the pitch the listener still perceives. explore illusions harmonic oscillator bank → gain → destination audiocontext oscillatornode gainnode"><strong>Missing fundamental</strong><span class="example-mode">Live</span><span class="example-description">Play harmonics 2–6 while omitting the pitch the listener still perceives.</span><code>node examples/missing-fundamental.js 100 3s</code></a>
+            <a href="./beating/" data-search="acoustic beating hear amplitude beating produced by two nearby frequencies. explore illusions 2 nearby oscillators → gain → destination audiocontext oscillatornode"><strong>Acoustic beating</strong><span class="example-mode">Live</span><span class="example-description">Hear amplitude beating produced by two nearby frequencies.</span><code>node examples/beating.js 440 3 5s</code></a>
+          </div>
+        </section>
+        <section class="catalog-group" data-category="Synthesis">
+          <h2>Synthesis</h2>
+          <div class="example-list">
+            <a href="./subtractive-synth/" data-search="subtractive synth shape a sawtooth oscillator with a resonant low-pass sweep and adsr envelope. create synthesis sawtooth → biquadfilter → adsr gain → destination oscillatornode biquadfilternode audioparam"><strong>Subtractive synth</strong><span class="example-mode">Live</span><span class="example-description">Shape a sawtooth oscillator with a resonant low-pass sweep and ADSR envelope.</span><code>node examples/subtractive-synth.js -d 5s</code></a>
+            <a href="./additive/" data-search="additive synthesis construct square, saw, and triangle timbres from individual harmonics. create synthesis harmonic oscillator bank → gain → destination audiocontext oscillatornode gainnode"><strong>Additive synthesis</strong><span class="example-mode">Live</span><span class="example-description">Construct square, saw, and triangle timbres from individual harmonics.</span><code>node examples/additive.js square 220 16 3s</code></a>
+            <a href="./fm-synthesis/" data-search="fm synthesis use one oscillator to modulate another oscillator’s frequency. create synthesis modulator → carrier.frequency → gain → destination oscillatornode audioparam gainnode"><strong>FM synthesis</strong><span class="example-mode">Live</span><span class="example-description">Use one oscillator to modulate another oscillator’s frequency.</span><code>node examples/fm-synthesis.js 440 2 5 3s</code></a>
+            <a href="./karplus-strong/" data-search="karplus–strong string turn a short noise burst and averaging delay into a plucked string. create synthesis noise ring buffer → feedback average → destination audiobuffer audiobuffersourcenode"><strong>Karplus–Strong string</strong><span class="example-mode">Live</span><span class="example-description">Turn a short noise burst and averaging delay into a plucked string.</span><code>node examples/karplus-strong.js A4 4s</code></a>
+          </div>
+        </section>
+        <section class="catalog-group" data-category="Generative">
+          <h2>Generative</h2>
+          <div class="example-list">
+            <a href="./sequencer/" data-search="step sequencer schedule a 16-step melody against the audio clock. create generative scheduled oscillators → envelopes → destination audiocontext oscillatornode audioparam"><strong>Step sequencer</strong><span class="example-mode">Live</span><span class="example-description">Schedule a 16-step melody against the audio clock.</span><code>node examples/sequencer.js bpm=140 -d 10s</code></a>
+            <a href="./serial/" data-search="twelve-tone generator generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows. create generative row generator → scheduled voices → destination audiocontext oscillatornode gainnode"><strong>Twelve-tone generator</strong><span class="example-mode">Live</span><span class="example-description">Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.</span><code>node examples/serial.js 72 30s</code></a>
+            <a href="./gamelan/" data-search="generative gamelan schedule interlocking slendro patterns with metalophone partials and gong structure. create generative slendro scheduler → metallic voices → destination audiocontext oscillatornode audioparam"><strong>Generative gamelan</strong><span class="example-mode">Live</span><span class="example-description">Schedule interlocking slendro patterns with metalophone partials and gong structure.</span><code>node examples/gamelan.js 120 20s</code></a>
+            <a href="./drone/" data-search="harmonic drone layer lightly detuned harmonics into a tanpura-like four-string drone. create generative detuned harmonic banks → master gain → destination audiocontext oscillatornode gainnode"><strong>Harmonic drone</strong><span class="example-mode">Live</span><span class="example-description">Layer lightly detuned harmonics into a tanpura-like four-string drone.</span><code>node examples/drone.js C3 30s</code></a>
+            <a href="./jazz/" data-search="generative jazz generate modal harmony, walking bass, plucked improvisation, and percussion. create generative theory generators → instrument chains → destination audiocontext audioworkletnode biquadfilternode"><strong>Generative jazz</strong><span class="example-mode">Live</span><span class="example-description">Generate modal harmony, walking bass, plucked improvisation, and percussion.</span><code>node examples/jazz.js</code></a>
+          </div>
+        </section>
+        <section class="catalog-group" data-category="API">
+          <h2>API</h2>
+          <div class="example-list">
+            <a href="./speaker/" data-search="speaker hello world play the smallest useful realtime graph through the system output. port api oscillator → gain → destination audiocontext audiodestinationnode"><strong>Speaker hello world</strong><span class="example-mode">Live</span><span class="example-description">Play the smallest useful realtime graph through the system output.</span><code>node examples/speaker.js</code></a>
+            <a href="./lfo/" data-search="lfo tremolo connect an oscillator to an audioparam and modulate gain at audio-clock precision. create api lfo + constantsource → gain.gain ← carrier constantsourcenode oscillatornode audioparam"><strong>LFO tremolo</strong><span class="example-mode">Live</span><span class="example-description">Connect an oscillator to an AudioParam and modulate gain at audio-clock precision.</span><code>node examples/lfo.js rate=5 depth=0.5 -d 10s</code></a>
+            <a href="./spatial/" data-search="spatial panning move a source from left to right through three-dimensional space. create api oscillator → panner → gain → destination pannernode audiolistener audioparam"><strong>Spatial panning</strong><span class="example-mode">Live</span><span class="example-description">Move a source from left to right through three-dimensional space.</span><code>node examples/spatial.js -d 5s</code></a>
+            <a href="./worklet/" data-search="custom audioworklet register a custom processor, expose a parameter, and render its output. extend api audioworkletprocessor → audioworkletnode → destination audioworklet audioworkletnode audioworkletprocessor"><strong>Custom AudioWorklet</strong><span class="example-mode">Worklet</span><span class="example-description">Register a custom processor, expose a parameter, and render its output.</span><code>node examples/worklet.js</code></a>
+            <a href="./linked-params/" data-search="linked audioparams drive multiple gain parameters from one constantsourcenode. test api constantsource → 2 gain audioparams → mix → audiobuffer offlineaudiocontext constantsourcenode audioparam"><strong>Linked AudioParams</strong><span class="example-mode">Offline</span><span class="example-description">Drive multiple gain parameters from one ConstantSourceNode.</span><code>node examples/linked-params.js</code></a>
+            <a href="./fft/" data-search="fft spectrum render a two-tone signal and inspect its frequency-domain peaks. analyze api 2 oscillators → analyser → audiobuffer offlineaudiocontext analysernode"><strong>FFT spectrum</strong><span class="example-mode">Offline</span><span class="example-description">Render a two-tone signal and inspect its frequency-domain peaks.</span><code>node examples/fft.js</code></a>
+            <a href="./render-to-buffer/" data-search="offline render render a complete graph to an audiobuffer with no speakers or audio device. render api offline graph → audiodestination → audiobuffer offlineaudiocontext audiobuffer"><strong>Offline render</strong><span class="example-mode">Offline</span><span class="example-description">Render a complete graph to an AudioBuffer with no speakers or audio device.</span><code>node examples/render-to-buffer.js</code></a>
+            <a href="./process-file/" data-search="process an audio file decode an audio file, apply eq and compression, then render the processed result. process api file → decode → high-shelf eq → compressor → audiobuffer decodeaudiodata biquadfilternode dynamicscompressornode"><strong>Process an audio file</strong><span class="example-mode">File input</span><span class="example-description">Decode an audio file, apply EQ and compression, then render the processed result.</span><code>node examples/process-file.js input.mp3</code></a>
+            <a href="./pipe-stdout/" data-search="pipe pcm to stdout send raw pcm from an audiocontext to any node writable stream. stream api audio graph → sinkid writable → aplay/ffmpeg/sox audiocontext audiodestinationnode writablestream"><strong>Pipe PCM to stdout</strong><span class="example-mode">Node stream</span><span class="example-description">Send raw PCM from an AudioContext to any Node writable stream.</span><code>node examples/pipe-stdout.js | ffplay -f s16le -ar 44100 -ac 2 -</code></a>
+            <a href="./mic/" data-search="microphone level route a live microphone through a gain and analyser with an rms meter. capture api microphone → gain → analyser → destination mediastreamaudiosourcenode gainnode analysernode"><strong>Microphone level</strong><span class="example-mode">Microphone</span><span class="example-description">Route a live microphone through a gain and analyser with an RMS meter.</span><code>node examples/mic.js gain=0.8</code></a>
+            <a href="./recorder/" data-search="microphone recorder capture microphone audio with a live level meter and save a recording. capture api microphone → gain → recorder → file mediastreamaudiosourcenode scriptprocessornode"><strong>Microphone recorder</strong><span class="example-mode">Microphone</span><span class="example-description">Capture microphone audio with a live level meter and save a recording.</span><code>node examples/recorder.js take1 gain=2</code></a>
+          </div>
+        </section>
+        <!-- GENERATED:catalog:end -->
+      </div>
+      <p class="catalog-status" id="catalog-empty" hidden>No examples match that search. Try a broader task or clear the category filter.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-statement">33 runnable<br>audio examples.</p>
+      <p class="footer-audiojs"><strong>web-audio-api</strong> is part of <a href="https://audiojs.dev/">AudioJS</a>, the open audio stack for JavaScript.</p>
+      <div class="footer-meta"><span>33 examples · MIT</span><nav aria-label="Footer"><a href="../">Home</a><a href="https://npmjs.com/package/web-audio-api">npm</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a><a href="https://audiojs.dev/">AudioJS</a></nav></div>
+    </div>
+  </footer>
+  <script type="module" src="./_web.js"></script>
+</body>
+</html>

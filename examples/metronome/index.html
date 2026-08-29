@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Programmable metronome with Web Audio API · Browser and Node</title>
+  <meta name="description" content="Schedule a click pattern with accents, rests, tempo control, and instrument presets. Run it in the browser, inspect the complete Node CLI source, and adapt the graph for CI.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/metronome/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/web-audio-api/examples/metronome/">
+  <meta property="og:title" content="Programmable metronome · web-audio-api example">
+  <meta property="og:description" content="Schedule a click pattern with accents, rests, tempo control, and instrument presets.">
+  <meta property="og:site_name" content="web-audio-api examples">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Orbitron:wght@700&amp;display=swap">
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../site.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Programmable metronome · web-audio-api example","description":"Schedule a click pattern with accents, rests, tempo control, and instrument presets.","url":"https://audiojs.dev/web-audio-api/examples/metronome/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/metronome.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Programmable metronome","description":"Schedule a click pattern with accents, rests, tempo control, and instrument presets.","tool":{"@type":"SoftwareApplication","name":"web-audio-api"},"step":[{"@type":"HowToStep","name":"Run the browser demo","text":"Start the graph after a user gesture and inspect its output."},{"@type":"HowToStep","name":"Run the Node program","text":"node examples/metronome.js 120 X-x-X-x-"},{"@type":"HowToStep","name":"Adapt the graph core","text":"Keep graph construction and replace only the runtime adapter."}]}]}</script>
+</head>
+<body data-example="metronome">
+  <a class="skip-link" href="#example">Skip to example</a>
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a class="brand" href="../../" aria-label="web-audio-api home"><span class="brand-parent">audio JS</span><span class="brand-slash" aria-hidden="true">/</span><span>web-audio-api</span></a>
+      <nav class="desktop-nav" aria-label="Primary"><a href="../../#jobs">Use cases</a><a href="../">Examples</a><a href="../../#compatibility">Compatibility</a><a href="../../#faq">FAQ</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav>
+      <a class="nav-install" href="https://npmjs.com/package/web-audio-api">npm&nbsp;i</a>
+      <details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile"><a href="../../">Home</a><a href="../">Examples</a><a href="../../#compatibility">Compatibility</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav></details>
+    </div>
+  </header>
+
+  <main id="example">
+    <section class="example-head">
+      <div class="example-head-inner">
+        <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Home</a><span aria-hidden="true">/</span><a href="../">Examples</a><span aria-hidden="true">/</span><span>Programmable metronome</span></nav>
+        <p class="example-kicker">Test signals · Create · Live</p>
+        <h1>Programmable metronome</h1>
+        <p>Schedule a click pattern with accents, rests, tempo control, and instrument presets.</p>
+      </div>
+    </section>
+
+    <div class="example-main">
+      <div class="example-layout">
+        <section class="demo-panel" aria-labelledby="demo-heading">
+          <div class="workbench-head"><span id="demo-heading">Browser demo</span><span>native AudioContext</span></div>
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div>
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-actions" id="demo-result"></div>
+          </div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-fields" id="demo-fields"></div>
+            <div class="demo-actions" id="demo-actions"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p>
+          </form>
+        </section>
+
+        <aside class="example-sidebar">
+          <div><h2 class="visually-small">Graph</h2><p class="graph-path">Scheduled transients → Master Gain → Destination</p></div>
+          <dl class="example-specs">
+            <div><dt>Input</dt><dd>Tempo · pattern · sound</dd></div>
+            <div><dt>Output</dt><dd>Timed clicks</dd></div>
+            <div><dt>Runtime</dt><dd>Browser preview · Node CLI</dd></div>
+            <div><dt>Command</dt><dd><code>node examples/metronome.js 120 X-x-X-x-</code></dd></div>
+          </dl>
+          <div><h3>CLI options</h3><dl class="cli-options"><div><dt><code>bpm=&lt;bpm|start..end&gt;</code></dt><dd>fixed tempo or a linear tempo ramp</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 600s)</dd></div><div><dt><code>pat=&lt;pattern&gt;</code></dt><dd>X accent, x hit, - or . rest</dd></div><div><dt><code>sound=&lt;preset&gt;</code></dt><dd>classic, wood, bell, beep, or signal</dd></div><div><dt><code>hi=&lt;hz&gt;</code></dt><dd>classic stick accent resonance</dd></div><div><dt><code>lo=&lt;hz&gt;</code></dt><dd>classic stick regular resonance</dd></div></dl></div>
+          <div><h3>APIs used</h3><p class="api-list"><code>AudioContext</code><code>AudioBufferSourceNode</code><code>BiquadFilterNode</code><code>AudioParam</code></p></div>
+          <a class="example-source-link" href="https://github.com/audiojs/web-audio-api/blob/master/examples/metronome.js">Open source on GitHub →</a>
+        </aside>
+      </div>
+      
+      
+
+      <section class="code-stage" aria-labelledby="code-heading">
+        <h2 id="code-heading">Code</h2>
+        <div class="code-toolbar">
+          <span>JavaScript</span>
+          <button class="copy-button copy-button--dark code-copy" type="button" data-copy="#example-code"><span>Copy code</span></button>
+        </div>
+        <pre class="code-output"><code class="language-javascript" id="example-code">Loading graph code…</code></pre>
+        <p class="source-note">This is the graph-building function. Browser and CI options are comments at the top. Shared helpers live in <a href="https://github.com/audiojs/web-audio-api/blob/master/examples/_portable.js"><code>examples/_portable.js</code></a>; the sidebar links the runnable CLI.</p>
+      </section>
+
+      <section class="related" aria-labelledby="related-heading"><h2 id="related-heading">Related examples</h2><div class="related-list"><a href="../tone/"><strong>Reference tone</strong><span>Test signals</span></a><a href="../sweep/"><strong>Frequency sweep</strong><span>Test signals</span></a><a href="../noise/"><strong>Colored noise</strong><span>Test signals</span></a><a href="../impulse/"><strong>Dirac impulse</strong><span>Test signals</span></a></div></section>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="footer-inner"><p class="footer-statement">Web Audio API<br>example.</p><p class="footer-audiojs"><strong>web-audio-api</strong> is part of <a href="https://audiojs.dev/">AudioJS</a>, the open audio stack for JavaScript.</p><div class="footer-meta"><span>MIT · v1.5.4</span><nav aria-label="Footer"><a href="../">Examples</a><a href="https://npmjs.com/package/web-audio-api">npm</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a><a href="https://audiojs.dev/">AudioJS</a></nav></div></div></footer>
+  <script type="module" src="../_web.js"></script>
+</body>
+</html>

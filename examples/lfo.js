@@ -4,6 +4,7 @@
 // Keys: ←/→ ±0.5 Hz rate · ↑/↓ ±0.05 depth · w cycle LFO wave · q quit
 
 import { AudioContext } from 'web-audio-api'
+import { buildTremolo } from './_portable.js'
 import { args, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
 
 help({
@@ -31,23 +32,8 @@ let wIdx = waves.indexOf($('wave', 'square')); if (wIdx < 0) wIdx = 1
 let ctx = new AudioContext()
 await ctx.resume()
 
-let carrier = ctx.createOscillator()
-carrier.frequency.value = 440
-let lfo = ctx.createOscillator()
-lfo.type = waves[wIdx]
-lfo.frequency.value = rate
-let lfoGain = ctx.createGain()
-lfoGain.gain.value = depth
-let offset = ctx.createConstantSource()
-offset.offset.value = 1 - depth
-let mixer = ctx.createGain()
-mixer.gain.value = 0
-let master = ctx.createGain()
-master.gain.value = 0.3
-carrier.connect(mixer).connect(master).connect(ctx.destination)
-lfo.connect(lfoGain).connect(mixer.gain)
-offset.connect(mixer.gain)
-carrier.start(); lfo.start(); offset.start()
+let demo = buildTremolo(ctx, { carrier: 440, rate, depth, waveform: waves[wIdx], duration: dur, gain: 0.3 })
+let [, lfo, lfoGain, offset] = demo.nodes
 
 let apply = () => {
   let t = ctx.currentTime
@@ -67,7 +53,4 @@ keys({
   w: () => { wIdx = (wIdx + 1) % waves.length; lfo.type = waves[wIdx] },
 }, () => { clearInterval(ui); clearLine(); ctx.close() }, ctx)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.3, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

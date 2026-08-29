@@ -1,0 +1,11 @@
+{
+  "date": "2026-08-29",
+  "design_md": null,
+  "font_stack": null,
+  "palette": null,
+  "motion": "motion-cut",
+  "spacing": null,
+  "framework": "vanilla ESM",
+  "preserve": ["repository ESM conventions"],
+  "introduce": ["AudioJS studied DNA", "static site", "locked tokens", "accessible demo interactions"]
+}

@@ -3,6 +3,7 @@
 // Run: node examples/stereo-test.js freq=500 dur=2s
 
 import { AudioContext } from 'web-audio-api'
+import { buildStereoTest } from './_portable.js'
 import { args, num, sec, keys, clearLine, help } from './_util.js'
 
 help({
@@ -22,27 +23,10 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '1'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let tests = [['Left', -1], ['Right', 1], ['Center', 0]]
+let tests = ['Left', 'Right', 'Center']
 let gap = 0.3
-
-let t = ctx.currentTime
-for (let [name, pan] of tests) {
-  console.log(name)
-  let osc = ctx.createOscillator()
-  osc.frequency.value = f
-  let panner = ctx.createStereoPanner()
-  panner.pan.value = pan
-
-  let env = ctx.createGain()
-  env.gain.setValueAtTime(0, t)
-  env.gain.linearRampToValueAtTime(0.5, t + 0.02)
-  env.gain.setValueAtTime(0.5, t + dur - 0.05)
-  env.gain.linearRampToValueAtTime(0, t + dur)
-
-  osc.connect(panner).connect(env).connect(ctx.destination)
-  osc.start(t); osc.stop(t + dur + 0.01)
-  t += dur + gap
-}
+for (let name of tests) console.log(name)
+buildStereoTest(ctx, { frequency: f, durationPerChannel: dur, gap, gain: 0.5 })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, tests.length * (dur + gap) * 1000)

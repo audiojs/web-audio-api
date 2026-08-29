@@ -1,0 +1,87 @@
+/* web-audio-api · AudioJS studied-DNA design tokens */
+:root {
+  --color-ink: oklch(17.163% 0.00966 255.65);
+  --color-ink-2: oklch(21.248% 0.01091 260.67);
+  --color-ink-3: oklch(34.258% 0.01404 256.77);
+  --color-body: oklch(28% 0.012 256);
+  --color-muted: oklch(45% 0.016 252);
+  --color-muted-on-ink: oklch(76% 0.012 92);
+  --color-paper: oklch(95.201% 0.00827 91.48);
+  --color-paper-2: oklch(93.968% 0.00958 93.57);
+  --color-paper-3: oklch(89% 0.011 92);
+  --color-raise: oklch(97% 0.007 92);
+  --color-rule: oklch(86.055% 0.01269 91.53);
+  --color-rule-dark: oklch(33% 0.014 256);
+  --color-accent: oklch(65.848% 0.11388 209.98);
+  --color-accent-strong: oklch(50% 0.12 210);
+  --color-accent-soft: oklch(90% 0.035 210);
+  --color-accent-ink: oklch(17.163% 0.00966 255.65);
+  --color-focus: oklch(50% 0.12 210);
+  --color-error: oklch(55% 0.19 29);
+  --color-success: oklch(46% 0.11 156);
+  --color-warning: oklch(60% 0.13 75);
+
+  --font-brand: "Orbitron", "Geist", ui-sans-serif, sans-serif;
+  --font-display: "Geist", ui-sans-serif, sans-serif;
+  --font-body: "Geist", ui-sans-serif, sans-serif;
+  --font-code: "IBM Plex Mono", ui-monospace, monospace;
+
+  --syntax-comment: var(--color-muted-on-ink);
+  --syntax-keyword: var(--color-accent);
+  --syntax-operator: var(--color-paper-3);
+  --syntax-string: var(--color-paper-2);
+  --syntax-constant: var(--color-warning);
+  --syntax-function: var(--color-accent);
+  --syntax-type: var(--color-paper-2);
+  --syntax-variable: var(--color-paper);
+  --syntax-property: var(--color-paper-2);
+  --syntax-tag: var(--color-accent);
+  --syntax-selector: var(--color-accent);
+  --syntax-inserted: var(--color-accent);
+  --syntax-deleted: var(--color-paper-2);
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
+  --text-display-s: clamp(2.25rem, 7vw, 4.5rem);
+  --text-display: clamp(2.65rem, 8vw, 5.25rem);
+
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+
+  --page-gutter: clamp(1rem, 4vw, 3.5rem);
+  --page-max: 72rem;
+  --copy-max: 66ch;
+
+  --rule-hair: 1px;
+  --rule-heavy: 2px;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}

@@ -2,6 +2,7 @@
 // Run: node examples/fft.js
 
 import { OfflineAudioContext } from 'web-audio-api'
+import { buildTwoTone } from './_portable.js'
 import { help } from './_util.js'
 
 help({
@@ -14,23 +15,8 @@ const sr = 44100
 const ctx = new OfflineAudioContext(1, sr, sr) // 1 second
 
 // Create a signal with two clear frequencies
-let osc1 = ctx.createOscillator()
-osc1.frequency.value = 440 // A4
-
-let osc2 = ctx.createOscillator()
-osc2.frequency.value = 880 // A5
-
-let mix = ctx.createGain()
-mix.gain.value = 0.5
-
-let analyser = ctx.createAnalyser()
-analyser.fftSize = 2048
-
-osc1.connect(mix).connect(analyser).connect(ctx.destination)
-osc2.connect(mix)
-
-osc1.start()
-osc2.start()
+let demo = buildTwoTone(ctx, { frequencies: [440, 880], duration: 1, when: 0 })
+let analyser = demo.data.analyser
 
 await ctx.startRendering()
 
