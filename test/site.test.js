@@ -51,19 +51,25 @@ test('site catalog covers every runnable repository example exactly once', () =>
   }
 })
 
-test('every CLI loads and its documented options match its example page', () => {
+test('every CLI option schema matches its source, --help, and example page', () => {
   is(Object.keys(exampleOptions).sort().join(','), examples.map(example => example.id).sort().join(','))
   for (let example of examples) {
-    let output = execFileSync(process.execPath, [`examples/${example.id}.js`, '--help'], { cwd: root, encoding: 'utf8' })
-    let section = output.match(/\nOptions:\n([\s\S]*?)(?=\n\n(?:Controls:|Note:| {2}-h, --help))/)?.[1]
-    let cli = section ? section.trim().split('\n').map(line => line.trim().split(/\s{2,}/)[0]) : []
+    let source = read(`examples/${example.id}.js`)
+    let block = source.match(/\n\s*options:\s*(\[[\s\S]*?\]),\n\s*(?:controls:|notes:|\}\))/)?.[1]
+    let documented = block ? [...block.matchAll(/\[\s*(['"`])(.+?)\1\s*,/g)].map(match => match[2]) : []
     let page = optionsFor(example.id).map(option => option.syntax)
-    is(page.join('|'), cli.join('|'), `${example.id}: page and CLI options`)
+    is(page.join('|'), documented.join('|'), `${example.id}: option schema and CLI source`)
+    if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) {
+      let output = execFileSync(process.execPath, [`examples/${example.id}.js`, '--help'], { cwd: root, encoding: 'utf8' })
+      let section = output.match(/\nOptions:\n([\s\S]*?)(?=\n\n(?:Controls:|Note:| {2}-h, --help))/)?.[1]
+      let cli = section ? section.trim().split('\n').map(line => line.trim().split(/\s{2,}/)[0]) : []
+      is(page.join('|'), cli.join('|'), `${example.id}: page and CLI --help options`)
+    }
     is(new Set(controlsFor(example.id).map(control => control.key)).size, controlsFor(example.id).length, `${example.id}: unique browser controls`)
     let document = documentOf(`examples/${example.id}/index.html`)
     let rendered = [...document.querySelectorAll('.cli-options dt code')].map(code => code.textContent)
-    is(rendered.join('|'), cli.join('|'), `${example.id}: rendered CLI options`)
-    is(Boolean(document.querySelector('.no-options')), cli.length === 0, `${example.id}: explicit no-options state`)
+    is(rendered.join('|'), page.join('|'), `${example.id}: rendered CLI options`)
+    is(Boolean(document.querySelector('.no-options')), page.length === 0, `${example.id}: explicit no-options state`)
   }
 })
 
