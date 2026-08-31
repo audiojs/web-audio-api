@@ -4,7 +4,8 @@
 // Keys: ←/→ ±0.5 Hz beat · ↑/↓ ±semitone carrier · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+import { build } from './graphs/binaural-beats.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
   description: 'create a binaural difference tone (headphones required)',
@@ -27,17 +28,8 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '60'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let oscL = ctx.createOscillator(), oscR = ctx.createOscillator()
-oscL.frequency.value = f
-oscR.frequency.value = f + beat
-let panL = ctx.createStereoPanner(), panR = ctx.createStereoPanner()
-panL.pan.value = -1; panR.pan.value = 1
-let master = ctx.createGain()
-master.gain.value = 0.3
-oscL.connect(panL).connect(master)
-oscR.connect(panR).connect(master)
-master.connect(ctx.destination)
-oscL.start(); oscR.start()
+let demo = build(ctx, { frequency: f, difference: beat, duration: dur, gain: 0.3 })
+let [oscL, oscR] = demo.sources
 
 let retune = () => {
   let t = ctx.currentTime
@@ -57,7 +49,4 @@ keys({
 
 console.log(`L: ${f}Hz  R: ${f + beat}Hz  beat: ${beat}Hz — use headphones  (${dur}s)`)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.3, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

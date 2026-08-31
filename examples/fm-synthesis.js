@@ -4,7 +4,8 @@
 // Keys: ←/→ ±0.5 ratio · ↑/↓ ±1 index · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+import { build } from './graphs/fm-synthesis.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
   description: 'explore DX7-style frequency modulation synthesis',
@@ -28,19 +29,8 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let mod = ctx.createOscillator()
-mod.frequency.value = carrier * ratio
-let modGain = ctx.createGain()
-modGain.gain.value = index * carrier * ratio
-
-let car = ctx.createOscillator()
-car.frequency.value = carrier
-mod.connect(modGain).connect(car.frequency)
-
-let master = ctx.createGain()
-master.gain.value = 0.3
-car.connect(master).connect(ctx.destination)
-mod.start(); car.start()
+let demo = build(ctx, { carrier, ratio, index, duration: dur, gain: 0.3 })
+let [mod, modGain] = demo.nodes
 
 let apply = () => {
   let t = ctx.currentTime
@@ -60,7 +50,4 @@ keys({
 
 console.log(`FM: carrier=${carrier}Hz, ratio=${ratio}, index=${index} (${dur}s)  ←→ ratio · ↑↓ index · q quit`)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.3, t - 0.1)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

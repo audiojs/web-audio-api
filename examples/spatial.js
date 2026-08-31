@@ -4,8 +4,8 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { buildSpatial } from './_portable.js'
-import { args, sec, keys, clearLine, help } from './_util.js'
+import { build as buildSpatial } from './graphs/spatial.js'
+import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'move a tone from left to right through 3D space',

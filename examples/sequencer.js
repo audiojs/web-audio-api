@@ -4,7 +4,8 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, sec, keys, clearLine, help } from './_util.js'
+import { build } from './graphs/sequencer.js'
+import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'schedule a precise 16-step note sequence',
@@ -25,30 +26,7 @@ let dur = sec($('dur', steps * stepDuration))
 const ctx = new AudioContext()
 await ctx.resume()
 
-const notes = [
-  440,  0,    523,  0,    587,  0,    659,  0,
-  587,  523,  440,  0,    330,  0,    440,  0,
-]
-
-let t0 = ctx.currentTime
-let nLoops = Math.ceil(dur / (steps * stepDuration))
-for (let loop = 0; loop < nLoops; loop++) {
-  for (let step = 0; step < steps; step++) {
-    let freq = notes[step]
-    if (!freq) continue
-    let when = t0 + (loop * steps + step) * stepDuration
-    if (when > t0 + dur) break
-    let osc = ctx.createOscillator()
-    osc.type = 'square'
-    osc.frequency.value = freq
-    let env = ctx.createGain()
-    env.gain.setValueAtTime(0, when)
-    env.gain.linearRampToValueAtTime(0.3, when + 0.005)
-    env.gain.exponentialRampToValueAtTime(0.01, when + stepDuration * 0.9)
-    osc.connect(env).connect(ctx.destination)
-    osc.start(when); osc.stop(when + stepDuration)
-  }
-}
+build(ctx, { bpm, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Sequencer: ${bpm} BPM, ${steps}-step pattern (${dur}s)  space pause · q quit`)

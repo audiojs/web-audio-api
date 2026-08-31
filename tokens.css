@@ -1,4 +1,4 @@
-/* web-audio-api · AudioJS studied-DNA design tokens */
+/* Hallmark · tokens · genre: modern-minimal · theme: AudioJS ink/paper */
 :root {
   --color-ink: oklch(17.163% 0.00966 255.65);
   --color-ink-2: oklch(21.248% 0.01091 260.67);
@@ -20,8 +20,9 @@
   --color-error: oklch(55% 0.19 29);
   --color-success: oklch(46% 0.11 156);
   --color-warning: oklch(60% 0.13 75);
+  --color-backdrop: oklch(10% 0.01 256 / 0.72);
 
-  --font-brand: "Orbitron", "Geist", ui-sans-serif, sans-serif;
+
   --font-display: "Geist", ui-sans-serif, sans-serif;
   --font-body: "Geist", ui-sans-serif, sans-serif;
   --font-code: "IBM Plex Mono", ui-monospace, monospace;
@@ -70,6 +71,7 @@
   --rule-heavy: 2px;
   --radius-xs: 0.125rem;
   --radius-sm: 0.25rem;
+  --radius-lg: 0.5rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);

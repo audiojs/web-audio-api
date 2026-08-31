@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-08-29",
+    "macrostructure": "Catalogue",
+    "theme": "AudioJS ink/paper",
+    "enrichment": "none",
+    "brief": "Headless Web Audio hero, modal example catalogue, and objection-led FAQ"
+  },
+  {
+    "date": "2026-08-29",
     "macrostructure": "Component Playground",
     "theme": "studied-DNA",
     "enrichment": "none — live audio graph is the artifact",

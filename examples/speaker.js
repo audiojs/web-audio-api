@@ -4,8 +4,8 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { buildTone } from './_portable.js'
-import { args, sec, keys, clearLine, help } from './_util.js'
+import { build as buildTone } from './graphs/speaker.js'
+import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'play the minimal Web Audio “hello world” tone',

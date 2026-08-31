@@ -4,8 +4,8 @@
 // Keys: 0-9 * # A-D dial live · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { scheduleDtmfDigit } from './_portable.js'
-import { args, sec, keys, clearLine, help } from './_util.js'
+import { schedule as scheduleDtmfDigit } from './graphs/dtmf.js'
+import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'dial telephone DTMF tones',

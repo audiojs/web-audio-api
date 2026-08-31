@@ -4,7 +4,8 @@
 // Run: node examples/missing-fundamental.js freq=80 dur=5s
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, clearLine, help } from './_util.js'
+import { build } from './graphs/missing-fundamental.js'
+import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'hear a fundamental frequency that is not being played',
@@ -23,26 +24,10 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let master = ctx.createGain()
-master.gain.value = 0.15
-master.connect(ctx.destination)
-
-// Play harmonics 2 through 6 — skip the fundamental
-for (let h = 2; h <= 6; h++) {
-  let osc = ctx.createOscillator()
-  osc.frequency.value = f * h
-  let g = ctx.createGain()
-  g.gain.value = 1 / h // natural harmonic rolloff
-  osc.connect(g).connect(master)
-  osc.start()
-  osc.stop(ctx.currentTime + dur + 0.01)
-}
+build(ctx, { frequency: f, duration: dur, gain: 0.15 })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Harmonics of ${f}Hz: ${[2, 3, 4, 5, 6].map(h => f * h + 'Hz').join(', ')}`)
 console.log(`You hear ${f}Hz — but it's not there.  space pause · q quit`)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.15, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

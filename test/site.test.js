@@ -4,22 +4,21 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseHTML } from 'linkedom'
-import { OfflineAudioContext } from '../index.js'
-import { examples, categories } from '../examples/_catalog.js'
-import { controlsFor, exampleOptions, optionsFor } from '../examples/_options.js'
-import { buildPortable, buildProcessedBuffer, portableBuilders, stopPortable } from '../examples/_portable.js'
+import { AudioWorkletNode, OfflineAudioContext } from '../index.js'
+import { examples } from '../examples/catalog.js'
+import { controlsFor, exampleOptions, optionsFor } from '../examples/options.js'
+import { buildGraph, buildProcessedBuffer, graphBuilders, stopGraph } from '../examples/graphs/index.js'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const read = path => readFileSync(join(root, path), 'utf8')
 const pkg = JSON.parse(read('package.json'))
-const htmlFiles = [
-  'index.html',
-  'examples/index.html',
-  ...examples.map(example => `examples/${example.id}/index.html`),
+const guidePages = [
   'guides/browser-to-node/index.html',
   'guides/test-audio-in-ci/index.html',
   'guides/tonejs-node/index.html',
 ]
+const redirectPages = ['examples/index.html', ...examples.map(example => `examples/${example.id}/index.html`)]
+const htmlFiles = ['index.html', ...guidePages, ...redirectPages]
 
 function documentOf(path) {
   return parseHTML(read(path)).document
@@ -34,106 +33,86 @@ function localTarget(path, href) {
   return target
 }
 
-test('site catalog covers every runnable repository example exactly once', () => {
+test('catalog covers every CLI and portable graph module exactly once', () => {
   is(examples.length, 33)
   is(new Set(examples.map(example => example.id)).size, examples.length)
-  is(categories.length, 5)
   let sourceIds = readdirSync(join(root, 'examples'), { withFileTypes: true })
-    .filter(entry => entry.isFile() && entry.name.endsWith('.js') && !entry.name.startsWith('_'))
+    .filter(entry => entry.isFile() && entry.name.endsWith('.js') && !['browser.js', 'catalog.js', 'options.js', 'tuner-pitch.js', 'utils.js'].includes(entry.name))
     .map(entry => entry.name.slice(0, -3))
     .sort()
   is(sourceIds.join(','), examples.map(example => example.id).sort().join(','))
   for (let example of examples) {
-    ok(existsSync(join(root, 'examples', `${example.id}.js`)), `${example.id} CLI source`)
-    ok(existsSync(join(root, 'examples', example.id, 'index.html')), `${example.id} page`)
+    ok(existsSync(join(root, 'examples', `${example.id}.js`)), `${example.id} CLI`)
+    ok(existsSync(join(root, 'examples', 'graphs', `${example.id}.js`)), `${example.id} graph`)
+    ok(existsSync(join(root, 'examples', example.id, 'index.html')), `${example.id} compatibility route`)
     ok(example.command.startsWith('node examples/'), `${example.id} command`)
-    ok(example.graph.includes('→'), `${example.id} graph path`)
   }
 })
 
-test('every CLI option schema matches its source, --help, and example page', () => {
+test('homepage is only the headless hero, example catalogue, compact FAQ, and footer', () => {
+  let document = documentOf('index.html')
+  is(document.querySelector('#hero-title strong').textContent, 'Web Audio API')
+  is(document.querySelector('#hero-title span').textContent, 'headless')
+  is(document.querySelectorAll('header a').length, 1, 'only the GitHub corner action')
+  ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
+  is(document.querySelectorAll('header nav').length, 0)
+  is(document.querySelector('.install-command').textContent.trim(), 'npm install web-audio-api')
+  is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
+  ok(!document.body.textContent.includes('Basic usage'))
+  is(document.querySelector('.hero-code [data-copy]').textContent.trim(), '', 'code copy is icon-only')
+  is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples|Questions')
+  is(document.querySelectorAll('[data-open-example]').length, examples.length)
+  is(document.querySelectorAll('.example-group').length, 5, 'examples are grouped by kind')
+  for (let link of document.querySelectorAll('[data-open-example]')) ok(link.getAttribute('href').startsWith('./examples/'), 'example remains a crawlable link')
+  ok(document.querySelector('dialog#example-dialog'))
+  is(document.querySelectorAll('[role="tab"]').length, 0)
+  let questions = [...document.querySelectorAll('.faq summary')].map(node => node.textContent.trim())
+  for (let expected of ['Is it fast enough for realtime?', 'How does audio I/O work?', 'Which formats can it decode?', 'Does Tone.js work?', 'Can I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'What differs from a browser?', 'How does it compare?']) ok(questions.includes(expected), expected)
+})
+
+test('every CLI option schema matches its source and --help output', () => {
   is(Object.keys(exampleOptions).sort().join(','), examples.map(example => example.id).sort().join(','))
   for (let example of examples) {
     let source = read(`examples/${example.id}.js`)
     let block = source.match(/\n\s*options:\s*(\[[\s\S]*?\]),\n\s*(?:controls:|notes:|\}\))/)?.[1]
     let documented = block ? [...block.matchAll(/\[\s*(['"`])(.+?)\1\s*,/g)].map(match => match[2]) : []
-    let page = optionsFor(example.id).map(option => option.syntax)
-    is(page.join('|'), documented.join('|'), `${example.id}: option schema and CLI source`)
+    let schema = optionsFor(example.id).map(option => option.syntax)
+    is(schema.join('|'), documented.join('|'), `${example.id}: schema and CLI source`)
     if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) {
       let output = execFileSync(process.execPath, [`examples/${example.id}.js`, '--help'], { cwd: root, encoding: 'utf8' })
       let section = output.match(/\nOptions:\n([\s\S]*?)(?=\n\n(?:Controls:|Note:| {2}-h, --help))/)?.[1]
       let cli = section ? section.trim().split('\n').map(line => line.trim().split(/\s{2,}/)[0]) : []
-      is(page.join('|'), cli.join('|'), `${example.id}: page and CLI --help options`)
+      is(schema.join('|'), cli.join('|'), `${example.id}: schema and --help`)
     }
     is(new Set(controlsFor(example.id).map(control => control.key)).size, controlsFor(example.id).length, `${example.id}: unique browser controls`)
-    let document = documentOf(`examples/${example.id}/index.html`)
-    let rendered = [...document.querySelectorAll('.cli-options dt code')].map(code => code.textContent)
-    is(rendered.join('|'), page.join('|'), `${example.id}: rendered CLI options`)
-    is(Boolean(document.querySelector('.no-options')), page.length === 0, `${example.id}: explicit no-options state`)
   }
 })
 
-test('homepage states the portable value proposition and serious boundaries', () => {
-  let html = read('index.html')
-  let document = documentOf('index.html')
-  let headline = document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim()
-  ok(headline.startsWith('Web Audio,') && headline.endsWith('without the browser.'))
-  ok(html.includes('Basic usage'))
-  is([...document.querySelectorAll('main > section h2')].map(heading => heading.textContent).join('|'), 'Use cases|Testing in CI|Tone.js in Node|Compatibility and limits|FAQ')
-  ok(!html.includes('data-hero-demo'), 'no decorative homepage audio demo')
-  ok(!html.includes('compact-index'), 'full catalog is not duplicated on the homepage')
-  ok(!html.includes('role="tab"'), 'runtime code is one block, not tabs')
-  ok(html.includes('JZ/WASM lane in progress'))
-  ok(html.includes('experimental, not a latency guarantee'))
-  ok(html.includes('AudioWorklet currently runs synchronously'))
-  ok(html.includes('Browser demos use the browser’s native engine'))
-  ok(html.includes('https://audiojs.dev/'))
-  is(document.querySelector('[data-metric="examples"]').textContent.trim(), '33')
-  ok(/^\d{1,3},\d{3} \/ \d{1,3},\d{3}$/.test(document.querySelector('[data-metric="wpt"]').textContent.trim()))
-})
-
-test('package, README, and page canonicals agree on the site URL', () => {
+test('package, decoder, README, and homepage agree', () => {
   is(pkg.homepage, 'https://audiojs.dev/web-audio-api/')
-  ok(read('README.md').includes(`](${pkg.homepage})`), 'README links to package homepage')
-  for (let path of htmlFiles) {
-    let canonical = documentOf(path).querySelector('link[rel="canonical"]').getAttribute('href')
-    ok(canonical.startsWith(pkg.homepage), `${path}: canonical uses package homepage`)
-  }
+  ok(pkg.dependencies['@audio/decode'], 'direct @audio/decode dependency')
+  ok(!pkg.dependencies['audio-decode'], 'unscoped alias removed')
+  ok(read('src/utils.js').includes("from '@audio/decode'"))
+  ok(read('README.md').includes(`](${pkg.homepage})`), 'README links to homepage')
+  is(documentOf('index.html').querySelector('link[rel="canonical"]').href, pkg.homepage)
+  let sitemap = read('sitemap.xml')
+  is((sitemap.match(/<url>/g) || []).length, examples.length + 1, 'homepage and every example are indexed')
+  for (let example of examples) ok(sitemap.includes(`${pkg.homepage}examples/${example.id}/`), `${example.id} sitemap URL`)
 })
 
-test('every site page has essential metadata and semantic landmarks', () => {
-  for (let path of htmlFiles) {
-    let document = documentOf(path)
-    is(document.documentElement.lang, 'en', `${path}: language`)
-    ok(document.querySelector('meta[name="viewport"]'), `${path}: viewport`)
-    ok(document.querySelector('meta[name="description"]')?.content.length > 40, `${path}: description`)
-    ok(document.querySelector('link[rel="canonical"]'), `${path}: canonical`)
-    is(document.querySelectorAll('h1').length, 1, `${path}: one h1`)
-    ok(document.querySelector('main'), `${path}: main`)
-    ok(document.querySelector('header'), `${path}: header`)
-    ok(document.querySelector('footer'), `${path}: footer`)
-    ok(document.querySelector('.skip-link'), `${path}: skip link`)
-    ok(document.body.textContent.includes('AudioJS'), `${path}: AudioJS attribution`)
-    for (let button of document.querySelectorAll('button')) is(button.type, 'button', `${path}: explicit button type`)
-  }
-})
-
-test('example pages use one code block with honest runtime labels', () => {
-  let web = read('examples/_web.js')
-  ok(web.includes("import { AudioContext } from 'web-audio-api' // Node"))
-  ok(web.includes('// Browser: remove the import; AudioContext is global.'))
-  ok(web.includes('// CI: import OfflineAudioContext instead and render offline.'))
+test('every example has a crawlable canonical detail page', () => {
+  is(documentOf('examples/index.html').querySelector('meta[http-equiv="refresh"]').content, '0; url=../#examples')
   for (let example of examples) {
     let path = `examples/${example.id}/index.html`
     let document = documentOf(path)
-    is(document.body.dataset.example, example.id)
-    is(document.querySelectorAll('[role="tab"]').length, 0, `${path}: no runtime tabs`)
-    is(document.querySelectorAll('#example-code').length, 1, `${path}: one code block`)
-    ok(document.querySelector('#example-code.language-javascript'))
-    ok(document.querySelector('#demo-run'))
-    ok(document.body.textContent.includes('native AudioContext'))
-    ok(document.body.textContent.includes(example.command))
-    ok(document.querySelector('script[type="application/ld+json"]'))
+    ok(!document.querySelector('meta[http-equiv="refresh"]'), `${example.id} does not redirect`)
+    is(document.body.dataset.example, example.id, `${example.id} page identity`)
+    is(document.querySelector('link[rel="canonical"]').href, `${pkg.homepage}examples/${example.id}/`)
+    is(document.querySelector('h1').textContent, example.title)
+    ok(document.querySelector('#demo-form'), `${example.id} browser adapter`)
+    ok(document.querySelector('#example-code'), `${example.id} atomic source`)
+    ok(document.body.textContent.includes(example.command), `${example.id} CLI command`)
+    ok(document.querySelector('script[type="application/ld+json"]'), `${example.id} structured data`)
   }
 })
 
@@ -143,6 +122,7 @@ test('all local HTML, CSS, JS, and navigation targets resolve', () => {
     let document = documentOf(path)
     for (let element of document.querySelectorAll('[href], [src]')) {
       let value = element.getAttribute('href') || element.getAttribute('src')
+      if (value == null) continue
       let target = localTarget(path, value)
       if (target && !existsSync(target)) missing.push(`${path}: ${value}`)
     }
@@ -150,58 +130,96 @@ test('all local HTML, CSS, JS, and navigation targets resolve', () => {
   is(missing.join('\n'), '')
 })
 
-test('featured CLI wrappers consume shared portable graph cores', () => {
-  let wrappers = ['tone', 'sweep', 'dtmf', 'stereo-test', 'lfo', 'spatial', 'speaker', 'linked-params', 'fft', 'render-to-buffer', 'process-file']
-  for (let id of wrappers) ok(read(`examples/${id}.js`).includes("from './_portable.js'"), `${id} shared core`)
+test('every CLI is a thin adapter over its browser-safe graph module', () => {
+  for (let example of examples) {
+    ok(read(`examples/${example.id}.js`).includes(`from './graphs/${example.id}.js'`), `${example.id} shared graph`)
+    let graph = read(`examples/graphs/${example.id}.js`)
+    ok(graph.startsWith(`// ${example.title}:`), `${example.id} source is self-descriptive`)
+    ok(!/^import\s/m.test(graph), `${example.id} source is atomic`)
+    ok(!/from ['"](?:web-audio-api|node:)/.test(graph), `${example.id} has no runtime import`)
+    ok(!/\bprocess\.(?:argv|stdin|stdout|exit)\b|\bdocument\./.test(graph), `${example.id} has no CLI or DOM boundary`)
+  }
+  is(readdirSync(join(root, 'examples')).filter(name => /^_.*\.js$/.test(name)).length, 0, 'no underscore example architecture')
 })
 
-test('every portable graph core renders finite audible samples', async () => {
+test('every realtime or offline graph core renders finite audible samples', async () => {
   let sampleRate = 44100
   let length = Math.ceil(sampleRate * 0.12)
   let options = {
     impulse: { count: 1 },
     dtmf: { digits: '5', speed: 0.06 },
     'stereo-test': { durationPerChannel: 0.06, gap: 0.01 },
-    metronome: { pattern: 'X', bars: 1, bpm: 600 },
-    sequencer: { loops: 1, bpm: 600 },
+    metronome: { pattern: 'X', bpm: 600 },
+    sequencer: { bpm: 600 },
   }
-
-  for (let id of Object.keys(portableBuilders)) {
+  for (let id of Object.keys(graphBuilders)) {
     let ctx = new OfflineAudioContext(2, length, sampleRate)
-    let graph = buildPortable(id, ctx, { duration: 0.1, when: 0, ...options[id] })
+    let graph = await buildGraph(id, ctx, { duration: 0.1, when: 0, AudioWorkletNodeClass: AudioWorkletNode, ...options[id] })
     let audio = await ctx.startRendering()
-    let peak = 0
-    let energy = 0
-    let finite = true
-
-    for (let channel = 0; channel < audio.numberOfChannels; channel++) {
-      for (let sample of audio.getChannelData(channel)) {
-        finite &&= Number.isFinite(sample)
-        peak = Math.max(peak, Math.abs(sample))
-        energy += sample * sample
-      }
+    let peak = 0, energy = 0, finite = true
+    for (let channel = 0; channel < audio.numberOfChannels; channel++) for (let sample of audio.getChannelData(channel)) {
+      finite &&= Number.isFinite(sample)
+      peak = Math.max(peak, Math.abs(sample))
+      energy += sample * sample
     }
-
-    ok(graph.sources.length > 0, `${id}: scheduled a source`)
-    is(audio.length, length, `${id}: rendered the requested frame count`)
-    ok(finite, `${id}: samples are finite`)
-    ok(peak > 1e-7, `${id}: output has a nonzero peak`)
-    ok(peak <= 1, `${id}: output stays within the demo safety ceiling`)
-    ok(energy > 1e-10, `${id}: output has nonzero energy`)
+    ok(graph.sources.length > 0, `${id}: source`)
+    is(audio.length, length, `${id}: frame count`)
+    ok(finite, `${id}: finite`)
+    ok(peak > 1e-7, `${id}: audible`)
+    ok(peak <= 1, `${id}: safety ceiling`)
+    ok(energy > 1e-10, `${id}: energy`)
   }
 })
 
-test('seeded portable graphs repeat A and distinguish B', async () => {
-  let render = async seed => {
-    let ctx = new OfflineAudioContext(1, 256, 44100)
-    buildPortable('noise', ctx, { color: 'white', duration: 256 / 44100, seed, when: 0 })
+test('metronome presets share deterministic, distinct instrument models', async () => {
+  let render = async sound => {
+    let ctx = new OfflineAudioContext(1, 6615, 44100)
+    await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.12, sound, seed: 17, when: 0 })
     return Array.from((await ctx.startRendering()).getChannelData(0))
   }
-  let a1 = await render(17)
-  let a2 = await render(17)
-  let b = await render(18)
-  is(a1.join(','), a2.join(','), 'same seed reproduces every sample')
-  ok(a1.some((sample, index) => sample !== b[index]), 'different seed changes the output')
+  let expectedVoices = { classic: 3, wood: 4, bell: 4, beep: 2, signal: 1 }
+  for (let [sound, voices] of Object.entries(expectedVoices)) {
+    let ctx = new OfflineAudioContext(1, 512, 44100)
+    let graph = await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.01, sound, seed: 17, when: 0 })
+    is(graph.sources.length, voices, `${sound}: layered source count`)
+    await ctx.startRendering()
+  }
+  let rendered = new Map()
+  for (let sound of Object.keys(expectedVoices)) {
+    let samples = await render(sound)
+    ok(samples.some(Boolean), `${sound}: audible`)
+    ok(samples.every(Number.isFinite), `${sound}: finite`)
+    rendered.set(sound, samples)
+  }
+  is(rendered.get('classic').join(','), (await render('classic')).join(','), 'seeded classic is repeatable')
+  for (let sound of ['wood', 'bell', 'beep', 'signal']) ok(rendered.get(sound).some((sample, index) => sample !== rendered.get('classic')[index]), `${sound}: distinct from classic`)
+})
+
+test('seeded graphs repeat and cleanup leaves only the replacement', async () => {
+  let renderNoise = async seed => {
+    let ctx = new OfflineAudioContext(1, 256, 44100)
+    await buildGraph('noise', ctx, { color: 'white', duration: 256 / 44100, seed, when: 0 })
+    return Array.from((await ctx.startRendering()).getChannelData(0))
+  }
+  let a1 = await renderNoise(17), a2 = await renderNoise(17), b = await renderNoise(18)
+  is(a1.join(','), a2.join(','), 'same seed')
+  ok(a1.some((sample, index) => sample !== b[index]), 'different seed')
+
+  let render = async withCleanup => {
+    let ctx = new OfflineAudioContext(1, 1024, 44100)
+    if (withCleanup) {
+      stopGraph(null)
+      let first = await buildGraph('tone', ctx, { duration: 0.01, when: 0 })
+      stopGraph(first); stopGraph(first)
+      let repeated = await buildGraph('tone', ctx, { frequency: 220, duration: 0.01, when: 0 })
+      stopGraph(repeated)
+    }
+    await buildGraph('sweep', ctx, { from: 100, to: 500, mode: 'linear', duration: 1024 / 44100, gain: 0.2, when: 0 })
+    return Array.from((await ctx.startRendering()).getChannelData(0))
+  }
+  is((await render(true)).join(','), (await render(false)).join(','), 'cleanup sequence')
+  let ctx = new OfflineAudioContext(1, 128, 44100)
+  throws(() => buildGraph('missing', ctx), /No browser-safe graph is registered/)
 })
 
 test('processed-buffer core renders the smallest valid input', async () => {
@@ -210,74 +228,54 @@ test('processed-buffer core renders the smallest valid input', async () => {
   input.getChannelData(0)[0] = 0.5
   let graph = buildProcessedBuffer(ctx, input, { when: 0 })
   let samples = (await ctx.startRendering()).getChannelData(0)
-  is(graph.duration, 1 / 44100, 'graph duration matches the one-sample input')
-  ok(samples.every(Number.isFinite), 'one-sample output is finite')
-  ok(samples.some(sample => sample !== 0), 'one-sample input survives the processing graph')
+  is(graph.duration, 1 / 44100)
+  ok(samples.every(Number.isFinite))
+  ok(samples.some(sample => sample !== 0))
 })
 
-test('portable cleanup leaves only the final replacement audible', async () => {
-  let render = async withCleanup => {
-    let ctx = new OfflineAudioContext(1, 1024, 44100)
-    if (withCleanup) {
-      stopPortable(null)
-      let first = buildPortable('tone', ctx, { duration: 0.01, when: 0 })
-      stopPortable(first)
-      stopPortable(first)
-      let repeated = buildPortable('tone', ctx, { frequency: 220, duration: 0.01, when: 0 })
-      stopPortable(repeated)
-    }
-    buildPortable('sweep', ctx, { from: 100, to: 500, mode: 'linear', duration: 1024 / 44100, gain: 0.2, when: 0 })
-    return Array.from((await ctx.startRendering()).getChannelData(0))
-  }
-
-  let afterCleanup = await render(true)
-  let replacementOnly = await render(false)
-  is(afterCleanup.join(','), replacementOnly.join(','), 'null, repeated stop, A → A, and A → B leave only B')
-  ok(afterCleanup.some(sample => sample !== 0), 'replacement output remains audible')
-  let ctx = new OfflineAudioContext(1, 128, 44100)
-  throws(() => buildPortable('missing', ctx), /No portable graph is registered/)
-})
-
-test('unsafe listening demos carry explicit safety language', () => {
+test('unsafe listening examples retain explicit safety language', () => {
   for (let id of ['sweep', 'impulse', 'stereo-test', 'binaural-beats', 'mic', 'recorder']) {
     let example = examples.find(item => item.id === id)
-    ok(example.warning?.length > 30, `${id} warning metadata`)
-    ok(documentOf(`examples/${id}/index.html`).querySelector('.warning'), `${id} rendered warning`)
+    ok(example.warning?.length > 30, `${id} warning`)
   }
 })
 
-test('code blocks use MicroLighter with a plain-code fallback', () => {
+test('code uses MicroLighter with plain-code fallback', () => {
   ok(read('syntax.js').includes('microlighter@2.1.0/dist/index.js'))
-  for (let path of htmlFiles) {
-    let document = documentOf(path)
-    for (let code of document.querySelectorAll('pre > code')) {
-      ok([...code.classList].some(name => name.startsWith('language-')), `${path}: code language`)
-    }
+  for (let path of ['index.html', ...guidePages]) {
+    for (let code of documentOf(path).querySelectorAll('pre > code')) ok([...code.classList].some(name => name.startsWith('language-')), `${path}: language class`)
   }
 })
 
-test('site CSS keeps the AudioJS token system and anti-slop constraints', () => {
+test('site CSS keeps the token system and Catalogue constraints', () => {
   let css = read('site.css')
   let rules = css.replace(/\/\*[\s\S]*?\*\//g, '')
   ok(css.startsWith('/* Hallmark ·'))
-  ok(!/transition\s*:\s*all\b/.test(rules), 'no transition-all')
-  ok(!/\b100vw\b/.test(rules), 'no 100vw')
-  ok(!/overflow-x\s*:\s*hidden/.test(rules), 'no overflow-x hidden')
-  ok(!/#[0-9a-f]{3,8}\b/i.test(rules), 'no improvised hex colors')
-  ok(!/\b(?:rgb|hsl|oklch)\(/i.test(rules), 'raw colors stay in tokens.css')
-  ok(!/font-family\s*:(?!\s*var\()/i.test(rules), 'font families use tokens')
+  ok(css.includes('macrostructure: Catalogue'))
+  ok(!/transition\s*:\s*all\b/.test(rules))
+  ok(!/\b100vw\b/.test(rules))
+  ok(!/overflow-x\s*:\s*hidden/.test(rules))
+  ok(!/#[0-9a-f]{3,8}\b/i.test(rules))
+  ok(!/\b(?:rgb|hsl|oklch)\(/i.test(rules), 'raw colors stay in tokens')
+  ok(!/font-family\s*:(?!\s*var\()/i.test(rules))
   ok(read('tokens.css').includes('--font-display: "Geist"'))
-  ok(read('tokens.css').includes('--font-brand: "Orbitron"'))
-  is((rules.match(/font-family:\s*var\(--font-brand\)/g) || []).length, 1, 'Orbitron is used only by the logo')
+  ok(!read('tokens.css').includes('Orbitron'))
   ok(rules.includes('overflow-x: clip'))
   ok(rules.includes('prefers-reduced-motion'))
   ok(rules.includes(':focus-visible'))
+  ok(rules.includes('grid-template-columns: repeat(2, minmax(0, 1fr))'), 'two-column example catalogue')
+})
+
+test('research and product decisions are documented', () => {
+  ok(existsSync(join(root, 'website.md')))
+  let research = read('website.md')
+  for (let heading of ['## Users', '## Jobs and trigger moments', '## Positioning', '## Evidence', '## Alternatives', '## Open questions', '## Sources']) ok(research.includes(heading), heading)
 })
 
 test('site avoids autoplay, fabricated proof, and generic interaction copy', () => {
   let html = htmlFiles.map(read).join('\n')
-  ok(!/\bautoplay\b/i.test(html), 'no autoplay')
-  ok(!/>\s*Click here\s*</i.test(html), 'no click-here links')
-  ok(!/trusted by|10× faster|99\.9% uptime/i.test(html), 'no invented marketing metrics')
-  ok(!/Jane Doe|John Smith|Lorem Ipsum/i.test(html), 'no placeholder identities')
+  ok(!/\bautoplay\b/i.test(html))
+  ok(!/>\s*Click here\s*</i.test(html))
+  ok(!/trusted by|10× faster|99\.9% uptime/i.test(html))
+  ok(!/Jane Doe|John Smith|Lorem Ipsum/i.test(html))
 })

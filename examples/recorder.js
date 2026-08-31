@@ -9,9 +9,10 @@
 
 import { writeFileSync } from 'node:fs'
 import readline from 'node:readline'
-import { AudioContext, MediaStream, CustomMediaStreamTrack, MediaStreamAudioSourceNode } from 'web-audio-api'
+import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
 import convert from 'pcm-convert'
-import { args, status, clearLine, help } from './_util.js'
+import { build } from './graphs/recorder.js'
+import { args, status, clearLine, help } from './utils.js'
 
 help({
   description: 'record the microphone to a PCM WAV file with a level meter',
@@ -51,10 +52,9 @@ let ctx = new AudioContext({ sampleRate })
 await ctx.resume()
 
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
-let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: new MediaStream([track]) })
-let gain = ctx.createGain()
-gain.gain.value = parseFloat($('gain', '1'))
 let recorder = ctx.createScriptProcessor(2048, channels, channels)
+let graph = build(ctx, { stream: new MediaStream([track]), gain: parseFloat($('gain', '1')), recorder })
+let gain = graph.nodes[1]
 
 let chunks = []          // captured frames: [ [Float32Array per channel], ... ]
 let frames = 0           // total sample frames captured
@@ -71,7 +71,6 @@ recorder.onaudioprocess = e => {
   level = Math.sqrt(sum / d.length)
   if (pk > peak) peak = pk
 }
-src.connect(gain).connect(recorder).connect(ctx.destination)
 
 let read
 try {

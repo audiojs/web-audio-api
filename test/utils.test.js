@@ -3,7 +3,7 @@ import { is, ok, rejects } from 'tst'
 import { readFileSync } from 'node:fs'
 import { decodeAudioData } from '../src/utils.js'
 
-// --- decodeAudioData (audio-decode) ---
+// --- decodeAudioData (@audio/decode) ---
 
 test('decodeAudioData > decodes 16b mono wav (promise)', async () => {
   let buf = readFileSync(new URL('./sounds/steps-mono-16b-44khz.wav', import.meta.url))
@@ -38,10 +38,18 @@ test('decodeAudioData > decodes stereo mp3 (promise)', async () => {
     is(ab.sampleRate, 44100)
     ok(ab.length > 0, 'has samples')
   } catch (e) {
-    // audio-decode's WASM loader (simple-yenc) has CRC issues in Bun
-    if (typeof Bun !== 'undefined' && e.message?.includes('crc32')) ok(true, 'skip: Bun CRC issue in audio-decode dependency')
+    // Some Bun releases reject a valid MP3 while initializing the WASM decoder.
+    if (typeof Bun !== 'undefined' && e.message?.includes('crc32')) ok(true, 'skip: Bun decoder initialization issue')
     else throw e
   }
+})
+
+for (let format of ['flac', 'ogg', 'm4a']) test(`decodeAudioData > decodes ${format} through @audio/decode`, async () => {
+  let buf = readFileSync(new URL(`./sounds/decode-440.${format}`, import.meta.url))
+  let audio = await decodeAudioData(buf)
+  ok(audio.numberOfChannels >= 1, 'has channels')
+  is(audio.sampleRate, 44100)
+  ok(audio.length > 0, 'has samples')
 })
 
 test('decodeAudioData > rejects unrecognized format (promise)', async () => {

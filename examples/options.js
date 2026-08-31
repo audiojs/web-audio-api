@@ -59,7 +59,7 @@ export const exampleOptions = {
   ],
   metronome: [
     text('bpm', 'bpm=<bpm|start..end>', 'Tempo', '80..240', 'fixed tempo or a linear tempo ramp'),
-    duration(600, 600),
+    { ...duration(600, 600), browserValue: 30 },
     text('pattern', 'pat=<pattern>', 'Pattern', 'X-x-x-x-', 'X accent, x hit, - or . rest', '[Xx.-]+'),
     select('sound', 'sound=<preset>', 'Sound', 'classic', ['classic', 'wood', 'bell', 'beep', 'signal'], 'classic, wood, bell, beep, or signal'),
     range('hi', 'hi=<hz>', 'Accent resonance', 1900, 200, 4000, 10, 'Hz', 'classic stick accent resonance'),

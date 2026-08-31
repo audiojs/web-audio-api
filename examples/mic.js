@@ -5,8 +5,9 @@
 // Run: node examples/mic.js gain=0.8
 // Keys: space pause · + / - adjust gain · q quit
 
-import { AudioContext, MediaStreamAudioSourceNode, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import { args, keys, status, clearLine, pausedTag, help } from './_util.js'
+import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
+import { build } from './graphs/mic.js'
+import { args, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
   description: 'monitor a live microphone through the audio graph',
@@ -40,12 +41,9 @@ await ctx.resume()
 const track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
 const stream = new MediaStream([track])
 
-const src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
-const gain = ctx.createGain()
-const analyser = ctx.createAnalyser()
-gain.gain.value = gainVal
+const graph = build(ctx, { stream, gain: gainVal, monitor: true })
+const [, gain, analyser] = graph.nodes
 analyser.fftSize = 1024
-src.connect(gain).connect(analyser).connect(ctx.destination)
 
 // audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
 let read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })

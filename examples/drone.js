@@ -5,7 +5,8 @@
 // Keys: space pause · ↑/↓ ±semitone · ←/→ ±5 cents · 1-7 scale degrees · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
+import { build } from './graphs/drone.js'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({
   description: 'play a tanpura-like four-string harmonic drone',
@@ -28,43 +29,9 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '300'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let master = ctx.createGain()
-master.connect(ctx.destination)
-
-let strings = []
-let build = freq => {
-  // Tanpura tuning: Pa (5th), Sa, Sa detuned, Sa low
-  let ratios = [3 / 2, 1, 1.001, 0.5]
-  return ratios.map(r => {
-    let stringFreq = freq * r
-    let harmonics = []
-    for (let h = 1; h <= 10; h++) {
-      let osc = ctx.createOscillator()
-      osc.frequency.value = stringFreq * h * (1 + (Math.random() - 0.5) * 0.0005)
-      let amp = h <= 3 ? 1 / h : 0.7 / h
-      let g = ctx.createGain()
-      g.gain.value = amp
-      osc.connect(g).connect(master)
-      osc.start()
-      harmonics.push({ osc, h, r })
-    }
-    return harmonics
-  }).flat()
-}
-
-strings = build(f)
-
-let retune = freq => {
-  f = freq
-  let t = ctx.currentTime
-  for (let { osc, h, r } of strings) {
-    osc.frequency.setTargetAtTime(freq * r * h * (1 + (Math.random() - 0.5) * 0.0005), t, 0.08)
-  }
-}
-
-let t0 = ctx.currentTime
-master.gain.setValueAtTime(0, t0)
-master.gain.linearRampToValueAtTime(0.08, t0 + 2)
+let demo = build(ctx, { frequency: f, duration: dur, seed: Math.random() * 0xffffffff })
+let master = demo.data.master
+let retune = frequency => { f = frequency; demo.data.retune(frequency) }
 
 let render = status()
 let draw = () => render(`Sa = ${f.toFixed(2)}Hz  ${noteName(f).padEnd(4)}  ↑↓ semi · ←→ cents · 1-7 scale · space pause · q quit${pausedTag(ctx)}`)
@@ -93,9 +60,4 @@ keys({
 
 console.log(`Drone: Sa = ${f.toFixed(2)}Hz ${noteName(f)} (${dur}s)  ↑↓ semi · ←→ cents · 1-7 scale · q quit`)
 
-setTimeout(() => {
-  let t = ctx.currentTime
-  master.gain.setValueAtTime(master.gain.value, t)
-  master.gain.linearRampToValueAtTime(0, t + 2)
-}, (dur - 2) * 1000)
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000 + 200)

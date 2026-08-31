@@ -3,7 +3,8 @@
 //   or: node examples/pipe-stdout.js | ffplay -f s16le -ar 44100 -ac 2 -
 
 import { AudioContext } from 'web-audio-api'
-import { help } from './_util.js'
+import { build } from './graphs/pipe-stdout.js'
+import { help } from './utils.js'
 
 help({
   description: 'write raw stereo PCM audio to stdout',
@@ -15,14 +16,5 @@ const duration = 2
 const ctx = new AudioContext({ sinkId: process.stdout })
 await ctx.resume()
 
-const osc = ctx.createOscillator()
-osc.frequency.value = 440
-
-const master = ctx.createGain()
-osc.connect(master).connect(ctx.destination)
-osc.start()
-
-let t = ctx.currentTime + duration
-master.gain.setValueAtTime(1, t - 0.05)
-master.gain.linearRampToValueAtTime(0, t)
+build(ctx, { duration })
 setTimeout(() => ctx.close(), duration * 1000)

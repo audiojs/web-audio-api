@@ -2,8 +2,8 @@
 // Run: node examples/fft.js
 
 import { OfflineAudioContext } from 'web-audio-api'
-import { buildTwoTone } from './_portable.js'
-import { help } from './_util.js'
+import { build as buildTwoTone } from './graphs/fft.js'
+import { help } from './utils.js'
 
 help({
   description: 'render a two-tone signal and inspect its FFT spectrum',

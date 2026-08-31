@@ -4,7 +4,8 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, clearLine, help } from './_util.js'
+import { build } from './graphs/additive.js'
+import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'build a waveform from individual harmonics',
@@ -28,35 +29,9 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let master = ctx.createGain()
-master.gain.value = 0.3
-master.connect(ctx.destination)
-
-let amp = h => {
-  switch (wave) {
-    case 'square':   return h % 2 ? 1 / h : 0
-    case 'saw':      return 1 / h
-    case 'triangle': return h % 2 ? ((-1) ** ((h - 1) / 2)) / (h * h) : 0
-    default:         return 1 / h
-  }
-}
-
-for (let h = 1; h <= n; h++) {
-  let v = amp(h)
-  if (Math.abs(v) < 0.001) continue
-  let osc = ctx.createOscillator()
-  osc.frequency.value = f * h
-  let g = ctx.createGain()
-  g.gain.value = v
-  osc.connect(g).connect(master)
-  osc.start()
-  osc.stop(ctx.currentTime + dur + 0.01)
-}
+build(ctx, { waveform: wave, frequency: f, harmonics: n, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Additive ${wave}: ${f}Hz, ${n} harmonics (${dur}s)  space pause · q quit`)
 
-let t = ctx.currentTime + dur
-master.gain.setValueAtTime(0.3, t - 0.1)
-master.gain.linearRampToValueAtTime(0, t)
 setTimeout(() => { clearLine(); ctx.close(); process.exit(0) }, dur * 1000)

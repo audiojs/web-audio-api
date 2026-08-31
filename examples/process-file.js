@@ -3,8 +3,8 @@
 
 import { readFileSync } from 'node:fs'
 import { OfflineAudioContext } from 'web-audio-api'
-import { buildProcessedBuffer } from './_portable.js'
-import { help } from './_util.js'
+import { build as buildProcessedBuffer } from './graphs/process-file.js'
+import { help } from './utils.js'
 
 help({
   description: 'decode an audio file, apply EQ and compression, and render it',

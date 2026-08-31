@@ -2,8 +2,8 @@
 // Run: node examples/linked-params.js
 
 import { OfflineAudioContext } from 'web-audio-api'
-import { buildLinkedParams } from './_portable.js'
-import { help } from './_util.js'
+import { build as buildLinkedParams } from './graphs/linked-params.js'
+import { help } from './utils.js'
 
 help({
   description: 'control multiple AudioParams from one ConstantSourceNode',

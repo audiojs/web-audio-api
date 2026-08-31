@@ -1,8 +1,8 @@
 # Todo
 
-## Website — contemplation-to-implementation checklist
+## Archived website implementation checklist
 
-This section is the durable product brief for the web-audio-api website. It preserves the full contemplation so later edits cannot quietly narrow the product story to “a few audio demos.”
+This records the first site implementation and is no longer the active information architecture. See [`website.md`](website.md) for current user research, positioning, evidence, decisions, and open questions. Checked items below mean the original implementation addressed them; they do not require every former section to remain visible.
 
 **Status:** implemented and verified on 2026-08-29. “Ready,” “experimental,” and “build next” labels on the page describe the underlying library/use-case maturity; every checklist item below refers to the website’s coverage, implementation, or explicit boundary.
 

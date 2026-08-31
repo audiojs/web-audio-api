@@ -3,21 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>web-audio-api · Web Audio without the browser</title>
-  <meta name="description" content="Run the same Web Audio graph in Node, CI, servers, scripts, and the browser. Pure JavaScript, no native dependencies, every Web Audio WPT passing.">
+  <title>Web Audio API · headless</title>
+  <meta name="description" content="A pure JavaScript Web Audio API implementation for Node, CI, servers, Deno, and Bun. Open runnable examples in the browser and use the same graph from the CLI.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://audiojs.dev/web-audio-api/">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/web-audio-api/">
-  <meta property="og:title" content="web-audio-api · Web Audio without the browser">
-  <meta property="og:description" content="One Web Audio graph. Play it in a browser, run it in Node, render it offline, or test it in CI.">
+  <meta property="og:title" content="Web Audio API · headless">
+  <meta property="og:description" content="Run browser-standard audio graphs in Node, CI, servers, Deno, and Bun.">
   <meta property="og:site_name" content="web-audio-api">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="web-audio-api · Web Audio without the browser">
-  <meta name="twitter:description" content="Pure-JavaScript, WPT-complete Web Audio for Node, CI, servers, and scripts.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Orbitron:wght@700&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
   <link rel="stylesheet" href="./tokens.css">
   <link rel="stylesheet" href="./site.css">
   <script type="application/ld+json">
@@ -25,329 +23,156 @@
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
     "name": "web-audio-api",
-    "description": "Pure-JavaScript, WPT-complete Web Audio API implementation for Node, CI, servers, and scripts.",
-    "url": "https://audiojs.dev/web-audio-api/",
+    "description": "Pure JavaScript Web Audio API implementation for headless JavaScript runtimes.",
     "codeRepository": "https://github.com/audiojs/web-audio-api",
     "programmingLanguage": "JavaScript",
-    "runtimePlatform": "Node.js, Deno, Bun, Browser",
-    "license": "https://opensource.org/licenses/MIT",
-    "isPartOf": { "@type": "Organization", "name": "AudioJS", "url": "https://audiojs.dev/" }
+    "runtimePlatform": ["Node.js", "Deno", "Bun"],
+    "license": "https://opensource.org/licenses/MIT"
   }
   </script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#examples">Skip to examples</a>
+  <header class="corner-action">
+    <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg>
+    </a>
+  </header>
 
-  <div class="hero-shell">
-    <header class="site-nav">
-      <div class="nav-inner">
-        <a class="brand" href="./" aria-label="web-audio-api home">
-          <span class="brand-parent">audio JS</span>
-          <span class="brand-slash" aria-hidden="true">/</span>
-          <span>web-audio-api</span>
-        </a>
-        <nav class="desktop-nav" aria-label="Primary">
-          <a href="#jobs">Use cases</a>
-          <a href="./examples/">Examples</a>
-          <a href="#compatibility">Compatibility</a>
-          <a href="#faq">FAQ</a>
-          <a href="https://github.com/audiojs/web-audio-api">GitHub</a>
-        </nav>
-        <a class="nav-install" href="https://npmjs.com/package/web-audio-api">npm&nbsp;i</a>
-        <details class="mobile-nav">
-          <summary>Menu</summary>
-          <nav aria-label="Mobile">
-            <a href="#jobs">Use cases</a>
-            <a href="./examples/">Examples</a>
-            <a href="#compatibility">Compatibility</a>
-            <a href="#faq">FAQ</a>
-            <a href="https://github.com/audiojs/web-audio-api">GitHub</a>
-          </nav>
-        </details>
-      </div>
-    </header>
-
+  <main>
     <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="category-line">W3C Web Audio for JavaScript runtimes</p>
-        <h1 id="hero-title">Web Audio,<br>without the browser.</h1>
-        <p class="hero-deck">Run the same audio graph in Node, CI, servers, scripts, and the browser. No new audio API. No native dependency setup.</p>
-        <div class="install-row">
-          <code id="install-command"><span aria-hidden="true">$ </span>npm install web-audio-api</code>
-          <button class="copy-button copy-button--dark" type="button" data-copy="#install-command" aria-label="Copy npm install command"><span>Copy</span></button>
-        </div>
-        <p class="hero-note">Pure JavaScript · ESM · Node 18+ · MIT</p>
-      </div>
-    </section>
-
-    <div class="hero-code">
-      <div class="code-toolbar">
-        <span>Basic usage</span>
-        <button class="copy-button copy-button--dark code-copy" type="button" data-copy="#hero-code"><span>Copy code</span></button>
-      </div>
-      <pre><code class="language-javascript" id="hero-code">import { AudioContext } from 'web-audio-api' // Node
-// Browser: const { AudioContext } = globalThis
-// CI: import { OfflineAudioContext } from 'web-audio-api'
+      <h1 id="hero-title"><strong>Web Audio API</strong><span>headless</span></h1>
+      <p class="hero-lede">The browser audio graph, implemented in pure JavaScript for Node, CI, servers, Deno, and Bun.</p>
+      <p class="install-command"><code>npm install web-audio-api</code></p>
+      <div class="hero-code code-stage">
+        <button class="icon-button copy-icon" type="button" data-copy="#hero-code" aria-label="Copy code">
+          <svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg>
+          <svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+        </button>
+        <pre><code class="language-javascript" id="hero-code">import { AudioContext } from 'web-audio-api'
 
 const ctx = new AudioContext()
 await ctx.resume()
 
 const osc = ctx.createOscillator()
-osc.frequency.value = 440
 osc.connect(ctx.destination)
 osc.start()</code></pre>
-    </div>
-  </div>
-
-  <main id="main">
-    <section class="proof-strip" aria-label="Project proof">
-      <div><strong data-metric="wpt">4,317 / 4,317</strong><span>Web Audio WPT</span></div>
-      <div><strong data-metric="examples">33</strong><span>runnable examples</span></div>
-      <div><strong>0</strong><span>native dependencies</span></div>
-      <div><strong>3</strong><span>CI runtimes</span></div>
-    </section>
-
-    <section class="section section--jobs" id="jobs">
-      <div class="section-intro">
-        <h2>Use cases</h2>
-        <p>Keep the Web Audio graph you already know. Change the input, output, or runtime around it.</p>
-      </div>
-      <div class="job-index">
-        <a href="./examples/render-to-buffer/">
-          <span class="job-verb">Render</span>
-          <strong>Generate audio without speakers</strong>
-          <span>OfflineAudioContext → AudioBuffer</span>
-        </a>
-        <a href="./guides/test-audio-in-ci/">
-          <span class="job-verb">Test</span>
-          <strong>Assert real DSP output in CI</strong>
-          <span>samples · peaks · spectra · timing</span>
-        </a>
-        <a href="./examples/process-file/">
-          <span class="job-verb">Process</span>
-          <strong>Decode, filter, compress, render</strong>
-          <span>MP3 · WAV · FLAC · OGG · AAC</span>
-        </a>
-        <a href="./guides/browser-to-node/">
-          <span class="job-verb">Port</span>
-          <strong>Run browser audio libraries in Node</strong>
-          <span>Tone.js and spec-based code</span>
-        </a>
-        <a href="./examples/fft/">
-          <span class="job-verb">Analyze</span>
-          <strong>Read waveforms and spectra</strong>
-          <span>FFT · RMS · pitch · peaks</span>
-        </a>
-        <a href="./examples/mic/">
-          <span class="job-verb">Capture</span>
-          <strong>Feed PCM and microphone streams</strong>
-          <span>MediaStream · CustomMediaStreamTrack</span>
-        </a>
-        <a href="./examples/pipe-stdout/">
-          <span class="job-verb">Stream</span>
-          <strong>Pipe graph output to a Writable</strong>
-          <span>stdout · ffmpeg · sox · bots</span>
-        </a>
-        <a href="./examples/">
-          <span class="job-verb">Create</span>
-          <strong>Synthesize, sequence, spatialize</strong>
-          <span>33 examples, from tone to jazz</span>
-        </a>
-      </div>
-
-      <div class="section-action">
-        <a class="primary-link" href="./examples/">Browse all 33 examples →</a>
-        <span>Test signals · Illusions · Synthesis · Generative · API</span>
-      </div>
-
-      <div class="secondary-uses">
-        <h3>Other applications</h3>
-        <div class="use-table" role="list">
-          <div role="listitem"><strong>Audio asset builds</strong><span>Generate sounds from parameters or data during a build.</span><b>Ready</b></div>
-          <div role="listitem"><strong>Browser and Node comparison</strong><span>Render one graph in both engines and compare the buffers.</span><b>Build next</b></div>
-          <div role="listitem"><strong>Dataset generation</strong><span>Create seeded, labeled audio variations without native tools.</span><b>Ready</b></div>
-          <div role="listitem"><strong>Personalized audio</strong><span>Render notifications, sonic identities, responses, and game assets.</span><b>Ready</b></div>
-          <div role="listitem"><strong>Voice and telephony</strong><span>Process PCM, gain, EQ, DTMF, and writable bot streams.</span><b>Experimental live</b></div>
-          <div role="listitem"><strong>Acoustic testing</strong><span>Generate sweeps, impulses, stereo checks, and mic measurements.</span><b>Ready</b></div>
-          <div role="listitem"><strong>Audio notebooks</strong><span>Share a browser result with reproducible Node code.</span><b>This site</b></div>
-          <div role="listitem"><strong>Data sonification</strong><span>Turn metrics or scientific series into deterministic sound.</span><b>Ready</b></div>
-        </div>
-        <p class="use-summary">Strongest immediate fits: <strong>audio testing</strong>, <strong>audio asset builds</strong>, and a <strong>reusable example library</strong>.</p>
-        <p class="adoption-call">Using WAA for a serious task? <a href="https://github.com/audiojs/web-audio-api/issues/new?title=%5Buse%20case%5D%20&amp;body=What%20the%20graph%20does%3A%0AWhere%20it%20runs%3A%0AWhat%20was%20useful%3A%0A">Tell AudioJS what the graph does →</a></p>
       </div>
     </section>
 
-    <section class="section section--testing" id="testing">
-      <div class="section-intro">
-        <h2>Testing in CI</h2>
-        <p><code>OfflineAudioContext</code> renders into memory. Test samples, peaks, spectra, duration, or hashes without a browser or speaker.</p>
+    <section class="examples" id="examples" aria-labelledby="examples-title">
+      <div class="section-heading">
+        <h2 id="examples-title">Examples</h2>
+        <p><span data-example-count>33</span> graphs. Browser preview and Node CLI use the same source module.</p>
       </div>
-      <div class="testing-grid">
-        <pre><code class="language-javascript">import assert from 'node:assert/strict'
-import { OfflineAudioContext } from 'web-audio-api'
-import { buildTone } from './examples/_portable.js'
-
-const ctx = new OfflineAudioContext(1, 44100, 44100)
-buildTone(ctx, { when: 0, duration: 1 })
-const audio = await ctx.startRendering()
-
-let peak = 0
-for (const sample of audio.getChannelData(0))
-  peak = Math.max(peak, Math.abs(sample))
-assert.ok(peak &gt; 0.2)</code></pre>
-        <div class="testing-notes">
-          <dl>
-            <div><dt>Runtime</dt><dd>ordinary Node process</dd></div>
-            <div><dt>Output</dt><dd>AudioBuffer in memory</dd></div>
-            <div><dt>Clock</dt><dd>128-frame render quanta</dd></div>
-            <div><dt>Failures</dt><dd>silence, clipping, DC, channels, spectral drift</dd></div>
-          </dl>
-          <a href="./examples/render-to-buffer/">Run the offline example →</a>
-        </div>
+      <div class="example-groups">
+        <!-- GENERATED:home-examples:start -->
+        <section class="example-group"><h3>Test signals</h3><div class="example-grid">
+            <a class="example-entry" href="./examples/tone/" data-open-example="tone"><strong>Reference tone</strong><span>Play a reference pitch with selectable waveform and frequency.</span><small>Generate</small></a>
+            <a class="example-entry" href="./examples/sweep/" data-open-example="sweep"><strong>Frequency sweep</strong><span>Sweep across a frequency range with linear or exponential automation.</span><small>Measure</small></a>
+            <a class="example-entry" href="./examples/noise/" data-open-example="noise"><strong>Colored noise</strong><span>Generate white, pink, brown, blue, or violet noise.</span><small>Generate</small></a>
+            <a class="example-entry" href="./examples/impulse/" data-open-example="impulse"><strong>Dirac impulse</strong><span>Fire a one-sample impulse for response and signal-path testing.</span><small>Measure</small></a>
+            <a class="example-entry" href="./examples/dtmf/" data-open-example="dtmf"><strong>DTMF dialer</strong><span>Synthesize telephone keypad tones from paired row and column frequencies.</span><small>Generate</small></a>
+            <a class="example-entry" href="./examples/stereo-test/" data-open-example="stereo-test"><strong>Stereo channel test</strong><span>Identify left, right, and center channels with a panned reference tone.</span><small>Measure</small></a>
+            <a class="example-entry" href="./examples/metronome/" data-open-example="metronome"><strong>Programmable metronome</strong><span>Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/tuner/" data-open-example="tuner"><strong>Microphone tuner</strong><span>Estimate microphone pitch, nearest note, and tuning error in cents.</span><small>Analyze</small></a>
+          </div></section>
+        <section class="example-group"><h3>Illusions</h3><div class="example-grid">
+            <a class="example-entry" href="./examples/shepard/" data-open-example="shepard"><strong>Shepard tone</strong><span>Layer octave-spaced voices to create a pitch that appears to rise or fall forever.</span><small>Explore</small></a>
+            <a class="example-entry" href="./examples/risset-rhythm/" data-open-example="risset-rhythm"><strong>Risset rhythm</strong><span>Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.</span><small>Explore</small></a>
+            <a class="example-entry" href="./examples/binaural-beats/" data-open-example="binaural-beats"><strong>Binaural beats</strong><span>Send nearby frequencies to opposite ears and hear their difference.</span><small>Explore</small></a>
+            <a class="example-entry" href="./examples/missing-fundamental/" data-open-example="missing-fundamental"><strong>Missing fundamental</strong><span>Play harmonics 2–6 while omitting the pitch the listener still perceives.</span><small>Explore</small></a>
+            <a class="example-entry" href="./examples/beating/" data-open-example="beating"><strong>Acoustic beating</strong><span>Hear amplitude beating produced by two nearby frequencies.</span><small>Explore</small></a>
+          </div></section>
+        <section class="example-group"><h3>Synthesis</h3><div class="example-grid">
+            <a class="example-entry" href="./examples/subtractive-synth/" data-open-example="subtractive-synth"><strong>Subtractive synth</strong><span>Shape a sawtooth oscillator with a resonant low-pass sweep and ADSR envelope.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/additive/" data-open-example="additive"><strong>Additive synthesis</strong><span>Construct square, saw, and triangle timbres from individual harmonics.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/fm-synthesis/" data-open-example="fm-synthesis"><strong>FM synthesis</strong><span>Use one oscillator to modulate another oscillator’s frequency.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/karplus-strong/" data-open-example="karplus-strong"><strong>Karplus–Strong string</strong><span>Turn a short noise burst and averaging delay into a plucked string.</span><small>Create</small></a>
+          </div></section>
+        <section class="example-group"><h3>Generative</h3><div class="example-grid">
+            <a class="example-entry" href="./examples/sequencer/" data-open-example="sequencer"><strong>Step sequencer</strong><span>Schedule a 16-step melody against the audio clock.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/serial/" data-open-example="serial"><strong>Twelve-tone generator</strong><span>Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/gamelan/" data-open-example="gamelan"><strong>Generative gamelan</strong><span>Schedule interlocking slendro patterns with metalophone partials and gong structure.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/drone/" data-open-example="drone"><strong>Harmonic drone</strong><span>Layer lightly detuned harmonics into a tanpura-like four-string drone.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/jazz/" data-open-example="jazz"><strong>Generative jazz</strong><span>Generate modal harmony, walking bass, plucked improvisation, and percussion.</span><small>Create</small></a>
+          </div></section>
+        <section class="example-group"><h3>API</h3><div class="example-grid">
+            <a class="example-entry" href="./examples/speaker/" data-open-example="speaker"><strong>Speaker hello world</strong><span>Play the smallest useful realtime graph through the system output.</span><small>Port</small></a>
+            <a class="example-entry" href="./examples/lfo/" data-open-example="lfo"><strong>LFO tremolo</strong><span>Connect an oscillator to an AudioParam and modulate gain at audio-clock precision.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/spatial/" data-open-example="spatial"><strong>Spatial panning</strong><span>Move a source from left to right through three-dimensional space.</span><small>Create</small></a>
+            <a class="example-entry" href="./examples/worklet/" data-open-example="worklet"><strong>Custom AudioWorklet</strong><span>Register a custom processor, expose a parameter, and render its output.</span><small>Extend</small></a>
+            <a class="example-entry" href="./examples/linked-params/" data-open-example="linked-params"><strong>Linked AudioParams</strong><span>Drive multiple gain parameters from one ConstantSourceNode.</span><small>Test</small></a>
+            <a class="example-entry" href="./examples/fft/" data-open-example="fft"><strong>FFT spectrum</strong><span>Render a two-tone signal and inspect its frequency-domain peaks.</span><small>Analyze</small></a>
+            <a class="example-entry" href="./examples/render-to-buffer/" data-open-example="render-to-buffer"><strong>Offline render</strong><span>Render a complete graph to an AudioBuffer with no speakers or audio device.</span><small>Render</small></a>
+            <a class="example-entry" href="./examples/process-file/" data-open-example="process-file"><strong>Process an audio file</strong><span>Decode an audio file, apply EQ and compression, then render the processed result.</span><small>Process</small></a>
+            <a class="example-entry" href="./examples/pipe-stdout/" data-open-example="pipe-stdout"><strong>Pipe PCM to stdout</strong><span>Send raw PCM from an AudioContext to any Node writable stream.</span><small>Stream</small></a>
+            <a class="example-entry" href="./examples/mic/" data-open-example="mic"><strong>Microphone level</strong><span>Route a live microphone through a gain and analyser with an RMS meter.</span><small>Capture</small></a>
+            <a class="example-entry" href="./examples/recorder/" data-open-example="recorder"><strong>Microphone recorder</strong><span>Capture microphone audio with a live level meter and save a recording.</span><small>Capture</small></a>
+          </div></section>
+        <!-- GENERATED:home-examples:end -->
       </div>
     </section>
 
-    <section class="section section--tone" id="tonejs">
-      <div class="section-intro">
-        <h2>Tone.js in Node</h2>
-        <p>The polyfill installs the globals used by browser-oriented libraries. Import Tone after it so its constructor checks see WAA.</p>
-      </div>
-      <div class="tone-grid">
-        <pre><code class="language-javascript">import 'web-audio-api/polyfill'
-const Tone = await import('tone')
-
-Tone.setContext(new AudioContext())
-const synth = new Tone.Synth().toDestination()
-synth.triggerAttackRelease('C4', '8n')</code></pre>
-        <div>
-          <h3>Why the dynamic import?</h3>
-          <p>Static imports are hoisted. Tone would inspect globals before the polyfill installs them.</p>
-          <p>For a static Tone import, start Node with:</p>
-          <code class="command-line">node --import web-audio-api/polyfill app.js</code>
-          <a href="./guides/tonejs-node/">Read the complete recipe →</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="compatibility">
-      <div class="section-intro section-intro--wide">
-        <h2>Compatibility and limits</h2>
-        <p>Compatibility claims come from repository CI and WPT. Performance claims come from the included comparison benchmark.</p>
-      </div>
-      <div class="compat-grid">
-        <div>
-          <h3>Tested runtimes</h3>
-          <dl class="spec-list">
-            <div><dt>Node</dt><dd>18 · 20 · 22</dd><span>CI</span></div>
-            <div><dt>Deno</dt><dd>current action runtime</dd><span>CI</span></div>
-            <div><dt>Bun</dt><dd>current action runtime</dd><span>CI</span></div>
-            <div><dt>Browser</dt><dd>native demo target</dd><span>Preview</span></div>
-            <div><dt>Tone.js</dt><dd>polyfill integration</dd><span>Tested</span></div>
-            <div><dt>Headless</dt><dd>no output device</dd><span>Offline</span></div>
-          </dl>
-        </div>
-        <div>
-          <h3>Performance</h3>
-          <dl class="spec-list">
-            <div><dt>Simple graphs</dt><dd>pure JS matches Rust napi</dd><span>Measured</span></div>
-            <div><dt>Heavy DSP</dt><dd>roughly 2–4× slower</dd><span>Measured</span></div>
-            <div><dt>Render pace</dt><dd>all included scenarios exceed realtime</dd><span>Measured</span></div>
-            <div><dt>Quantum</dt><dd>128 sample frames</dd><span>Spec</span></div>
-            <div><dt>Worklet today</dt><dd>synchronous; no thread isolation</dd><span>Limit</span></div>
-            <div><dt>Hot kernels</dt><dd>JZ/WASM lane in progress</dd><span>Experimental</span></div>
-          </dl>
-        </div>
-      </div>
-
-      <aside class="jz-lane" aria-labelledby="jz-title">
-        <div>
-          <span class="lane-state">Experimental</span>
-          <h3 id="jz-title">JZ and WebAssembly</h3>
-          <p><a href="https://jz.js.org/">JZ</a> compiles a numeric JavaScript subset to small WASM modules. The direction is to move hot DSP kernels into the realtime/worklet lane without asking library authors to rewrite them in Rust or AssemblyScript.</p>
-        </div>
-        <dl>
-          <div><dt>Today</dt><dd>pure JS graph and DSP</dd></div>
-          <div><dt>Next lane</dt><dd>selected hot kernels in WASM</dd></div>
-          <div><dt>Status</dt><dd>experimental, not a latency guarantee</dd></div>
-        </dl>
-      </aside>
-
-      <div class="limits">
-        <h3>Limits</h3>
-        <ul>
-          <li>Native bindings remain the better choice when maximum heavy-DSP throughput is the only criterion.</li>
-          <li>AudioWorklet currently runs synchronously. Production low-latency WebRTC mixing is promising, not yet the headline promise.</li>
-          <li>Browser demos use the browser’s native engine; they prove graph portability rather than pretending the package replaces a browser engine.</li>
-        </ul>
-      </div>
-
-      <div class="alternatives">
-        <h3>Alternatives</h3>
-        <div><strong>web-audio-api</strong><span>Pure JS, WPT-complete, no native setup, Node/CI/server scripting.</span></div>
-        <div><strong>node-web-audio-api</strong><span>Rust napi bindings; faster heavy DSP and native realtime focus.</span></div>
-        <div><strong>Browser Web Audio</strong><span>The native choice inside a browser; not a Node runtime.</span></div>
-        <div><strong>web-audio-engine</strong><span>Earlier pure-JS implementation with partial coverage.</span></div>
-      </div>
-      <a class="text-link" href="https://github.com/audiojs/web-audio-api#alternatives">Read the maintained comparison →</a>
-    </section>
-
-    <section class="section section--faq" id="faq">
-      <div class="section-intro">
-        <h2>FAQ</h2>
-        <p>Short answers with links to runnable examples and complete guides.</p>
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <div class="section-heading">
+        <h2 id="faq-title">Questions</h2>
       </div>
       <div class="faq-list">
-        <details>
-          <summary>Why does AudioContext start suspended?</summary>
-          <p><code>AudioContext</code> starts suspended to match the Web Audio lifecycle. In Node, call <code>await ctx.resume()</code>. Browsers may require that call inside a user gesture.</p>
-        </details>
-        <details>
-          <summary>How do I close the audio output?</summary>
-          <p>Call <code>await ctx.close()</code>. Explicit resource management is also supported with <code>using ctx = new AudioContext()</code>.</p>
-        </details>
-        <details>
-          <summary>Can I test audio without speakers?</summary>
-          <p>Yes. Build the graph in an <code>OfflineAudioContext</code>, await <code>startRendering()</code>, then assert the returned AudioBuffer.</p>
-        </details>
-        <details>
-          <summary>Does it run Tone.js?</summary>
-          <p>Yes. Import <code>web-audio-api/polyfill</code> before dynamically importing Tone, or launch Node with <code>--import web-audio-api/polyfill</code>.</p>
-        </details>
-        <details>
-          <summary>Which file formats can it decode?</summary>
-          <p><code>decodeAudioData()</code> uses audio-decode for WAV, MP3, FLAC, OGG, and AAC inputs.</p>
-        </details>
-        <details>
-          <summary>How does microphone input work in Node?</summary>
-          <p>Install the optional <code>audio-mic</code> package, then use <code>getUserMedia()</code> through the polyfill or push PCM into a <code>CustomMediaStreamTrack</code>.</p>
-        </details>
-        <details>
-          <summary>Is it fast enough for realtime work?</summary>
-          <p>All included benchmark graphs render faster than realtime. Simple graphs compare well with native bindings; heavy DSP is slower. Worklet thread isolation and the JZ/WASM kernel lane are active boundaries.</p>
-        </details>
-        <details>
-          <summary>Is this a DAW, framework, or new Web Audio tutorial?</summary>
-          <p>No. The W3C standard is the API, and MDN remains the general browser reference. WAA exists so those graphs can run where a browser is absent; this site stays focused on executable library recipes.</p>
-        </details>
+        <details><summary>Is it fast enough for realtime?</summary><div><p>For simple graphs, yes. The included benchmarks render every measured scenario faster than realtime. Pure JavaScript is competitive on small graphs; convolution and compression are roughly 2–4× slower than the native Rust binding in the repository benchmark. AudioWorklet execution is currently synchronous, so production low-latency work remains the boundary.</p></div></details>
+        <details><summary>How does audio I/O work?</summary><div><p><code>audio-speaker</code> provides the default output device. Microphone examples use the optional <code>audio-mic</code> adapter, then feed PCM into a <code>MediaStreamTrack</code>. You can also set <code>sinkId</code> to any Node writable stream.</p></div></details>
+        <details><summary>Which formats can it decode?</summary><div><p><code>decodeAudioData()</code> uses <a href="https://github.com/audiojs/decode"><code>@audio/decode</code></a>. It detects and lazily loads codecs for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, QOA, WebM, WMA, AC-3, DTS, tracker modules, DSD, and more. It can also extract supported audio tracks from MP4, MOV, MKV, WebM, and AVI without FFmpeg or native bindings. Codec packages carry their own licences, so check the decoder’s licence table before distributing a bundled codec.</p></div></details>
+        <details><summary>Does Tone.js work?</summary><div><p>Usually. Load <code>web-audio-api/polyfill</code> before importing a browser-oriented library so constructors and <code>window</code> checks exist. Tone.js works with that import order; unsupported DOM APIs still need their own adapter.</p></div></details>
+        <details><summary>Can I test audio in CI?</summary><div><p>Yes. Use <code>OfflineAudioContext</code> to render an <code>AudioBuffer</code> in memory, then assert duration, channel count, peaks, RMS, spectra, or exact samples. No speaker, display, or audio device is required.</p></div></details>
+        <details><summary>Can it run without speakers?</summary><div><p>Yes. <code>OfflineAudioContext</code> never opens an output device. A realtime <code>AudioContext</code> can also write PCM to a stream instead of the system speaker.</p></div></details>
+        <details><summary>Does it support AudioWorklets?</summary><div><p>Yes. Modules can be registered by URL, data URL, Blob URL, or an inline callback in Node. Processors and parameters follow the Web Audio shape. Worklets currently execute synchronously rather than on an isolated realtime thread.</p></div></details>
+        <details><summary>What differs from a browser?</summary><div><p>The graph API, 128-frame render quantum, automation model, and node behavior follow the same specification. The boundaries differ: Node needs adapters for speakers, microphones, files, and streams; browser examples on this page use the browser’s native engine.</p></div></details>
+        <details class="comparison"><summary>How does it compare?</summary><div class="table-scroll" tabindex="0" role="region" aria-label="Web Audio implementation comparison">
+          <table>
+            <caption>Snapshot: 29 August 2026. Sizes are npm unpacked package sizes, not full dependency trees.</caption>
+            <thead><tr><th scope="col">Package</th><th scope="col">Engine</th><th scope="col">Coverage</th><th scope="col">Environment</th><th scope="col">Realtime</th><th scope="col">Decode support</th><th scope="col">Package size</th><th scope="col">Best fit</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><a href="https://github.com/audiojs/web-audio-api">web-audio-api</a></th><td>Pure JavaScript</td><td>4,317 / 4,317 WPT; offline, worklets, media streams</td><td>Node 18+, Deno, Bun</td><td>Simple measured graphs run faster than realtime</td><td><code>@audio/decode</code>, 20+ format families</td><td>208 KB core, codecs on demand</td><td>Portable graphs, CI, scripts, servers</td></tr>
+              <tr><th scope="row"><a href="https://github.com/ircam-ismm/node-web-audio-api">node-web-audio-api</a></th><td>Rust via Node-API</td><td>WPT harness; minimal MediaStream support</td><td>Node 22+, supported native binaries</td><td>Native engine with low-latency backends</td><td>Symphonia common formats</td><td>42.2 MB package</td><td>Native performance and low latency</td></tr>
+              <tr><th scope="row"><a href="https://github.com/chrisguttandin/standardized-audio-context">standardized-audio-context</a></th><td>Browser ponyfill over native Web Audio</td><td>Almost-complete browser subset; no ScriptProcessor</td><td>Supported browsers</td><td>Uses the browser’s native engine</td><td>Browser codec support</td><td>3.0 MB package</td><td>Consistent behavior across browsers</td></tr>
+              <tr><th scope="row"><a href="https://github.com/mohayonao/web-audio-engine">web-audio-engine</a></th><td>Pure JavaScript</td><td>Older partial API; streaming and offline contexts</td><td>Node and browser build</td><td>PCM streaming context</td><td>WAV by default; custom decoders</td><td>Registry metadata unavailable</td><td>Legacy PCM streaming and rendering</td></tr>
+            </tbody>
+          </table>
+        </div></details>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <p class="footer-statement">Web Audio API<br>for Node.</p>
-      <p class="footer-audiojs"><strong>web-audio-api</strong> is part of <a href="https://audiojs.dev/">AudioJS</a>, the open audio stack for JavaScript.</p>
-      <div class="footer-meta">
-        <span>MIT · <span data-version>v1.5.4</span></span>
-        <nav aria-label="Footer">
-          <a href="https://npmjs.com/package/web-audio-api">npm</a>
-          <a href="https://github.com/audiojs/web-audio-api">GitHub</a>
-          <a href="https://github.com/sponsors/audiojs">Sponsor</a>
-          <a href="https://audiojs.dev/">AudioJS</a>
-        </nav>
+  <footer class="site-footer"><p>web-audio-api · MIT · <span data-version>v1.5.4</span> · <a href="https://audiojs.dev/">AudioJS</a></p></footer>
+
+  <dialog class="example-dialog" id="example-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-shell">
+      <header class="dialog-head">
+        <div><p class="dialog-meta" id="dialog-meta"></p><h2 id="dialog-title">Example</h2><p id="dialog-description"></p></div>
+        <button class="icon-button dialog-close" type="button" data-close-dialog aria-label="Close example"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+      </header>
+      <div class="dialog-body">
+        <section class="demo-panel" aria-label="Browser demo">
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div>
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-actions" id="demo-result"></div>
+          </div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-fields" id="demo-fields"></div>
+            <div class="demo-actions" id="demo-actions"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p>
+          </form>
+        </section>
+        <section class="dialog-code code-stage" aria-labelledby="dialog-code-title">
+          <div class="dialog-code-head"><h3 id="dialog-code-title">Source</h3><button class="icon-button copy-icon copy-icon--dark" type="button" data-copy="#example-code" aria-label="Copy example source"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+          <pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre>
+          <p class="dialog-command"><code id="dialog-command"></code></p>
+          <p class="dialog-links"><a id="dialog-page-link" href="">Example page</a><a id="dialog-graph-link" href="">Graph source</a><a id="dialog-cli-link" href="">CLI wrapper</a></p>
+        </section>
       </div>
     </div>
-  </footer>
+  </dialog>
 
   <script type="module" src="./site.js"></script>
 </body>

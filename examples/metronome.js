@@ -8,7 +8,8 @@
 // Keys: space pause · ←/→ tempo ±2 BPM · ↑/↓ cycle sound · t tap-tempo · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { args, num, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+import { createInstrument } from './graphs/metronome.js'
+import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
   description: 'run a programmable practice metronome',
@@ -41,158 +42,11 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '10m'))
 let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X-x-x-x-')).split('')
 let hi = num($('hi', 1900)), lo = num($('lo', 1250))
 
-// These are different instruments, not small variations on one click model:
-// a dry stick, a hollow block, a ringing bell, a square-wave beep, and the pure
-// 880/440 Hz signal from the original example.
-let sounds = [
-  { name: 'classic', kind: 'stick',  a: hi,   g: lo },
-  { name: 'wood',    kind: 'wood',   a: 1400, g: 700 },
-  { name: 'bell',    kind: 'bell',   a: 1760, g: 880 },
-  { name: 'beep',    kind: 'beep',   a: 2600, g: 1700 },
-  { name: 'signal',  kind: 'signal', a: 880,  g: 440 },
-]
 let wantedSound = String($('sound', 'classic')).toLowerCase()
-let sIdx = sounds.findIndex(s => s.name.startsWith(wantedSound))
-if (sIdx < 0) sIdx = 0
-
 let ctx = new AudioContext()
 await ctx.resume()
-
-let master = ctx.createGain()
-master.gain.value = 0.7
-master.connect(ctx.destination)
-
-// Reuse a long noise buffer but start at a random offset so consecutive attacks differ.
-let noiseBuffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate), ctx.sampleRate)
-let noiseData = noiseBuffer.getChannelData(0)
-for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1
-
-// Source nodes dispose themselves after they end, but the filters/gains downstream
-// stay connected to master unless we release the tail of each transient graph.
-// Hundreds of stale click graphs otherwise make a long accelerating session fall
-// behind real time even while the displayed (audio-clock) BPM keeps increasing.
-let releaseOnEnd = (source, tail) => {
-  source.onended = () => tail.disconnect()
-}
-
-let noiseHit = (when, frequency, duration, gain, type) => {
-  let burst = ctx.createBufferSource()
-  burst.buffer = noiseBuffer
-  let filter = ctx.createBiquadFilter()
-  filter.type = type
-  filter.frequency.value = Math.min(ctx.sampleRate * 0.4, frequency)
-  filter.Q.value = 0.7
-  let env = ctx.createGain()
-  env.gain.setValueAtTime(gain, when)
-  env.gain.exponentialRampToValueAtTime(0.001, when + duration)
-  burst.connect(filter).connect(env).connect(master)
-  releaseOnEnd(burst, env)
-  burst.start(when, Math.random() * (noiseBuffer.duration - duration))
-  burst.stop(when + duration)
-}
-
-let click = (when, ch) => {
-  if (ch === '-' || ch === '.') return
-  let strong = ch === 'X'
-  let s = sounds[sIdx]
-  let f = strong ? s.a : s.g
-
-  if (s.kind === 'stick') {
-    // Classic metronome stick: a hard tip attack with two very short wood modes.
-    let duration = strong ? 0.028 : 0.020
-    let body = ctx.createGain()
-    body.gain.setValueAtTime(strong ? 0.28 : 0.18, when)
-    body.gain.exponentialRampToValueAtTime(0.001, when + duration)
-    body.connect(master)
-    let lastOsc
-    for (let [ratio, level] of [[1, 1], [1.63, 0.36]]) {
-      let osc = lastOsc = ctx.createOscillator()
-      let modeGain = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.value = f * ratio
-      modeGain.gain.value = level
-      osc.connect(modeGain).connect(body)
-      osc.start(when); osc.stop(when + duration + 0.005)
-    }
-    releaseOnEnd(lastOsc, body)
-    noiseHit(when, f * 2.2, strong ? 0.008 : 0.006, strong ? 0.16 : 0.10, 'bandpass')
-    return
-  }
-
-  if (s.kind === 'wood') {
-    // Hollow woodblock: two low, inharmonic body modes and a muted strike.
-    let duration = strong ? 0.085 : 0.060
-    let body = ctx.createGain()
-    body.gain.setValueAtTime(strong ? 0.34 : 0.24, when)
-    body.gain.exponentialRampToValueAtTime(0.001, when + duration)
-    body.connect(master)
-    let lastOsc
-    for (let [ratio, level] of [[1, 1], [1.67, 0.30]]) {
-      let osc = lastOsc = ctx.createOscillator()
-      let modeGain = ctx.createGain()
-      osc.frequency.value = f * ratio
-      modeGain.gain.value = level
-      osc.connect(modeGain).connect(body)
-      osc.start(when); osc.stop(when + duration + 0.005)
-    }
-    releaseOnEnd(lastOsc, body)
-    noiseHit(when, f * 2.2, 0.012, strong ? 0.08 : 0.05, 'lowpass')
-    return
-  }
-
-  if (s.kind === 'bell') {
-    // Bell: a soft attack and long inharmonic ring, deliberately without noise.
-    let duration = strong ? 0.28 : 0.20
-    let body = ctx.createGain()
-    body.gain.setValueAtTime(0, when)
-    body.gain.linearRampToValueAtTime(strong ? 0.17 : 0.11, when + 0.0015)
-    body.gain.exponentialRampToValueAtTime(0.001, when + duration)
-    body.connect(master)
-    let lastOsc
-    for (let [ratio, level] of [[1, 1], [1.48, 0.52], [2.09, 0.27], [2.63, 0.13]]) {
-      let osc = lastOsc = ctx.createOscillator()
-      let modeGain = ctx.createGain()
-      osc.frequency.value = f * ratio
-      modeGain.gain.value = level
-      osc.connect(modeGain).connect(body)
-      osc.start(when); osc.stop(when + duration + 0.01)
-    }
-    releaseOnEnd(lastOsc, body)
-    return
-  }
-
-  if (s.kind === 'beep') {
-    // Digital beep: bright, flat and gated instead of decaying like a strike.
-    let duration = strong ? 0.065 : 0.045
-    let osc = ctx.createOscillator()
-    let env = ctx.createGain()
-    osc.type = 'square'
-    osc.frequency.value = f
-    env.gain.setValueAtTime(0, when)
-    env.gain.linearRampToValueAtTime(strong ? 0.15 : 0.09, when + 0.001)
-    env.gain.setValueAtTime(strong ? 0.15 : 0.09, when + duration - 0.006)
-    env.gain.linearRampToValueAtTime(0, when + duration)
-    osc.connect(env).connect(master)
-    releaseOnEnd(osc, env)
-    osc.start(when); osc.stop(when + duration + 0.005)
-    return
-  }
-
-  // Restore the original signal preset: clean 880 Hz accents and 440 Hz beats.
-  let duration = 0.070
-  let peak = strong ? 0.60 : 0.25
-  let osc = ctx.createOscillator()
-  let env = ctx.createGain()
-  osc.type = 'sine'
-  osc.frequency.value = f
-  env.gain.setValueAtTime(0, when)
-  env.gain.linearRampToValueAtTime(peak, when + 0.003)
-  env.gain.setValueAtTime(peak, when + duration - 0.020)
-  env.gain.linearRampToValueAtTime(0, when + duration)
-  osc.connect(env).connect(master)
-  releaseOnEnd(osc, env)
-  osc.start(when); osc.stop(when + duration + 0.005)
-}
+let instrument = createInstrument(ctx, { sound: wantedSound, hi, lo })
+let click = instrument.hit
 
 let t0 = ctx.currentTime
 let userOffset = 0
@@ -217,7 +71,7 @@ let draw = () => {
   let p = Math.min(Math.max((ctx.currentTime - t0) / dur, 0), 1)
   curBpm = Math.max(20, bpm0 + (bpm1 - bpm0) * p + userOffset)
   let bar = '█'.repeat(Math.floor(p * 20)).padEnd(20, '░')
-  render(`♩ ${curBpm.toFixed(1).padStart(6)} · [${pat.join('')}] · ${sounds[sIdx].name.padEnd(10)} ${bar} ${(p * 100).toFixed(0).padStart(3)}%${pausedTag(ctx)}`)
+  render(`♩ ${curBpm.toFixed(1).padStart(6)} · [${pat.join('')}] · ${instrument.name.padEnd(10)} ${bar} ${(p * 100).toFixed(0).padStart(3)}%${pausedTag(ctx)}`)
 }
 let ui = setInterval(draw, 50)
 let endTimer
@@ -230,8 +84,8 @@ let finish = auto => {
 keys({
   left: () => { userOffset -= 2 },
   right: () => { userOffset += 2 },
-  up: () => { sIdx = (sIdx + 1) % sounds.length },
-  down: () => { sIdx = (sIdx - 1 + sounds.length) % sounds.length },
+  up: () => instrument.cycle(1),
+  down: () => instrument.cycle(-1),
   t: () => {
     let now = Date.now()
     tapTimes.push(now)

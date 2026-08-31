@@ -1,11 +1,11 @@
 {
   "date": "2026-08-29",
   "design_md": null,
-  "font_stack": null,
-  "palette": null,
-  "motion": "motion-cut",
-  "spacing": null,
+  "font_stack": "Geist 300/400/700 + IBM Plex Mono",
+  "palette": "AudioJS ink/paper/teal OKLCH tokens",
+  "motion": "motion-cut; modal and state feedback only",
+  "spacing": "4-point named CSS token scale",
   "framework": "vanilla ESM",
-  "preserve": ["repository ESM conventions"],
-  "introduce": ["AudioJS studied DNA", "static site", "locked tokens", "accessible demo interactions"]
+  "preserve": ["AudioJS palette", "static ESM", "accessible audio demos"],
+  "introduce": ["Catalogue macrostructure", "native dialog", "shared graph modules"]
 }

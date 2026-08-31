@@ -4,8 +4,8 @@
 // Keys: ←/→ ±0.5 Hz rate · ↑/↓ ±0.05 depth · w cycle LFO wave · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { buildTremolo } from './_portable.js'
-import { args, sec, keys, status, clearLine, pausedTag, help } from './_util.js'
+import { build as buildTremolo } from './graphs/lfo.js'
+import { args, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
   description: 'modulate a 440 Hz carrier with an LFO tremolo',

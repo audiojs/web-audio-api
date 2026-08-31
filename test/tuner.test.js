@@ -1,5 +1,5 @@
 import test, { almost, is, ok } from 'tst'
-import { detectPitch, createPitchTracker } from '../examples/_tuner-pitch.js'
+import { detectPitch, createPitchTracker } from '../examples/tuner-pitch.js'
 
 let sampleRate = 44100
 let frame = (frequency, amplitudes = [1], length = 4096) => {

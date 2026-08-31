@@ -8,9 +8,10 @@
 // Run: node examples/tuner.js a=415 rate=48000
 // Keys: 1-6 play a string's reference tone · space stop it · ↑/↓ nudge A ±1 Hz · q quit
 
-import { AudioContext, MediaStreamAudioSourceNode, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import { args, keys, status, clearLine, help } from './_util.js'
-import { detectPitch, createPitchTracker } from './_tuner-pitch.js'
+import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
+import { build } from './graphs/tuner.js'
+import { args, keys, status, clearLine, help } from './utils.js'
+import { detectPitch, createPitchTracker } from './tuner-pitch.js'
 
 help({
   description: 'tune a guitar from the microphone or reference tones',
@@ -60,13 +61,10 @@ let ctx = new AudioContext({ sampleRate })
 await ctx.resume()
 
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
-let src = new MediaStreamAudioSourceNode(ctx, { mediaStream: new MediaStream([track]) })
-let analyser = ctx.createAnalyser()
+let graph = build(ctx, { stream: new MediaStream([track]) })
+let analyser = graph.nodes[2]
 // Keep enough low-E cycles for a reliable estimate even at 48 kHz.
 analyser.fftSize = 8192
-let mute = ctx.createGain()
-mute.gain.value = 0
-src.connect(analyser).connect(mute).connect(ctx.destination) // silent path — drives the render loop, no echo
 
 // audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
 let read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })

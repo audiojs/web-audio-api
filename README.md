@@ -46,7 +46,7 @@ const buffer = await ctx.startRendering()
 
 ## Examples
 
-`node examples/<name>.js` runs each example with its defaults. Use `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation. Parametric examples accept positional args or `key=value` with prefix matching (`f=440`, `freq=440` both work). Note names (`A4`, `C#3`, `Eb5`), `k` for kHz (`20k`), and `s`/`m`/`h` for duration (`10m`) are supported.
+`node examples/<name>.js` runs each example with its defaults. Each CLI is a thin adapter over a standalone `examples/graphs/<name>.js` module; the website imports that same graph into the browser’s native Web Audio context. Use `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation. Parametric examples accept positional args or `key=value` with prefix matching (`f=440`, `freq=440` both work). Note names (`A4`, `C#3`, `Eb5`), `k` for kHz (`20k`), and `s`/`m`/`h` for duration (`10m`) are supported.
 
 | Example | |
 |---|---|
@@ -137,7 +137,7 @@ Then static `import * as Tone from 'tone'` works in `app.js`.
 ```js
 const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 ```
-WAV, MP3, FLAC, OGG, AAC via [audio-decode](https://github.com/audiojs/audio-decode).
+`decodeAudioData()` uses [@audio/decode](https://github.com/audiojs/decode) for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, WebM, and other supported audio or video containers without FFmpeg or native bindings.
 </dd>
 
 <dt id="how-do-i-capture-audio-from-the-microphone">How do I capture audio from the microphone?</dt>

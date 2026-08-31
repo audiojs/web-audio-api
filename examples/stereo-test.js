@@ -3,8 +3,8 @@
 // Run: node examples/stereo-test.js freq=500 dur=2s
 
 import { AudioContext } from 'web-audio-api'
-import { buildStereoTest } from './_portable.js'
-import { args, num, sec, keys, clearLine, help } from './_util.js'
+import { build as buildStereoTest } from './graphs/stereo-test.js'
+import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'identify the left, right, and center channels',

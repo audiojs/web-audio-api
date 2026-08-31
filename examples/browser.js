@@ -1,15 +1,21 @@
-import { byId } from './_catalog.js'
-import { controlsFor } from './_options.js'
+import { byId } from './catalog.js'
+import { controlsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
-import {
-  buildPortable,
-  portableBuilders,
-  buildProcessedBuffer,
-  stopPortable,
-} from './_portable.js'
+import { build as buildProcessedBuffer } from './graphs/process-file.js'
+import { build as buildWorklet } from './graphs/worklet.js'
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+
+function stopGraph(graph, time = 0) {
+  if (!graph) return
+  for (let source of graph.sources || []) {
+    try { source.stop(time) } catch { continue }
+  }
+  for (let node of graph.nodes || []) {
+    try { node.disconnect() } catch { continue }
+  }
+}
 
 function setButtonLabel(button, label) {
   let target = button?.querySelector('span') || button
@@ -17,6 +23,8 @@ function setButtonLabel(button, label) {
 }
 
 async function copyText(button, text) {
+  let iconOnly = button.classList.contains('copy-icon')
+  let previous = iconOnly ? button.getAttribute('aria-label') : button.querySelector('span')?.textContent || button.textContent
   try {
     if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text)
     else {
@@ -29,17 +37,23 @@ async function copyText(button, text) {
       document.execCommand('copy')
       area.remove()
     }
-    let previous = button.querySelector('span')?.textContent || button.textContent
     button.dataset.state = 'copied'
-    setButtonLabel(button, 'Copied')
+    if (iconOnly) button.setAttribute('aria-label', 'Copied')
+    else setButtonLabel(button, 'Copied')
     setTimeout(() => {
       delete button.dataset.state
-      setButtonLabel(button, previous)
+      if (iconOnly) button.setAttribute('aria-label', previous)
+      else setButtonLabel(button, previous)
     }, 2200)
   } catch {
     button.classList.add('is-error')
-    setButtonLabel(button, 'Copy failed')
-    setTimeout(() => button.classList.remove('is-error'), 2200)
+    if (iconOnly) button.setAttribute('aria-label', 'Copy failed')
+    else setButtonLabel(button, 'Copy failed')
+    setTimeout(() => {
+      button.classList.remove('is-error')
+      if (iconOnly) button.setAttribute('aria-label', previous)
+      else setButtonLabel(button, previous)
+    }, 2200)
   }
 }
 
@@ -50,43 +64,6 @@ for (let button of document.querySelectorAll('[data-copy]')) {
   })
 }
 
-for (let link of document.querySelectorAll('.mobile-nav nav a')) link.addEventListener('click', () => link.closest('details')?.removeAttribute('open'))
-
-function initCatalog() {
-  let page = document.querySelector('[data-catalog]')
-  if (!page) return
-  let input = document.getElementById('catalog-search')
-  let buttons = [...document.querySelectorAll('[data-filter]')]
-  let groups = [...document.querySelectorAll('.catalog-group')]
-  let entries = [...document.querySelectorAll('.example-list a')]
-  let status = document.getElementById('catalog-status')
-  let empty = document.getElementById('catalog-empty')
-  let active = 'all'
-
-  let update = () => {
-    let query = input.value.trim().toLowerCase()
-    let visible = 0
-    for (let entry of entries) {
-      let category = entry.closest('.catalog-group')?.dataset.category
-      let matchesCategory = active === 'all' || category === active
-      let matchesSearch = !query || entry.dataset.search.includes(query)
-      entry.hidden = !(matchesCategory && matchesSearch)
-      if (!entry.hidden) visible++
-    }
-    for (let group of groups) group.hidden = ![...group.querySelectorAll('.example-list a')].some(entry => !entry.hidden)
-    status.textContent = `${visible} ${visible === 1 ? 'example' : 'examples'}`
-    empty.hidden = visible !== 0
-  }
-
-  input.addEventListener('input', update)
-  buttons.forEach(button => button.addEventListener('click', () => {
-    active = button.dataset.filter
-    buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)))
-    update()
-  }))
-}
-
-initCatalog()
 
 const controlSpecs = Object.fromEntries([...byId.keys()].map(id => [id, controlsFor(id)]))
 
@@ -94,6 +71,7 @@ function createControls(id, container) {
   let specs = controlSpecs[id] || []
   for (let spec of specs) {
     let label = document.createElement('label')
+    let initialValue = spec.browserValue ?? spec.value
     label.className = 'control-field'
     let heading = document.createElement('span')
     let name = document.createElement('span')
@@ -102,7 +80,7 @@ function createControls(id, container) {
     let output
     if (spec.type === 'range') {
       output = document.createElement('output')
-      output.textContent = `${spec.value}${spec.unit ? ` ${spec.unit}` : ''}`
+      output.textContent = `${initialValue}${spec.unit ? ` ${spec.unit}` : ''}`
       heading.append(output)
     }
     label.append(heading)
@@ -113,7 +91,7 @@ function createControls(id, container) {
         let element = document.createElement('option')
         element.value = option
         element.textContent = option[0].toUpperCase() + option.slice(1)
-        element.selected = option === spec.value
+        element.selected = option === initialValue
         control.append(element)
       }
     } else {
@@ -122,7 +100,7 @@ function createControls(id, container) {
       if (spec.min != null) control.min = spec.min
       if (spec.max != null) control.max = spec.max
       if (spec.step != null) control.step = spec.step
-      control.value = spec.value
+      control.value = initialValue
       if (spec.pattern) control.pattern = spec.pattern
       if (spec.type === 'text') control.autocomplete = 'off'
     }
@@ -254,47 +232,43 @@ function pitchLabel(frequency, a4 = 440) {
   return `${note} · ${frequency.toFixed(1)} Hz · ${cents >= 0 ? '+' : ''}${cents} cents`
 }
 
-function codeSnippet(example) {
-  let runtime = `import { AudioContext } from 'web-audio-api' // Node\n// Browser: remove the import; AudioContext is global.\n// CI: import OfflineAudioContext instead and render offline.\n\n`
-  let builder = portableBuilders[example.id]
-  if (builder) {
-    let defaults = Object.fromEntries((controlSpecs[example.id] || []).map(spec => [spec.key, spec.value]))
-    let options = JSON.stringify(defaults, null, 2)
-    let source = builder.toString()
-    if (example.mode === 'offline') return `import { OfflineAudioContext } from 'web-audio-api' // Node / CI\n// Browser: remove the import; OfflineAudioContext is global.\n\n${source}\n\nconst rate = 44100\nconst ctx = new OfflineAudioContext(2, rate * 3, rate)\n${builder.name}(ctx, { ...${options}, when: 0, duration: 3 })\nconst audio = await ctx.startRendering()`
-    return `${runtime}${source}\n\nconst ctx = new AudioContext()\nawait ctx.resume()\n${builder.name}(ctx, ${options})`
-  }
-  if (example.mode === 'mic') return `import 'web-audio-api/polyfill' // Node\n// Browser: remove the import; Web Audio and getUserMedia are global.\n\nconst stream = await navigator.mediaDevices.getUserMedia({ audio: true })\nconst ctx = new AudioContext()\nconst source = ctx.createMediaStreamSource(stream)\nconst analyser = ctx.createAnalyser()\nsource.connect(analyser)`
-  if (example.mode === 'file') return `import { OfflineAudioContext } from 'web-audio-api' // Node / CI\n// Browser: remove the import; OfflineAudioContext is global.\n\n${buildProcessedBuffer.toString()}\n\nconst ctx = new OfflineAudioContext(source.numberOfChannels, source.length, source.sampleRate)\nbuildProcessedBuffer(ctx, source)\nconst output = await ctx.startRendering()`
-  if (example.mode === 'worklet') return `${runtime}const url = URL.createObjectURL(new Blob([processorSource], { type: 'text/javascript' }))\nawait ctx.audioWorklet.addModule(url)\nconst node = new AudioWorkletNode(ctx, 'white-noise')\nnode.connect(ctx.destination)`
-  return `import { AudioContext } from 'web-audio-api' // Node only\n\nconst ctx = new AudioContext({ sinkId: process.stdout })\nbuildGraph(ctx)`
-}
-
-function loadCode(example) {
-  let code = document.getElementById('example-code')
+async function loadCode(example, root = document) {
+  let code = root.querySelector('#example-code')
   if (!code) return
-  code.textContent = codeSnippet(example)
+  try {
+    let response = await fetch(new URL(`./graphs/${example.id}.js`, import.meta.url))
+    if (!response.ok) throw new Error(`Graph source returned ${response.status}`)
+    code.textContent = await response.text()
+  } catch {
+    code.textContent = `// Source could not be loaded.\n// Open examples/graphs/${example.id}.js in the repository.`
+  }
   highlightSyntax(code.closest('.code-stage')).catch(() => {})
 }
 
-function initExample() {
-  let page = document.querySelector('[data-example]')
-  if (!page) return
-  let id = page.dataset.example, example = byId.get(id)
-  if (!example) return
-  let form = document.getElementById('demo-form')
-  let fields = document.getElementById('demo-fields')
-  let actions = document.getElementById('demo-actions')
-  let run = document.getElementById('demo-run')
-  let status = document.getElementById('demo-status')
-  let canvas = document.getElementById('demo-canvas')
-  let resultContainer = document.getElementById('demo-result')
-  let meter = document.getElementById('demo-meter-fill')
-  let meterValue = document.getElementById('demo-meter-value')
+export function mountExample(root, id) {
+  let example = byId.get(id)
+  if (!example) throw new Error(`Unknown example: ${id}`)
+  let find = selector => root.querySelector(selector)
+  let form = find('#demo-form')
+  let fields = find('#demo-fields')
+  let actions = find('#demo-actions')
+  let run = find('#demo-run')
+  let status = find('#demo-status')
+  let canvas = find('#demo-canvas')
+  let resultContainer = find('#demo-result')
+  let meter = find('#demo-meter-fill')
+  let meterValue = find('#demo-meter-value')
+  let freshRun = run.cloneNode(true)
+  run.replaceWith(freshRun)
+  run = freshRun
+  fields.replaceChildren()
+  resultContainer.replaceChildren()
+  actions.querySelector('.file-label')?.remove()
   createControls(id, fields)
-  loadCode(example)
+  loadCode(example, root)
   drawWave(canvas)
-  new ResizeObserver(() => drawWave(canvas)).observe(canvas)
+  let observer = new ResizeObserver(() => drawWave(canvas))
+  observer.observe(canvas)
 
   let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0
   let samples = new Float32Array(2048), recorder = null, chunks = []
@@ -338,7 +312,7 @@ function initExample() {
     cancelVisual()
     if (recorder?.state === 'recording') recorder.stop()
     recorder = null
-    if (context) stopPortable(demo, context.currentTime)
+    if (context) stopGraph(demo, context.currentTime)
     for (let track of stream?.getTracks?.() || []) track.stop()
     let closing = context
     context = null; demo = null; analyser = null; stream = null
@@ -355,7 +329,9 @@ function initExample() {
     let options = readOptions(id, form)
     options.destination = analyser
     if (!('duration' in options)) options.duration = ['jazz'].includes(id) ? 7 : ['risset-rhythm', 'serial', 'gamelan', 'drone'].includes(id) ? 5 : 3
-    demo = buildPortable(id, context, options)
+    if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = AudioWorkletNode
+    let { build } = await import(`./graphs/${id}.js`)
+    demo = await build(context, options)
     setButtonLabel(run, 'Stop demo')
     setStatus(`Running with the browser’s native AudioContext · ${demo.graph}`, 'running')
     animate(id === 'fft' ? 'spectrum' : 'wave')
@@ -368,7 +344,8 @@ function initExample() {
     let rate = 44100
     let offline = new OfflineAudioContext(2, Math.ceil(rate * duration), rate)
     options.when = 0; options.duration = duration
-    let offlineDemo = buildPortable(id, offline, options)
+    let { build } = await import(`./graphs/${id}.js`)
+    let offlineDemo = await build(offline, options)
     setButtonLabel(run, 'Rendering')
     run.setAttribute('aria-busy', 'true')
     setStatus('Rendering the graph in memory. No output device is open.', 'running')
@@ -405,14 +382,8 @@ function initExample() {
 
   async function runWorklet() {
     context = new AudioContext(); await context.resume()
-    let source = `class WhiteNoise extends AudioWorkletProcessor {\n  static get parameterDescriptors() { return [{ name: 'amplitude', defaultValue: 0.18 }] }\n  process(inputs, outputs, parameters) {\n    const out = outputs[0][0], amp = parameters.amplitude\n    for (let i = 0; i < out.length; i++) out[i] = (Math.random() * 2 - 1) * amp[Math.min(i, amp.length - 1)]\n    return true\n  }\n}\nregisterProcessor('white-noise', WhiteNoise)`
-    let url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }))
-    await context.audioWorklet.addModule(url); URL.revokeObjectURL(url)
     analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.connect(context.destination)
-    let node = new AudioWorkletNode(context, 'white-noise')
-    let amp = node.parameters.get('amplitude'), now = context.currentTime
-    amp.setValueAtTime(0, now); amp.linearRampToValueAtTime(0.18, now + 0.2); amp.linearRampToValueAtTime(0, now + 1)
-    node.connect(analyser); demo = { sources: [], nodes: [node], duration: 1 }
+    demo = await buildWorklet(context, { destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
     setButtonLabel(run, 'Stop demo'); setStatus('Custom AudioWorkletProcessor is running in the browser worklet thread.', 'running')
     animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
   }
@@ -421,10 +392,9 @@ function initExample() {
     let options = readOptions(id, form)
     stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     context = new AudioContext(); await context.resume()
-    let source = context.createMediaStreamSource(stream), gain = context.createGain()
-    gain.gain.value = Number(options.gain ?? 1); analyser = context.createAnalyser(); analyser.fftSize = 4096
-    source.connect(gain).connect(analyser)
-    demo = { sources: [], nodes: [source, gain, analyser], duration: Infinity }
+    let { build } = await import(`./graphs/${id}.js`)
+    demo = build(context, { stream, gain: Number(options.gain ?? 1), monitor: false })
+    analyser = demo.nodes[2]; analyser.fftSize = 4096
     if (id === 'recorder') {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser')
       chunks = []; recorder = new MediaRecorder(stream)
@@ -467,7 +437,7 @@ function initExample() {
     setButtonLabel(run, 'Starting')
     try {
       if (example.mode === 'offline') await runOffline()
-      else if (example.mode === 'file') await runFile(document.getElementById('audio-file')?.files?.[0])
+      else if (example.mode === 'file') await runFile(find('#audio-file')?.files?.[0])
       else if (example.mode === 'worklet') await runWorklet()
       else if (example.mode === 'mic') await runMic()
       else await runPortable()
@@ -481,8 +451,15 @@ function initExample() {
     }
   })
 
-  addEventListener('pagehide', () => stop('Closed.'))
+  return async () => {
+    observer.disconnect()
+    await stop('Closed.')
+  }
 }
 
-initExample()
+let detailPage = document.querySelector('[data-example]')
+if (detailPage) {
+  let cleanup = mountExample(document, detailPage.dataset.example)
+  addEventListener('pagehide', cleanup)
+}
 highlightSyntax().catch(() => {})

@@ -4,8 +4,8 @@
 // Keys: ↑/↓ ±semitone · ←/→ cycle waveform · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { buildTone } from './_portable.js'
-import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './_util.js'
+import { build as buildTone } from './graphs/tone.js'
+import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({
   description: 'play a reference tone',

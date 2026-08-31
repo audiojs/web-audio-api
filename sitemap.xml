@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://audiojs.dev/web-audio-api/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/examples/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/tone/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/sweep/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/noise/</loc></url>
@@ -35,7 +34,4 @@
   <url><loc>https://audiojs.dev/web-audio-api/examples/pipe-stdout/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/mic/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/recorder/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/guides/browser-to-node/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/guides/test-audio-in-ci/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/guides/tonejs-node/</loc></url>
 </urlset>

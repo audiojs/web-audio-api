@@ -1,4 +1,4 @@
-import decode from 'audio-decode'
+import decode from '@audio/decode'
 import { from as audioBufferFrom } from 'audio-buffer/util'
 
 // polyfill Symbol.dispose
