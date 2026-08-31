@@ -1,4 +1,5 @@
 // FFT spectrum: Render a two-tone signal and inspect its frequency-domain peaks.
+// CLI: node examples/fft.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

@@ -1,4 +1,5 @@
 // Frequency sweep: Sweep across a frequency range with linear or exponential automation.
+// CLI: node examples/sweep.js 20..20k exp 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

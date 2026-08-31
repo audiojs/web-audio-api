@@ -1,8 +1,8 @@
 // Guitar tuner — listen through the mic, show the note and how far off it is, in cents.
 // Pitch is found with audiojs' YIN detector, then stabilized across frames so
 // changing overtones and isolated octave errors do not make the display jump.
-// Requires the `audio-mic` package (cross-platform Node mic capture):
-//   npm i audio-mic
+// Requires the `@audio/mic` package (cross-platform Node mic capture):
+//   npm i @audio/mic
 // Run: node examples/tuner.js          # A = 432 Hz
 // Run: node examples/tuner.js 440      # standard concert pitch
 // Run: node examples/tuner.js a=415 rate=48000
@@ -21,13 +21,13 @@ help({
     ['rate=<hz>', 'microphone sample rate (default: 44100)'],
     ['ch=<number>', 'input channels (default: 1)'],
     ['bit=<number>', 'input PCM bit depth (default: 16)'],
-    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+    ['backend=<name>', '@audio/mic backend: miniaudio/auto (default) or process'],
   ],
   controls: [
     ['1–6', 'play that guitar string’s reference tone'], ['0 / Space', 'stop the reference tone'],
     ['↑ / ↓', 'change A4 by 1 Hz'], ['Q / Esc', 'quit'],
   ],
-  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+  notes: ['Requires the optional @audio/mic package. The process backend uses sox/ffmpeg as a fallback.'],
 })
 
 let { pos, $ } = args()
@@ -37,10 +37,10 @@ let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
 let backend = $('backend')   // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
 
-// audio-mic is an optional peer dependency — fail with a hint, not a stack trace.
+// @audio/mic is an optional peer dependency — fail with a hint, not a stack trace.
 let mic
-try { mic = (await import('audio-mic')).default }
-catch { console.error('Microphone capture needs the audio-mic package:\n  npm i audio-mic'); process.exit(1) }
+try { mic = (await import('@audio/mic')).default }
+catch { console.error('Microphone capture needs the @audio/mic package:\n  npm i @audio/mic'); process.exit(1) }
 
 // --- note math, all relative to the chosen A4 (no fixed 440 here) ---
 let NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -66,7 +66,7 @@ let analyser = graph.nodes[2]
 // Keep enough low-E cycles for a reliable estimate even at 48 kHz.
 analyser.fftSize = 8192
 
-// audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
+// @audio/mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
 let read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })
 let pump = () => read((err, buf) => {
   if (err || !buf) return

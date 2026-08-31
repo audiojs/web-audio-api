@@ -1,4 +1,5 @@
 // Speaker hello world: Play the smallest useful realtime graph through the system output.
+// CLI: node examples/speaker.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

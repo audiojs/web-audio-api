@@ -5,7 +5,6 @@ const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
 const meta = document.getElementById('dialog-meta')
 const description = document.getElementById('dialog-description')
-const command = document.getElementById('dialog-command')
 let dispose = null
 let activeId = null
 const unlockPage = () => document.documentElement.classList.remove('modal-open')
@@ -22,7 +21,6 @@ async function openExample(id, updateHistory = true) {
     return tag
   }))
   description.textContent = example.description
-  command.textContent = example.command
   dispose = mountExample(dialog, id)
   if (!dialog.open) {
     document.documentElement.classList.add('modal-open')
@@ -40,9 +38,20 @@ for (let link of document.querySelectorAll('[data-open-example]')) {
   })
 }
 
-dialog.querySelector('[data-close-dialog]').addEventListener('click', () => { unlockPage(); dialog.close() })
-dialog.addEventListener('click', event => { if (event.target === dialog) { unlockPage(); dialog.close() } })
+const closeDialog = () => {
+  if (!dialog.open) return
+  unlockPage()
+  dialog.close()
+}
+
+dialog.querySelector('[data-close-dialog]').addEventListener('click', closeDialog)
+dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog() })
 dialog.addEventListener('cancel', unlockPage)
+addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !dialog.open) return
+  event.preventDefault()
+  closeDialog()
+}, { capture: true })
 dialog.addEventListener('close', async () => {
   unlockPage()
   if (dispose) await dispose()
@@ -54,7 +63,7 @@ dialog.addEventListener('close', async () => {
 addEventListener('hashchange', () => {
   let id = decodeURIComponent(location.hash.slice(1))
   if (id && id !== activeId) openExample(id, false)
-  else if (!id && dialog.open) { unlockPage(); dialog.close() }
+  else if (!id) closeDialog()
 })
 
 addEventListener('pagehide', () => dispose?.())

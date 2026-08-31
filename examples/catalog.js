@@ -191,7 +191,7 @@ export const examples = [
     description: 'Decode an audio file, apply EQ and compression, then render the processed result.',
     graph: 'File → decode → high-shelf EQ → compressor → AudioBuffer', input: 'Audio file', output: 'Processed AudioBuffer',
     apis: ['decodeAudioData', 'BiquadFilterNode', 'DynamicsCompressorNode'], command: 'node examples/process-file.js input.mp3',
-    note: 'The browser preview accepts formats the browser can decode. In Node, WAA uses audio-decode for WAV, MP3, FLAC, OGG, and AAC.',
+    note: 'The browser preview accepts formats the browser can decode. In Node, WAA uses @audio/decode for broader, runtime-independent codec coverage.',
   },
   {
     id: 'pipe-stdout', title: 'Pipe PCM to stdout', category: 'API', job: 'Stream', mode: 'node', featured: true,

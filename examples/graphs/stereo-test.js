@@ -1,4 +1,5 @@
 // Stereo channel test: Identify left, right, and center channels with a panned reference tone.
+// CLI: node examples/stereo-test.js 1k 1s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

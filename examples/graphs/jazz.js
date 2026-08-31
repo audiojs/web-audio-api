@@ -1,4 +1,5 @@
 // Generative jazz: Generate modal harmony, walking bass, plucked improvisation, and percussion.
+// CLI: node examples/jazz.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export async function build(ctx, {

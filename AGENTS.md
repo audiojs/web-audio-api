@@ -65,8 +65,8 @@ AnalyserNode, MediaStreamAudioDestinationNode, and AudioWorkletNode register in 
 ## Dependencies (owned)
 
 - `audio-buffer` — AudioBuffer implementation (owned by same author)
-- `audio-decode` — multi-format decoding (owned)
-- `audio-speaker` — cross-platform audio output (owned)
+- `@audio/decode` — multi-format decoding (owned)
+- `@audio/speaker` — cross-platform audio output (owned)
 - `automation-events` — AudioParam timeline (third-party)
 - `fourier-transform` — FFT (owned)
 

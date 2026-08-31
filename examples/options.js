@@ -70,7 +70,7 @@ export const exampleOptions = {
     cliOnly('rate=<hz>', 'microphone sample rate (default: 44100)'),
     cliOnly('ch=<number>', 'input channels (default: 1)'),
     cliOnly('bit=<number>', 'input PCM bit depth (default: 16)'),
-    cliOnly('backend=<name>', 'audio-mic backend: miniaudio/auto or process'),
+    cliOnly('backend=<name>', '@audio/mic backend: miniaudio/auto or process'),
   ],
   shepard: [
     select('direction', 'dir=<up|down>', 'Direction', 'up', ['up', 'down'], 'movement direction'),
@@ -140,7 +140,7 @@ export const exampleOptions = {
     cliOnly('rate=<hz>', 'sample rate (default: 44100)'),
     cliOnly('ch=<number>', 'input channels (default: 1)'),
     cliOnly('bit=<number>', 'input PCM bit depth (default: 16)'),
-    cliOnly('backend=<name>', 'audio-mic backend: miniaudio/auto or process'),
+    cliOnly('backend=<name>', '@audio/mic backend: miniaudio/auto or process'),
   ],
   recorder: [
     text('filename', 'filename', 'Filename', 'recording', 'suggested output name'),
@@ -148,7 +148,7 @@ export const exampleOptions = {
     cliOnly('rate=<hz>', 'sample rate (default: 44100)'),
     cliOnly('ch=<number>', 'input channels (default: 1)'),
     cliOnly('bit=<number>', 'PCM bit depth (default: 16)'),
-    cliOnly('backend=<name>', 'audio-mic backend: miniaudio/auto or process'),
+    cliOnly('backend=<name>', '@audio/mic backend: miniaudio/auto or process'),
   ],
 }
 

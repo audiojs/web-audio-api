@@ -1,4 +1,5 @@
 // Twelve-tone generator: Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.
+// CLI: node examples/serial.js 72 30s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x574141) {

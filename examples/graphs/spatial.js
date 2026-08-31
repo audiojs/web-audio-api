@@ -1,4 +1,5 @@
 // Spatial panning: Move a source from left to right through three-dimensional space.
+// CLI: node examples/spatial.js -d 5s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

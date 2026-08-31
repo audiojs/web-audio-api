@@ -1,4 +1,5 @@
 // Microphone tuner: Estimate microphone pitch, nearest note, and tuning error in cents.
+// CLI: node examples/tuner.js 440
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export function build(ctx, {

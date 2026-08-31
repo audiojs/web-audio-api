@@ -1,4 +1,5 @@
 // Reference tone: Play a reference pitch with selectable waveform and frequency.
+// CLI: node examples/tone.js sine A4 2s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

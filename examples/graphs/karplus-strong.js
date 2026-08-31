@@ -1,4 +1,5 @@
 // Karplus–Strong string: Turn a short noise burst and averaging delay into a plucked string.
+// CLI: node examples/karplus-strong.js A4 4s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export const processorSource = `class KarplusStrongProcessor extends AudioWorkletProcessor {

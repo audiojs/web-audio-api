@@ -1,4 +1,5 @@
 // Harmonic drone: Layer lightly detuned harmonics into a tanpura-like four-string drone.
+// CLI: node examples/drone.js C3 30s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x574141) {

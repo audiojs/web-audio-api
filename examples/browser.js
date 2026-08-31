@@ -125,7 +125,9 @@ function readOptions(id, container) {
 function sizeCanvas(canvas) {
   let rect = canvas.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, 2)
   let width = Math.max(1, Math.round(rect.width * ratio)), height = Math.max(1, Math.round(rect.height * ratio))
-  if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
+  let changed = canvas.width !== width || canvas.height !== height
+  if (changed) { canvas.width = width; canvas.height = height }
+  return changed
 }
 
 function drawWave(canvas, data = null) {
@@ -153,19 +155,79 @@ function drawWave(canvas, data = null) {
   ctx.stroke()
 }
 
-function drawSpectrum(canvas, data) {
-  sizeCanvas(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
-  ctx.clearRect(0, 0, width, height)
-  ctx.fillStyle = css('--color-accent')
-  let bins = 72, stride = Math.max(1, Math.floor(data.length / bins))
-  for (let bin = 0; bin < bins; bin++) {
-    let value = 0
-    for (let i = 0; i < stride; i++) value = Math.max(value, Math.abs(data[bin * stride + i] || 0))
-    let barHeight = Math.max(1, value * height * 2.5)
-    let barWidth = width / bins
-    ctx.fillRect(bin * barWidth, height - barHeight, Math.max(1, barWidth - 1), barHeight)
+function frequencyAt(row, rows, sampleRate, scale) {
+  let amount = 1 - row / Math.max(1, rows - 1)
+  let nyquist = sampleRate / 2
+  if (scale === 'linear') return amount * nyquist
+  if (scale === 'mel') {
+    let maxMel = 2595 * Math.log10(1 + nyquist / 700)
+    return 700 * (10 ** (amount * maxMel / 2595) - 1)
   }
+  let minimum = 20
+  return minimum * (nyquist / minimum) ** amount
+}
+
+function resetSpectrogram(canvas) {
+  sizeCanvas(canvas)
+  let ctx = canvas.getContext('2d')
+  ctx.globalAlpha = 1
+  ctx.fillStyle = css('--color-ink-2')
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+}
+
+function drawSpectrogramColumn(canvas, data, sampleRate, scale) {
+  if (sizeCanvas(canvas)) resetSpectrogram(canvas)
+  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
+  let step = Math.max(2, Math.round(Math.min(devicePixelRatio || 1, 2) * 1.5))
+  if (width <= step) { resetSpectrogram(canvas); return }
+  ctx.globalAlpha = 1
+  ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
+  ctx.fillStyle = css('--color-ink-2')
+  ctx.fillRect(width - step, 0, step, height)
+  ctx.fillStyle = css('--color-accent')
+  for (let y = 0; y < height; y++) {
+    let frequency = frequencyAt(y, height, sampleRate, scale)
+    let bin = Math.min(data.length - 1, Math.max(0, Math.round(frequency / (sampleRate / 2) * (data.length - 1))))
+    let amount = Math.max(0, Math.min(1, (data[bin] + 100) / 75))
+    ctx.globalAlpha = amount * amount
+    ctx.fillRect(width - step, y, step, 1)
+  }
+  ctx.globalAlpha = 1
+}
+
+function drawBufferSpectrogram(canvas, data, sampleRate, scale) {
+  resetSpectrogram(canvas)
+  if (!data.length) return
+  let width = canvas.width, height = canvas.height
+  let columns = Math.min(160, Math.max(48, Math.floor(width / 4)))
+  let rows = Math.min(96, Math.max(48, Math.floor(height / 2)))
+  let scratch = document.createElement('canvas')
+  scratch.width = columns; scratch.height = rows
+  let ctx = scratch.getContext('2d')
+  ctx.fillStyle = css('--color-ink-2'); ctx.fillRect(0, 0, columns, rows)
+  let windowSize = Math.min(256, data.length)
+  let window = Float64Array.from({ length: windowSize }, (_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / Math.max(1, windowSize - 1)))
+  let coefficients = Float64Array.from({ length: rows }, (_, y) => 2 * Math.cos(2 * Math.PI * frequencyAt(y, rows, sampleRate, scale) / sampleRate))
+  ctx.fillStyle = css('--color-accent')
+  for (let x = 0; x < columns; x++) {
+    let start = Math.floor(x / Math.max(1, columns - 1) * Math.max(0, data.length - windowSize))
+    for (let y = 0; y < rows; y++) {
+      let s1 = 0, s2 = 0, coefficient = coefficients[y]
+      for (let i = 0; i < windowSize; i++) {
+        let s0 = data[start + i] * window[i] + coefficient * s1 - s2
+        s2 = s1; s1 = s0
+      }
+      let power = Math.max(1e-12, s1 * s1 + s2 * s2 - coefficient * s1 * s2)
+      let db = 10 * Math.log10(power / (windowSize * windowSize))
+      let amount = Math.max(0, Math.min(1, (db + 80) / 65))
+      ctx.globalAlpha = amount * amount
+      ctx.fillRect(x, y, 1, 1)
+    }
+  }
+  ctx.globalAlpha = 1
+  let output = canvas.getContext('2d')
+  output.imageSmoothingEnabled = false
+  output.drawImage(scratch, 0, 0, width, height)
 }
 
 function audioBufferToWav(buffer) {
@@ -250,11 +312,14 @@ export function mountExample(root, id) {
   if (!example) throw new Error(`Unknown example: ${id}`)
   let find = selector => root.querySelector(selector)
   let form = find('#demo-form')
+  let controls = find('#demo-controls')
   let fields = find('#demo-fields')
   let actions = find('#demo-actions')
   let run = find('#demo-run')
   let status = find('#demo-status')
   let canvas = find('#demo-canvas')
+  let spectrogram = find('#demo-spectrogram')
+  let frequencyScale = find('#demo-frequency-scale')
   let resultContainer = find('#demo-result')
   let meter = find('#demo-meter-fill')
   let meterValue = find('#demo-meter-value')
@@ -267,11 +332,18 @@ export function mountExample(root, id) {
   createControls(id, fields)
   loadCode(example, root)
   drawWave(canvas)
-  let observer = new ResizeObserver(() => drawWave(canvas))
-  observer.observe(canvas)
+  resetSpectrogram(spectrogram)
 
-  let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0
-  let samples = new Float32Array(2048), recorder = null, chunks = []
+  let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0, reloadTimer = 0
+  let samples = new Float32Array(2048), spectrum = new Float32Array(1024), recorder = null, chunks = []
+  let lastBuffer = null, live = false, busy = false, disposed = false
+  let observer = new ResizeObserver(() => {
+    drawWave(canvas, lastBuffer?.getChannelData(0))
+    if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
+    else resetSpectrogram(spectrogram)
+  })
+  observer.observe(canvas)
+  observer.observe(spectrogram)
 
   function setStatus(message, state = 'default') {
     status.textContent = message
@@ -281,24 +353,21 @@ export function mountExample(root, id) {
     else run.classList.remove('is-error')
   }
 
-  function animate(kind = 'wave') {
+  function animate() {
     if (!analyser) return
-    if (kind === 'spectrum') {
-      let spectrum = new Float32Array(analyser.frequencyBinCount)
-      analyser.getFloatFrequencyData(spectrum)
-      let normalized = Float32Array.from(spectrum, value => Math.max(0, (value + 100) / 100))
-      drawSpectrum(canvas, normalized)
-    } else {
-      analyser.getFloatTimeDomainData(samples)
-      drawWave(canvas, samples)
-    }
+    if (samples.length !== analyser.fftSize) samples = new Float32Array(analyser.fftSize)
+    if (spectrum.length !== analyser.frequencyBinCount) spectrum = new Float32Array(analyser.frequencyBinCount)
+    analyser.getFloatTimeDomainData(samples)
+    analyser.getFloatFrequencyData(spectrum)
+    drawWave(canvas, samples)
+    drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value)
     let level = rms(samples)
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
     meterValue.textContent = id === 'tuner'
       ? pitchLabel(detectPitch(samples, context.sampleRate), Number(form.elements.a4?.value || 440))
       : `${(20 * Math.log10(Math.max(level, 1e-6))).toFixed(1)} dBFS`
-    if (reducedMotion.matches) frame = setTimeout(() => animate(kind), 160)
-    else frame = requestAnimationFrame(() => animate(kind))
+    if (reducedMotion.matches) frame = setTimeout(animate, 160)
+    else frame = requestAnimationFrame(animate)
   }
 
   function cancelVisual() {
@@ -323,9 +392,11 @@ export function mountExample(root, id) {
   }
 
   async function runPortable() {
+    lastBuffer = null
+    resetSpectrogram(spectrogram)
     context = new AudioContext()
     await context.resume()
-    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.connect(context.destination)
+    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20; analyser.connect(context.destination)
     let options = readOptions(id, form)
     options.destination = analyser
     if (!('duration' in options)) options.duration = ['jazz'].includes(id) ? 7 : ['risset-rhythm', 'serial', 'gamelan', 'drone'].includes(id) ? 5 : 3
@@ -334,7 +405,7 @@ export function mountExample(root, id) {
     demo = await build(context, options)
     setButtonLabel(run, 'Stop demo')
     setStatus(`Running with the browser’s native AudioContext: ${demo.graph}`, 'running')
-    animate(id === 'fft' ? 'spectrum' : 'wave')
+    animate()
     timer = setTimeout(() => stop('Complete. The graph stopped and the AudioContext closed.'), demo.duration * 1000 + 150)
   }
 
@@ -351,7 +422,9 @@ export function mountExample(root, id) {
     setStatus('Rendering the graph in memory. No output device is open.', 'running')
     let buffer = await offline.startRendering()
     let data = buffer.getChannelData(0)
+    lastBuffer = buffer
     drawWave(canvas, data)
+    drawBufferSpectrogram(spectrogram, data, buffer.sampleRate, frequencyScale.value)
     let peak = 0
     for (let value of data) peak = Math.max(peak, Math.abs(value))
     meter.style.transform = `scaleX(${Math.min(1, peak)})`
@@ -373,7 +446,9 @@ export function mountExample(root, id) {
     run.setAttribute('aria-busy', 'true')
     setStatus(`Processing ${file.name} in memory…`, 'running')
     let output = await offline.startRendering()
+    lastBuffer = output
     drawWave(canvas, output.getChannelData(0))
+    drawBufferSpectrogram(spectrogram, output.getChannelData(0), output.sampleRate, frequencyScale.value)
     setRenderedAudio(resultContainer, output, `${file.name.replace(/\.[^.]+$/, '')}-processed`)
     setButtonLabel(run, 'Process again')
     run.removeAttribute('aria-busy')
@@ -381,20 +456,24 @@ export function mountExample(root, id) {
   }
 
   async function runWorklet() {
+    lastBuffer = null
+    resetSpectrogram(spectrogram)
     context = new AudioContext(); await context.resume()
-    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.connect(context.destination)
+    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20; analyser.connect(context.destination)
     demo = await buildWorklet(context, { destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
     setButtonLabel(run, 'Stop demo'); setStatus('Custom AudioWorkletProcessor is running in the browser worklet thread.', 'running')
     animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
   }
 
   async function runMic() {
+    lastBuffer = null
+    resetSpectrogram(spectrogram)
     let options = readOptions(id, form)
     stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     context = new AudioContext(); await context.resume()
     let { build } = await import(`./graphs/${id}.js`)
     demo = build(context, { stream, gain: Number(options.gain ?? 1), monitor: false })
-    analyser = demo.nodes[2]; analyser.fftSize = 4096
+    analyser = demo.nodes[2]; analyser.fftSize = 4096; analyser.minDecibels = -100; analyser.maxDecibels = -20
     if (id === 'recorder') {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser')
       chunks = []; recorder = new MediaRecorder(stream)
@@ -425,14 +504,20 @@ export function mountExample(root, id) {
     input.addEventListener('change', () => { label.firstChild.textContent = input.files[0]?.name || 'Choose audio file' })
   }
 
+  controls.hidden = fields.childElementCount === 0 && actions.childElementCount === 0
+
   if (example.mode === 'node') {
     setButtonLabel(run, 'Copy command')
     setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
+  } else {
+    setStatus(!controls.hidden && example.mode !== 'file'
+      ? 'Sound starts only after you run the demo. Control changes then apply live.'
+      : 'Sound starts only after you run the demo.')
   }
 
-  run.addEventListener('click', async () => {
-    if (context) return stop()
-    if (example.mode === 'node') return copyText(run, example.command)
+  let startDemo = async () => {
+    if (busy || disposed) return
+    busy = true
     run.setAttribute('aria-busy', 'true')
     setButtonLabel(run, 'Starting')
     try {
@@ -441,18 +526,63 @@ export function mountExample(root, id) {
       else if (example.mode === 'worklet') await runWorklet()
       else if (example.mode === 'mic') await runMic()
       else await runPortable()
+      live = true
     } catch (error) {
+      live = false
+      let message = `${error.message}. Check permissions or input, then try again.`
+      if (context) await stop(message)
       setButtonLabel(run, 'Try again')
-      setStatus(`${error.message}. Check permissions or input, then try again.`, 'error')
-      if (context) await stop(status.textContent)
-      run.classList.add('is-error')
+      setStatus(message, 'error')
     } finally {
+      busy = false
       run.removeAttribute('aria-busy')
     }
-  })
+  }
+
+  let onRun = async () => {
+    if (busy) return
+    if (context) {
+      live = false
+      return stop()
+    }
+    if (example.mode === 'node') return copyText(run, example.command)
+    await startDemo()
+  }
+
+  let reloadDemo = async () => {
+    if (!live || busy || disposed) return
+    if (context) await stop('Applying updated controls.')
+    await startDemo()
+  }
+
+  let scheduleReload = event => {
+    if (!live || event.target?.type === 'file') return
+    clearTimeout(reloadTimer)
+    reloadTimer = setTimeout(reloadDemo, 180)
+  }
+
+  let onControlInput = event => {
+    if (event.target?.type === 'range') scheduleReload(event)
+  }
+
+  let onScaleChange = () => {
+    if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
+    else resetSpectrogram(spectrogram)
+  }
+
+  run.addEventListener('click', onRun)
+  form.addEventListener('input', onControlInput)
+  form.addEventListener('change', scheduleReload)
+  frequencyScale.addEventListener('change', onScaleChange)
 
   return async () => {
+    disposed = true
+    live = false
+    clearTimeout(reloadTimer)
     observer.disconnect()
+    form.removeEventListener('input', onControlInput)
+    form.removeEventListener('change', scheduleReload)
+    frequencyScale.removeEventListener('change', onScaleChange)
     await stop('Closed.')
   }
 }

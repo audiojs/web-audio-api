@@ -1,4 +1,5 @@
 // Programmable metronome: Schedule a click pattern with accents, rests, tempo control, and instrument presets.
+// CLI: node examples/metronome.js 120 X-x-X-x-
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x4d455452) {

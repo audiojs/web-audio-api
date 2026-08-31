@@ -72,8 +72,8 @@ Their trigger is a recorder, tuner, meter, telephony path, acoustic test, or rea
 Evidence:
 
 - Issues [#35](https://github.com/audiojs/web-audio-api/issues/35), [#49](https://github.com/audiojs/web-audio-api/issues/49), [#63](https://github.com/audiojs/web-audio-api/issues/63), and [#79](https://github.com/audiojs/web-audio-api/issues/79) concern capture, microphone levels, MediaStreams, and stream modification.
-- `audio-speaker` is the default output adapter.
-- `audio-mic` is an optional input adapter used by the microphone examples.
+- `@audio/speaker` is the default output adapter.
+- `@audio/mic` is an optional input adapter used by the microphone examples.
 
 What they need first:
 
@@ -246,7 +246,7 @@ Current visible structure:
 1. Product title and one runnable code sample.
 2. Install command.
 3. Two-column example catalogue grouped by kind.
-4. Modal containing the browser preview, atomic graph source, and CLI command; every link also has a canonical detail page.
+4. Modal containing the browser preview and atomic graph source, with the CLI invocation kept in the source header comment; every link also has a canonical detail page.
 5. Compact objection-led FAQ, with the comparison table inside it.
 6. One-line licence footer.
 
@@ -321,6 +321,11 @@ Decoding:
 
 - `@audio/decode`: https://github.com/audiojs/decode
 - npm metadata: https://www.npmjs.com/package/@audio/decode
+
+Audio I/O:
+
+- `@audio/speaker`: https://github.com/audiojs/speaker
+- `@audio/mic`: https://github.com/audiojs/mic
 
 Alternatives:
 

@@ -1,5 +1,5 @@
 import BaseAudioContext from './BaseAudioContext.js'
-import Speaker from 'audio-speaker'
+import Speaker from '@audio/speaker'
 import convert from 'pcm-convert'
 import { BLOCK_SIZE } from './constants.js'
 import { DOMErr } from './errors.js'
@@ -24,7 +24,7 @@ class AudioContext extends BaseAudioContext {
   #numberOfChannels
   #bitDepth
   #encoder
-  #speaker = null  // audio-speaker write function (default output)
+  #speaker = null  // @audio/speaker write function (default output)
   #stream = null   // writable stream sink (when sinkId is a stream)
   #loopDeferred = false
   #sinkId = ''

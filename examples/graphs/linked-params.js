@@ -1,4 +1,5 @@
 // Linked AudioParams: Drive multiple gain parameters from one ConstantSourceNode.
+// CLI: node examples/linked-params.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

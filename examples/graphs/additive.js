@@ -1,4 +1,5 @@
 // Additive synthesis: Construct square, saw, and triangle timbres from individual harmonics.
+// CLI: node examples/additive.js square 220 16 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

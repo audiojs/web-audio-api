@@ -1,7 +1,7 @@
 // Recorder — capture the mic to a WAV file, with a live level meter.
 // mic → gain → recorder node → destination (silent) — every sample is captured through the graph.
-// Requires the `audio-mic` package (cross-platform Node mic capture):
-//   npm i audio-mic
+// Requires the `@audio/mic` package (cross-platform Node mic capture):
+//   npm i @audio/mic
 // Run: node examples/recorder.js
 // Run: node examples/recorder.js take1 gain=2      # preset name + input gain
 // Run: node examples/recorder.js rate=48000 ch=2
@@ -23,10 +23,10 @@ help({
     ['rate=<hz>', 'sample rate (default: 44100)'],
     ['ch=<number>', 'input channels (default: 1)'],
     ['bit=<number>', 'PCM bit depth (default: 16)'],
-    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+    ['backend=<name>', '@audio/mic backend: miniaudio/auto (default) or process'],
   ],
   controls: [['Enter', 'stop and choose the output filename'], ['+ / −', 'adjust input gain'], ['Q / Esc', 'cancel without saving']],
-  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+  notes: ['Requires the optional @audio/mic package. The process backend uses sox/ffmpeg as a fallback.'],
 })
 
 let { pos, $ } = args()
@@ -36,10 +36,10 @@ let bitDepth = parseInt($('bit', '16'))
 let backend = $('backend')                    // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
 let nameArg = pos[0]                          // positional → default filename
 
-// audio-mic is an optional peer dependency — fail with a hint, not a stack trace.
+// @audio/mic is an optional peer dependency — fail with a hint, not a stack trace.
 let mic
-try { mic = (await import('audio-mic')).default }
-catch { console.error('Microphone capture needs the audio-mic package:\n  npm i audio-mic'); process.exit(1) }
+try { mic = (await import('@audio/mic')).default }
+catch { console.error('Microphone capture needs the @audio/mic package:\n  npm i @audio/mic'); process.exit(1) }
 
 let C = process.stdout.isTTY
 let paint = (s, c) => C ? `\x1b[${c}m${s}\x1b[0m` : s
@@ -74,7 +74,7 @@ recorder.onaudioprocess = e => {
 
 let read
 try {
-  // audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
+  // @audio/mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
   read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })
   let pump = () => read((err, buf) => {
     if (err || !buf) return

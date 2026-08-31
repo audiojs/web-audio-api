@@ -2,7 +2,7 @@
 
 [Web Audio, without the browser.](https://audiojs.dev/web-audio-api/) Run the same Web Audio graph in browsers, Node, CI, servers, and scripts.
 
-* **100% [WPT](https://web-platform-tests.org/) conformance**, no native deps.
+* **100% [WPT](https://web-platform-tests.org/) conformance**, with a pure-JS audio graph and DSP core.
 * **Audio in CI** – `OfflineAudioContext` renders without speakers.
 * **CLI audio scripting** – pipe, process, synthesize from terminal.
 * **Server-side audio** – generate from APIs, bots, pipelines.
@@ -27,7 +27,7 @@ osc.start()
 // → A440 through your speakers
 ```
 
-[`audio-speaker`](https://github.com/audiojs/audio-speaker) provides speaker output without extra setup.
+[`@audio/speaker`](https://github.com/audiojs/speaker) provides speaker output without extra setup.
 
 ### Offline rendering
 
@@ -58,7 +58,7 @@ const buffer = await ctx.startRendering()
 | [dtmf.js](examples/dtmf.js) | Dial a phone number – `5551234` |
 | [stereo-test.js](examples/stereo-test.js) | Left, right, center – `1k 1s` |
 | [metronome.js](examples/metronome.js) | Programmable stick click – `80..240 10m X-x-x-x-` |
-| [tuner.js](examples/tuner.js) | Guitar tuner – mic pitch in cents – `440` (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
+| [tuner.js](examples/tuner.js) | Guitar tuner – mic pitch in cents – `440` (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
 | **Illusions** | |
 | [shepard.js](examples/shepard.js) | Pitch that rises forever – `up 15s` |
 | [risset-rhythm.js](examples/risset-rhythm.js) | Beat that accelerates forever – `up 120 20s` |
@@ -86,8 +86,8 @@ const buffer = await ctx.startRendering()
 | [render-to-buffer.js](examples/render-to-buffer.js) | Offline render → buffer |
 | [process-file.js](examples/process-file.js) | Audio file → EQ + compress → render |
 | [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout – pipe to `aplay`, `sox`, etc. |
-| [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
-| [recorder.js](examples/recorder.js) | Record the mic to a WAV file, with a level meter (requires [`audio-mic`](https://github.com/audiojs/audio-mic)) |
+| [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
+| [recorder.js](examples/recorder.js) | Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
 
 ## FAQ
 
@@ -143,15 +143,15 @@ const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 <dt id="how-do-i-capture-audio-from-the-microphone">How do I capture audio from the microphone?</dt>
 <dd>
 
-In Node, pair [`audio-mic`](https://github.com/audiojs/audio-mic) with `CustomMediaStreamTrack`:
+In Node, pair [`@audio/mic`](https://github.com/audiojs/mic) with `CustomMediaStreamTrack`:
 
 ```sh
-npm install audio-mic
+npm install @audio/mic
 ```
 
 ```js
 import { AudioContext, MediaStreamAudioSourceNode, CustomMediaStreamTrack, MediaStream } from 'web-audio-api'
-import mic from 'audio-mic'
+import mic from '@audio/mic'
 
 const ctx = new AudioContext()
 await ctx.resume()
@@ -166,7 +166,7 @@ const stream = new MediaStream([track])
 const src = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
 src.connect(ctx.destination) // live monitor
 
-// audio-mic's read(cb) is single-shot; re-arm it inside the callback.
+// @audio/mic's read(cb) is single-shot; re-arm it inside the callback.
 const read = mic({ sampleRate: ctx.sampleRate, channels: 1, bitDepth: 16 })
 const pump = () => read((err, buf) => {
   if (err || !buf) return
@@ -180,7 +180,7 @@ pump()
 
 See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU meter. To record the graph to a buffer, use `OfflineAudioContext.startRendering()`. To capture live graph output as a stream, use `ctx.createMediaStreamDestination()`.
 
-If the mic opens but delivers silence on macOS (a known issue with audio-mic's prebuilt CoreAudio binding under some TCC configurations), pass `backend: 'process'` to use `sox`/`ffmpeg` instead: `mic({ ..., backend: 'process' })`. All bundled examples accept `backend=process` on the command line.
+If the default microphone backend cannot open the device, pass `backend: 'process'` to use `sox`/`ffmpeg` instead: `mic({ ..., backend: 'process' })`. All bundled examples accept `backend=process` on the command line.
 </dd>
 
 <dt>How do I use it as a polyfill?</dt>
@@ -191,11 +191,11 @@ import 'web-audio-api/polyfill'
 // AudioContext, GainNode, etc. are now global
 ```
 
-The polyfill also installs `navigator.mediaDevices.getUserMedia({ audio: true })`, backed by the optional [`audio-mic`](https://github.com/audiojs/audio-mic) peer dependency. This lets browser mic-capture code run verbatim in Node:
+The polyfill also installs `navigator.mediaDevices.getUserMedia({ audio: true })`, backed by the optional [`@audio/mic`](https://github.com/audiojs/mic) peer dependency. This lets browser mic-capture code run verbatim in Node:
 
 ```js
 import 'web-audio-api/polyfill'
-// npm install audio-mic
+// npm install @audio/mic
 
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 const ctx = new AudioContext()
@@ -206,7 +206,7 @@ src.connect(ctx.destination)
 stream.getAudioTracks()[0].stop()
 ```
 
-Without `audio-mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
+Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
 </dd>
 
 <dt>Can I unit-test audio code?</dt>

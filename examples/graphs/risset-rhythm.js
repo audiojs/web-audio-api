@@ -1,4 +1,5 @@
 // Risset rhythm: Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.
+// CLI: node examples/risset-rhythm.js up 120 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

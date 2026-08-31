@@ -1,4 +1,5 @@
 // FM synthesis: Use one oscillator to modulate another oscillator’s frequency.
+// CLI: node examples/fm-synthesis.js 440 2 5 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

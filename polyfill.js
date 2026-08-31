@@ -1,6 +1,6 @@
 // Web Audio API globals for Node: `import 'web-audio-api/polyfill'`
 // Also exposes `navigator.mediaDevices.getUserMedia()` backed by the optional
-// peer dep `audio-mic` so browser mic code runs verbatim.
+// peer dep `@audio/mic` so browser mic code runs verbatim.
 import * as waa from './index.js'
 
 for (let [name, value] of Object.entries(waa))
@@ -17,7 +17,7 @@ globalThis.navigator ??= {}
 globalThis.navigator.mediaDevices ??= {}
 
 // --- navigator.mediaDevices.getUserMedia ---------------------------------
-// Backed by the optional 'audio-mic' peer dep.  Install: npm install audio-mic
+// Backed by the optional '@audio/mic' peer dep.  Install: npm install @audio/mic
 
 let pick = v => v == null ? undefined : typeof v === 'number' ? v : (v.ideal ?? v.exact ?? v.min ?? v.max)
 
@@ -26,9 +26,9 @@ async function getUserMedia(constraints = {}) {
     'getUserMedia: only { audio } is supported in Node'), { name: 'NotSupportedError' })
 
   let mic
-  try { mic = (await import('audio-mic')).default }
+  try { mic = (await import('@audio/mic')).default }
   catch { throw Object.assign(new Error(
-    "getUserMedia requires 'audio-mic' in Node. Install: npm install audio-mic"),
+    "getUserMedia requires '@audio/mic' in Node. Install: npm install @audio/mic"),
     { name: 'NotFoundError' }) }
 
   let c = constraints.audio === true ? {} : constraints.audio

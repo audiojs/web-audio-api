@@ -1,4 +1,5 @@
 // LFO tremolo: Connect an oscillator to an AudioParam and modulate gain at audio-clock precision.
+// CLI: node examples/lfo.js rate=5 depth=0.5 -d 10s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

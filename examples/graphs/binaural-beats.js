@@ -1,4 +1,5 @@
 // Binaural beats: Send nearby frequencies to opposite ears and hear their difference.
+// CLI: node examples/binaural-beats.js 200 10 10s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

@@ -1,4 +1,5 @@
 // Shepard tone: Layer octave-spaced voices to create a pitch that appears to rise or fall forever.
+// CLI: node examples/shepard.js up 15s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export const processorSource = `class ShepardProcessor extends AudioWorkletProcessor {

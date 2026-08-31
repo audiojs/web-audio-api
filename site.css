@@ -1,5 +1,5 @@
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
- * genre: modern-minimal · macrostructure: Catalogue · theme: AudioJS ink/paper · enrichment: none
+ * genre: modern-minimal · macrostructure: Catalogue · theme: AudioJS cool ink/paper · enrichment: none
  * contrast: pass (46–50) · nav: N9 edge-minimal · footer: Ft2 inline rule · slop: pass (51–55)
  * honest: pass (56) · chrome: pass (57) · tokens: pass (58) · responsive: pass (59) · icons: pass (60)
  * mobile: pass (36, 59, 61–69)
@@ -46,7 +46,7 @@ summary { cursor: pointer; }
 
 a {
   color: var(--color-ink);
-  text-decoration-color: var(--color-accent-strong);
+  text-decoration-color: var(--color-muted);
   text-underline-offset: 0.18em;
 }
 
@@ -118,10 +118,7 @@ main,
   padding-inline: var(--page-gutter);
 }
 
-.hero {
-  padding-block: var(--space-3xl) var(--space-4xl);
-  border-block-end: var(--rule-heavy) solid var(--color-ink);
-}
+.hero { padding-block: var(--space-3xl) var(--space-2xl); }
 
 h1,
 h2,
@@ -212,7 +209,7 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-.examples { padding-block: var(--space-3xl) var(--space-4xl); }
+.examples { padding-block: var(--space-2xl) var(--space-4xl); }
 
 .section-heading {
   margin-block-end: var(--space-xl);
@@ -299,12 +296,9 @@ pre code { font: inherit; }
 .example-entry.is-error { color: var(--color-error); }
 .example-entry[data-state="success"]::after { content: "✓"; color: var(--color-success); }
 
-.faq {
-  padding-block: 0 var(--space-4xl);
-  border-block-start: var(--rule-hair) solid var(--color-rule);
-}
+.faq { padding-block: 0 var(--space-4xl); }
 
-.faq .section-heading { margin-block: var(--space-3xl) var(--space-lg); }
+.faq .section-heading { margin-block: 0 var(--space-lg); }
 .faq-list { border-block-start: var(--rule-heavy) solid var(--color-ink); }
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
@@ -332,6 +326,15 @@ pre code { font: inherit; }
 }
 
 .faq p { max-width: 68ch; margin: 0; }
+
+.faq pre {
+  max-width: 48rem;
+  margin-block-start: var(--space-md);
+  padding: var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule-dark);
+  background: var(--color-ink-2);
+  color: var(--color-paper);
+}
 
 .table-scroll {
   max-width: 100%;
@@ -394,16 +397,25 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   height: 100dvh;
   max-height: none;
   margin: 0;
-  padding: max(var(--space-md), env(safe-area-inset-top)) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-md), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
+  padding: env(safe-area-inset-top) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-md), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
   position: fixed;
   inset: 0;
   overflow-x: clip;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-color: var(--color-muted) transparent;
+  scrollbar-width: auto;
   border: 0;
   background: transparent;
   color: var(--color-body);
+}
+
+.example-dialog::-webkit-scrollbar-thumb {
+  border: var(--space-2xs) solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--color-muted);
+  background-clip: padding-box;
 }
 
 .example-dialog::backdrop { background: var(--color-backdrop); }
@@ -419,7 +431,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   min-width: 0;
   margin-inline: auto;
   overflow: clip;
-  border: var(--rule-hair) solid var(--color-rule);
+  border: 0;
   border-radius: var(--radius-lg);
   background: var(--color-paper);
 }
@@ -463,11 +475,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .dialog-body {
   min-width: 0;
   display: grid;
-  align-items: start;
+  align-items: stretch;
 }
-
-.dialog-body .demo-panel,
-.detail-grid .demo-panel { order: -1; }
 
 .demo-panel,
 .dialog-code {
@@ -476,15 +485,48 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   color: var(--color-paper);
 }
 
-.demo-stage {
-  min-height: 16rem;
-  padding: var(--space-md);
-  display: grid;
-  align-content: center;
+.demo-panel {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.demo-canvas-wrap { height: 11rem; }
-.demo-canvas { width: 100%; height: 11rem; display: block; }
+.demo-stage {
+  padding: var(--space-md);
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-raised);
+  display: grid;
+  background: var(--color-ink);
+}
+
+.demo-canvas-wrap { height: 8rem; }
+.demo-canvas { width: 100%; height: 8rem; display: block; }
+
+.demo-spectrogram-head {
+  min-height: 2.75rem;
+  margin-block-start: var(--space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  border-block-start: var(--rule-hair) solid var(--color-rule-dark);
+  color: var(--color-muted-on-ink);
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+}
+
+.demo-spectrogram-head select {
+  min-height: 2rem;
+  padding-inline: var(--space-sm);
+  border: var(--rule-hair) solid var(--color-rule-dark);
+  border-radius: var(--radius-xs);
+  background: var(--color-ink-2);
+  color: var(--color-paper);
+}
+
+.demo-spectrogram-wrap { height: 7rem; }
+.demo-spectrogram { width: 100%; height: 7rem; display: block; }
 
 .demo-meter {
   margin-block-start: var(--space-md);
@@ -501,7 +543,9 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .demo-meter-fill { width: 100%; height: 100%; background: var(--color-accent); transform: scaleX(0); transform-origin: left center; }
 
 .demo-form {
-  display: grid;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   border-block-start: var(--rule-hair) solid var(--color-rule-dark);
 }
 
@@ -516,11 +560,16 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .demo-extras:empty { display: none; }
 
 .demo-runbar {
+  margin-block-start: auto;
   padding: var(--space-md);
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--z-raised);
   display: flex;
   align-items: center;
   gap: var(--space-md);
   border-block-start: var(--rule-hair) solid var(--color-rule-dark);
+  background: var(--color-ink);
 }
 
 .control-field {
@@ -581,13 +630,15 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .file-label input { width: 1px; height: 1px; position: absolute; overflow: hidden; clip-path: inset(50%); }
 
 .demo-help { min-width: 0; min-height: 1.5rem; margin: 0; flex: 1; color: var(--color-muted-on-ink); font-size: var(--text-xs); }
-.demo-results { margin-block-start: var(--space-md); }
+.demo-results {
+  padding: var(--space-md);
+  border-block-start: var(--rule-hair) solid var(--color-rule-dark);
+}
 .demo-results:empty { display: none; }
 .demo-results audio { width: min(100%, 28rem); min-height: 2.75rem; }
 
 .dialog-code { border-block-start: var(--rule-hair) solid var(--color-rule-dark); }
 .code-output { padding: var(--space-md); overflow-x: auto; overflow-y: visible; }
-.dialog-command { margin: 0; padding: var(--space-md); border-block-start: var(--rule-hair) solid var(--color-rule-dark); overflow-x: auto; overflow-y: hidden; font-family: var(--font-code); font-size: var(--text-xs); white-space: nowrap; }
 
 ::highlight(comment) { color: var(--syntax-comment); }
 ::highlight(keyword) { color: var(--syntax-keyword); }
@@ -703,15 +754,20 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .example-entry { grid-template-columns: minmax(11rem, 0.9fr) minmax(0, 1.1fr) auto; }
   .example-entry > span { display: block; }
   .dialog-body,
-  .detail-grid { grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr); align-items: start; }
-  .dialog-body .demo-panel,
-  .detail-grid .demo-panel {
-    order: 0;
-    position: sticky;
-    inset-block-start: var(--space-md);
+  .detail-grid { grid-template-columns: minmax(22rem, 1fr) minmax(0, 1fr); align-items: stretch; }
+  .dialog-code {
+    border-block-start: 0;
     border-inline-start: var(--rule-hair) solid var(--color-rule-dark);
   }
-  .dialog-code { border-block-start: 0; }
+}
+
+@media (max-height: 40rem) {
+  .demo-stage { padding: var(--space-sm); }
+  .demo-canvas-wrap,
+  .demo-canvas { height: 5rem; }
+  .demo-spectrogram-head { min-height: 2.25rem; }
+  .demo-spectrogram-wrap,
+  .demo-spectrogram { height: 4rem; }
 }
 
 @media (pointer: coarse) {

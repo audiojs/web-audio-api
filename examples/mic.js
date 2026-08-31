@@ -1,6 +1,6 @@
 // Live microphone pass-through — mic → gain → speakers, with RMS meter.
-// Requires the `audio-mic` package (cross-platform Node mic capture):
-//   npm i audio-mic
+// Requires the `@audio/mic` package (cross-platform Node mic capture):
+//   npm i @audio/mic
 // Run: node examples/mic.js
 // Run: node examples/mic.js gain=0.8
 // Keys: space pause · + / - adjust gain · q quit
@@ -17,10 +17,10 @@ help({
     ['rate=<hz>', 'sample rate (default: 44100)'],
     ['ch=<number>', 'input channels (default: 1)'],
     ['bit=<number>', 'input PCM bit depth (default: 16)'],
-    ['backend=<name>', 'audio-mic backend: miniaudio/auto (default) or process'],
+    ['backend=<name>', '@audio/mic backend: miniaudio/auto (default) or process'],
   ],
   controls: [['Space', 'pause/resume'], ['+ / −', 'adjust input gain'], ['Q / Esc', 'quit']],
-  notes: ['Requires the optional audio-mic package. The process backend uses sox/ffmpeg as a fallback.'],
+  notes: ['Requires the optional @audio/mic package. The process backend uses sox/ffmpeg as a fallback.'],
 })
 
 let { $ } = args()
@@ -30,10 +30,10 @@ let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
 let backend = $('backend')   // 'miniaudio' (default) or 'process' (sox/ffmpeg fallback)
 
-// audio-mic is optional; keep --help usable even when it is not installed.
+// @audio/mic is optional; keep --help usable even when it is not installed.
 let mic
-try { mic = (await import('audio-mic')).default }
-catch { console.error('Microphone capture needs the audio-mic package:\n  npm i audio-mic'); process.exit(1) }
+try { mic = (await import('@audio/mic')).default }
+catch { console.error('Microphone capture needs the @audio/mic package:\n  npm i @audio/mic'); process.exit(1) }
 
 const ctx = new AudioContext({ sampleRate })
 await ctx.resume()
@@ -45,7 +45,7 @@ const graph = build(ctx, { stream, gain: gainVal, monitor: true })
 const [, gain, analyser] = graph.nodes
 analyser.fftSize = 1024
 
-// audio-mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
+// @audio/mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.
 let read = mic({ sampleRate, channels, bitDepth, ...(backend && { backend }) })
 let pump = () => read((err, buf) => {
   if (err || !buf) return

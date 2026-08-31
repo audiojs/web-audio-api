@@ -1,4 +1,5 @@
 // Acoustic beating: Hear amplitude beating produced by two nearby frequencies.
+// CLI: node examples/beating.js 440 3 5s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

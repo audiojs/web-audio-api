@@ -1,4 +1,5 @@
 // DTMF dialer: Synthesize telephone keypad tones from paired row and column frequencies.
+// CLI: node examples/dtmf.js 5551234
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

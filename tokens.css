@@ -1,16 +1,16 @@
-/* Hallmark · tokens · genre: modern-minimal · theme: AudioJS ink/paper */
+/* Hallmark · tokens · genre: modern-minimal · theme: AudioJS cool ink/paper */
 :root {
   --color-ink: oklch(17.163% 0.00966 255.65);
   --color-ink-2: oklch(21.248% 0.01091 260.67);
   --color-ink-3: oklch(34.258% 0.01404 256.77);
   --color-body: oklch(28% 0.012 256);
   --color-muted: oklch(45% 0.016 252);
-  --color-muted-on-ink: oklch(76% 0.012 92);
-  --color-paper: oklch(95.201% 0.00827 91.48);
-  --color-paper-2: oklch(93.968% 0.00958 93.57);
-  --color-paper-3: oklch(89% 0.011 92);
-  --color-raise: oklch(97% 0.007 92);
-  --color-rule: oklch(86.055% 0.01269 91.53);
+  --color-muted-on-ink: oklch(76% 0.012 252);
+  --color-paper: oklch(95.8% 0.008 252);
+  --color-paper-2: oklch(93.8% 0.009 252);
+  --color-paper-3: oklch(89.5% 0.011 252);
+  --color-raise: oklch(97% 0.007 252);
+  --color-rule: oklch(85.5% 0.013 252);
   --color-rule-dark: oklch(33% 0.014 256);
   --color-accent: oklch(65.848% 0.11388 209.98);
   --color-accent-strong: oklch(50% 0.12 210);

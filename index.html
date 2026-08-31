@@ -120,12 +120,46 @@ osc.start()</code></pre>
       </div>
       <div class="faq-list">
         <details><summary>Is it fast enough for realtime?</summary><div><p>For simple graphs, yes. The included benchmarks render every measured scenario faster than realtime. Pure JavaScript is competitive on small graphs; convolution and compression are roughly 2–4× slower than the native Rust binding in the repository benchmark. AudioWorklet execution is currently synchronous, so production low-latency work remains the boundary.</p></div></details>
-        <details><summary>How does audio I/O work?</summary><div><p><code>audio-speaker</code> provides the default output device. Microphone examples use the optional <code>audio-mic</code> adapter, then feed PCM into a <code>MediaStreamTrack</code>. You can also set <code>sinkId</code> to any Node writable stream.</p></div></details>
-        <details><summary>Which formats can it decode?</summary><div><p><code>decodeAudioData()</code> uses <a href="https://github.com/audiojs/decode"><code>@audio/decode</code></a>. It detects and lazily loads codecs for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, QOA, WebM, WMA, AC-3, DTS, tracker modules, DSD, and more. It can also extract supported audio tracks from MP4, MOV, MKV, WebM, and AVI without FFmpeg or native bindings. Codec packages carry their own licences, so check the decoder’s licence table before distributing a bundled codec.</p></div></details>
-        <details><summary>Does Tone.js work?</summary><div><p>Usually. Load <code>web-audio-api/polyfill</code> before importing a browser-oriented library so constructors and <code>window</code> checks exist. Tone.js works with that import order; unsupported DOM APIs still need their own adapter.</p></div></details>
-        <details><summary>Can I test audio in CI?</summary><div><p>Yes. Use <code>OfflineAudioContext</code> to render an <code>AudioBuffer</code> in memory, then assert duration, channel count, peaks, RMS, spectra, or exact samples. No speaker, display, or audio device is required.</p></div></details>
-        <details><summary>Can it run without speakers?</summary><div><p>Yes. <code>OfflineAudioContext</code> never opens an output device. A realtime <code>AudioContext</code> can also write PCM to a stream instead of the system speaker.</p></div></details>
-        <details><summary>Does it support AudioWorklets?</summary><div><p>Yes. Modules can be registered by URL, data URL, Blob URL, or an inline callback in Node. Processors and parameters follow the Web Audio shape. Worklets currently execute synchronously rather than on an isolated realtime thread.</p></div></details>
+        <details><summary>How does audio I/O work?</summary><div><p><a href="https://github.com/audiojs/speaker"><code>@audio/speaker</code></a> provides the default output device. Microphone examples use the optional <a href="https://github.com/audiojs/mic"><code>@audio/mic</code></a> adapter, then feed PCM into a <code>MediaStreamTrack</code>. You can also set <code>sinkId</code> to any Node writable stream.</p></div></details>
+        <details><summary>Which formats can it decode?</summary><div><p><code>decodeAudioData()</code> uses <a href="https://github.com/audiojs/decode"><code>@audio/decode</code></a>. Its codec and container coverage is broader and more predictable than the native <code>decodeAudioData()</code> set in a typical browser, which varies by browser and operating system. Codecs are detected and loaded on demand for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, QOA, WebM, WMA, AC-3, DTS, tracker modules, DSD, and more. Supported tracks can also be extracted from MP4, MOV, MKV, WebM, and AVI without FFmpeg or native bindings. Codec packages carry their own licences.</p></div></details>
+        <details><summary>Does Tone.js work?</summary><div><p>Yes. Install the globals before dynamically importing <a href="https://github.com/Tonejs/Tone.js">Tone.js</a> so its browser checks see the Web Audio constructors.</p><pre><code class="language-javascript">import 'web-audio-api/polyfill'
+const Tone = await import('tone')
+
+const ctx = new AudioContext()
+await ctx.resume()
+Tone.setContext(ctx)
+new Tone.Synth().toDestination()
+  .triggerAttackRelease('C4', '8n')</code></pre></div></details>
+        <details><summary>Can I test audio in CI?</summary><div><p>Yes. Render in memory, then assert samples, peaks, RMS, spectra, duration, or channel count. No audio device is opened.</p><pre><code class="language-javascript">import assert from 'node:assert/strict'
+import { OfflineAudioContext } from 'web-audio-api'
+
+const ctx = new OfflineAudioContext(1, 44100, 44100)
+const osc = ctx.createOscillator()
+osc.connect(ctx.destination)
+osc.start()
+
+const audio = await ctx.startRendering()
+assert(audio.getChannelData(0).some(Boolean))</code></pre></div></details>
+        <details><summary>Can it run without speakers?</summary><div><p>Yes. <code>OfflineAudioContext</code> renders without opening <a href="https://github.com/audiojs/speaker"><code>@audio/speaker</code></a>. A realtime context can instead send PCM to a writable stream through <code>sinkId</code>.</p><pre><code class="language-javascript">import { OfflineAudioContext } from 'web-audio-api'
+
+const ctx = new OfflineAudioContext(2, 44100, 44100)
+// build the same graph here
+const audio = await ctx.startRendering()</code></pre></div></details>
+        <details><summary>Does it support AudioWorklets?</summary><div><p>Yes. Modules can be registered by URL, data URL, Blob URL, or an inline callback in Node. Worklets currently execute synchronously rather than on an isolated realtime thread.</p><pre><code class="language-javascript">import { AudioContext, AudioWorkletNode } from 'web-audio-api'
+
+const ctx = new AudioContext()
+await ctx.resume()
+await ctx.audioWorklet.addModule(scope =&gt; {
+  class PassThrough extends scope.AudioWorkletProcessor {
+    process(inputs, outputs) {
+      outputs[0][0].set(inputs[0][0] || [])
+      return true
+    }
+  }
+  scope.registerProcessor('pass-through', PassThrough)
+})
+
+const node = new AudioWorkletNode(ctx, 'pass-through')</code></pre></div></details>
         <details><summary>What differs from a browser?</summary><div><p>The graph API, 128-frame render quantum, automation model, and node behavior follow the same specification. The boundaries differ: Node needs adapters for speakers, microphones, files, and streams; browser examples on this page use the browser’s native engine.</p></div></details>
         <details class="comparison"><summary>How does it compare?</summary><div class="table-scroll" tabindex="0" role="region" aria-label="Web Audio implementation comparison">
           <table>
@@ -152,20 +186,21 @@ osc.start()</code></pre>
         <button class="icon-button dialog-close" type="button" data-close-dialog aria-label="Close example"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
       </header>
       <div class="dialog-body">
-        <section class="dialog-code code-stage" aria-label="Graph source">
-          <pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre>
-          <p class="dialog-command"><code id="dialog-command"></code></p>
-        </section>
         <section class="demo-panel" aria-label="Browser demo">
           <div class="demo-stage">
-            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div>
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+            <div class="demo-spectrogram-head"><span>Spectrogram</span><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas></div>
             <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <div class="demo-results" id="demo-result"></div>
           </div>
+          <div class="demo-results" id="demo-result"></div>
           <form class="demo-form" id="demo-form">
-            <div class="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
             <div class="demo-runbar"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button><p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p></div>
           </form>
+        </section>
+        <section class="dialog-code code-stage" aria-label="Graph source">
+          <pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre>
         </section>
       </div>
     </div>
