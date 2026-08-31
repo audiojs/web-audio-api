@@ -1,10 +1,6 @@
 // Generative gamelan: Schedule interlocking slendro patterns with metalophone partials and gong structure.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -26,5 +22,5 @@ export function build(ctx, {
     }
     nodes.push(env)
   }
-  return result({ sources, nodes, duration, graph: 'Slendro scheduler → metallic partials → Destination' })
+  return { sources, nodes, duration, graph: 'Slendro scheduler → metallic partials → Destination' }
 }

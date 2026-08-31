@@ -12,10 +12,6 @@ function seeded(seed = 0x574141) {
   }
 }
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -45,5 +41,5 @@ export function build(ctx, {
   let retune = (nextFrequency, time = ctx.currentTime) => {
     for (let voice of voices) voice.osc.frequency.setTargetAtTime(nextFrequency * voice.ratio * voice.harmonic * (1 + (random() - 0.5) * 0.0005), time, 0.08)
   }
-  return result({ sources, nodes, duration, graph: 'Detuned harmonic banks → Master Gain → Destination', data: { master, retune } })
+  return { sources, nodes, duration, graph: 'Detuned harmonic banks → Master Gain → Destination', data: { master, retune } }
 }

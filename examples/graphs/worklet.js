@@ -1,10 +1,6 @@
 // Custom AudioWorklet: Register a custom processor, expose a parameter, and render its output.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export const processorSource = `class WhiteNoise extends AudioWorkletProcessor {
   static get parameterDescriptors() { return [{ name: 'amplitude', defaultValue: 0.18, minValue: 0, maxValue: 1 }] }
   process(inputs, outputs, parameters) {
@@ -29,5 +25,5 @@ export async function build(ctx, {
   amplitude.linearRampToValueAtTime(gain, when + Math.min(0.2, duration / 3))
   amplitude.linearRampToValueAtTime(0, when + duration)
   node.connect(destination)
-  return result({ nodes: [node], duration, graph: 'AudioWorkletProcessor → AudioWorkletNode → Destination' })
+  return { sources: [], nodes: [node], duration, graph: 'AudioWorkletProcessor → AudioWorkletNode → Destination' }
 }

@@ -12,10 +12,6 @@ function seeded(seed = 0x574141) {
   }
 }
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -67,5 +63,5 @@ export function build(ctx, {
   source.start(when)
   fadeOut(master.gain, when, duration, gain)
   safeStop(source, when + duration + 0.01)
-  return result({ sources: [source], nodes: [source, master], duration, graph: 'Generated noise buffer → Gain → Destination' })
+  return { sources: [source], nodes: [source, master], duration, graph: 'Generated noise buffer → Gain → Destination' }
 }

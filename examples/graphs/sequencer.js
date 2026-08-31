@@ -1,10 +1,6 @@
 // Step sequencer: Schedule a 16-step melody against the audio clock.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -27,5 +23,5 @@ export function build(ctx, {
     osc.connect(env).connect(destination); osc.start(time); safeStop(osc, Math.min(time + step, when + totalDuration) + 0.01)
     sources.push(osc); nodes.push(osc, env)
   }
-  return result({ sources, nodes, duration: totalDuration, graph: '16-step audio-clock scheduler → envelopes → Destination' })
+  return { sources, nodes, duration: totalDuration, graph: '16-step audio-clock scheduler → envelopes → Destination' }
 }

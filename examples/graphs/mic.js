@@ -1,10 +1,6 @@
 // Microphone level: Route a live microphone through a gain and analyser with an RMS meter.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export function build(ctx, {
   stream, gain = 1, monitor = false, destination = ctx.destination,
 } = {}) {
@@ -23,5 +19,5 @@ export function build(ctx, {
     analyser.connect(mute).connect(destination)
     nodes.push(mute)
   }
-  return result({ nodes, duration: Infinity, graph: 'Microphone → Gain → Analyser' })
+  return { sources: [], nodes, duration: Infinity, graph: 'Microphone → Gain → Analyser' }
 }

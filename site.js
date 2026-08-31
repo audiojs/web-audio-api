@@ -6,11 +6,9 @@ const title = document.getElementById('dialog-title')
 const meta = document.getElementById('dialog-meta')
 const description = document.getElementById('dialog-description')
 const command = document.getElementById('dialog-command')
-const pageLink = document.getElementById('dialog-page-link')
-const graphLink = document.getElementById('dialog-graph-link')
-const cliLink = document.getElementById('dialog-cli-link')
 let dispose = null
 let activeId = null
+const unlockPage = () => document.documentElement.classList.remove('modal-open')
 
 async function openExample(id, updateHistory = true) {
   let example = byId.get(id)
@@ -18,14 +16,18 @@ async function openExample(id, updateHistory = true) {
   if (dispose) await dispose()
   activeId = id
   title.textContent = example.title
-  meta.textContent = `${example.category} · ${example.job}`
+  meta.replaceChildren(...[example.category, example.job].map(value => {
+    let tag = document.createElement('span')
+    tag.textContent = value
+    return tag
+  }))
   description.textContent = example.description
   command.textContent = example.command
-  pageLink.href = `./examples/${id}/`
-  graphLink.href = `https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/${id}.js`
-  cliLink.href = `https://github.com/audiojs/web-audio-api/blob/master/examples/${id}.js`
   dispose = mountExample(dialog, id)
-  if (!dialog.open) dialog.showModal()
+  if (!dialog.open) {
+    document.documentElement.classList.add('modal-open')
+    dialog.showModal()
+  }
   if (updateHistory) history.replaceState(null, '', `#${id}`)
   requestAnimationFrame(() => dialog.querySelector('input, select, #demo-run')?.focus({ preventScroll: true }))
 }
@@ -38,9 +40,11 @@ for (let link of document.querySelectorAll('[data-open-example]')) {
   })
 }
 
-dialog.querySelector('[data-close-dialog]').addEventListener('click', () => dialog.close())
-dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close() })
+dialog.querySelector('[data-close-dialog]').addEventListener('click', () => { unlockPage(); dialog.close() })
+dialog.addEventListener('click', event => { if (event.target === dialog) { unlockPage(); dialog.close() } })
+dialog.addEventListener('cancel', unlockPage)
 dialog.addEventListener('close', async () => {
+  unlockPage()
   if (dispose) await dispose()
   dispose = null
   activeId = null
@@ -50,7 +54,7 @@ dialog.addEventListener('close', async () => {
 addEventListener('hashchange', () => {
   let id = decodeURIComponent(location.hash.slice(1))
   if (id && id !== activeId) openExample(id, false)
-  else if (!id && dialog.open) dialog.close()
+  else if (!id && dialog.open) { unlockPage(); dialog.close() }
 })
 
 addEventListener('pagehide', () => dispose?.())

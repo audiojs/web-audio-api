@@ -1,10 +1,6 @@
 // Acoustic beating: Hear amplitude beating produced by two nearby frequencies.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -25,5 +21,5 @@ export function build(ctx, {
   a.connect(master); b.connect(master); master.connect(destination)
   a.start(when); b.start(when); fadeOut(master.gain, when, duration, gain)
   safeStop(a, when + duration + 0.01); safeStop(b, when + duration + 0.01)
-  return result({ sources: [a, b], nodes: [a, b, master], duration, graph: '2 nearby Oscillators → Gain → Destination' })
+  return { sources: [a, b], nodes: [a, b, master], duration, graph: '2 nearby Oscillators → Gain → Destination' }
 }

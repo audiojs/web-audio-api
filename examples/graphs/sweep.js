@@ -1,10 +1,6 @@
 // Frequency sweep: Sweep across a frequency range with linear or exponential automation.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -33,5 +29,5 @@ export function build(ctx, {
   osc.connect(master).connect(destination)
   osc.start(when)
   safeStop(osc, when + duration + 0.01)
-  return result({ sources: [osc], nodes: [osc, master], duration, graph: 'Oscillator.frequency automation → Gain → Destination' })
+  return { sources: [osc], nodes: [osc, master], duration, graph: 'Oscillator.frequency automation → Gain → Destination' }
 }

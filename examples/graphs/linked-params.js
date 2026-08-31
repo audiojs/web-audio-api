@@ -1,10 +1,6 @@
 // Linked AudioParams: Drive multiple gain parameters from one ConstantSourceNode.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -19,5 +15,5 @@ export function build(ctx, {
   control.offset.setValueAtTime(0.45, when + duration * 0.75); control.offset.linearRampToValueAtTime(0, when + duration)
   control.connect(gainA.gain); control.connect(gainB.gain); a.connect(gainA).connect(mix); b.connect(gainB).connect(mix); mix.connect(destination)
   for (let source of [a, b, control]) { source.start(when); safeStop(source, when + duration + 0.01) }
-  return result({ sources: [a, b, control], nodes: [a, b, gainA, gainB, control, mix], duration, graph: 'ConstantSource → 2 Gain AudioParams → mix → Destination' })
+  return { sources: [a, b, control], nodes: [a, b, gainA, gainB, control, mix], duration, graph: 'ConstantSource → 2 Gain AudioParams → mix → Destination' }
 }

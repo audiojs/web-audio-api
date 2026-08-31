@@ -1,10 +1,6 @@
 // Karplus–Strong string: Turn a short noise burst and averaging delay into a plucked string.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export const processorSource = `class KarplusStrongProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super()
@@ -46,5 +42,5 @@ export async function build(ctx, {
   let end = when + duration
   master.gain.setValueAtTime(gain, Math.max(when, end - Math.min(0.1, duration / 4)))
   master.gain.linearRampToValueAtTime(0, end)
-  return result({ sources: [node], nodes: [node, master], duration, graph: 'Karplus–Strong AudioWorklet → Gain → Destination', data: { node } })
+  return { sources: [node], nodes: [node, master], duration, graph: 'Karplus–Strong AudioWorklet → Gain → Destination', data: { node } }
 }

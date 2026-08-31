@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Web Audio API · headless</title>
+  <title>Web Audio API: headless</title>
   <meta name="description" content="A pure JavaScript Web Audio API implementation for Node, CI, servers, Deno, and Bun. Open runnable examples in the browser and use the same graph from the CLI.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://audiojs.dev/web-audio-api/">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/web-audio-api/">
-  <meta property="og:title" content="Web Audio API · headless">
+  <meta property="og:title" content="Web Audio API: headless">
   <meta property="og:description" content="Run browser-standard audio graphs in Node, CI, servers, Deno, and Bun.">
   <meta property="og:site_name" content="web-audio-api">
   <meta name="twitter:card" content="summary">
@@ -143,32 +143,29 @@ osc.start()</code></pre>
     </section>
   </main>
 
-  <footer class="site-footer"><p>web-audio-api · MIT · <span data-version>v1.5.4</span> · <a href="https://audiojs.dev/">AudioJS</a></p></footer>
+  <footer class="site-footer"><p><span>web-audio-api</span><span>MIT</span><span data-version>v1.5.4</span><a href="https://audiojs.dev/">AudioJS</a></p></footer>
 
   <dialog class="example-dialog" id="example-dialog" aria-labelledby="dialog-title">
     <div class="dialog-shell">
       <header class="dialog-head">
-        <div><p class="dialog-meta" id="dialog-meta"></p><h2 id="dialog-title">Example</h2><p id="dialog-description"></p></div>
+        <div><div class="detail-tags" id="dialog-meta" aria-label="Example classification"></div><h2 id="dialog-title">Example</h2><p id="dialog-description"></p></div>
         <button class="icon-button dialog-close" type="button" data-close-dialog aria-label="Close example"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
       </header>
       <div class="dialog-body">
+        <section class="dialog-code code-stage" aria-label="Graph source">
+          <pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre>
+          <p class="dialog-command"><code id="dialog-command"></code></p>
+        </section>
         <section class="demo-panel" aria-label="Browser demo">
           <div class="demo-stage">
             <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div>
             <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <div class="demo-actions" id="demo-result"></div>
+            <div class="demo-results" id="demo-result"></div>
           </div>
           <form class="demo-form" id="demo-form">
-            <div class="demo-fields" id="demo-fields"></div>
-            <div class="demo-actions" id="demo-actions"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button></div>
-            <p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p>
+            <div class="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+            <div class="demo-runbar"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button><p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p></div>
           </form>
-        </section>
-        <section class="dialog-code code-stage" aria-labelledby="dialog-code-title">
-          <div class="dialog-code-head"><h3 id="dialog-code-title">Source</h3><button class="icon-button copy-icon copy-icon--dark" type="button" data-copy="#example-code" aria-label="Copy example source"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
-          <pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre>
-          <p class="dialog-command"><code id="dialog-command"></code></p>
-          <p class="dialog-links"><a id="dialog-page-link" href="">Example page</a><a id="dialog-graph-link" href="">Graph source</a><a id="dialog-cli-link" href="">CLI wrapper</a></p>
         </section>
       </div>
     </div>

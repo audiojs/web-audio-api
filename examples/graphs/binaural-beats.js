@@ -1,10 +1,6 @@
 // Binaural beats: Send nearby frequencies to opposite ears and hear their difference.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -29,5 +25,5 @@ export function build(ctx, {
   left.start(when); right.start(when)
   fadeOut(master.gain, when, duration, gain)
   safeStop(left, when + duration + 0.01); safeStop(right, when + duration + 0.01)
-  return result({ sources: [left, right], nodes: [left, right, panLeft, panRight, master], duration, graph: '2 Oscillators → hard L/R pan → Destination' })
+  return { sources: [left, right], nodes: [left, right, panLeft, panRight, master], duration, graph: '2 Oscillators → hard L/R pan → Destination' }
 }

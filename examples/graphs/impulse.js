@@ -1,10 +1,6 @@
 // Dirac impulse: Fire a one-sample impulse for response and signal-path testing.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export function build(ctx, {
   count = 3, interval = 0.45, gain = 0.35, when = ctx.currentTime,
   destination = ctx.destination,
@@ -19,5 +15,5 @@ export function build(ctx, {
     source.start(when + i * interval)
     sources.push(source)
   }
-  return result({ sources, nodes: [...sources], duration: Math.max(0.5, (count - 1) * interval + 0.4), graph: 'One-sample AudioBuffer → Destination' })
+  return { sources, nodes: [...sources], duration: Math.max(0.5, (count - 1) * interval + 0.4), graph: 'One-sample AudioBuffer → Destination' }
 }

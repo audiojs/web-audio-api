@@ -1,10 +1,6 @@
 // Programmable metronome: Schedule a click pattern with accents, rests, tempo control, and instrument presets.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function seeded(seed = 0x4d455452) {
   let state = seed >>> 0
   return () => {
@@ -171,11 +167,11 @@ export function build(ctx, {
     elapsed += 30 / Math.max(20, tempo)
     step++
   }
-  return result({
+  return {
     sources: instrument.sources,
     nodes: instrument.nodes,
     duration,
     graph: 'Shared metronome instrument → audio-clock scheduler → Destination',
     data: { instrument },
-  })
+  }
 }

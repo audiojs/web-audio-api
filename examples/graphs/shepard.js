@@ -1,10 +1,6 @@
 // Shepard tone: Layer octave-spaced voices to create a pitch that appears to rise or fall forever.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export const processorSource = `class ShepardProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super()
@@ -53,5 +49,5 @@ export async function build(ctx, {
   let end = when + duration
   master.gain.setValueAtTime(1, Math.max(when, end - Math.min(1, duration / 3)))
   master.gain.linearRampToValueAtTime(0, end)
-  return result({ sources: [node], nodes: [node, master], duration, graph: 'AudioWorklet Shepard bank → Gain → Destination', data: { node } })
+  return { sources: [node], nodes: [node, master], duration, graph: 'AudioWorklet Shepard bank → Gain → Destination', data: { node } }
 }

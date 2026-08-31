@@ -1,10 +1,6 @@
 // Stereo channel test: Identify left, right, and center channels with a panned reference tone.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -29,5 +25,5 @@ export function build(ctx, {
     sources.push(osc); nodes.push(osc, panner, env)
     time += durationPerChannel + gap
   }
-  return result({ sources, nodes, duration: time - when, graph: 'Oscillator → StereoPanner → Envelope → Destination' })
+  return { sources, nodes, duration: time - when, graph: 'Oscillator → StereoPanner → Envelope → Destination' }
 }

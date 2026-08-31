@@ -1,10 +1,6 @@
 // FM synthesis: Use one oscillator to modulate another oscillator’s frequency.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -26,5 +22,5 @@ export function build(ctx, {
   mod.connect(modGain).connect(car.frequency); car.connect(master).connect(destination)
   mod.start(when); car.start(when); fadeOut(master.gain, when, duration, 0.2)
   safeStop(mod, when + duration + 0.01); safeStop(car, when + duration + 0.01)
-  return result({ sources: [mod, car], nodes: [mod, modGain, car, master], duration, graph: 'Modulator → Carrier.frequency → Gain → Destination' })
+  return { sources: [mod, car], nodes: [mod, modGain, car, master], duration, graph: 'Modulator → Carrier.frequency → Gain → Destination' }
 }

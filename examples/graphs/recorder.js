@@ -1,10 +1,6 @@
 // Microphone recorder: Capture microphone audio with a live level meter and save a recording.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export function build(ctx, {
   stream, gain = 1, recorder = null, destination = ctx.destination,
 } = {}) {
@@ -22,5 +18,5 @@ export function build(ctx, {
     analyser.connect(recorder).connect(destination)
     nodes.push(recorder)
   }
-  return result({ nodes, duration: Infinity, graph: 'Microphone → Gain → recorder boundary' })
+  return { sources: [], nodes, duration: Infinity, graph: 'Microphone → Gain → recorder boundary' }
 }

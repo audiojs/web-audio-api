@@ -1,10 +1,6 @@
 // Risset rhythm: Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -35,5 +31,5 @@ export function build(ctx, {
       t += 60 / tempo
     }
   }
-  return result({ sources, nodes, duration, graph: 'Layered tempo cycles → click envelopes → Destination' })
+  return { sources, nodes, duration, graph: 'Layered tempo cycles → click envelopes → Destination' }
 }

@@ -1,10 +1,6 @@
 // Pipe PCM to stdout: Send raw PCM from an AudioContext to any Node writable stream.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -29,5 +25,5 @@ export function build(ctx, {
   osc.start(when)
   fadeOut(master.gain, when, duration, gain)
   safeStop(osc, when + duration + 0.01)
-  return result({ sources: [osc], nodes: [osc, master], duration, graph: 'Oscillator → Gain → Writable stream' })
+  return { sources: [osc], nodes: [osc, master], duration, graph: 'Oscillator → Gain → Writable stream' }
 }

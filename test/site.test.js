@@ -17,8 +17,8 @@ const guidePages = [
   'guides/test-audio-in-ci/index.html',
   'guides/tonejs-node/index.html',
 ]
-const redirectPages = ['examples/index.html', ...examples.map(example => `examples/${example.id}/index.html`)]
-const htmlFiles = ['index.html', ...guidePages, ...redirectPages]
+const examplePages = ['examples/index.html', ...examples.map(example => `examples/${example.id}/index.html`)]
+const htmlFiles = ['index.html', ...guidePages, ...examplePages]
 
 function documentOf(path) {
   return parseHTML(read(path)).document
@@ -64,7 +64,11 @@ test('homepage is only the headless hero, example catalogue, compact FAQ, and fo
   is(document.querySelectorAll('[data-open-example]').length, examples.length)
   is(document.querySelectorAll('.example-group').length, 5, 'examples are grouped by kind')
   for (let link of document.querySelectorAll('[data-open-example]')) ok(link.getAttribute('href').startsWith('./examples/'), 'example remains a crawlable link')
-  ok(document.querySelector('dialog#example-dialog'))
+  let dialog = document.querySelector('dialog#example-dialog')
+  ok(dialog)
+  ok(dialog.querySelector('.dialog-body > :first-child').classList.contains('dialog-code'), 'source precedes demo at wide layouts')
+  is(dialog.querySelectorAll('.dialog-code-head, .dialog-links, .dialog-code [data-copy]').length, 0, 'source has no redundant chrome')
+  ok(dialog.querySelector('.demo-runbar #demo-run'), 'run action has its own footer')
   is(document.querySelectorAll('[role="tab"]').length, 0)
   let questions = [...document.querySelectorAll('.faq summary')].map(node => node.textContent.trim())
   for (let expected of ['Is it fast enough for realtime?', 'How does audio I/O work?', 'Which formats can it decode?', 'Does Tone.js work?', 'Can I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'What differs from a browser?', 'How does it compare?']) ok(questions.includes(expected), expected)
@@ -111,6 +115,10 @@ test('every example has a crawlable canonical detail page', () => {
     is(document.querySelector('h1').textContent, example.title)
     ok(document.querySelector('#demo-form'), `${example.id} browser adapter`)
     ok(document.querySelector('#example-code'), `${example.id} atomic source`)
+    ok(document.querySelector('.detail-grid > :first-child').classList.contains('dialog-code'), `${example.id} source precedes demo`)
+    is(document.querySelectorAll('.detail-tags span').length, 2, `${example.id} category and job tags`)
+    is(document.querySelectorAll('.dialog-code-head, .dialog-links, .dialog-code [data-copy]').length, 0, `${example.id} source chrome removed`)
+    ok(document.querySelector('.demo-runbar #demo-run'), `${example.id} separate run footer`)
     ok(document.body.textContent.includes(example.command), `${example.id} CLI command`)
     ok(document.querySelector('script[type="application/ld+json"]'), `${example.id} structured data`)
   }
@@ -136,6 +144,7 @@ test('every CLI is a thin adapter over its browser-safe graph module', () => {
     let graph = read(`examples/graphs/${example.id}.js`)
     ok(graph.startsWith(`// ${example.title}:`), `${example.id} source is self-descriptive`)
     ok(!/^import\s/m.test(graph), `${example.id} source is atomic`)
+    ok(!/function result\b|return result\(/.test(graph), `${example.id} returns its graph object directly`)
     ok(!/from ['"](?:web-audio-api|node:)/.test(graph), `${example.id} has no runtime import`)
     ok(!/\bprocess\.(?:argv|stdin|stdout|exit)\b|\bdocument\./.test(graph), `${example.id} has no CLI or DOM boundary`)
   }
@@ -261,6 +270,9 @@ test('site CSS keeps the token system and Catalogue constraints', () => {
   ok(read('tokens.css').includes('--font-display: "Geist"'))
   ok(!read('tokens.css').includes('Orbitron'))
   ok(rules.includes('overflow-x: clip'))
+  ok(rules.includes('scrollbar-gutter: stable'))
+  ok(rules.includes('scrollbar-color: transparent transparent'))
+  ok(rules.includes('html.modal-open { overflow: hidden; }'))
   ok(rules.includes('prefers-reduced-motion'))
   ok(rules.includes(':focus-visible'))
   ok(rules.includes('grid-template-columns: repeat(2, minmax(0, 1fr))'), 'two-column example catalogue')
@@ -272,8 +284,10 @@ test('research and product decisions are documented', () => {
   for (let heading of ['## Users', '## Jobs and trigger moments', '## Positioning', '## Evidence', '## Alternatives', '## Open questions', '## Sources']) ok(research.includes(heading), heading)
 })
 
-test('site avoids autoplay, fabricated proof, and generic interaction copy', () => {
+test('site avoids autoplay, fabricated proof, generic interaction copy, and middle-dot separators', () => {
   let html = htmlFiles.map(read).join('\n')
+  ok(!html.includes('·'))
+  ok(![read('examples/browser.js'), read('examples/catalog.js'), read('site.js')].join('\n').includes('·'))
   ok(!/\bautoplay\b/i.test(html))
   ok(!/>\s*Click here\s*</i.test(html))
   ok(!/trusted by|10× faster|99\.9% uptime/i.test(html))

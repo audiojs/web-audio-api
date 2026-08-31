@@ -1,10 +1,6 @@
 // Subtractive synth: Shape a sawtooth oscillator with a resonant low-pass sweep and ADSR envelope.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -25,5 +21,5 @@ export function build(ctx, {
   env.gain.linearRampToValueAtTime(0, when + duration)
   osc.connect(filter).connect(env).connect(destination)
   osc.start(when); safeStop(osc, when + duration + 0.01)
-  return result({ sources: [osc], nodes: [osc, filter, env], duration, graph: 'Sawtooth → BiquadFilter → ADSR Gain → Destination' })
+  return { sources: [osc], nodes: [osc, filter, env], duration, graph: 'Sawtooth → BiquadFilter → ADSR Gain → Destination' }
 }

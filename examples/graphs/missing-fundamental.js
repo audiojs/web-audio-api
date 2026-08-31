@@ -1,10 +1,6 @@
 // Missing fundamental: Play harmonics 2–6 while omitting the pitch the listener still perceives.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -31,5 +27,5 @@ export function build(ctx, {
     sources.push(osc); nodes.push(osc, level)
   }
   fadeOut(master.gain, when, duration, gain)
-  return result({ sources, nodes, duration, graph: 'Harmonics 2–6 → weighted mix → Destination' })
+  return { sources, nodes, duration, graph: 'Harmonics 2–6 → weighted mix → Destination' }
 }

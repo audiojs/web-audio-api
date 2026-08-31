@@ -1,10 +1,6 @@
 // LFO tremolo: Connect an oscillator to an AudioParam and modulate gain at audio-clock precision.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function fadeOut(param, when, duration, value) {
   let end = when + duration
   let start = Math.max(when, end - Math.min(0.08, duration / 4))
@@ -27,5 +23,5 @@ export function build(ctx, {
   voice.connect(mixer).connect(master).connect(destination); lfo.connect(lfoGain).connect(mixer.gain); offset.connect(mixer.gain)
   voice.start(when); lfo.start(when); offset.start(when); fadeOut(master.gain, when, duration, gain)
   for (let source of [voice, lfo, offset]) safeStop(source, when + duration + 0.01)
-  return result({ sources: [voice, lfo, offset], nodes: [voice, lfo, lfoGain, offset, mixer, master], duration, graph: 'LFO + ConstantSource → Gain.gain ← Carrier' })
+  return { sources: [voice, lfo, offset], nodes: [voice, lfo, lfoGain, offset, mixer, master], duration, graph: 'LFO + ConstantSource → Gain.gain ← Carrier' }
 }

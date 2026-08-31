@@ -3,37 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Step sequencer · Web Audio API in browser and Node</title>
+  <title>Step sequencer | Web Audio API in browser and Node</title>
   <meta name="description" content="Schedule a 16-step melody against the audio clock. Run the same atomic graph source in the browser or from its Node CLI.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/sequencer/">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://audiojs.dev/web-audio-api/examples/sequencer/">
-  <meta property="og:title" content="Step sequencer · web-audio-api">
+  <meta property="og:title" content="Step sequencer | web-audio-api">
   <meta property="og:description" content="Schedule a 16-step melody against the audio clock.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
   <link rel="stylesheet" href="../../tokens.css">
   <link rel="stylesheet" href="../../site.css">
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Step sequencer · web-audio-api example","description":"Schedule a 16-step melody against the audio clock.","url":"https://audiojs.dev/web-audio-api/examples/sequencer/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/sequencer.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Step sequencer","description":"Schedule a 16-step melody against the audio clock.","step":[{"@type":"HowToStep","name":"Build the graph","text":"Import examples/graphs/sequencer.js and pass a Web Audio context."},{"@type":"HowToStep","name":"Run in Node","text":"node examples/sequencer.js bpm=140 -d 10s"}]}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Step sequencer: web-audio-api example","description":"Schedule a 16-step melody against the audio clock.","url":"https://audiojs.dev/web-audio-api/examples/sequencer/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/sequencer.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Step sequencer","description":"Schedule a 16-step melody against the audio clock.","step":[{"@type":"HowToStep","name":"Build the graph","text":"Import examples/graphs/sequencer.js and pass a Web Audio context."},{"@type":"HowToStep","name":"Run in Node","text":"node examples/sequencer.js bpm=140 -d 10s"}]}]}</script>
 </head>
 <body data-example="sequencer">
   <a class="skip-link" href="#demo-form">Skip to demo</a>
   <header class="detail-actions"><a href="../../#examples">All examples</a><a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a></header>
   <main class="example-detail">
-    <header class="detail-head"><p>Generative · Create</p><h1>Step sequencer</h1><p>Schedule a 16-step melody against the audio clock.</p></header>
-    <dl class="detail-facts"><div><dt>Graph</dt><dd>Scheduled Oscillators → envelopes → Destination</dd></div><div><dt>Input</dt><dd>Tempo · pattern</dd></div><div><dt>Output</dt><dd>Timed sequence</dd></div></dl>
+    <header class="detail-head"><div class="detail-tags" aria-label="Example classification"><span>Generative</span><span>Create</span></div><h1>Step sequencer</h1><p>Schedule a 16-step melody against the audio clock.</p></header>
+    <dl class="detail-facts"><div><dt>Graph</dt><dd>Scheduled Oscillators → envelopes → Destination</dd></div><div><dt>Input</dt><dd>Tempo, pattern</dd></div><div><dt>Output</dt><dd>Timed sequence</dd></div></dl>
 
     <div class="detail-grid">
+      <section class="dialog-code code-stage" aria-label="Graph source"><pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre><p class="dialog-command"><code>node examples/sequencer.js bpm=140 -d 10s</code></p></section>
       <section class="demo-panel" aria-label="Browser demo">
-        <div class="demo-stage"><div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div><div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div><div class="demo-actions" id="demo-result"></div></div>
-        <form class="demo-form" id="demo-form"><div class="demo-fields" id="demo-fields"></div><div class="demo-actions" id="demo-actions"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button></div><p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p></form>
+        <div class="demo-stage"><div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="260" role="img" aria-label="Audio output visualization"></canvas></div><div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div><div class="demo-results" id="demo-result"></div></div>
+        <form class="demo-form" id="demo-form"><div class="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div><div class="demo-runbar"><button class="demo-action" id="demo-run" type="button" aria-pressed="false"><span>Run demo</span></button><p class="demo-help" id="demo-status" role="status" aria-live="polite">Sound starts only after you run the demo.</p></div></form>
       </section>
-      <section class="dialog-code code-stage" aria-labelledby="source-title"><div class="dialog-code-head"><h2 id="source-title">Atomic graph source</h2><button class="icon-button copy-icon copy-icon--dark" type="button" data-copy="#example-code" aria-label="Copy example source"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><pre class="code-output"><code class="language-javascript" id="example-code">Loading source…</code></pre><p class="dialog-command"><code>node examples/sequencer.js bpm=140 -d 10s</code></p><p class="dialog-links"><a href="https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/sequencer.js">Graph source</a><a href="https://github.com/audiojs/web-audio-api/blob/master/examples/sequencer.js">CLI wrapper</a></p></section>
     </div>
   </main>
-  <footer class="site-footer"><p>web-audio-api · MIT · v1.5.4 · <a href="https://audiojs.dev/">AudioJS</a></p></footer>
+  <footer class="site-footer"><p><span>web-audio-api</span><span>MIT</span><span>v1.5.4</span><a href="https://audiojs.dev/">AudioJS</a></p></footer>
   <script type="module" src="../browser.js"></script>
 </body>
 </html>

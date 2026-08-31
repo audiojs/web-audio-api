@@ -1,10 +1,6 @@
 // DTMF dialer: Synthesize telephone keypad tones from paired row and column frequencies.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -15,7 +11,7 @@ const high = { 1:1209,2:1336,3:1477,A:1633, 4:1209,5:1336,6:1477,B:1633, 7:1209,
 export function schedule(ctx, digit, {
   when = ctx.currentTime, duration = 0.12, gain = 0.15, destination = ctx.destination,
 } = {}) {
-  if (!low[digit]) return result({ duration: 0, graph: 'Invalid DTMF digit' })
+  if (!low[digit]) return { sources: [], nodes: [], duration: 0, graph: 'Invalid DTMF digit' }
   let sources = [], nodes = []
   for (let frequency of [low[digit], high[digit]]) {
     let osc = ctx.createOscillator()
@@ -30,7 +26,7 @@ export function schedule(ctx, digit, {
     safeStop(osc, when + duration + 0.01)
     sources.push(osc); nodes.push(osc, env)
   }
-  return result({ sources, nodes, duration, graph: '2 Oscillators → Envelope → Destination' })
+  return { sources, nodes, duration, graph: '2 Oscillators → Envelope → Destination' }
 }
 
 export function build(ctx, {
@@ -42,5 +38,5 @@ export function build(ctx, {
     sources.push(...voice.sources); nodes.push(...voice.nodes)
     time += speed * 1.7
   }
-  return result({ sources, nodes, duration: Math.max(0.3, time - when), graph: 'DTMF oscillator pairs → envelopes → Destination' })
+  return { sources, nodes, duration: Math.max(0.3, time - when), graph: 'DTMF oscillator pairs → envelopes → Destination' }
 }

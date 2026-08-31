@@ -12,10 +12,6 @@ function seeded(seed = 0x574141) {
   }
 }
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
@@ -37,5 +33,5 @@ export function build(ctx, {
     osc.connect(env).connect(destination); osc.start(time); safeStop(osc, time + noteDuration + 0.01)
     sources.push(osc); nodes.push(osc, env); time += noteDuration + beat * random() * 0.4
   }
-  return result({ sources, nodes, duration, graph: 'Twelve-tone row → scheduled voices → Destination', data: { row } })
+  return { sources, nodes, duration, graph: 'Twelve-tone row → scheduled voices → Destination', data: { row } }
 }

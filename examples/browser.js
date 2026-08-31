@@ -229,7 +229,7 @@ function pitchLabel(frequency, a4 = 440) {
   let note = `${names[(midi % 12 + 12) % 12]}${Math.floor(midi / 12) - 1}`
   let exact = a4 * 2 ** ((midi - 69) / 12)
   let cents = Math.round(1200 * Math.log2(frequency / exact))
-  return `${note} · ${frequency.toFixed(1)} Hz · ${cents >= 0 ? '+' : ''}${cents} cents`
+  return `${note}, ${frequency.toFixed(1)} Hz, ${cents >= 0 ? '+' : ''}${cents} cents`
 }
 
 async function loadCode(example, root = document) {
@@ -333,7 +333,7 @@ export function mountExample(root, id) {
     let { build } = await import(`./graphs/${id}.js`)
     demo = await build(context, options)
     setButtonLabel(run, 'Stop demo')
-    setStatus(`Running with the browser’s native AudioContext · ${demo.graph}`, 'running')
+    setStatus(`Running with the browser’s native AudioContext: ${demo.graph}`, 'running')
     animate(id === 'fft' ? 'spectrum' : 'wave')
     timer = setTimeout(() => stop('Complete. The graph stopped and the AudioContext closed.'), demo.duration * 1000 + 150)
   }
@@ -359,7 +359,7 @@ export function mountExample(root, id) {
     setRenderedAudio(resultContainer, buffer, example.id)
     setButtonLabel(run, 'Render again')
     run.removeAttribute('aria-busy')
-    setStatus(`Rendered ${buffer.length.toLocaleString()} frames at ${buffer.sampleRate.toLocaleString()} Hz · ${offlineDemo.graph}`)
+    setStatus(`Rendered ${buffer.length.toLocaleString()} frames at ${buffer.sampleRate.toLocaleString()} Hz: ${offlineDemo.graph}`)
   }
 
   async function runFile(file) {
@@ -377,7 +377,7 @@ export function mountExample(root, id) {
     setRenderedAudio(resultContainer, output, `${file.name.replace(/\.[^.]+$/, '')}-processed`)
     setButtonLabel(run, 'Process again')
     run.removeAttribute('aria-busy')
-    setStatus(`Processed ${output.duration.toFixed(2)} s · high-shelf EQ → compressor → AudioBuffer`)
+    setStatus(`Processed ${output.duration.toFixed(2)} s: high-shelf EQ → compressor → AudioBuffer`)
   }
 
   async function runWorklet() {

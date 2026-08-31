@@ -1,10 +1,6 @@
 // Generative jazz: Generate modal harmony, walking bass, plucked improvisation, and percussion.
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-function result({ sources = [], nodes = [], duration = 3, graph, data } = {}) {
-  return { sources, nodes, duration, graph, data }
-}
-
 export async function build(ctx, {
   duration: targetDuration = 270, destination = ctx.destination, AudioWorkletNodeClass = null,
 } = {}) {
@@ -353,11 +349,11 @@ export async function build(ctx, {
     }
   }
 
-  return result({
+  return {
     sources: [noise, swoosh],
     nodes: [padLp, padOut, bassLp, bassOut, guitLp, guitOut, noise, rideBp, rideG, hhHp, hhG, ghostBp, ghostG, brushHp, brushG, swoosh, swooshG, kickOut],
     duration,
     graph: 'Modal harmony + walking bass + improvised guitar + percussion → Destination',
     data: { bpm, chordLog },
-  })
+  }
 }
