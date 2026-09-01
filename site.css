@@ -553,8 +553,13 @@ pre code { font: inherit; }
 .example-entry.is-error { color: var(--color-error); }
 .example-entry[data-state="success"]::after { content: "✓"; color: var(--color-success); }
 
-/* questions sit back on the document's dot grid, like the hero */
-.faq { padding-block: var(--space-2xl) var(--space-4xl); }
+/* questions sit on plain paper: dot rows drift against the 64px separators */
+.faq {
+  padding-block: var(--space-2xl) var(--space-4xl);
+  background: var(--color-paper);
+  box-shadow: 0 0 0 100vmax var(--color-paper);
+  clip-path: inset(0 -100vmax);
+}
 
 .faq .section-heading { margin-block: 0 var(--space-xl); }
 .faq-list { border-block-start: var(--rule-heavy) solid var(--color-ink); }
@@ -690,6 +695,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   display: block;
   width: 100%;
   height: 8rem;
+  background: var(--color-paper);
 }
 
 .site-footer {
