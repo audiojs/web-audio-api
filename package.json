@@ -47,7 +47,7 @@
     "periodic-function": "^2.1.0"
   },
   "devDependencies": {
-    "@audio/assert": "github:audiojs/assert",
+    "@audio/assert": "^0.2.0",
     "@audio/pitch-yin": "^1.0.4",
     "linkedom": "^0.18.12",
     "node-web-audio-api": "^1.0.8",
