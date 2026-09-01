@@ -412,13 +412,14 @@ pre code { font: inherit; }
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   letter-spacing: -0.035em;
-  line-height: 1.05;
+  line-height: 3rem;
 }
 
 .section-heading p {
   max-width: var(--copy-max);
   margin: 0;
   color: var(--color-muted);
+  line-height: 1.5rem;
 }
 
 .example-filters {
@@ -562,6 +563,15 @@ pre code { font: inherit; }
 
 .faq summary {
   min-height: calc(4rem - var(--rule-hair));
+}
+
+/* the list's heavy top rule is absorbed by the first row, so every divider
+   below lands on the 16px dot grid */
+.faq-list > details:first-child summary {
+  min-height: calc(4rem - var(--rule-hair) - var(--rule-heavy));
+}
+
+.faq summary {
   padding-block: var(--space-md);
   line-height: 1.5rem;
   display: flex;
