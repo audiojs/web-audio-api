@@ -198,7 +198,7 @@ function llmsTxt() {
     .join('\n')).join('\n\n')
   return `# Web Audio API without the browser
 
-> web-audio-api is a pure-JavaScript implementation of the W3C Web Audio API for Node, Deno, Bun, and edge runtimes. 100% Web Platform Tests conformance (${metrics.wptPass}/${metrics.wptPass + metrics.wptFail}). No native bindings, no compilation. Install: \`npm install web-audio-api\`. Run any example with \`npx web-audio-api <name>\`.
+> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. It passes ${metrics.wptPass}/${metrics.wptPass + metrics.wptFail} Web Platform Tests. Audio-device I/O uses adapters. Install: \`npm install web-audio-api\`. Run any example with \`npx web-audio-api <name>\`.
 
 Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through \`import 'web-audio-api/polyfill'\`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
 

@@ -192,6 +192,8 @@ main {
 .hero {
   padding-block: var(--space-4xl) var(--space-2xl);
   position: relative;
+  /* The following white field crosses behind the lower hero. */
+  z-index: var(--z-base);
 }
 
 .hero-spec {
@@ -263,14 +265,9 @@ h3 {
   .hero h1 span { margin-block-start: var(--space-xs); line-height: 3.5rem; }
 }
 
-.hero-lede strong {
-  color: var(--color-ink);
-  font-weight: 500;
-}
-
-/* verified engines, listed after the lede */
+/* verified engines, listed after the code sample */
 .hero-stack {
-  margin-block-start: var(--space-xs);
+  margin-block-start: var(--space-md);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -333,8 +330,6 @@ h3 {
   max-width: 48rem;
   margin-block-start: var(--space-2xl);
   position: relative;
-  /* stays above the grid-stopper line that crosses behind its lower half */
-  z-index: var(--z-base);
   border: var(--rule-hair) solid var(--color-rule-dark);
   background: var(--color-ink-2);
   color: var(--color-paper);
