@@ -21,6 +21,9 @@ class GainNode extends AudioNode {
   _tick() {
     super._tick()
     let inBuff = this._inputs[0]._tick()
+    // Silence in → silence out regardless of gain; the param is a pure function
+    // of the timeline, so deferring its tick loses nothing
+    if (inBuff._silent) return inBuff
     let gainArray = this.#gain._tick()
     let ch = inBuff.numberOfChannels
 
@@ -31,6 +34,16 @@ class GainNode extends AudioNode {
 
     GainNode._dsp(inBuff, this._outBuf, gainArray, ch, BLOCK_SIZE)
     return this._outBuf
+  }
+
+  // Gain cannot create signal: silent input stays silent whatever the gain does,
+  // so the sleep horizon is simply the input's earliest possible signal
+  _silentUntil(blockEnd) {
+    if (this._scheduled.length) return -Infinity
+    let horizon = Infinity
+    for (let output of this._inputs[0].connections)
+      if ((horizon = Math.min(horizon, output._horizon(blockEnd))) <= blockEnd) return horizon
+    return horizon
   }
 
   static _dsp(inBuf, outBuf, gain, channels, blockSize) {

@@ -242,3 +242,122 @@ test('error types > have correct names', async () => {
     ok(err.message === 'test', name + ' has message')
   }
 })
+
+// --- sleep horizons: scheduled-but-idle subgraphs cost nothing and stay exact ---
+
+test('sleep horizons > gain and filter chains wake exactly at the source start time', async () => {
+  let sr = 44100, length = 4096, startTime = 2048.5 / sr
+  let ctx = new OfflineAudioContext(1, length, sr)
+  let osc = ctx.createOscillator()
+  let gain = ctx.createGain()
+  let filter = ctx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = 20000
+  osc.connect(gain).connect(filter).connect(ctx.destination)
+  osc.start(startTime)
+  let data = (await ctx.startRendering()).getChannelData(0)
+  let firstSample = Math.ceil(startTime * sr)
+  for (let i = 0; i < firstSample; i++) if (data[i] !== 0) throw new Error(`sample ${i} nonzero before start`)
+  ok(data.slice(firstSample).some(Boolean), 'signal present from the start sample on')
+})
+
+test('sleep horizons > param.value stays timeline-exact while its node sleeps', async () => {
+  let sr = 44100
+  let ctx = new OfflineAudioContext(1, 2048, sr)
+  let osc = ctx.createOscillator()
+  let gain = ctx.createGain()
+  osc.connect(gain).connect(ctx.destination)
+  osc.start(1) // beyond this render: gain sleeps the whole time
+  gain.gain.setValueAtTime(0.2, 0)
+  gain.gain.linearRampToValueAtTime(1, 2048 / sr)
+  await ctx.startRendering()
+  almost(gain.gain.value, 1, 0.01, 'value follows the automation timeline during sleep')
+})
+
+test('sleep horizons > connect and start wake a subgraph with a cached horizon', async () => {
+  let sr = 44100
+  let ctx = new OfflineAudioContext(1, 4096, sr)
+  let gain = ctx.createGain()
+  gain.connect(ctx.destination)
+  let osc = ctx.createOscillator()
+  osc.connect(gain)
+  // nothing started: the graph sleeps with cached horizons from the first quanta
+  ctx.suspend(1024 / sr).then(() => {
+    osc.start(2048 / sr)
+    ctx.resume()
+  })
+  let data = (await ctx.startRendering()).getChannelData(0)
+  for (let i = 0; i < 2048; i++) if (data[i] !== 0) throw new Error(`sample ${i} nonzero before start`)
+  ok(data.slice(2048).some(Boolean), 'signal flows after a start() issued mid-render')
+})
+
+test('sleep horizons > connecting a source wakes a chain sleeping on an empty input', async () => {
+  let sr = 44100
+  let ctx = new OfflineAudioContext(1, 4096, sr)
+  let gain = ctx.createGain()
+  gain.connect(ctx.destination)
+  // gain has no sources: it sleeps forever until a connection arrives
+  let osc = ctx.createOscillator()
+  osc.start(0)
+  ctx.suspend(1024 / sr).then(() => {
+    osc.connect(gain)
+    ctx.resume()
+  })
+  let data = (await ctx.startRendering()).getChannelData(0)
+  for (let i = 0; i < 1024; i++) if (data[i] !== 0) throw new Error(`sample ${i} nonzero before connect`)
+  ok(data.slice(1024).some(Boolean), 'signal flows after a connect() into a sleeping chain')
+})
+
+test('sleep horizons > stop before start stays silent and still fires ended', async () => {
+  let sr = 44100
+  let ctx = new OfflineAudioContext(1, 4096, sr)
+  let gain = ctx.createGain()
+  gain.connect(ctx.destination)
+  let osc = ctx.createOscillator()
+  osc.connect(gain)
+  osc.start(2048 / sr)
+  osc.stop(1024 / sr)
+  let ended = new Promise(resolve => { osc.onended = () => resolve(true) })
+  let data = (await ctx.startRendering()).getChannelData(0)
+  ok(data.every(sample => sample === 0), 'no output when stopped before start')
+  ok(await ended, 'ended event fires through the sleeping chain')
+})
+
+test('sleep horizons > render cost is flat in the amount of scheduled-ahead work', async () => {
+  let render = async duration => {
+    let ctx = new OfflineAudioContext(1, 44100, 44100)
+    let master = ctx.createGain()
+    master.connect(ctx.destination)
+    for (let i = 0; i < duration * 4; i++) {
+      let osc = ctx.createOscillator()
+      let envelope = ctx.createGain()
+      envelope.gain.setValueAtTime(0.01, i * 0.25)
+      envelope.gain.exponentialRampToValueAtTime(0.001, i * 0.25 + 0.02)
+      osc.connect(envelope).connect(master)
+      osc.start(i * 0.25)
+      osc.stop(i * 0.25 + 0.02)
+    }
+    let started = performance.now()
+    let data = (await ctx.startRendering()).getChannelData(0)
+    ok(data.some(Boolean), `audible at ${duration}s of schedule`)
+    return performance.now() - started
+  }
+  await render(30) // warmup
+  let small = await render(30)
+  let large = await render(600)
+  ok(large < Math.max(50, small * 12), `600s schedule renders in ${large.toFixed(0)}ms vs ${small.toFixed(0)}ms for 30s`)
+})
+
+test('oscillator started mid-block begins at phase zero without a pop', async () => {
+  let sr = 44100
+  let ctx = new OfflineAudioContext(1, 1024, sr)
+  let osc = new OscillatorNode(ctx)
+  osc.frequency.value = 660
+  osc.connect(ctx.destination)
+  osc.start(300.5 / sr)
+  let data = (await ctx.startRendering()).getChannelData(0)
+  almost(data[301], 0, 1e-3, 'first audible sample sits at the zero crossing')
+  let maxStep = 0
+  for (let i = 1; i < data.length; i++) maxStep = Math.max(maxStep, Math.abs(data[i] - data[i - 1]))
+  ok(maxStep < 0.12, `steepest step ${maxStep.toFixed(3)} stays within a 660 Hz sine slope`)
+})

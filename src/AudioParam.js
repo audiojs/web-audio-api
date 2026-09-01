@@ -28,6 +28,7 @@ class AudioParam extends DspObject {
   #paramVersion = 0   // incremented on every automation mutation
   #cachedVersion = -1 // version when cache was set
   #cachedValue = 0    // cached fill value (valid when version matches)
+  #tickTime = -1      // context time of the last _tick (params can sleep during silence)
 
   get defaultValue() { return this.#defaultValue }
   get minValue() { return this.#minValue }
@@ -42,6 +43,11 @@ class AudioParam extends DspObject {
 
   get value() {
     let v = this.#intrinsicValue
+    // A param whose owner slept through silent quanta has a stale intrinsic value;
+    // the timeline is a pure function of time, so evaluate it directly
+    if (this.#tickTime !== this.context.currentTime && !this._input.sources.length
+        && this.#automationEventList._automationEvents.length)
+      v = this.#automationEventList.getValue(this.context.currentTime)
     v = Math.min(this.#maxValue, Math.max(this.#minValue, v))
     return Math.fround(v)
   }
@@ -169,6 +175,7 @@ class AudioParam extends DspObject {
   _tick() {
     super._tick()
     this._dsp(this._outBuf)
+    this.#tickTime = this.context.currentTime
     return this._outBuf
   }
 

@@ -62,6 +62,8 @@ class AudioInput extends AudioPort {
     this._chHandlers.set(source, handler)
     source.on('_numberOfChannels', handler)
     super.connect(source)
+    // A new upstream connection can carry signal earlier than any cached horizon
+    this.node._wake?.()
   }
 
   disconnect(source) {
@@ -71,13 +73,29 @@ class AudioInput extends AudioPort {
   }
 
   _tick() {
-    let sources = this.sources.slice()
-    let inBuffers = sources.map(source => source._tick())
+    // Snapshot connections into reusable scratch arrays: a pull can fire scheduled
+    // events that disconnect sources mid-iteration, and per-quantum allocations
+    // dominate large graphs of mostly-idle scheduled sources
+    let connections = this.connections
+    let count = connections.length
+    let sources = this._srcScratch || (this._srcScratch = [])
+    sources.length = count
+    for (let i = 0; i < count; i++) sources[i] = connections[i]
+    let ctx = this.context
+    let blockEnd = ctx._frame != null
+      ? (ctx._frame + BLOCK_SIZE) / ctx.sampleRate
+      : ctx.currentTime + BLOCK_SIZE / ctx.sampleRate
+    // Sleeping outputs are provably silent this quantum — represent them by a
+    // shared 1-channel silent block (matching what an idle source returns)
+    let silent = this._silentBuf || (this._silentBuf = Object.assign(new AudioBuffer(1, BLOCK_SIZE, ctx.sampleRate), { _silent: true }))
+    let inBuffers = this._bufScratch || (this._bufScratch = [])
+    inBuffers.length = count
+    for (let i = 0; i < count; i++)
+      inBuffers[i] = sources[i]._horizon(blockEnd) > blockEnd ? silent : sources[i]._tick()
 
     if (this.computedNumberOfChannels === null) {
-      let maxUp = sources.length
-        ? inBuffers.reduce((m, buf) => Math.max(m, buf.numberOfChannels), 0)
-        : 0
+      let maxUp = 0
+      for (let i = 0; i < count; i++) maxUp = Math.max(maxUp, inBuffers[i].numberOfChannels)
       this._computeNumberOfChannels(maxUp)
     }
 
@@ -89,20 +107,24 @@ class AudioInput extends AudioPort {
 
     if (!this._mixBuf || this._mixBuf.numberOfChannels !== this.computedNumberOfChannels) {
       this._mixBuf = new AudioBuffer(this.computedNumberOfChannels, BLOCK_SIZE, this.context.sampleRate)
+      this._mixBuf._silent = true // fresh buffers are zeroed
       // AudioParam inputs use Float64Array to avoid intermediate float32 rounding
       // that would cause precision mismatch vs direct automation
       if (this._useFloat64) {
         for (let ch = 0; ch < this.computedNumberOfChannels; ch++)
           this._mixBuf._channels[ch] = new Float64Array(BLOCK_SIZE)
       }
-    } else {
+    } else if (!this._mixBuf._silent) {
       for (let ch = 0; ch < this._mixBuf.numberOfChannels; ch++)
         this._mixBuf.getChannelData(ch).fill(0)
     }
 
     let interp = this.node.channelInterpretation
     let outCh = this.computedNumberOfChannels
+    let mixed = false
     for (let inBuffer of inBuffers) {
+      if (inBuffer._silent) continue // all-zero block contributes nothing
+      mixed = true
       let inCh = inBuffer.numberOfChannels
       let key = (inCh << 16) | (outCh << 8) | (interp === 'speakers' ? 0 : 1)
       let mix = this._mixCache?.get(key)
@@ -113,6 +135,7 @@ class AudioInput extends AudioPort {
       }
       mix.process(inBuffer, this._mixBuf)
     }
+    this._mixBuf._silent = !mixed
     return this._mixBuf
   }
 
@@ -136,9 +159,26 @@ class AudioOutput extends AudioPort {
     this._cachedBlock = { time: -1, buffer: null }
     this._numberOfChannels = null
     this._ticking = false
+    this._silentUntil = -Infinity // cached sleep horizon; -Infinity = active/unknown
+    this._horizonBusy = false
   }
 
   get sinks() { return this.connections }
+
+  // Time until which this output is provably silent. Inputs skip pulling a
+  // sleeping output entirely, so graphs of scheduled-but-idle sources cost
+  // nothing per quantum. A future horizon is cached; it can only move earlier
+  // through API calls (start, connect), which wake the downstream subgraph.
+  _horizon(blockEnd) {
+    if (this._silentUntil > blockEnd) return this._silentUntil
+    let node = this.node
+    if (!node._silentUntil || this._horizonBusy) return -Infinity
+    this._horizonBusy = true
+    let horizon = node._silentUntil(blockEnd)
+    this._horizonBusy = false
+    if (horizon > blockEnd) this._silentUntil = horizon
+    return horizon
+  }
 
   _tick() {
     // Cycle detection: if this output is already being pulled, return cached or silence

@@ -21,6 +21,8 @@ class AudioScheduledSourceNode extends AudioNode {
     this._stopTime = -1
     this._ended = false
     this._zeroBuf = new AudioBuffer(1, BLOCK_SIZE, context.sampleRate)
+    // Never written to — safe to advertise as silence so downstream nodes can skip DSP
+    this._zeroBuf._silent = true
   }
 
   start(when = 0) {
@@ -29,6 +31,15 @@ class AudioScheduledSourceNode extends AudioNode {
     if (this._started) throw DOMErr('start has already been called', 'InvalidStateError')
     this._started = true
     this._startTime = when
+    this._wake()
+  }
+
+  // Sleep horizon: silent until the scheduled start; forever while unstarted
+  // (start() wakes the subgraph) or after the end, once pending events fired
+  _silentUntil() {
+    if (this._scheduled.length) return -Infinity
+    if (this._ended || !this._started) return Infinity
+    return this._playing ? -Infinity : this._startTime
   }
 
   stop(when = 0) {

@@ -36,6 +36,18 @@ class AudioNode extends DspObject {
   #numberOfOutputs
   get numberOfOutputs() { return this.#numberOfOutputs }
 
+  // Discard cached sleep horizons on this node's outputs and every node
+  // downstream of them — called when an API action (start, connect) can make
+  // signal arrive earlier than a cached horizon promised. The already-awake
+  // guard bounds the walk and terminates cycles.
+  _wake() {
+    for (let output of this._outputs) {
+      if (output._silentUntil === -Infinity) continue
+      output._silentUntil = -Infinity
+      for (let sink of output.connections) sink.node?._wake?.()
+    }
+  }
+
   // Validation hooks — subclasses override to add constraints
   _validateChannelCount(val) {}
   _validateChannelCountMode(val) {}

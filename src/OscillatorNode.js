@@ -54,13 +54,9 @@ class OscillatorNode extends AudioScheduledSourceNode {
     let sr = this.context.sampleRate
     let nyquist = sr / 2
     let table = this.#periodicWave?.table ?? PeriodicWave.getBuiltIn(this.#type)
+    // Spec: phase accumulates from startTime, so a mid-block start begins at
+    // phase 0 (the pre-start samples are silence, not elapsed oscillation)
     let phase = this.#phase
-
-    // Advance phase for skipped samples (before start within block)
-    for (let i = 0; i < offset; i++) {
-      phase += freqArr[i] * (2 ** (detuneArr[i] / 1200)) / sr
-      phase -= Math.floor(phase)
-    }
 
     // Fast path: constant frequency and detune across block — compute once
     if (freqArr[0] === freqArr[BLOCK_SIZE - 1] && detuneArr[0] === detuneArr[BLOCK_SIZE - 1]) {

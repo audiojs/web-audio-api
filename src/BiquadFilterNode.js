@@ -86,6 +86,8 @@ class BiquadFilterNode extends AudioNode {
   _tick() {
     super._tick()
     let inBuf = this._inputs[0]._tick()
+    // Silence in with a settled filter (no ringing state) stays silence
+    if (inBuf._silent && this.#isQuiet()) return inBuf
     let ch = inBuf.numberOfChannels
     let sr = this.context.sampleRate
     let freqArr = this.#frequency._tick()
@@ -138,6 +140,23 @@ class BiquadFilterNode extends AudioNode {
     }
 
     return this._outBuf
+  }
+
+  // A settled filter cannot ring: silent input stays silent until signal arrives
+  _silentUntil(blockEnd) {
+    if (this._scheduled.length || !this.#isQuiet()) return -Infinity
+    let horizon = Infinity
+    for (let output of this._inputs[0].connections)
+      if ((horizon = Math.min(horizon, output._horizon(blockEnd))) <= blockEnd) return horizon
+    return horizon
+  }
+
+  // True when internal state cannot produce audible output (below float32 subnormal range)
+  #isQuiet() {
+    let state = this.#state
+    if (!state) return true
+    for (let i = 0; i < state.length; i++) if (Math.abs(state[i]) > 1e-37) return false
+    return true
   }
 
   // Web Audio spec coefficients — delegates to digital-filter biquad
