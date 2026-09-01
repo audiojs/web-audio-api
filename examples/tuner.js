@@ -3,7 +3,7 @@
 // changing overtones and isolated octave errors do not make the display jump.
 // Requires the `@audio/mic` package (cross-platform Node mic capture):
 //   npm i @audio/mic
-// Run: node examples/tuner.js          # A = 432 Hz
+// Run: node examples/tuner.js          # A = 440 Hz
 // Run: node examples/tuner.js 440      # standard concert pitch
 // Run: node examples/tuner.js a=415 rate=48000
 // Keys: 1-6 play a string's reference tone · space stop it · ↑/↓ nudge A ±1 Hz · q quit
@@ -17,7 +17,7 @@ help({
   description: 'tune a guitar from the microphone or reference tones',
   usage: ['', '[A4-frequency]', 'a=440 rate=48000 ch=1 backend=process'],
   options: [
-    ['a=<hz>', 'reference pitch for A4 (default: 432; use 440 for concert pitch)'],
+    ['a=<hz>', 'reference pitch for A4 (default: 440 concert pitch)'],
     ['rate=<hz>', 'microphone sample rate (default: 44100)'],
     ['ch=<number>', 'input channels (default: 1)'],
     ['bit=<number>', 'input PCM bit depth (default: 16)'],
@@ -31,7 +31,7 @@ help({
 })
 
 let { pos, $ } = args()
-let a4 = parseFloat(pos.find(t => /^\d+(\.\d+)?$/.test(t)) || $('a', '432'))
+let a4 = parseFloat(pos.find(t => /^\d+(\.\d+)?$/.test(t)) || $('a', '440'))
 let sampleRate = parseInt($('rate', '44100'))
 let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))

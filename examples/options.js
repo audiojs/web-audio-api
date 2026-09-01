@@ -39,7 +39,7 @@ export const exampleOptions = {
       ],
     },
     select('mode', 'mode=<exp|lin>', 'Curve', 'exponential', ['exponential', 'linear'], 'exponential or linear sweep'),
-    { ...duration(3, 30), browser: false },
+    duration(3, 30),
   ],
   noise: [
     select('color', 'color=<type>', 'Noise color', 'white', ['white', 'pink', 'brown', 'blue', 'violet'], 'white, pink, brown, blue, or violet'),
@@ -67,7 +67,7 @@ export const exampleOptions = {
     cliOnly('sample=<file>', 'audio file to use as the click sound instead of a preset'),
   ],
   tuner: [
-    range('a4', 'a=<hz>', 'A4 reference', 432, 400, 480, 1, 'Hz', 'reference pitch for A4'),
+    range('a4', 'a=<hz>', 'A4 reference', 440, 400, 480, 1, 'Hz', 'reference pitch for A4'),
     cliOnly('rate=<hz>', 'microphone sample rate (default: 44100)'),
     cliOnly('ch=<number>', 'input channels (default: 1)'),
     cliOnly('bit=<number>', 'input PCM bit depth (default: 16)'),
@@ -82,6 +82,7 @@ export const exampleOptions = {
   ],
   'level-meter': [
     select('ballistics', 'ballistics=<fast|slow>', 'Ballistics', 'slow', ['fast', 'slow'], 'meter response speed'),
+    range('gain', 'gain=<number>', 'Input gain', 1, 0, 4, 0.05, '×', 'input gain'),
     cliOnly('rate=<hz>', 'sample rate (default: 44100)'),
     cliOnly('ch=<number>', 'input channels (default: 1)'),
     cliOnly('bit=<number>', 'input PCM bit depth (default: 16)'),
@@ -103,7 +104,11 @@ export const exampleOptions = {
     range('difference', 'beat=<hz>', 'Difference', 10, 0.5, 40, 0.5, 'Hz', 'right-ear frequency offset'),
     { ...duration(60, 180), browser: false },
   ],
-  'missing-fundamental': [frequency(100, 'Implied pitch', 40, 400), { ...duration(3, 30), browser: false }],
+  'missing-fundamental': [
+    frequency(100, 'Implied pitch', 40, 400),
+    select('fundamental', 'fund=<on|off>', 'Fundamental', 'off', ['off', 'on'], 'include the fundamental for comparison'),
+    { ...duration(3, 30), browser: false },
+  ],
   beating: [
     frequency(440, 'Carrier', 40, 2000),
     range('difference', 'diff=<hz>', 'Difference', 3, 0.5, 40, 0.5, 'Hz', 'difference and beat frequency'),
@@ -146,7 +151,12 @@ export const exampleOptions = {
     range('off', 'off=<s>', 'Off time', 2, 0.5, 8, 0.5, 's', 'silence duration'),
     { ...duration(20, 60), browser: false },
   ],
-  'subtractive-synth': [{ ...duration(2, 10), browser: false }],
+  'subtractive-synth': [
+    frequency(220, 'Frequency', 40, 2000),
+    range('cutoff', 'cutoff=<hz>', 'Cutoff peak', 3600, 300, 8000, 50, 'Hz', 'filter sweep peak frequency'),
+    range('resonance', 'q=<number>', 'Resonance', 8, 0.5, 24, 0.5, '', 'filter Q'),
+    { ...duration(2, 10), browser: false },
+  ],
   additive: [
     select('waveform', 'wave=<type>', 'Shape', 'square', ['square', 'saw', 'triangle'], 'square, saw, or triangle'),
     frequency(220, 'Fundamental', 40, 2000),
@@ -159,7 +169,11 @@ export const exampleOptions = {
     range('index', 'index=<number>', 'Index', 5, 0, 20, 0.5, '', 'modulation index'),
     { ...duration(30, 120), browser: false },
   ],
-  'karplus-strong': [frequency(220, 'Pitch', 40, 2000), { ...duration(30, 120), browser: false }],
+  'karplus-strong': [
+    frequency(220, 'Pitch', 40, 2000),
+    range('decay', 'decay=<s>', 'Decay', 4, 0.5, 12, 0.5, 's', 'time for the pluck to fade 60 dB'),
+    { ...duration(30, 120), browser: false },
+  ],
   wavetable: [
     select('preset', 'preset=<name>', 'Preset', 'organ', ['organ', 'bell', 'pulse', 'voice'], 'organ, bell, pulse, or voice'),
     frequency(220, 'Frequency', 40, 2000),
@@ -174,6 +188,7 @@ export const exampleOptions = {
   ],
   sequencer: [
     range('bpm', 'bpm=<number>', 'Tempo', 140, 40, 300, 1, 'BPM', 'tempo'),
+    text('pattern', 'pat=<steps>', 'Pattern', 'A4,-,C5,-,D5,-,E5,-,D5,C5,A4,-,E4,-,A4,-', 'comma-separated note names, - or . rests', '[A-Ga-g#b0-9,. -]+'),
     { ...duration(1.75, 30), browser: false },
   ],
   serial: [
@@ -189,7 +204,10 @@ export const exampleOptions = {
     frequency(130.81, 'Sa', 40, 500),
     { ...duration(300, 600), browser: false },
   ],
-  jazz: [],
+  jazz: [
+    range('bpm', 'bpm=<number>', 'Tempo', 84, 60, 140, 1, 'BPM', 'performance tempo (default: random 76..92)'),
+    { ...duration(270, 600), browser: false },
+  ],
   euclidean: [
     range('tempo', 'tempo=<bpm>', 'Tempo', 120, 40, 300, 1, 'BPM', 'step tempo'),
     range('steps', 'steps=<n>', 'Steps', 16, 4, 32, 1, '', 'steps per cycle'),
@@ -204,11 +222,21 @@ export const exampleOptions = {
     { ...duration(30, 120), browser: false },
   ],
   spatial: [{ ...duration(3, 10), browser: false }],
-  worklet: [],
+  worklet: [
+    range('gain', 'gain=<0..1>', 'Amplitude', 0.18, 0, 1, 0.01, '', 'peak of the amplitude parameter automation'),
+  ],
   'linked-params': [],
-  fft: [],
+  fft: [
+    range('f1', 'f1=<hz>', 'Tone 1', 440, 20, 8000, 10, 'Hz', 'first tone'),
+    range('f2', 'f2=<hz>', 'Tone 2', 880, 20, 8000, 10, 'Hz', 'second tone'),
+    select('fftSize', 'fft=<size>', 'FFT size', '2048', ['512', '1024', '2048', '4096', '8192'], 'analyser resolution'),
+  ],
   'render-to-buffer': [],
-  'process-file': [cliOnly('audio-file', 'path to an audio file supported by decodeAudioData()')],
+  'process-file': [
+    cliOnly('audio-file', 'path to an audio file supported by decodeAudioData()'),
+    range('highShelfGain', 'shelf=<db>', 'High shelf', -6, -15, 15, 0.5, 'dB', 'high-shelf gain above 4 kHz'),
+    range('threshold', 'threshold=<db>', 'Threshold', -20, -60, 0, 1, 'dB', 'compressor threshold'),
+  ],
   'pipe-stdout': [],
   mic: [
     range('gain', 'gain=<number>', 'Input gain', 1, 0, 4, 0.05, '×', 'input gain'),

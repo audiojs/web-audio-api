@@ -14,12 +14,12 @@ function safeStop(source, time) {
 }
 
 export function init(ctx, {
-  frequency = 100, duration = 3, gain = 0.12, when = ctx.currentTime,
+  frequency = 100, fundamental = 'off', duration = 3, gain = 0.12, when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {
   let master = ctx.createGain(); master.gain.value = gain; master.connect(destination)
   let sources = [], nodes = [master]
-  for (let harmonic = 2; harmonic <= 6; harmonic++) {
+  for (let harmonic = fundamental === 'on' ? 1 : 2; harmonic <= 6; harmonic++) {
     let osc = ctx.createOscillator(), level = ctx.createGain()
     osc.frequency.value = frequency * harmonic
     level.gain.value = 1 / harmonic

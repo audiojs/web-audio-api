@@ -12,6 +12,7 @@ help({
   usage: ['', '[fundamental] [duration]', 'freq=80 dur=5s'],
   options: [
     ['freq=<hz|note>', 'implied fundamental; only harmonics 2–6 are played (default: 100)'],
+    ['fund=<on|off>', 'include the fundamental for comparison (default: off)'],
     ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 3s)'],
   ],
   controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
@@ -24,7 +25,8 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-init(ctx, { frequency: f, duration: dur, gain: 0.15 })
+let fundamental = String($('fund', 'off')).toLowerCase() === 'on' ? 'on' : 'off'
+init(ctx, { frequency: f, fundamental, duration: dur, gain: 0.15 })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Harmonics of ${f}Hz: ${[2, 3, 4, 5, 6].map(h => f * h + 'Hz').join(', ')}`)

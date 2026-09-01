@@ -554,7 +554,7 @@ export function mountExample(root, id) {
     let source = await decode.decodeAudioData(await file.arrayBuffer())
     await decode.close()
     let offline = new OfflineAudioContext(source.numberOfChannels, source.length, source.sampleRate)
-    buildProcessedBuffer(offline, source, { when: 0 })
+    buildProcessedBuffer(offline, source, { when: 0, ...readOptions(id, form) })
     setButtonLabel(run, 'Processing')
     run.setAttribute('aria-busy', 'true')
     setStatus(`Processing ${file.name} in memory…`, 'running')
@@ -574,7 +574,7 @@ export function mountExample(root, id) {
     context = new AudioContext(); await context.resume()
     analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
     connectOutput()
-    demo = await buildWorklet(context, { destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
+    demo = await buildWorklet(context, { ...readOptions(id, form), destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
     setButtonLabel(run, 'Stop demo'); setStatus('Custom AudioWorkletProcessor is running in the browser worklet thread.', 'running')
     animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
   }

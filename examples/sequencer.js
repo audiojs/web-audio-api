@@ -12,21 +12,23 @@ help({
   usage: ['', 'bpm=140 dur=10s'],
   options: [
     ['bpm=<number>', 'tempo (default: 140)'],
-    ['-d, --duration <time>', 'run time; defaults to one 16-step loop'],
+    ['pat=<steps>', 'comma-separated note names, - or . rests'],
+    ['-d, --duration <time>', 'run time; defaults to one loop'],
   ],
   controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
 })
 
 let { $ } = args()
 let bpm = +$('bpm', 140)
-const steps = 16
+let pattern = $('pat') || null
+const steps = pattern ? pattern.split(',').length : 16
 let stepDuration = 60 / bpm / 4
 let dur = sec($('dur', steps * stepDuration))
 
 const ctx = new AudioContext()
 await ctx.resume()
 
-init(ctx, { bpm, duration: dur })
+init(ctx, { bpm, pattern, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Sequencer: ${bpm} BPM, ${steps}-step pattern (${dur}s)  space pause · q quit`)

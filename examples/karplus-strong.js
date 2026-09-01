@@ -12,6 +12,7 @@ help({
   usage: ['', '[frequency] [duration]', 'freq=A4 dur=2s'],
   options: [
     ['freq=<hz|note>', 'string frequency (default: 220)'],
+    ['decay=<s>', 'time for the pluck to fade 60 dB (default: 4)'],
     ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 30s)'],
   ],
   controls: [['Space', 'pause/resume'], ['P', 'pluck again'], ['↑ / ↓', 'move one semitone and pluck'], ['Q / Esc', 'quit']],
@@ -19,12 +20,13 @@ help({
 
 let { pos, $ } = args()
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 220))
+let decay = num($('decay', 4))
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = await init(ctx, { frequency: f, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
+let demo = await init(ctx, { frequency: f, decay, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
 let node = demo.data.node
 
 let render = status()

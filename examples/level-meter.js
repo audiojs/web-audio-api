@@ -14,6 +14,7 @@ help({
   usage: ['', 'ballistics=fast rate=48000 ch=2 backend=process'],
   options: [
     ['ballistics=<fast|slow>', 'meter response speed (default: slow)'],
+    ['gain=<number>', 'input gain (default: 1)'],
     ['rate=<hz>', 'sample rate (default: 44100)'],
     ['ch=<number>', 'input channels (default: 1)'],
     ['bit=<number>', 'input PCM bit depth (default: 16)'],
@@ -25,6 +26,7 @@ help({
 
 let { $ } = args()
 let ballistics = String($('ballistics', 'slow')).toLowerCase() === 'fast' ? 'fast' : 'slow'
+let gain = parseFloat($('gain', '1'))
 let sampleRate = parseInt($('rate', '44100'))
 let channels = parseInt($('ch', '1'))
 let bitDepth = parseInt($('bit', '16'))
@@ -39,7 +41,7 @@ let ctx = new AudioContext({ sampleRate })
 await ctx.resume()
 
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
-let graph = init(ctx, { stream: new MediaStream([track]) })
+let graph = init(ctx, { stream: new MediaStream([track]), gain })
 let analyser = graph.nodes[2]
 
 // @audio/mic's read(cb) is one-shot — re-arm from inside the callback to keep draining the device.

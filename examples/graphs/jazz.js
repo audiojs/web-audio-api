@@ -3,10 +3,10 @@
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export async function init(ctx, {
-  duration: targetDuration = 270, destination = ctx.destination, AudioWorkletNodeClass = null,
+  bpm = null, duration: targetDuration = 270, destination = ctx.destination, AudioWorkletNodeClass = null,
 } = {}) {
   if (!AudioWorkletNodeClass) throw new TypeError('AudioWorkletNode is not available')
-  let bpm = 76 + (Math.random() * 16 | 0)
+  bpm = Number(bpm) || 76 + (Math.random() * 16 | 0)
   let beat = 60 / bpm
   let bpc = 8 // beats per chord (2 bars)
   let nChords = Math.ceil(targetDuration / (bpc * beat)) // ~4.5 min

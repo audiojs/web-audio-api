@@ -3,18 +3,26 @@
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
 import { init } from './graphs/jazz.js'
-import { keys, clearLine, help } from './utils.js'
+import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
   description: 'generate a complete modal jazz performance',
-  usage: [''],
+  usage: ['', 'bpm=92 -d 3m'],
+  options: [
+    ['bpm=<number>', 'performance tempo (default: random 76..92)'],
+    ['-d, --duration <time>', 'target length with optional s/m/h suffix (default: 270s)'],
+  ],
   controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],
   notes: ['Every 4–5 minute performance uses a new tempo, progression, voicings, and improvisation.'],
 })
 
+let { $ } = args()
+let bpm = $('bpm') ? +$('bpm') : null
+let dur = sec($('dur', '270'))
+
 let ctx = new AudioContext()
 await ctx.resume()
-let demo = await init(ctx, { AudioWorkletNodeClass: AudioWorkletNode })
+let demo = await init(ctx, { bpm, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`♪ ${demo.data.bpm} BPM, ${(demo.duration / 60).toFixed(1)} min — space pause · q quit\n` + demo.data.chordLog.join(' → '))

@@ -7,11 +7,12 @@ function safeStop(source, time) {
 }
 
 export function init(ctx, {
-  frequencies = [440, 880], duration = 1.5, gain = 0.5, when = ctx.currentTime,
+  f1 = 440, f2 = 880, fftSize = 2048, duration = 1.5, gain = 0.5, when = ctx.currentTime,
   destination = ctx.destination, analyser = null,
 } = {}) {
+  let frequencies = [Number(f1), Number(f2)]
   let meter = analyser || ctx.createAnalyser(), mix = ctx.createGain(); mix.gain.value = gain
-  meter.fftSize = 2048; mix.connect(meter).connect(destination)
+  meter.fftSize = Number(fftSize); mix.connect(meter).connect(destination)
   let sources = [], nodes = [mix, meter]
   for (let frequency of frequencies) {
     let osc = ctx.createOscillator(); osc.frequency.value = frequency; osc.connect(mix); osc.start(when); safeStop(osc, when + duration + 0.01)

@@ -6,10 +6,19 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
+function noteToFrequency(token) {
+  let match = token.match(/^([A-G])([#b])?(-?\d)$/i)
+  if (!match) return 0
+  let semitone = 'C.D.EF.G.A.B'.indexOf(match[1].toUpperCase()) + (match[2] === '#') - (match[2] === 'b')
+  return 440 * 2 ** ((semitone + 12 * (+match[3] + 1) - 69) / 12)
+}
+
 export function init(ctx, {
-  bpm = 140, duration = null, loops = 1, when = ctx.currentTime, destination = ctx.destination,
+  bpm = 140, pattern = null, duration = null, loops = 1, when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
-  let notes = [440, 0, 523.25, 0, 587.33, 0, 659.25, 0, 587.33, 523.25, 440, 0, 329.63, 0, 440, 0]
+  let notes = pattern
+    ? pattern.split(',').map(token => noteToFrequency(token.trim()))
+    : [440, 0, 523.25, 0, 587.33, 0, 659.25, 0, 587.33, 523.25, 440, 0, 329.63, 0, 440, 0]
   let step = 60 / bpm / 4, sources = [], nodes = []
   let totalDuration = duration ?? notes.length * loops * step
   let loopCount = Math.ceil(totalDuration / (notes.length * step))
