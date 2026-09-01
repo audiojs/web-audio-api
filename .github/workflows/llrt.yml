@@ -18,7 +18,7 @@ jobs:
       - run: npm ci
       # Bundling is the standard LLRT deployment shape (Lambda); optional
       # audio-device and codec adapters stay external, the engine bundles.
-      - run: npx esbuild test/smoke.mjs --bundle --format=esm --platform=node --outfile=smoke-llrt.mjs "--external:@audio/*"
+      - run: npx esbuild test/smoke.mjs --bundle --format=esm --platform=node --outfile=smoke-llrt.mjs --external:@audio/decode --external:@audio/decode-ape --external:@audio/speaker --external:@audio/mic
       - run: |
           curl -sL -o llrt.zip https://github.com/awslabs/llrt/releases/download/v0.8.1-beta/llrt-linux-x64.zip
           unzip -o llrt.zip llrt
