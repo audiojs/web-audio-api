@@ -83,9 +83,9 @@ select:focus-visible,
 
 .corner-action {
   width: 100%;
-  /* full-bleed white bar; gutter grows so content stays on the page column */
-  padding: var(--space-md) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));
-  background: var(--color-white);
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: var(--space-md) var(--page-gutter) 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -635,12 +635,6 @@ table.bench td { font-variant-numeric: tabular-nums; }
 
 tbody th { color: var(--color-ink); white-space: nowrap; }
 
-.site-nav {
-  width: 100%;
-  padding: var(--space-md) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));
-  background: var(--color-white);
-}
-
 .header-strips {
   display: block;
   width: 100%;
@@ -1088,8 +1082,9 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 
 .detail-actions {
   width: 100%;
-  padding: var(--space-md) max(var(--page-gutter), calc((100% - var(--page-max)) / 2 + var(--page-gutter)));
-  background: var(--color-white);
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: var(--space-md) var(--page-gutter) 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
