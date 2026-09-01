@@ -819,7 +819,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   overflow: clip;
   border: 0;
   border-radius: var(--radius-lg);
-  background: var(--color-paper);
+  background: var(--color-ink);
 }
 
 .dialog-head {
@@ -827,24 +827,29 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-md);
-  border-block-end: var(--rule-hair) solid var(--color-rule);
+  border-block-end: var(--rule-hair) solid var(--color-rule-dark);
 }
 
 .dialog-head h2 {
   margin: var(--space-xs) 0 0;
-  color: var(--color-ink);
+  color: var(--color-paper);
   font-size: clamp(var(--text-lg), 6vw, var(--text-2xl));
   letter-spacing: -0.035em;
   line-height: 1.05;
   overflow-wrap: anywhere;
 }
 
-.dialog-head p { max-width: 54rem; margin: var(--space-sm) 0 0; }
+.dialog-head p {
+  max-width: 54rem;
+  margin: var(--space-sm) 0 0;
+  color: var(--color-muted-on-ink);
+}
 
 .dialog-close {
   align-self: start;
   border-color: transparent;
   background: transparent;
+  color: var(--color-paper);
 }
 
 .dialog-close svg {
@@ -1214,7 +1219,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
     transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out);
   }
   .icon-button:hover { background: var(--color-paper-2); }
-  .copy-icon:hover { background: var(--color-ink-3); }
+  .copy-icon:hover,
+  .dialog-close:hover { background: var(--color-ink-3); }
   .hero-stack button { transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out); }
   .hero-stack button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); color: var(--color-ink); }
   .hero-stack button img { transition: filter var(--dur-short) var(--ease-out); }
@@ -1258,12 +1264,12 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
      so the play control is visible before, during, and after the pin */
   .demo-panel {
     min-height: 0;
-    height: 100dvh;
+    max-height: 100dvh;
     position: sticky;
     inset-block-start: 0;
     align-self: start;
   }
-  .example-dialog .demo-panel { height: calc(100dvh - var(--space-xl)); }
+  .example-dialog .demo-panel { max-height: calc(100dvh - var(--space-xl)); }
   .demo-stage { position: static; }
   .demo-form { min-height: 0; }
   .demo-controls { min-height: 0; overflow-y: auto; }
