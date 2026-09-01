@@ -28,8 +28,9 @@ html {
   background: var(--color-paper);
   background-image: conic-gradient(from 270deg at var(--rule-heavy) var(--rule-heavy), var(--color-grid) 90deg, transparent 0);
   background-size: var(--space-md) var(--space-md);
-  /* Aligns dot columns with the content edge at full page width (72rem + 3.5rem gutter) */
-  background-position: 50% 0;
+  /* Columns align with the centered content edge; rows shift up one dot height
+     so each dot row sits tangent above every 16px-aligned rect edge */
+  background-position: 50% calc(-1 * var(--rule-heavy));
   color: var(--color-body);
   font-family: var(--font-body);
   font-size: 100%;
@@ -211,9 +212,10 @@ main {
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
 
+  .install-command { width: 100%; }
+
   .hero-spec {
     flex-basis: 100%;
-    margin-block-start: var(--space-md);
     padding-block: var(--space-sm);
     white-space: normal;
   }
@@ -304,6 +306,19 @@ h3 {
 .hero-stack button[aria-pressed="true"] {
   background: var(--color-white);
   color: var(--color-ink);
+}
+
+@media (max-width: 48rem) {
+  .hero-foot { margin-block-start: var(--space-xs); }
+
+  .hero-stack { flex-wrap: nowrap; gap: var(--space-2xs); }
+
+  /* icons only, one line: the lede's "Any JS engine:" names the row */
+  .hero-stack button {
+    padding-inline: var(--space-xs);
+    gap: 0;
+    font-size: 0;
+  }
 }
 
 .hero-stack img {
