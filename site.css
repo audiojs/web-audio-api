@@ -185,15 +185,24 @@ main {
 
 .hero-spec {
   margin-inline-start: var(--space-lg);
-  align-self: flex-end;
+  align-self: stretch;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md);
+  align-items: stretch;
+  border: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-white);
   color: var(--color-muted);
   font-family: var(--font-code);
   font-size: var(--text-xs);
 }
+
+.hero-spec > * {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-md);
+  border-inline-start: var(--rule-hair) solid var(--color-rule);
+}
+
+.hero-spec > :first-child { border-inline-start: 0; }
 
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
