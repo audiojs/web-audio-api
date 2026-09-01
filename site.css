@@ -180,7 +180,7 @@ main {
 }
 
 .hero {
-  padding-block: var(--space-4xl) var(--space-3xl);
+  padding-block: var(--space-4xl) var(--space-2xl);
   position: relative;
 }
 
