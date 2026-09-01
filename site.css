@@ -184,33 +184,27 @@ main {
 }
 
 .hero-spec {
-  margin-inline-start: var(--space-lg);
   align-self: stretch;
   display: flex;
-  align-items: stretch;
-  border: var(--rule-hair) solid var(--color-rule);
+  align-items: center;
+  padding-inline: var(--space-md) var(--space-lg);
   background: var(--color-white);
   color: var(--color-muted);
   font-family: var(--font-code);
   font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
-.hero-spec > * {
-  display: inline-flex;
-  align-items: center;
-  padding-inline: var(--space-md);
-  border-inline-start: var(--rule-hair) solid var(--color-rule);
-}
-
-.hero-spec > :first-child { border-inline-start: 0; }
+.hero-spec a { color: var(--color-ink); }
 
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
 
   .hero-spec {
     flex-basis: 100%;
-    margin-inline-start: 0;
     margin-block-start: var(--space-md);
+    padding-block: var(--space-sm);
+    white-space: normal;
   }
 }
 
@@ -328,6 +322,7 @@ h3 {
   /* Overlap the command rect so the first black cell merges with it seamlessly */
   margin-inline-start: calc(-1 * var(--rule-hair));
   position: relative;
+  background: var(--color-white);
 }
 
 .install-strips {
@@ -520,7 +515,7 @@ pre code { font: inherit; }
   padding: 0 var(--space-xs);
   border: var(--rule-hair) solid var(--color-ink);
   border-radius: var(--radius-pill);
-  background: var(--color-paper-2);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -1254,8 +1249,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .hero-stack button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); color: var(--color-ink); }
   .hero-stack button img { transition: filter var(--dur-short) var(--ease-out); }
   .hero-stack button:hover img { filter: none; }
-  .example-tag { transition: background-color var(--dur-short) var(--ease-out); }
-  .example-tag:hover { background: var(--color-white); }
+  .example-filters button { transition: background-color var(--dur-short) var(--ease-out); }
+  .example-filters button:not([aria-pressed="true"]):hover { background: var(--color-white); }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
   .wpt-badge:hover { opacity: 0.85; }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
