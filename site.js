@@ -114,19 +114,17 @@ if (strips) {
     let width = strips.offsetWidth * ratio, height = strips.offsetHeight * ratio
     if (width < 1) return
     if (strips.width !== width || strips.height !== height) { strips.width = width; strips.height = height }
-    // equal-width cells, each split black/transparent; the split ratio eases in-out
+    // equal integer cells, each split black/transparent; the split falls linearly,
+    // so bars thin and gaps widen in equal steps with no rounding jitter
     let cells = 10
-    let cell = width / cells
-    let ease = t => t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2
+    let cell = Math.max(2, Math.round(width / cells))
     context.clearRect(0, 0, width, height)
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
     for (let k = 0; k < cells; k++) {
-      let black = 1 - ease(k / (cells - 1))
-      if (!black) continue
-      let x0 = Math.round(k * cell)
-      // clamp keeps a visible gap (1 CSS px) before the next cell even at black=1
-      let x1 = Math.min(Math.round(k * cell + cell * black), Math.round((k + 1) * cell) - ratio)
-      context.fillRect(x0, 0, Math.max(1, x1 - x0), height)
+      let bar = Math.round(cell * (1 - k / (cells - 1)))
+      if (!bar) continue
+      // clamp keeps a visible gap (1 CSS px) in every cell even at full black
+      context.fillRect(k * cell, 0, Math.max(1, Math.min(bar, cell - ratio)), height)
     }
   }
   paint()

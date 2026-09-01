@@ -251,20 +251,17 @@ h3 {
   gap: var(--space-xs);
   height: 2rem;
   padding-inline: var(--space-sm);
-  border: var(--rule-hair) solid transparent;
+  border: 0;
   border-radius: var(--radius-pill);
   background: none;
   color: var(--color-muted);
   font-size: var(--text-sm);
   white-space: nowrap;
-  opacity: 0.45;
 }
 
 .hero-stack button[aria-pressed="true"] {
-  border-color: var(--color-rule);
   background: var(--color-white);
   color: var(--color-ink);
-  opacity: 1;
 }
 
 .hero-stack img {
@@ -1093,8 +1090,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   }
   .icon-button:hover { background: var(--color-paper-2); }
   .copy-icon:hover { background: var(--color-ink-3); }
-  .hero-stack button { transition: opacity var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
-  .hero-stack button:not([aria-pressed="true"]):hover { opacity: 0.8; }
+  .hero-stack button { transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out); }
+  .hero-stack button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); color: var(--color-ink); }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
   .wpt-badge:hover { opacity: 0.85; }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
