@@ -379,24 +379,15 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* The blueprint dot grid ends on a dot row across the code block's lower
-   part: a white stopper line there, then plain paper below. 8rem above the
-   section top lands the line on the grid, three quarters down the block. */
+/* The blueprint dots end where the white field begins, on a dot row across
+   the code block's lower part (8rem above the section top keeps it on grid).
+   The field runs white through the examples; questions return to paper. */
 .examples {
-  padding-block: var(--space-xl) var(--space-4xl);
+  padding-block: var(--space-md) var(--space-4xl);
   position: relative;
-  background: var(--color-paper);
-  box-shadow: 0 0 0 100vmax var(--color-paper);
-  clip-path: inset(-8rem -100vmax 0);
-}
-
-.examples::before {
-  content: '';
-  position: absolute;
-  inset-inline: -100vmax;
-  inset-block-start: -8rem;
-  height: var(--rule-heavy);
   background: var(--color-white);
+  box-shadow: 0 0 0 100vmax var(--color-white);
+  clip-path: inset(-8rem -100vmax 0);
 }
 
 .section-heading {
@@ -460,7 +451,7 @@ pre code { font: inherit; }
   inset-block-start: 0;
   z-index: var(--z-raised);
   border-block-end: var(--rule-heavy) solid var(--color-ink);
-  background: var(--color-paper);
+  background: var(--color-white);
   color: var(--color-ink);
   font-size: var(--text-lg);
   letter-spacing: -0.025em;
@@ -515,7 +506,7 @@ pre code { font: inherit; }
   padding: 0 var(--space-xs);
   border: var(--rule-hair) solid var(--color-ink);
   border-radius: var(--radius-pill);
-  background: var(--color-paper);
+  background: var(--color-white);
   color: var(--color-ink);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -1206,7 +1197,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .hero-stack button img { transition: filter var(--dur-short) var(--ease-out); }
   .hero-stack button:hover img { filter: none; }
   .example-filters button { transition: background-color var(--dur-short) var(--ease-out); }
-  .example-filters button:not([aria-pressed="true"]):hover { background: var(--color-white); }
+  .example-filters button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
   .wpt-badge:hover { opacity: 0.85; }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
