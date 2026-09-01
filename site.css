@@ -201,7 +201,12 @@ main {
   border-inline-end: var(--rule-hair) solid var(--color-rule);
 }
 
-.hero-spec a { color: var(--color-ink); }
+.hero-spec > :last-child { border-inline-end: 0; }
+
+.hero-spec a {
+  color: inherit;
+  text-decoration: none;
+}
 
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
