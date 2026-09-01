@@ -179,7 +179,7 @@ main {
 }
 
 .hero {
-  padding-block: var(--space-3xl);
+  padding-block: var(--space-4xl) var(--space-3xl);
   position: relative;
 }
 
@@ -270,7 +270,6 @@ h3 {
 
 .hero-foot {
   margin-block-start: var(--space-md);
-  padding-block-start: var(--space-3xs);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -394,22 +393,22 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* The blueprint dot grid ends on a dot row halfway up the code block:
-   a white stopper line there, then plain paper below. 12rem = half the
-   256px code block plus the hero's 4rem bottom padding. */
+/* The blueprint dot grid ends on a dot row across the code block's lower
+   part: a white stopper line there, then plain paper below. 8rem above the
+   section top lands the line on the grid, three quarters down the block. */
 .examples {
-  padding-block: var(--space-2xl) var(--space-4xl);
+  padding-block: var(--space-xl) var(--space-4xl);
   position: relative;
   background: var(--color-paper);
   box-shadow: 0 0 0 100vmax var(--color-paper);
-  clip-path: inset(calc(-12rem - var(--rule-heavy)) -100vmax 0);
+  clip-path: inset(-8rem -100vmax 0);
 }
 
 .examples::before {
   content: '';
   position: absolute;
   inset-inline: -100vmax;
-  inset-block-start: calc(-12rem - var(--rule-heavy));
+  inset-block-start: -8rem;
   height: var(--rule-heavy);
   background: var(--color-white);
 }
