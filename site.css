@@ -60,11 +60,12 @@ summary { cursor: pointer; }
 
 a {
   color: var(--color-ink);
-  text-decoration-color: var(--color-muted);
+  /* underlines carry the same translucency in every context, solid on hover */
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
   text-underline-offset: 0.18em;
 }
 
-a:hover { text-decoration-thickness: var(--rule-heavy); }
+a:hover { text-decoration-color: currentColor; }
 
 button:focus-visible,
 a:focus-visible,
@@ -710,10 +711,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   padding-inline: var(--page-gutter);
 }
 
-.site-footer a {
-  color: var(--color-paper);
-  text-decoration-color: var(--color-ink-3);
-}
+.site-footer a { color: var(--color-paper); }
 
 .site-footer p {
   margin: 0;
