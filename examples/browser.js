@@ -716,7 +716,7 @@ if (detailPage) {
 highlightSyntax().catch(() => {})
 
 // horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
-function stripBand(canvas, solidTop) {
+function stripBand(canvas, solidTop, colorToken = '--color-ink') {
   let context = canvas.getContext('2d')
   let paint = () => {
     let ratio = Math.min(devicePixelRatio || 1, 2)
@@ -726,7 +726,7 @@ function stripBand(canvas, solidTop) {
     let cells = Math.max(2, Math.round(canvas.offsetHeight / 8))
     let cell = Math.max(2, Math.round(height / cells))
     context.clearRect(0, 0, width, height)
-    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
+    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(colorToken).trim()
     for (let k = 0; k < cells; k++) {
       let t = k / (cells - 1)
       let bar = Math.round(cell * (solidTop ? 1 - t : t))
@@ -742,4 +742,4 @@ function stripBand(canvas, solidTop) {
 let footerStrips = document.querySelector('.footer-strips')
 if (footerStrips) stripBand(footerStrips, false)
 let headerStrips = document.querySelector('.header-strips')
-if (headerStrips) stripBand(headerStrips, true)
+if (headerStrips) stripBand(headerStrips, true, '--color-white')
