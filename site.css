@@ -214,27 +214,6 @@ h3 {
   line-height: 1.1;
 }
 
-.hero-spec {
-  margin: var(--space-xl) 0 0;
-  display: grid;
-  gap: var(--space-3xs);
-  color: var(--color-muted);
-  font-family: var(--font-code);
-  font-size: var(--text-xs);
-}
-
-.hero-spec > div {
-  display: grid;
-  grid-template-columns: 6rem auto;
-}
-
-.hero-spec dt {
-  color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.hero-spec dd { margin: 0; color: var(--color-body); }
-
 .hero-lede {
   max-width: 42rem;
   margin: var(--space-xl) 0 0;
@@ -645,9 +624,10 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   text-decoration: none;
 }
 
-.footer-brand svg {
+.footer-brand img {
   width: 1.5rem;
   height: 1.5rem;
+  border-radius: var(--radius-pill);
 }
 
 .example-dialog {
@@ -1114,12 +1094,6 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 @media (min-width: 60rem) {
-  .hero-spec {
-    margin: 0;
-    position: absolute;
-    inset-block-end: var(--space-3xl);
-    inset-inline-end: 0;
-  }
   .dialog-body,
   .detail-grid { grid-template-columns: minmax(22rem, 1fr) minmax(0, 1fr); align-items: stretch; background: var(--color-ink); }
   .dialog-code {
