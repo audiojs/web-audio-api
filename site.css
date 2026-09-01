@@ -227,7 +227,7 @@ h3 {
 }
 
 .hero-foot {
-  margin-block-start: var(--space-xl);
+  margin-block-start: var(--space-md);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -398,7 +398,8 @@ pre code { font: inherit; }
 
 .example-group h3 {
   margin: 0;
-  padding-block: var(--space-sm);
+  padding-block: calc(var(--space-md) - var(--rule-hair));
+  line-height: 2rem;
   position: sticky;
   inset-block-start: 0;
   z-index: var(--z-raised);
@@ -416,12 +417,13 @@ pre code { font: inherit; }
 .example-entry {
   width: 100%;
   min-width: 0;
-  padding: var(--space-sm) 0;
+  padding: var(--space-sm) 0 calc(var(--space-sm) - var(--rule-hair));
+  line-height: 1.5rem;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: var(--space-md);
   row-gap: var(--space-2xs);
-  align-items: baseline;
+  align-items: center;
   align-content: start;
   border: 0;
   border-block-end: var(--rule-hair) solid var(--color-rule);
@@ -451,8 +453,10 @@ pre code { font: inherit; }
 .example-tag {
   grid-column: 2;
   justify-self: start;
-  margin-block-start: var(--space-2xs);
-  padding: var(--space-3xs) var(--space-xs);
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-xs);
   border: var(--rule-hair) solid var(--color-ink);
   border-radius: var(--radius-pill);
   color: var(--color-ink);
@@ -477,6 +481,7 @@ pre code { font: inherit; }
 .example-description {
   grid-column: 2;
   min-width: 0;
+  min-height: 3rem;
   color: var(--color-muted);
   font-size: var(--text-sm);
 }
@@ -496,8 +501,9 @@ pre code { font: inherit; }
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
 
 .faq summary {
-  min-height: 3.75rem;
+  min-height: calc(4rem - var(--rule-hair));
   padding-block: var(--space-md);
+  line-height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;

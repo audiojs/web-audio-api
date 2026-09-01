@@ -121,7 +121,10 @@ if (strips) {
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
     for (let k = 0; k < cells; k++) {
       let black = 1 - ease(k / (cells - 1))
-      context.fillRect(k * cell, 0, Math.max(1, cell * black), height)
+      if (!black) continue
+      let x0 = Math.round(k * cell)
+      let x1 = Math.round(k * cell + cell * black)
+      context.fillRect(x0, 0, Math.max(1, x1 - x0), height)
     }
   }
   paint()
