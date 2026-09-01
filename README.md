@@ -1,8 +1,8 @@
 # web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-[Web Audio, without the browser.](https://audiojs.dev/web-audio-api/) Run the same Web Audio graph in browsers, Node, CI, servers, and scripts.
+[Web Audio](https://audiojs.dev/web-audio-api/): headless & cross-platform.
 
-* **100% [WPT](https://web-platform-tests.org/) conformance**, with a pure-JS audio graph and DSP core.
+* **100% [WPT](https://web-platform-tests.org/) conformance**, no native bindings, no compile.
 * **Audio in CI** – `OfflineAudioContext` renders without speakers.
 * **CLI audio scripting** – pipe, process, synthesize from terminal.
 * **Server-side audio** – generate from APIs, bots, pipelines.
