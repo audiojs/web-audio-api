@@ -745,3 +745,12 @@ let footerStrips = document.querySelector('.footer-strips')
 if (footerStrips) stripBand(footerStrips, false)
 let headerStrips = document.querySelector('.header-strips')
 if (headerStrips) stripBand(headerStrips, true, '--color-white')
+
+let footerInstall = document.querySelector('.footer-install')
+if (footerInstall && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+  new IntersectionObserver((entries, observer) => {
+    if (!entries.some(entry => entry.isIntersecting)) return
+    observer.disconnect()
+    footerInstall.classList.add('is-typed')
+  }).observe(footerInstall)
+}

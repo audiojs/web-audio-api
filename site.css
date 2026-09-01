@@ -184,28 +184,24 @@ main {
 }
 
 .hero-spec {
-  position: absolute;
-  inset-block-start: 0;
-  /* right edge rides the code block's column end (its 48rem max width) */
-  inset-inline-end: calc(100% - 48rem);
-  display: grid;
-  gap: var(--space-2xs);
-  justify-items: end;
+  margin-inline-start: var(--space-lg);
+  align-self: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
   color: var(--color-muted);
   font-family: var(--font-code);
   font-size: var(--text-xs);
-  text-align: end;
 }
 
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
 
   .hero-spec {
-    position: static;
     flex-basis: 100%;
+    margin-inline-start: 0;
     margin-block-start: var(--space-md);
-    justify-items: start;
-    text-align: start;
   }
 }
 
@@ -737,14 +733,50 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   font-weight: 500;
 }
 
-.footer-install {
+.footer-name [data-version] {
   font-family: var(--font-code);
-  font-size: var(--text-xs);
+  font-weight: 400;
 }
 
-.footer-row {
-  display: inline-flex;
-  gap: var(--space-md);
+.site-footer .footer-install-line {
+  margin: var(--space-xl) auto 0;
+  display: block;
+  text-align: center;
+}
+
+.footer-install {
+  font-family: var(--font-code);
+  font-size: var(--text-sm);
+  color: var(--color-paper);
+  text-decoration: none;
+}
+
+.footer-install code {
+  display: inline-block;
+  width: 25ch;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  text-align: start;
+  border-inline-end: var(--rule-heavy) solid transparent;
+}
+
+.footer-install.is-typed code {
+  border-color: var(--color-paper);
+  animation: footer-typing 1.8s steps(25, end), footer-caret 1.2s step-end infinite;
+}
+
+@keyframes footer-typing {
+  from { width: 0; }
+  to { width: 25ch; }
+}
+
+@keyframes footer-caret {
+  50% { border-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-install.is-typed code { animation: none; }
 }
 
 .footer-side {
