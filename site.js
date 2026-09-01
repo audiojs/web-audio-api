@@ -96,7 +96,7 @@ if (filters) {
     let button = document.createElement('button')
     button.type = 'button'
     button.dataset.tag = tag
-    button.textContent = tag || 'all'
+    button.textContent = tag || 'All'
     button.setAttribute('aria-pressed', String(tag === ''))
     button.addEventListener('click', () => apply(tag))
     return button

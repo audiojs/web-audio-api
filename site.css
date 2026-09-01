@@ -26,7 +26,7 @@ body {
 html {
   scrollbar-gutter: stable;
   background: var(--color-paper);
-  background-image: conic-gradient(from 270deg at var(--rule-hair) var(--rule-hair), var(--color-grid) 90deg, transparent 0);
+  background-image: conic-gradient(from 270deg at var(--rule-heavy) var(--rule-heavy), var(--color-grid) 90deg, transparent 0);
   background-size: var(--space-md) var(--space-md);
   /* Aligns dot columns with the content edge at full page width (72rem + 3.5rem gutter) */
   background-position: 50% 0;
@@ -283,6 +283,7 @@ h3 {
 .install-command {
   width: fit-content;
   margin: 0;
+  border-inline-end: 0;
   padding: var(--space-sm) var(--space-md);
   border: var(--rule-hair) solid var(--color-rule-dark);
   background: var(--color-ink);
@@ -388,9 +389,7 @@ pre code { font: inherit; }
 
 .example-filters button:active { transform: translateY(1px); }
 
-.example-tag,
-.detail-tags span,
-.example-filters button { text-transform: lowercase; }
+
 
 .example-groups {
   display: grid;
@@ -617,10 +616,12 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 .footer-brand {
+  margin-inline-end: auto;
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
   color: var(--color-ink);
+  font-weight: 500;
   text-decoration: none;
 }
 
