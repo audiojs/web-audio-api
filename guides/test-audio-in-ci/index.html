@@ -21,7 +21,7 @@
     <section class="example-head"><div class="example-head-inner"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Home</a><span aria-hidden="true">/</span><span>Guides</span><span aria-hidden="true">/</span><span>Audio in CI</span></nav><p class="example-kicker">Serious task, CI, OfflineAudioContext</p><h1>Audio testing in CI</h1><p>Render the production Web Audio graph into memory. No browser, speaker, virtual audio device, or native binding is required.</p></div></section>
     <article class="example-main guide-content">
       <section class="guide-section"><h2>Example test</h2><p>The assertions below, from <a href="https://github.com/audiojs/assert"><code>@audio/assert</code></a>, check useful invariants without depending on one engine’s last floating-point bit. Each throws a plain <code>Error</code>, so they work under node:test, tape, tap, vitest, or bare scripts alike.</p><pre><code class="language-javascript">import { OfflineAudioContext } from 'web-audio-api'
-import { assertFrequency, assertPeak, assertNoClipping, assertNoDcOffset } from '@audio/assert'
+import { frequency, peak, unclipped, dc } from '@audio/assert'
 
 function buildGraph(ctx) {
   const osc = ctx.createOscillator()
@@ -38,10 +38,10 @@ const ctx = new OfflineAudioContext(1, rate, rate)
 buildGraph(ctx)
 const audio = await ctx.startRendering()
 
-assertFrequency(audio, rate, 440)
-assertPeak(audio, 0.25, 0.01)
-assertNoClipping(audio)
-assertNoDcOffset(audio)</code></pre></section>
+frequency(audio, rate, 440)
+peak(audio, 0.25, 0.01)
+unclipped(audio)
+dc(audio, 0.01)</code></pre></section>
       <section class="guide-section"><h2>Assertions</h2><dl class="spec-list"><div><dt>Silence</dt><dd>RMS or peak exceeds a floor</dd><span>Robust</span></div><div><dt>Clipping</dt><dd>peak stays below the allowed ceiling</dd><span>Robust</span></div><div><dt>Timing</dt><dd>first/last active frame falls in a window</dd><span>Robust</span></div><div><dt>Pitch</dt><dd>FFT or zero-crossing peak is near target</dd><span>Robust</span></div><div><dt>Channels</dt><dd>count, routing, correlation, or polarity</dd><span>Robust</span></div><div><dt>Exact DSP</dt><dd>selected sample windows with explicit tolerance</dd><span>Precise</span></div></dl><p class="guide-note">Avoid snapshotting an entire buffer unless bit identity is the requirement. A domain assertion explains the regression better.</p></section>
       <section class="guide-section"><h2>GitHub Actions</h2><pre><code class="language-yaml">jobs:
   test:

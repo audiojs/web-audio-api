@@ -1,6 +1,7 @@
-# Tracking job: Porffor cannot compile import declarations yet
-# ("no generation for ImportDeclaration", verified on 0.61.13), so this
-# fails honestly until Porffor lands ESM support. Weekly, not per push.
+# Tracking job: Porffor cannot run the engine yet. Unbundled it lacks
+# import-declaration codegen; fully bundled (all deps stubbed or inlined,
+# zero imports) its wasm codegen miscompiles ("expected 2 elements on the
+# stack for branch", verified on 0.61.13). Weekly, so progress is noticed.
 name: Porffor
 
 on:
@@ -18,4 +19,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx -y porffor@latest --module test/smoke.mjs
+      - run: printf 'export default null\nexport const from = null\n' > stub.js
+      - run: npx esbuild test/smoke.mjs --bundle --format=esm --outfile=smoke-porf.mjs --alias:@audio/decode=./stub.js --alias:@audio/decode-ape=./stub.js --alias:@audio/speaker=./stub.js --alias:@audio/mic=./stub.js
+      - run: npx -y porffor@latest --module smoke-porf.mjs
