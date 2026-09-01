@@ -209,18 +209,6 @@ main {
   text-decoration: none;
 }
 
-@media (max-width: 64rem) {
-  .install-row { flex-wrap: wrap; }
-
-  .install-command { width: 100%; }
-
-  .hero-spec {
-    flex-basis: 100%;
-    padding-block: var(--space-sm);
-    white-space: normal;
-  }
-}
-
 h1,
 h2,
 h3 {
@@ -270,56 +258,27 @@ h3 {
   font-weight: 500;
 }
 
-.hero-foot {
-  margin-block-start: var(--space-md);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md) var(--space-xl);
-}
-
+/* icon-only engine selector, inline in the lede after "Any JS engine:" */
 .hero-stack {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2xs) var(--space-xs);
-  list-style: none;
+  margin-inline-start: var(--space-2xs);
+  display: inline-flex;
+  gap: var(--space-2xs);
+  vertical-align: bottom;
 }
-
-.hero-stack li { display: contents; }
 
 .hero-stack button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  height: 2rem;
-  padding-inline: var(--space-sm);
+  justify-content: center;
   border: 0;
   border-radius: var(--radius-pill);
   background: none;
-  color: var(--color-muted);
-  font-size: var(--text-sm);
-  white-space: nowrap;
 }
 
-.hero-stack button[aria-pressed="true"] {
-  background: var(--color-white);
-  color: var(--color-ink);
-}
-
-@media (max-width: 48rem) {
-  .hero-foot { margin-block-start: var(--space-xs); }
-
-  .hero-stack { flex-wrap: nowrap; gap: var(--space-2xs); }
-
-  /* icons only, one line: the lede's "Any JS engine:" names the row */
-  .hero-stack button {
-    padding-inline: var(--space-xs);
-    gap: 0;
-    font-size: 0;
-  }
-}
+.hero-stack button[aria-pressed="true"] { background: var(--color-white); }
 
 .hero-stack img {
   width: 1.25rem;
@@ -355,6 +314,18 @@ h3 {
 }
 
 .install-command code { font: inherit; }
+
+@media (max-width: 64rem) {
+  .install-row { flex-wrap: wrap; }
+
+  .install-command { width: 100%; }
+
+  .hero-spec {
+    flex-basis: 100%;
+    padding-block: var(--space-sm);
+    white-space: normal;
+  }
+}
 
 .hero-code {
   max-width: 48rem;
