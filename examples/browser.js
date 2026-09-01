@@ -731,6 +731,8 @@ function stripBand(canvas, solidTop, colorToken = '--color-ink') {
       let t = k / (cells - 1)
       let bar = Math.round(cell * (solidTop ? 1 - t : t))
       if (!bar) continue
+      // a solid-top band fades from its very first row: every cell keeps a hairline gap
+      if (solidTop) bar = Math.min(bar, cell - 1)
       context.fillRect(0, solidTop ? k * cell : (k + 1) * cell - bar, width, bar)
     }
     if (!solidTop) context.fillRect(0, cells * cell, width, height - cells * cell)

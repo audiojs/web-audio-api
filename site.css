@@ -279,6 +279,8 @@ h3 {
   mix-blend-mode: multiply;
 }
 
+.hero-stack button[aria-pressed="true"] img { filter: none; }
+
 .wpt-badge { display: inline-flex; }
 .wpt-badge img { height: 1.25rem; display: block; }
 
@@ -692,8 +694,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 .footer-seal svg {
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
   display: block;
 }
 
