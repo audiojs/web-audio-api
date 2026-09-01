@@ -4,7 +4,7 @@
 // Keys: space pause · r retrigger · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/subtractive-synth.js'
+import { init } from './graphs/subtractive-synth.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -20,7 +20,7 @@ let dur = sec($('dur', '2'))
 const ctx = new AudioContext()
 await ctx.resume()
 
-let pluck = () => build(ctx, { duration: dur })
+let pluck = () => init(ctx, { duration: dur })
 pluck()
 
 keys({ r: pluck }, () => { clearLine(); ctx.close() }, ctx)

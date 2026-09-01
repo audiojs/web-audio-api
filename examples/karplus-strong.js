@@ -4,7 +4,7 @@
 // Keys: space pause · p pluck · ↑/↓ ±semitone · q quit
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
-import { build } from './graphs/karplus-strong.js'
+import { init } from './graphs/karplus-strong.js'
 import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({
@@ -24,7 +24,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = await build(ctx, { frequency: f, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
+let demo = await init(ctx, { frequency: f, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
 let node = demo.data.node
 
 let render = status()

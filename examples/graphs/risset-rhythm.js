@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   direction = 'up', bpm = 110, duration = 5, when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {
@@ -17,7 +17,11 @@ export function build(ctx, {
     for (let t = 0; t < duration;) {
       let phase = ((t / period * sign + offset) % 1 + 1) % 1
       let tempo = bpm * 2 ** phase
-      let amp = Math.exp(-0.5 * ((phase - 0.5) / 0.34) ** 2)
+      // Raised-cosine (Hann) window: zero at phase 0 and 1, so each layer fades out exactly as
+      // it would wrap an octave up and fades in exactly as it reappears an octave down. Windows
+      // staggered by 1/voices satisfy the constant-overlap-add identity (the cosines cancel), so
+      // the summed loudness across all voices stays constant through the wrap: no seam, no pump.
+      let amp = 0.5 * (1 - Math.cos(2 * Math.PI * phase))
       if (amp > 0.04) {
         let time = when + t
         let osc = ctx.createOscillator(), env = ctx.createGain()

@@ -1,4 +1,4 @@
-// Additive synthesis: Construct square, saw, and triangle timbres from individual harmonics.
+// Additive synth: Construct square, saw, and triangle timbres from individual harmonics.
 // CLI: node examples/additive.js square 220 16 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,7 +13,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   waveform = 'square', frequency = 220, harmonics = 14, duration = 3,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

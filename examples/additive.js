@@ -4,7 +4,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/additive.js'
+import { init } from './graphs/additive.js'
 import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -29,7 +29,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-build(ctx, { waveform: wave, frequency: f, harmonics: n, duration: dur })
+init(ctx, { waveform: wave, frequency: f, harmonics: n, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Additive ${wave}: ${f}Hz, ${n} harmonics (${dur}s)  space pause · q quit`)

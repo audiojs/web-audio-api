@@ -34,13 +34,16 @@ function localTarget(path, href) {
 }
 
 test('catalog covers every CLI and portable graph module exactly once', () => {
-  is(examples.length, 33)
+  is(examples.length, 46)
   is(new Set(examples.map(example => example.id)).size, examples.length)
   let sourceIds = readdirSync(join(root, 'examples'), { withFileTypes: true })
     .filter(entry => entry.isFile() && entry.name.endsWith('.js') && !['browser.js', 'catalog.js', 'options.js', 'tuner-pitch.js', 'utils.js'].includes(entry.name))
     .map(entry => entry.name.slice(0, -3))
     .sort()
   is(sourceIds.join(','), examples.map(example => example.id).sort().join(','))
+  let jobCounts = new Map()
+  for (let example of examples) jobCounts.set(example.job, (jobCounts.get(example.job) || 0) + 1)
+  for (let [job, count] of jobCounts) ok(count >= 2, `${job} tags at least two examples (${count})`)
   for (let example of examples) {
     ok(existsSync(join(root, 'examples', `${example.id}.js`)), `${example.id} CLI`)
     ok(existsSync(join(root, 'examples', 'graphs', `${example.id}.js`)), `${example.id} graph`)
@@ -49,31 +52,67 @@ test('catalog covers every CLI and portable graph module exactly once', () => {
   }
 })
 
-test('homepage is only the headless hero, example catalogue, compact FAQ, and footer', () => {
+test('homepage is only the hero, example catalogue, compact FAQ, and footer', () => {
   let document = documentOf('index.html')
   is(document.querySelector('#hero-title strong').textContent, 'Web Audio API')
-  is(document.querySelector('#hero-title span').textContent, 'headless')
-  is(document.querySelectorAll('header a').length, 1, 'only the GitHub corner action')
+  is(document.querySelector('#hero-title span').textContent, 'without the browser')
+  is(document.querySelector('.hero-lede').textContent, 'Your web-audio code, running cross-platform: in the CLI, on servers, in CI. No native bindings, no compilation. Process audio in batch, unit-test it, render at the edge.')
+  is([...document.querySelectorAll('.hero-lede strong')].map(node => node.textContent).join('|'), 'No native bindings|no compilation', 'key claims stand out of the gray lede')
+  is([...document.querySelectorAll('.hero-stack li')].map(node => node.textContent.trim()).join('|'), 'Node.js|Deno|Bun', 'runtime stack rides the hero foot')
+  ok(document.querySelector('.wpt-badge img[src$="workflows/wpt.yml/badge.svg"]'), 'the live W3C WPT workflow badge rides the hero foot')
+  ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
+  ok(document.querySelector('.hero-foot .wpt-badge[href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml"]'), 'WPT seal links to its workflow')
+  is(document.querySelectorAll('header a').length, 5, 'brand, section nav, version, and GitHub')
+  is([...document.querySelectorAll('header nav a')].map(node => `${node.textContent}=${node.getAttribute('href')}`).join('|'), 'Examples=#examples|Questions=#faq', 'sections ride the navigation')
+  ok(document.querySelector('header a.brand[href="https://audiojs.dev/"]'))
+  ok(document.querySelector('header a.version-link[href="https://www.npmjs.com/package/web-audio-api"] [data-version]'), 'the version links to npm')
   ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
-  is(document.querySelectorAll('header nav').length, 0)
+  is(document.querySelectorAll('header nav').length, 1, 'one primary navigation')
   is(document.querySelector('.install-command').textContent.trim(), 'npm install web-audio-api')
   is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
   ok(!document.body.textContent.includes('Basic usage'))
+  for (let fact of ['208 KB', 'TypeScript', 'MIT', '2013']) ok(document.querySelector('.hero-spec').textContent.includes(fact), `spec plate carries ${fact}`)
+  ok(document.querySelector('.hero-spec [data-version]'), 'spec plate carries the stamped version')
+  ok(document.querySelector('.site-footer .footer-brand[href="https://audiojs.dev/"] svg'), 'footer carries the AudioJS mark')
   is(document.querySelector('.hero-code [data-copy]').textContent.trim(), '', 'code copy is icon-only')
   is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples|Questions')
-  is(document.querySelectorAll('[data-open-example]').length, examples.length)
-  is(document.querySelectorAll('.example-group').length, 5, 'examples are grouped by kind')
-  for (let link of document.querySelectorAll('[data-open-example]')) ok(link.getAttribute('href').startsWith('./examples/'), 'example remains a crawlable link')
+  ok(document.querySelector('.section-heading #example-filters[role="group"]'), 'examples are filterable by tag')
+  ok(read('site.js').includes("querySelector('.example-tag')"), 'the filter reads the tag element the entries actually render')
+  ok(!document.querySelector('[data-example-count]'), 'no static graph count')
+  ok(document.querySelector('.faq table.bench'), 'realtime answer carries measured numbers')
+  is(document.querySelector('.comparison tbody tr th').textContent, 'Engine', 'alternatives table lists aspects as rows, packages as columns')
+  ok(document.querySelector('.install-row .install-strips'), 'the install command dissolves into the strip band')
+  let links = [...document.querySelectorAll('[data-open-example]')]
+  is(links.length, examples.length)
+  is([...document.querySelectorAll('.example-group h3')].map(node => node.textContent).join('|'), 'Utilities|Test signals|Illusions|Synthesis|Generative|API', 'groups run by search demand')
+  is(document.querySelector('.examples .section-heading p').textContent, 'Every example is one runnable file: play it here, run it in Node, drop it into CI.', 'the examples heading states the value')
+  for (let [index, example] of examples.entries()) {
+    let link = links[index]
+    is(link.dataset.openExample, example.id, `${example.id}: catalogue order`)
+    is(link.querySelector('.example-number').textContent, String(index + 1).padStart(2, '0'), `${example.id}: catalogue number`)
+    is(link.querySelector('.example-heading strong').textContent, example.title, `${example.id}: title`)
+    is(link.querySelector('.example-description + .example-tag').textContent, example.job, `${example.id}: job tag closes the entry`)
+    is(link.querySelector('.example-description').textContent, example.description, `${example.id}: description`)
+    is(link.getAttribute('href'), `./examples/${example.id}/`, `${example.id}: crawlable route`)
+    ok(link.querySelector('.example-arrow'), `${example.id}: open arrow`)
+  }
   let dialog = document.querySelector('dialog#example-dialog')
   ok(dialog)
   ok(dialog.querySelector('.dialog-body > :first-child').classList.contains('demo-panel'), 'demo precedes source')
-  is(dialog.querySelectorAll('.dialog-code-head, .dialog-links, .dialog-command, .dialog-code [data-copy]').length, 0, 'source has no redundant chrome')
+  is(dialog.querySelectorAll('.dialog-code-head, .dialog-links, .code-output [data-copy]').length, 0, 'code view has no redundant chrome')
+  is([...dialog.querySelectorAll('.code-tab')].map(tab => tab.dataset.pane).join('|'), 'cli|code', 'source panel offers CLI and code views')
+  ok(dialog.querySelector('.code-tab[data-pane="cli"][aria-pressed="true"]'), 'CLI view is the default')
+  ok(dialog.querySelector('.cli-command [data-copy="#cli-command"]'), 'CLI command is copyable')
+  ok(dialog.querySelector('.code-output[hidden]'), 'code stays hidden until requested')
   ok(dialog.querySelector('#demo-spectrogram'), 'demo includes a spectrogram')
+  ok(dialog.querySelector('.demo-spectrogram-wrap #demo-frequency-scale'), 'scale selector overlays the spectrogram')
   is(dialog.querySelectorAll('#demo-frequency-scale option').length, 3, 'linear, mel, and log scales are available')
-  ok(dialog.querySelector('.demo-runbar #demo-run'), 'run action has its own footer')
+  ok(dialog.querySelector('.demo-runbar #demo-run .play-glyph'), 'run action is a play control in its own footer')
+  ok(dialog.querySelector('.demo-runbar #demo-volume'), 'output volume rides the runbar')
+  ok(!dialog.querySelector('.detail-seo'), 'SEO text never rides the modal')
   is(document.querySelectorAll('[role="tab"]').length, 0)
   let questions = [...document.querySelectorAll('.faq summary')].map(node => node.textContent.trim())
-  for (let expected of ['Is it fast enough for realtime?', 'How does audio I/O work?', 'Which formats can it decode?', 'Does Tone.js work?', 'Can I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'What differs from a browser?', 'How does it compare?']) ok(questions.includes(expected), expected)
+  for (let expected of ['Is it fast enough for realtime?', 'How does audio I/O work?', 'Which formats can it decode?', 'How big is the install?', 'Does Tone.js work?', 'Can I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'What differs from a browser?', 'How does it compare to alternatives?']) ok(questions.includes(expected), expected)
 })
 
 test('every CLI option schema matches its source and --help output', () => {
@@ -112,6 +151,20 @@ test('package, decoder, README, and homepage agree', () => {
   for (let example of examples) ok(sitemap.includes(`${pkg.homepage}examples/${example.id}/`), `${example.id} sitemap URL`)
 })
 
+test('homepage, guides, and example pages share the AudioJS favicon', () => {
+  let homeIcons = documentOf('index.html').querySelectorAll('link[rel="icon"]')
+  is(homeIcons.length, 1, 'homepage: one favicon')
+  let homeIcon = homeIcons[0]
+  is(homeIcon.type, 'image/svg+xml')
+  ok(homeIcon.getAttribute('href').startsWith('data:image/svg+xml,'))
+  for (let path of [...guidePages, ...examplePages.slice(1)]) {
+    let icons = documentOf(path).querySelectorAll('link[rel="icon"]')
+    is(icons.length, 1, `${path}: one favicon`)
+    is(icons[0].type, homeIcon.type, `${path}: favicon type`)
+    is(icons[0].getAttribute('href'), homeIcon.getAttribute('href'), `${path}: favicon source`)
+  }
+})
+
 test('every example has a crawlable canonical detail page', () => {
   is(documentOf('examples/index.html').querySelector('meta[http-equiv="refresh"]').content, '0; url=../#examples')
   for (let example of examples) {
@@ -125,10 +178,15 @@ test('every example has a crawlable canonical detail page', () => {
     ok(document.querySelector('#example-code'), `${example.id} atomic source`)
     ok(document.querySelector('.detail-grid > :first-child').classList.contains('demo-panel'), `${example.id} demo precedes source`)
     is(document.querySelectorAll('.detail-tags span').length, 2, `${example.id} category and job tags`)
-    is(document.querySelectorAll('.dialog-code-head, .dialog-links, .dialog-command, .dialog-code [data-copy]').length, 0, `${example.id} source chrome removed`)
+    is(document.querySelectorAll('.dialog-code-head, .dialog-links, .code-output [data-copy]').length, 0, `${example.id} code chrome removed`)
+    is(document.querySelector('#cli-command').textContent, example.command, `${example.id} CLI command`)
+    is(document.querySelectorAll('.cli-options dt').length, optionsFor(example.id).length, `${example.id} CLI options documented`)
+    ok(document.querySelector('.code-tab[data-pane="cli"][aria-pressed="true"]'), `${example.id} CLI view default`)
     ok(document.querySelector('#demo-spectrogram'), `${example.id} spectrogram`)
-    ok(document.querySelector('.demo-runbar #demo-run'), `${example.id} separate run footer`)
+    ok(document.querySelector('.demo-runbar #demo-run .play-glyph'), `${example.id} separate run footer`)
     ok(document.querySelector('script[type="application/ld+json"]'), `${example.id} structured data`)
+    ok(document.querySelector('.detail-actions .brand[href="../../"]'), `${example.id} logo leads home`)
+    is(!!document.querySelector('.detail-seo'), !!example.seo, `${example.id} SEO text on its own page`)
   }
 })
 
@@ -195,7 +253,7 @@ test('metronome presets share deterministic, distinct instrument models', async 
     await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.12, sound, seed: 17, when: 0 })
     return Array.from((await ctx.startRendering()).getChannelData(0))
   }
-  let expectedVoices = { classic: 3, wood: 4, bell: 4, beep: 2, signal: 1 }
+  let expectedVoices = { classic: 3, wood: 4, bell: 4, beep: 2, signal: 1, karatala: 5 }
   for (let [sound, voices] of Object.entries(expectedVoices)) {
     let ctx = new OfflineAudioContext(1, 512, 44100)
     let graph = await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.01, sound, seed: 17, when: 0 })
@@ -210,7 +268,64 @@ test('metronome presets share deterministic, distinct instrument models', async 
     rendered.set(sound, samples)
   }
   is(rendered.get('classic').join(','), (await render('classic')).join(','), 'seeded classic is repeatable')
-  for (let sound of ['wood', 'bell', 'beep', 'signal']) ok(rendered.get(sound).some((sample, index) => sample !== rendered.get('classic')[index]), `${sound}: distinct from classic`)
+  for (let sound of ['wood', 'bell', 'beep', 'signal', 'karatala']) ok(rendered.get(sound).some((sample, index) => sample !== rendered.get('classic')[index]), `${sound}: distinct from classic`)
+})
+
+test('metronome schedules upfront offline but in a bounded window on live contexts', async () => {
+  let offline = new OfflineAudioContext(1, 128, 44100)
+  let offlineGraph = await buildGraph('metronome', offline, { duration: 600, bpm: '80..240', when: 0 })
+  ok(offlineGraph.sources.length > 1000, `offline schedules everything upfront (${offlineGraph.sources.length} sources)`)
+
+  // A live context is anything without startRendering; delegate node creation to
+  // a real context so the instrument builds actual nodes
+  let backing = new OfflineAudioContext(1, 128, 44100)
+  let state = 'running'
+  let live = {
+    get currentTime() { return backing.currentTime },
+    get state() { return state },
+    get sampleRate() { return backing.sampleRate },
+    get destination() { return backing.destination },
+    createGain: () => backing.createGain(),
+    createOscillator: () => backing.createOscillator(),
+    createBufferSource: () => backing.createBufferSource(),
+    createBiquadFilter: () => backing.createBiquadFilter(),
+    createBuffer: (...args) => backing.createBuffer(...args),
+  }
+  let liveGraph = await buildGraph('metronome', live, { duration: 600, bpm: '80..240', when: 0 })
+  ok(liveGraph.sources.length < 200, `live scheduling stays inside the lookahead window (${liveGraph.sources.length} sources)`)
+  state = 'closed'
+  await new Promise(resolve => setTimeout(resolve, 1100)) // scheduler timer sees the closed state and clears itself
+})
+
+test('shepard bank sweeps beyond 12 kHz', async () => {
+  let sampleRate = 44100, seconds = 2.5
+  let ctx = new OfflineAudioContext(1, sampleRate * seconds, sampleRate)
+  await buildGraph('shepard', ctx, { direction: 'up', rate: 0.5, duration: seconds, when: 0, AudioWorkletNodeClass: AudioWorkletNode })
+  let data = (await ctx.startRendering()).getChannelData(0)
+  let magnitudeAt = (start, frequency) => {
+    let n = 4096, coefficient = 2 * Math.cos(2 * Math.PI * frequency / sampleRate)
+    let s1 = 0, s2 = 0
+    for (let i = 0; i < n; i++) { let s0 = data[start + i] + coefficient * s1 - s2; s2 = s1; s1 = s0 }
+    return Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - coefficient * s1 * s2)) / n
+  }
+  let peak = 0
+  for (let t = 0; t < seconds - 0.2; t += 0.25) peak = Math.max(peak, magnitudeAt(Math.floor(t * sampleRate), 12000))
+  ok(peak > 1e-4, `12 kHz content present as the top voices climb (peak ${peak.toExponential(2)})`)
+})
+
+test('shepard waveforms render distinct finite audio', async () => {
+  let render = async wave => {
+    let ctx = new OfflineAudioContext(1, 8192, 44100)
+    await buildGraph('shepard', ctx, { direction: 'up', rate: 0.5, wave, duration: 1, when: 0, AudioWorkletNodeClass: AudioWorkletNode })
+    return (await ctx.startRendering()).getChannelData(0)
+  }
+  let sine = await render('sine')
+  for (let wave of ['triangle', 'square', 'sawtooth']) {
+    let data = await render(wave)
+    ok(data.every(Number.isFinite), `${wave}: finite`)
+    ok(data.some(sample => Math.abs(sample) > 1e-4), `${wave}: audible`)
+    ok(data.some((sample, index) => sample !== sine[index]), `${wave}: distinct from sine`)
+  }
 })
 
 test('seeded graphs repeat and cleanup leaves only the replacement', async () => {
@@ -252,7 +367,7 @@ test('processed-buffer core renders the smallest valid input', async () => {
 })
 
 test('unsafe listening examples retain explicit safety language', () => {
-  for (let id of ['sweep', 'impulse', 'stereo-test', 'binaural-beats', 'mic', 'recorder']) {
+  for (let id of ['sweep', 'impulse', 'stereo-test', 'binaural-beats', 'mic', 'recorder', 'octave-illusion', 'scale-illusion', 'huggins-pitch', 'latency-tester']) {
     let example = examples.find(item => item.id === id)
     ok(example.warning?.length > 30, `${id} warning`)
   }
@@ -285,6 +400,10 @@ test('site CSS keeps the token system and Catalogue constraints', () => {
   ok(rules.includes('html.modal-open { overflow: hidden; }'))
   ok(!/\.hero\s*\{[^}]*border-block-end/s.test(rules), 'no divider before Examples')
   ok(!/\.faq\s*\{[^}]*border-block-start/s.test(rules), 'no divider before Questions')
+  ok(/\.example-group h3\s*\{[^}]*position:\s*sticky/s.test(rules), 'category headers stick while their group scrolls')
+  ok(/\.demo-panel\s*\{[^}]*position:\s*sticky/s.test(rules), 'demo panel pins beside the scrolling source column')
+  ok(!/(?:^|[{}])\s*\.brand\b/m.test(rules), 'home mark styles do not override guide brand links')
+  ok(/\.corner-action \.brand\s*\{/.test(rules), 'home mark styles stay scoped to its header')
   ok(/\.demo-stage\s*\{[^}]*position:\s*sticky/s.test(rules), 'visualizations stick to the viewport top')
   ok(/\.demo-runbar\s*\{[^}]*position:\s*sticky/s.test(rules), 'run footer sticks to the viewport bottom')
   ok(rules.includes('prefers-reduced-motion'))

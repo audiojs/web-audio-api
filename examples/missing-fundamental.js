@@ -4,7 +4,7 @@
 // Run: node examples/missing-fundamental.js freq=80 dur=5s
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/missing-fundamental.js'
+import { init } from './graphs/missing-fundamental.js'
 import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -24,7 +24,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '3'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-build(ctx, { frequency: f, duration: dur, gain: 0.15 })
+init(ctx, { frequency: f, duration: dur, gain: 0.15 })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Harmonics of ${f}Hz: ${[2, 3, 4, 5, 6].map(h => f * h + 'Hz').join(', ')}`)

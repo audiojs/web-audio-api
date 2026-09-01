@@ -2,7 +2,7 @@
 // Different every time. 4-5 minutes. Run: node examples/jazz.js
 
 import { AudioContext, AudioWorkletNode } from 'web-audio-api'
-import { build } from './graphs/jazz.js'
+import { init } from './graphs/jazz.js'
 import { keys, clearLine, help } from './utils.js'
 
 help({
@@ -14,7 +14,7 @@ help({
 
 let ctx = new AudioContext()
 await ctx.resume()
-let demo = await build(ctx, { AudioWorkletNodeClass: AudioWorkletNode })
+let demo = await init(ctx, { AudioWorkletNodeClass: AudioWorkletNode })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`♪ ${demo.data.bpm} BPM, ${(demo.duration / 60).toFixed(1)} min — space pause · q quit\n` + demo.data.chordLog.join(' → '))

@@ -4,7 +4,7 @@
 // Keys: ←/→ ±0.5 Hz beat · ↑/↓ ±semitone carrier · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/beating.js'
+import { init } from './graphs/beating.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
@@ -27,7 +27,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = build(ctx, { frequency: f, difference: diff, duration: dur, gain: 0.3 })
+let demo = init(ctx, { frequency: f, difference: diff, duration: dur, gain: 0.3 })
 let [osc1, osc2] = demo.sources
 
 let retune = () => {

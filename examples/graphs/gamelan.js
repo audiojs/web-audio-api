@@ -1,4 +1,4 @@
-// Generative gamelan: Schedule interlocking slendro patterns with metalophone partials and gong structure.
+// Gamelan: Schedule interlocking slendro patterns with metalophone partials and gong structure.
 // CLI: node examples/gamelan.js 120 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   tempo = 126, duration = 5, when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   let scale = [0, 240, 480, 720, 960].map(cents => 440 * 2 ** (cents / 1200))

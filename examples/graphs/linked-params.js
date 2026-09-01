@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   duration = 2, when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   let a = ctx.createOscillator(), b = ctx.createOscillator(), gainA = ctx.createGain(), gainB = ctx.createGain()

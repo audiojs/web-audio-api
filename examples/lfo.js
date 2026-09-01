@@ -4,7 +4,7 @@
 // Keys: ←/→ ±0.5 Hz rate · ↑/↓ ±0.05 depth · w cycle LFO wave · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildTremolo } from './graphs/lfo.js'
+import { init as buildTremolo } from './graphs/lfo.js'
 import { args, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({

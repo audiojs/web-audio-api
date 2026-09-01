@@ -2,7 +2,7 @@
 // Run: node examples/render-to-buffer.js
 
 import { OfflineAudioContext } from 'web-audio-api'
-import { build as buildTone } from './graphs/render-to-buffer.js'
+import { init as buildTone } from './graphs/render-to-buffer.js'
 import { help } from './utils.js'
 
 help({

@@ -5,7 +5,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/gamelan.js'
+import { init } from './graphs/gamelan.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -25,7 +25,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '20'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-build(ctx, { tempo, duration: dur })
+init(ctx, { tempo, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Gamelan kotekan: slendro, ${tempo} BPM (${dur}s)  space pause · q quit`)

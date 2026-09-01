@@ -2,7 +2,7 @@
 // Run: node examples/linked-params.js
 
 import { OfflineAudioContext } from 'web-audio-api'
-import { build as buildLinkedParams } from './graphs/linked-params.js'
+import { init as buildLinkedParams } from './graphs/linked-params.js'
 import { help } from './utils.js'
 
 help({

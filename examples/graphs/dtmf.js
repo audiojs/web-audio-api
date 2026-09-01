@@ -30,7 +30,7 @@ export function schedule(ctx, digit, {
   return { sources, nodes, duration, graph: '2 Oscillators → Envelope → Destination' }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   digits = '5551234', speed = 0.13, when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   let sources = [], nodes = [], time = when

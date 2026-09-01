@@ -3,7 +3,7 @@
 // Run: node examples/stereo-test.js freq=500 dur=2s
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildStereoTest } from './graphs/stereo-test.js'
+import { init as buildStereoTest } from './graphs/stereo-test.js'
 import { args, num, sec, keys, clearLine, help } from './utils.js'
 
 help({

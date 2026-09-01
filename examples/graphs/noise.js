@@ -1,4 +1,4 @@
-// Colored noise: Generate white, pink, brown, blue, or violet noise.
+// Noise: Generate white, pink, brown, blue, or violet noise.
 // CLI: node examples/noise.js pink 2s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -24,7 +24,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   color = 'pink', duration = 3, gain = 0.18, seed = 0x4e4f4953,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

@@ -1,4 +1,4 @@
-// Stereo channel test: Identify left, right, and center channels with a panned reference tone.
+// Stereo test: Identify left, right, and center channels with a panned reference tone.
 // CLI: node examples/stereo-test.js 1k 1s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   frequency = 700, durationPerChannel = 0.55, gap = 0.12, gain = 0.22,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

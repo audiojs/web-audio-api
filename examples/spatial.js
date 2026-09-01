@@ -4,7 +4,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildSpatial } from './graphs/spatial.js'
+import { init as buildSpatial } from './graphs/spatial.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({

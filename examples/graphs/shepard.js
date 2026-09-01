@@ -5,15 +5,17 @@
 export const processorSource = `class ShepardProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super()
-    const { direction, rate, sampleRate } = options.processorOptions
+    const { direction, rate, sampleRate, wave } = options.processorOptions
     this.sign = direction === 'down' ? -1 : 1
     this.rate = rate
     this.sampleRate = sampleRate
-    this.phases = new Float64Array(8)
+    this.wave = wave || 'sine'
+    this.phases = new Float64Array(11)
     this.time = 0
     this.port.onmessage = ({ data }) => {
       if (data.direction) this.sign = data.direction === 'down' ? -1 : 1
       if (data.rate != null) this.rate = data.rate
+      if (data.wave) this.wave = data.wave
     }
   }
   process(inputs, outputs) {
@@ -21,13 +23,19 @@ export const processorSource = `class ShepardProcessor extends AudioWorkletProce
     for (let i = 0; i < output.length; i++) {
       this.time += 1 / this.sampleRate
       let sample = 0
-      for (let octave = 0; octave < 8; octave++) {
-        const phase = ((octave / 8 + this.sign * this.rate / 8 * this.time) % 1 + 1) % 1
-        const offset = phase * 8 - 4
+      for (let octave = 0; octave < 11; octave++) {
+        const phase = ((octave / 11 + this.sign * this.rate / 11 * this.time) % 1 + 1) % 1
+        const offset = phase * 11 - 5.5
         const frequency = 440 * 2 ** offset
+        if (frequency > this.sampleRate / 2) continue
         const amplitude = Math.exp(-0.5 * (offset / 2) ** 2)
         this.phases[octave] += frequency / this.sampleRate
-        sample += Math.sin(2 * Math.PI * this.phases[octave]) * amplitude
+        const p = this.phases[octave] % 1
+        const value = this.wave === 'square' ? (p < 0.5 ? 1 : -1)
+          : this.wave === 'sawtooth' ? 2 * p - 1
+          : this.wave === 'triangle' ? 2 * Math.abs(2 * p - 1) - 1
+          : Math.sin(2 * Math.PI * this.phases[octave])
+        sample += value * amplitude
       }
       output[i] = sample * 0.12
     }
@@ -36,14 +44,14 @@ export const processorSource = `class ShepardProcessor extends AudioWorkletProce
 }
 registerProcessor('shepard', ShepardProcessor)`
 
-export async function build(ctx, {
-  direction = 'up', rate = 0.5, duration = 30, when = ctx.currentTime,
+export async function init(ctx, {
+  direction = 'up', rate = 0.5, wave = 'sine', duration = 30, when = ctx.currentTime,
   destination = ctx.destination, AudioWorkletNodeClass = null,
 } = {}) {
   if (!AudioWorkletNodeClass) throw new TypeError('AudioWorkletNode is not available')
   await ctx.audioWorklet.addModule(`data:text/javascript,${encodeURIComponent(processorSource)}`)
   let node = new AudioWorkletNodeClass(ctx, 'shepard', {
-    processorOptions: { direction, rate, sampleRate: ctx.sampleRate },
+    processorOptions: { direction, rate, wave, sampleRate: ctx.sampleRate },
   })
   let master = ctx.createGain()
   node.connect(master).connect(destination)

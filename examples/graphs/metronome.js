@@ -1,4 +1,4 @@
-// Programmable metronome: Schedule a click pattern with accents, rests, tempo control, and instrument presets.
+// Metronome: Schedule a click pattern with accents, rests, tempo control, and instrument presets.
 // CLI: node examples/metronome.js 120 X-x-X-x-
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,10 +13,10 @@ function seeded(seed = 0x4d455452) {
   }
 }
 
-export const soundNames = ['classic', 'wood', 'bell', 'beep', 'signal']
+export const soundNames = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala']
 
 export function createInstrument(ctx, {
-  sound = 'classic', hi = 1900, lo = 1250, seed = 0x4d455452,
+  sound = 'classic', hi = 1900, lo = 1250, seed = 0x4d455452, sample = null,
   destination = ctx.destination, track = false,
 } = {}) {
   let soundIndex = Math.max(0, soundNames.findIndex(name => name.startsWith(String(sound).toLowerCase())))
@@ -127,9 +127,32 @@ export function createInstrument(ctx, {
     releaseOnEnd(osc, envelope)
   }
 
+  // Hand cymbal: bright inharmonic modal partials with a fast metallic "chick" transient.
+  // Accent rings open and shimmers; a regular hit is damped short.
+  let karatala = (when, strong, frequency) => {
+    modalHit(when, frequency, strong ? 0.45 : 0.08, strong ? 0.16 : 0.12, [[1, 1], [2.9, 0.5], [5.4, 0.28], [8.1, 0.14]], 0.001)
+    noiseHit(when, frequency * 1.4, 0.006, strong ? 0.1 : 0.07, 'highpass', 2)
+  }
+
+  // Sample-triggered hit: plays the CLI-decoded AudioBuffer instead of a preset, per tick.
+  let sampleHit = (when, strong) => {
+    let source = ctx.createBufferSource()
+    let brightness = ctx.createBiquadFilter()
+    let level = ctx.createGain()
+    source.buffer = sample
+    source.playbackRate.value = strong ? 1.03 : 1
+    brightness.type = 'highshelf'; brightness.frequency.value = 3000; brightness.gain.value = strong ? 4 : 0
+    level.gain.value = strong ? 1 : 0.7
+    source.connect(brightness).connect(level).connect(master)
+    releaseOnEnd(source, level)
+    source.start(when)
+    rememberSource(source); remember(source, brightness, level)
+  }
+
   let hit = (when, mark) => {
     if (mark === '-' || mark === '.') return
     let strong = mark === 'X'
+    if (sample) return sampleHit(when, strong)
     let name = soundNames[soundIndex]
     let frequencies = {
       classic: strong ? hi : lo,
@@ -137,8 +160,9 @@ export function createInstrument(ctx, {
       bell: strong ? 1760 : 880,
       beep: strong ? 1320 : 880,
       signal: strong ? 880 : 440,
+      karatala: 2800,
     }
-    ;({ classic, wood, bell, beep, signal })[name](when, strong, frequencies[name])
+    ;({ classic, wood, bell, beep, signal, karatala })[name](when, strong, frequencies[name])
   }
 
   return {
@@ -150,23 +174,39 @@ export function createInstrument(ctx, {
   }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   bpm = '80..240', pattern = 'X-x-x-x-', duration = 600, sound = 'classic',
-  hi = 1900, lo = 1250, seed = 0x4d455452,
+  hi = 1900, lo = 1250, seed = 0x4d455452, sample = null,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   let [startBpm, endBpm] = String(bpm).split('..').map(Number)
   if (!Number.isFinite(startBpm) || startBpm <= 0) startBpm = 80
   if (!Number.isFinite(endBpm) || endBpm <= 0) endBpm = startBpm
   if (!pattern) pattern = 'X-x-x-x-'
-  let instrument = createInstrument(ctx, { sound, hi, lo, seed, destination, track: true })
+  let instrument = createInstrument(ctx, { sound, hi, lo, seed, sample, destination, track: true })
   let elapsed = 0, step = 0
-  while (elapsed < duration) {
-    let progress = Math.min(1, elapsed / Math.max(duration, 0.001))
-    let tempo = startBpm + (endBpm - startBpm) * progress
-    instrument.hit(when + elapsed, pattern[step % pattern.length])
-    elapsed += 30 / Math.max(20, tempo)
-    step++
+  let scheduleUntil = horizon => {
+    while (elapsed < duration && elapsed < horizon) {
+      let progress = Math.min(1, elapsed / Math.max(duration, 0.001))
+      let tempo = startBpm + (endBpm - startBpm) * progress
+      instrument.hit(when + elapsed, pattern[step % pattern.length])
+      elapsed += 30 / Math.max(20, tempo)
+      step++
+    }
+  }
+  // Offline contexts render faster than wall clock, so everything is scheduled
+  // upfront; live contexts get a rolling lookahead window, keeping the node
+  // count bounded however long the run is
+  if (typeof ctx.startRendering === 'function') scheduleUntil(duration)
+  else {
+    let lookahead = 8
+    scheduleUntil(ctx.currentTime - when + lookahead)
+    if (elapsed < duration) {
+      let timer = setInterval(() => {
+        if (ctx.state !== 'running' || elapsed >= duration) return clearInterval(timer)
+        scheduleUntil(ctx.currentTime - when + lookahead)
+      }, 1000)
+    }
   }
   return {
     sources: instrument.sources,

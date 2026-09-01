@@ -6,7 +6,7 @@
 // Keys: space pause · + / - adjust gain · q quit
 
 import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import { build } from './graphs/mic.js'
+import { init } from './graphs/mic.js'
 import { args, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
@@ -41,7 +41,7 @@ await ctx.resume()
 const track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
 const stream = new MediaStream([track])
 
-const graph = build(ctx, { stream, gain: gainVal, monitor: true })
+const graph = init(ctx, { stream, gain: gainVal, monitor: true })
 const [, gain, analyser] = graph.nodes
 analyser.fftSize = 1024
 

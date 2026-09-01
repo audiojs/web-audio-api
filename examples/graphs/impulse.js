@@ -1,8 +1,8 @@
-// Dirac impulse: Fire a one-sample impulse for response and signal-path testing.
+// Impulse: Fire a one-sample impulse for response and signal-path testing.
 // CLI: node examples/impulse.js 5 0.5s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-export function build(ctx, {
+export function init(ctx, {
   count = 3, interval = 0.45, gain = 0.35, when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {

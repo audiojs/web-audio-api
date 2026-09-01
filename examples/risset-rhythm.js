@@ -5,7 +5,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/risset-rhythm.js'
+import { init } from './graphs/risset-rhythm.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -26,7 +26,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '20'))
 
 let ctx = new AudioContext()
 await ctx.resume()
-build(ctx, { direction: dir, bpm, duration: dur })
+init(ctx, { direction: dir, bpm, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Risset rhythm: ${dir}, ~${bpm} BPM center (${dur}s)  space pause · q quit`)

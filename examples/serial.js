@@ -4,7 +4,7 @@
 // Run: node examples/serial.js tempo=100 dur=1m
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/serial.js'
+import { init } from './graphs/serial.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -24,7 +24,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = build(ctx, { tempo, duration: dur, seed: Math.random() * 0xffffffff })
+let demo = init(ctx, { tempo, duration: dur, seed: Math.random() * 0xffffffff })
 let row = demo.data.row
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)

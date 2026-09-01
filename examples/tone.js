@@ -4,7 +4,7 @@
 // Keys: ↑/↓ ±semitone · ←/→ cycle waveform · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildTone } from './graphs/tone.js'
+import { init as buildTone } from './graphs/tone.js'
 import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({

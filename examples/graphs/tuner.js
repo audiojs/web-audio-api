@@ -1,8 +1,8 @@
-// Microphone tuner: Estimate microphone pitch, nearest note, and tuning error in cents.
+// Tuner: Estimate microphone pitch, nearest note, and tuning error in cents.
 // CLI: node examples/tuner.js 440
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-export function build(ctx, {
+export function init(ctx, {
   stream, gain = 1, destination = ctx.destination,
 } = {}) {
   if (!stream) throw new TypeError('A MediaStream is required')

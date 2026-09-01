@@ -4,7 +4,7 @@
 // Keys: ←/→ ±0.5 ratio · ↑/↓ ±1 index · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/fm-synthesis.js'
+import { init } from './graphs/fm-synthesis.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
@@ -29,7 +29,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '30'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = build(ctx, { carrier, ratio, index, duration: dur, gain: 0.3 })
+let demo = init(ctx, { carrier, ratio, index, duration: dur, gain: 0.3 })
 let [mod, modGain] = demo.nodes
 
 let apply = () => {

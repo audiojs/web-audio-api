@@ -1,4 +1,4 @@
-// Process an audio file: Decode an audio file, apply EQ and compression, then render the processed result.
+// Process a file: Decode an audio file, apply EQ and compression, then render the processed result.
 // CLI: node examples/process-file.js input.mp3
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, buffer, {
+export function init(ctx, buffer, {
   highShelfFrequency = 4000, highShelfGain = -6, threshold = -20, ratio = 4,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

@@ -2,7 +2,7 @@
 // Run: node examples/fft.js
 
 import { OfflineAudioContext } from 'web-audio-api'
-import { build as buildTwoTone } from './graphs/fft.js'
+import { init as buildTwoTone } from './graphs/fft.js'
 import { help } from './utils.js'
 
 help({

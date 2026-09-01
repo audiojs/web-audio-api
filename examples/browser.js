@@ -1,8 +1,8 @@
 import { byId } from './catalog.js'
-import { controlsFor } from './options.js'
+import { controlsFor, optionsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
-import { build as buildProcessedBuffer } from './graphs/process-file.js'
-import { build as buildWorklet } from './graphs/worklet.js'
+import { init as buildProcessedBuffer } from './graphs/process-file.js'
+import { init as buildWorklet } from './graphs/worklet.js'
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -20,6 +20,8 @@ function stopGraph(graph, time = 0) {
 function setButtonLabel(button, label) {
   let target = button?.querySelector('span') || button
   if (target) target.textContent = label
+  // Iconic buttons hide the span visually; the label still names the control
+  if (button?.classList?.contains('is-iconic')) button.setAttribute('aria-label', label)
 }
 
 async function copyText(button, text) {
@@ -77,10 +79,17 @@ function createControls(id, container) {
     let name = document.createElement('span')
     name.textContent = spec.label
     heading.append(name)
+    let format = value => {
+      if (spec.unit === 's' && Number(value) >= 120) {
+        let minutes = Number(value) / 60
+        return `${Number.isInteger(minutes) ? minutes : minutes.toFixed(1)} min`
+      }
+      return `${value}${spec.unit ? ` ${spec.unit}` : ''}`
+    }
     let output
     if (spec.type === 'range') {
       output = document.createElement('output')
-      output.textContent = `${initialValue}${spec.unit ? ` ${spec.unit}` : ''}`
+      output.textContent = format(initialValue)
       heading.append(output)
     }
     label.append(heading)
@@ -106,7 +115,7 @@ function createControls(id, container) {
     }
     control.name = spec.key
     control.id = `control-${spec.key}`
-    if (output) control.addEventListener('input', () => { output.textContent = `${control.value}${spec.unit ? ` ${spec.unit}` : ''}` })
+    if (output) control.addEventListener('input', () => { output.textContent = format(control.value) })
     label.htmlFor = control.id
     label.append(control)
     container.append(label)
@@ -136,10 +145,7 @@ function drawWave(canvas, data = null) {
   ctx.clearRect(0, 0, width, height)
   ctx.strokeStyle = css('--color-rule-dark')
   ctx.lineWidth = Math.max(1, devicePixelRatio || 1)
-  for (let row = 1; row < 4; row++) {
-    let y = height * row / 4
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke()
-  }
+  ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke()
   ctx.strokeStyle = css('--color-accent')
   ctx.lineWidth = Math.max(2, (devicePixelRatio || 1) * 1.5)
   ctx.beginPath()
@@ -171,8 +177,7 @@ function resetSpectrogram(canvas) {
   sizeCanvas(canvas)
   let ctx = canvas.getContext('2d')
   ctx.globalAlpha = 1
-  ctx.fillStyle = css('--color-ink-2')
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
 }
 
 function drawSpectrogramColumn(canvas, data, sampleRate, scale) {
@@ -181,9 +186,10 @@ function drawSpectrogramColumn(canvas, data, sampleRate, scale) {
   let step = Math.max(2, Math.round(Math.min(devicePixelRatio || 1, 2) * 1.5))
   if (width <= step) { resetSpectrogram(canvas); return }
   ctx.globalAlpha = 1
+  // 'copy' scrolls the transparent history left without alpha accumulation
+  ctx.globalCompositeOperation = 'copy'
   ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
-  ctx.fillStyle = css('--color-ink-2')
-  ctx.fillRect(width - step, 0, step, height)
+  ctx.globalCompositeOperation = 'source-over'
   ctx.fillStyle = css('--color-accent')
   for (let y = 0; y < height; y++) {
     let frequency = frequencyAt(y, height, sampleRate, scale)
@@ -204,7 +210,6 @@ function drawBufferSpectrogram(canvas, data, sampleRate, scale) {
   let scratch = document.createElement('canvas')
   scratch.width = columns; scratch.height = rows
   let ctx = scratch.getContext('2d')
-  ctx.fillStyle = css('--color-ink-2'); ctx.fillRect(0, 0, columns, rows)
   let windowSize = Math.min(256, data.length)
   let window = Float64Array.from({ length: windowSize }, (_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / Math.max(1, windowSize - 1)))
   let coefficients = Float64Array.from({ length: rows }, (_, y) => 2 * Math.cos(2 * Math.PI * frequencyAt(y, rows, sampleRate, scale) / sampleRate))
@@ -294,6 +299,49 @@ function pitchLabel(frequency, a4 = 440) {
   return `${note}, ${frequency.toFixed(1)} Hz, ${cents >= 0 ? '+' : ''}${cents} cents`
 }
 
+function createLevelMeter(fast) {
+  let attack = fast ? 0.6 : 0.25, release = fast ? 0.35 : 0.06
+  let rmsEnv = 1e-6, peakEnv = 1e-6
+  let dbfs = value => 20 * Math.log10(Math.max(value, 1e-6))
+  return samples => {
+    let sum = 0, peak = 0
+    for (let value of samples) { sum += value * value; peak = Math.max(peak, Math.abs(value)) }
+    let instRms = Math.sqrt(sum / samples.length)
+    rmsEnv += (instRms - rmsEnv) * (instRms > rmsEnv ? attack : release)
+    peakEnv += (peak - peakEnv) * (peak > peakEnv ? 1 : release * 0.4)
+    return `RMS ${dbfs(rmsEnv).toFixed(1)} dBFS, peak ${dbfs(peakEnv).toFixed(1)} dBFS`
+  }
+}
+
+function createLatencyTracker(context, click, intervalSeconds) {
+  let history = [], pending = null, lastScheduled = -Infinity, threshold = 0.06
+  let schedule = () => {
+    let when = context.currentTime + 0.05
+    click(when)
+    pending = { when, deadline: when + 0.8 }
+    lastScheduled = when
+  }
+  return samples => {
+    let now = context.currentTime
+    if (pending) {
+      for (let i = 0; i < samples.length; i++) {
+        if (Math.abs(samples[i]) <= threshold) continue
+        let sampleTime = now - (samples.length - i) / context.sampleRate
+        if (sampleTime <= pending.when + 0.003) continue
+        history.push((sampleTime - pending.when) * 1000)
+        if (history.length > 7) history.shift()
+        pending = null
+        break
+      }
+      if (pending && now > pending.deadline) pending = null // honest miss: try again next interval
+    } else if (now > lastScheduled + intervalSeconds) schedule()
+    if (!history.length) return pending ? 'Listening for the click…' : 'No click detected yet — raise the volume or mic gain'
+    let sorted = [...history].sort((a, b) => a - b)
+    let median = sorted[Math.floor(sorted.length / 2)]
+    return `${median.toFixed(0)} ms round trip (median of ${history.length})`
+  }
+}
+
 async function loadCode(example, root = document) {
   let code = root.querySelector('#example-code')
   if (!code) return
@@ -326,17 +374,68 @@ export function mountExample(root, id) {
   let freshRun = run.cloneNode(true)
   run.replaceWith(freshRun)
   run = freshRun
+  run.classList.toggle('is-iconic', example.mode !== 'node')
+  if (example.mode !== 'node') run.setAttribute('aria-label', 'Run demo')
   fields.replaceChildren()
   resultContainer.replaceChildren()
   actions.querySelector('.file-label')?.remove()
   createControls(id, fields)
-  loadCode(example, root)
   drawWave(canvas)
   resetSpectrogram(spectrogram)
 
+  // CLI pane: command plus the full option schema, including CLI-only options
+  let cliCommand = find('#cli-command')
+  if (cliCommand) cliCommand.textContent = example.command
+  let cliOptions = find('#cli-options')
+  if (cliOptions) {
+    cliOptions.replaceChildren(...optionsFor(id).map(option => {
+      let item = document.createElement('div')
+      let term = document.createElement('dt')
+      let syntax = document.createElement('code')
+      syntax.textContent = option.syntax
+      term.append(syntax)
+      let description = document.createElement('dd')
+      description.textContent = option.description || ''
+      item.append(term, description)
+      return item
+    }))
+  }
+
+  // Code loads lazily: the CLI tab is the default view
+  let codeLoaded = false
+  let panes = { cli: find('#cli-pane'), code: find('#code-pane') }
+  let tabs = [...root.querySelectorAll('.code-tab')]
+  let activatePane = name => {
+    for (let tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.pane === name))
+    for (let key of Object.keys(panes)) if (panes[key]) panes[key].hidden = key !== name
+    if (name === 'code' && !codeLoaded) {
+      codeLoaded = true
+      loadCode(example, root)
+    }
+  }
+  for (let tab of tabs) tab.onclick = () => activatePane(tab.dataset.pane)
+  activatePane('cli')
+
+  let volume = find('#demo-volume')
+  if (volume) volume.hidden = !['audio', 'worklet'].includes(example.mode)
   let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0, reloadTimer = 0
+  let outputGain = null
+  let volumeGain = () => Number(volume?.value ?? 25) / 100
+  let connectOutput = () => {
+    outputGain = context.createGain()
+    outputGain.gain.value = volumeGain()
+    analyser.connect(outputGain).connect(context.destination)
+  }
+  let paintVolume = () => volume?.style.setProperty('--fill', `${volume.value}%`)
+  let onVolume = () => {
+    paintVolume()
+    outputGain?.gain.setTargetAtTime(volumeGain(), context?.currentTime || 0, 0.03)
+  }
+  paintVolume()
+  volume?.addEventListener('input', onVolume)
   let samples = new Float32Array(2048), spectrum = new Float32Array(1024), recorder = null, chunks = []
   let lastBuffer = null, live = false, busy = false, disposed = false
+  let levelMeter = null, latencyTracker = null
   let observer = new ResizeObserver(() => {
     drawWave(canvas, lastBuffer?.getChannelData(0))
     if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
@@ -365,6 +464,10 @@ export function mountExample(root, id) {
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
     meterValue.textContent = id === 'tuner'
       ? pitchLabel(detectPitch(samples, context.sampleRate), Number(form.elements.a4?.value || 440))
+      : id === 'level-meter' && levelMeter
+      ? levelMeter(samples)
+      : id === 'latency-tester' && latencyTracker
+      ? latencyTracker(samples)
       : `${(20 * Math.log10(Math.max(level, 1e-6))).toFixed(1)} dBFS`
     if (reducedMotion.matches) frame = setTimeout(animate, 160)
     else frame = requestAnimationFrame(animate)
@@ -384,7 +487,8 @@ export function mountExample(root, id) {
     if (context) stopGraph(demo, context.currentTime)
     for (let track of stream?.getTracks?.() || []) track.stop()
     let closing = context
-    context = null; demo = null; analyser = null; stream = null
+    context = null; demo = null; analyser = null; stream = null; outputGain = null
+    levelMeter = null; latencyTracker = null
     if (closing && closing.state !== 'closed') await closing.close().catch(() => {})
     setButtonLabel(run, example.mode === 'node' ? 'Copy command' : 'Run demo')
     setStatus(message)
@@ -396,13 +500,22 @@ export function mountExample(root, id) {
     resetSpectrogram(spectrogram)
     context = new AudioContext()
     await context.resume()
-    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20; analyser.connect(context.destination)
+    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
+    connectOutput()
     let options = readOptions(id, form)
     options.destination = analyser
-    if (!('duration' in options)) options.duration = ['jazz'].includes(id) ? 7 : ['risset-rhythm', 'serial', 'gamelan', 'drone'].includes(id) ? 5 : 3
+    // The duration control lives in the CLI only now; the browser demo runs long and relies on
+    // the play/stop button, same as any other realtime instrument. Graphs that schedule a node
+    // (or worklet-driven event) per beat rather than looping a fixed voice bank still need a
+    // bounded default, or a 600s run would build thousands of nodes upfront in a live context.
+    let scaledDurationDefaults = {
+      jazz: 7, sequencer: 1.75, gamelan: 20, serial: 30, 'risset-rhythm': 20,
+      continuity: 15, 'octave-illusion': 12, 'scale-illusion': 8, streaming: 15, 'zwicker-tone': 20,
+    }
+    if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
     if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = AudioWorkletNode
-    let { build } = await import(`./graphs/${id}.js`)
-    demo = await build(context, options)
+    let { init } = await import(`./graphs/${id}.js`)
+    demo = await init(context, options)
     setButtonLabel(run, 'Stop demo')
     setStatus(`Running with the browser’s native AudioContext: ${demo.graph}`, 'running')
     animate()
@@ -415,8 +528,8 @@ export function mountExample(root, id) {
     let rate = 44100
     let offline = new OfflineAudioContext(2, Math.ceil(rate * duration), rate)
     options.when = 0; options.duration = duration
-    let { build } = await import(`./graphs/${id}.js`)
-    let offlineDemo = await build(offline, options)
+    let { init } = await import(`./graphs/${id}.js`)
+    let offlineDemo = await init(offline, options)
     setButtonLabel(run, 'Rendering')
     run.setAttribute('aria-busy', 'true')
     setStatus('Rendering the graph in memory. No output device is open.', 'running')
@@ -459,7 +572,8 @@ export function mountExample(root, id) {
     lastBuffer = null
     resetSpectrogram(spectrogram)
     context = new AudioContext(); await context.resume()
-    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20; analyser.connect(context.destination)
+    analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
+    connectOutput()
     demo = await buildWorklet(context, { destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
     setButtonLabel(run, 'Stop demo'); setStatus('Custom AudioWorkletProcessor is running in the browser worklet thread.', 'running')
     animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
@@ -471,9 +585,11 @@ export function mountExample(root, id) {
     let options = readOptions(id, form)
     stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     context = new AudioContext(); await context.resume()
-    let { build } = await import(`./graphs/${id}.js`)
-    demo = build(context, { stream, gain: Number(options.gain ?? 1), monitor: false })
+    let { init } = await import(`./graphs/${id}.js`)
+    demo = init(context, { stream, gain: Number(options.gain ?? 1), monitor: false })
     analyser = demo.nodes[2]; analyser.fftSize = 4096; analyser.minDecibels = -100; analyser.maxDecibels = -20
+    levelMeter = id === 'level-meter' ? createLevelMeter(options.ballistics === 'fast') : null
+    latencyTracker = id === 'latency-tester' ? createLatencyTracker(context, demo.data.click, Number(options.interval || 1.5)) : null
     if (id === 'recorder') {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser')
       chunks = []; recorder = new MediaRecorder(stream)
@@ -492,7 +608,11 @@ export function mountExample(root, id) {
       recorder.start()
     }
     setButtonLabel(run, id === 'recorder' ? 'Stop and save' : 'Stop microphone')
-    setStatus(id === 'tuner' ? 'Listening for a stable pitch. Audio stays on this device.' : id === 'recorder' ? 'Recording. Audio stays on this device until you download it.' : 'Reading microphone RMS. Monitoring is muted to prevent feedback.', 'running')
+    setStatus(id === 'tuner' ? 'Listening for a stable pitch. Audio stays on this device.'
+      : id === 'recorder' ? 'Recording. Audio stays on this device until you download it.'
+      : id === 'latency-tester' ? 'Clicking through the speakers and timing the return on the microphone.'
+      : id === 'level-meter' ? 'Reading microphone level. Monitoring is muted to prevent feedback.'
+      : 'Reading microphone RMS. Monitoring is muted to prevent feedback.', 'running')
     animate()
   }
 
@@ -511,8 +631,8 @@ export function mountExample(root, id) {
     setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
   } else {
     setStatus(!controls.hidden && example.mode !== 'file'
-      ? 'Sound starts only after you run the demo. Control changes then apply live.'
-      : 'Sound starts only after you run the demo.')
+      ? 'Silent until you press play. Controls apply live.'
+      : 'Silent until you press play.')
   }
 
   let startDemo = async () => {
@@ -556,7 +676,7 @@ export function mountExample(root, id) {
   }
 
   let scheduleReload = event => {
-    if (!live || event.target?.type === 'file') return
+    if (!live || event.target?.type === 'file' || event.target === volume) return
     clearTimeout(reloadTimer)
     reloadTimer = setTimeout(reloadDemo, 180)
   }
@@ -580,6 +700,7 @@ export function mountExample(root, id) {
     live = false
     clearTimeout(reloadTimer)
     observer.disconnect()
+    volume?.removeEventListener('input', onVolume)
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)
     frequencyScale.removeEventListener('change', onScaleChange)

@@ -7,6 +7,7 @@
 //   Waltz: X-x-x-   Rock: X-x-X-x-   Reggaeton: X--x--x-
 // Keys: space pause · ←/→ tempo ±2 BPM · ↑/↓ cycle sound · t tap-tempo · q quit
 
+import { readFileSync } from 'node:fs'
 import { AudioContext } from 'web-audio-api'
 import { createInstrument } from './graphs/metronome.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
@@ -18,9 +19,10 @@ help({
     ['bpm=<bpm|start..end>', 'fixed tempo or linear tempo ramp (default: 80..240)'],
     ['-d, --duration <time>', 'session length with optional s/m/h suffix (default: 10m)'],
     ['pat=<pattern>', 'X accent, x regular click, - or . rest; each character is an eighth note (default: X-x-x-x-)'],
-    ['sound=<preset>', 'classic stick (default), wood, bell, beep, or signal'],
+    ['sound=<preset>', 'classic stick (default), wood, bell, beep, signal, or karatala'],
     ['hi=<hz>', 'classic stick accent resonance (default: 1900)'],
     ['lo=<hz>', 'classic stick regular resonance (default: 1250)'],
+    ['sample=<file>', 'use an audio file as the click sound instead of a preset'],
   ],
   controls: [
     ['Space', 'pause/resume'], ['← / →', 'offset tempo by −/+2 BPM'], ['↑ / ↓', 'cycle sound preset'],
@@ -41,11 +43,15 @@ if (!bpm1) bpm1 = bpm0
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '10m'))
 let pat = (pos.find(t => /^[Xx.\-]+$/.test(t)) || $('pat', 'X-x-x-x-')).split('')
 let hi = num($('hi', 1900)), lo = num($('lo', 1250))
+let sampleFile = $('sample')
 
 let wantedSound = String($('sound', 'classic')).toLowerCase()
 let ctx = new AudioContext()
 await ctx.resume()
-let instrument = createInstrument(ctx, { sound: wantedSound, hi, lo })
+// sample=<file> plays a decoded AudioBuffer per tick instead of a built-in preset; the graph
+// itself stays atomic, so decoding happens here in the CLI wrapper.
+let sample = sampleFile ? await ctx.decodeAudioData(readFileSync(sampleFile)) : null
+let instrument = createInstrument(ctx, { sound: wantedSound, hi, lo, sample })
 let click = instrument.hit
 
 let t0 = ctx.currentTime

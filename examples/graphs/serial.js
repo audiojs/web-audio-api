@@ -1,4 +1,4 @@
-// Twelve-tone generator: Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.
+// Twelve-tone: Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.
 // CLI: node examples/serial.js 72 30s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -17,7 +17,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   tempo = 78, duration = 5, seed = 0x53455249, when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {

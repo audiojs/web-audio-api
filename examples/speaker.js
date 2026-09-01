@@ -4,7 +4,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildTone } from './graphs/speaker.js'
+import { init as buildTone } from './graphs/speaker.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({

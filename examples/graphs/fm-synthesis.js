@@ -1,4 +1,4 @@
-// FM synthesis: Use one oscillator to modulate another oscillator’s frequency.
+// FM synth: Use one oscillator to modulate another oscillator’s frequency.
 // CLI: node examples/fm-synthesis.js 440 2 5 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,7 +13,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   carrier = 220, ratio = 2, index = 4, duration = 3, when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {

@@ -3,7 +3,7 @@
 //   or: node examples/pipe-stdout.js | ffplay -f s16le -ar 44100 -ac 2 -
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/pipe-stdout.js'
+import { init } from './graphs/pipe-stdout.js'
 import { help } from './utils.js'
 
 help({
@@ -16,5 +16,5 @@ const duration = 2
 const ctx = new AudioContext({ sinkId: process.stdout })
 await ctx.resume()
 
-build(ctx, { duration })
+init(ctx, { duration })
 setTimeout(() => ctx.close(), duration * 1000)

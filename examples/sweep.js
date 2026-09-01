@@ -4,7 +4,7 @@
 // Keys: space pause · r restart · ←/→ halve/double duration · m toggle lin/exp · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build as buildSweep } from './graphs/sweep.js'
+import { init as buildSweep } from './graphs/sweep.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({

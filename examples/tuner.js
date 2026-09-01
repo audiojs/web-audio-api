@@ -9,7 +9,7 @@
 // Keys: 1-6 play a string's reference tone · space stop it · ↑/↓ nudge A ±1 Hz · q quit
 
 import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
-import { build } from './graphs/tuner.js'
+import { init } from './graphs/tuner.js'
 import { args, keys, status, clearLine, help } from './utils.js'
 import { detectPitch, createPitchTracker } from './tuner-pitch.js'
 
@@ -61,7 +61,7 @@ let ctx = new AudioContext({ sampleRate })
 await ctx.resume()
 
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
-let graph = build(ctx, { stream: new MediaStream([track]) })
+let graph = init(ctx, { stream: new MediaStream([track]) })
 let analyser = graph.nodes[2]
 // Keep enough low-E cycles for a reliable estimate even at 48 kHz.
 analyser.fftSize = 8192

@@ -1,28 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://audiojs.dev/web-audio-api/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/metronome/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/tuner/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/latency-tester/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/level-meter/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/tone/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/sweep/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/noise/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/impulse/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/dtmf/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/stereo-test/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/examples/metronome/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/examples/tuner/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/shepard/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/risset-rhythm/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/binaural-beats/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/missing-fundamental/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/beating/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/octave-illusion/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/scale-illusion/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/tritone-paradox/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/continuity/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/streaming/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/huggins-pitch/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/zwicker-tone/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/subtractive-synth/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/additive/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/fm-synthesis/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/karplus-strong/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/wavetable/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/granular/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/sequencer/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/serial/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/gamelan/</loc></url>
-  <url><loc>https://audiojs.dev/web-audio-api/examples/drone/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/jazz/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/euclidean/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/drone/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/speaker/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/lfo/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/spatial/</loc></url>
@@ -34,4 +46,5 @@
   <url><loc>https://audiojs.dev/web-audio-api/examples/pipe-stdout/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/mic/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/recorder/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/reverb/</loc></url>
 </urlset>

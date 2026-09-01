@@ -4,7 +4,7 @@
 // Keys: ←/→ ±0.5 Hz beat · ↑/↓ ±semitone carrier · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/binaural-beats.js'
+import { init } from './graphs/binaural-beats.js'
 import { args, num, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
@@ -28,7 +28,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '60'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = build(ctx, { frequency: f, difference: beat, duration: dur, gain: 0.3 })
+let demo = init(ctx, { frequency: f, difference: beat, duration: dur, gain: 0.3 })
 let [oscL, oscR] = demo.sources
 
 let retune = () => {

@@ -11,7 +11,7 @@ import { writeFileSync } from 'node:fs'
 import readline from 'node:readline'
 import { AudioContext, MediaStream, CustomMediaStreamTrack } from 'web-audio-api'
 import convert from 'pcm-convert'
-import { build } from './graphs/recorder.js'
+import { init } from './graphs/recorder.js'
 import { args, status, clearLine, help } from './utils.js'
 
 help({
@@ -53,7 +53,7 @@ await ctx.resume()
 
 let track = new CustomMediaStreamTrack({ kind: 'audio', label: 'mic', settings: { channelCount: channels, sampleSize: bitDepth, sampleRate } })
 let recorder = ctx.createScriptProcessor(2048, channels, channels)
-let graph = build(ctx, { stream: new MediaStream([track]), gain: parseFloat($('gain', '1')), recorder })
+let graph = init(ctx, { stream: new MediaStream([track]), gain: parseFloat($('gain', '1')), recorder })
 let gain = graph.nodes[1]
 
 let chunks = []          // captured frames: [ [Float32Array per channel], ... ]

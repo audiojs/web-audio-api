@@ -13,7 +13,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   frequency = 440, waveform = 'sine', duration = 2, gain = 1,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

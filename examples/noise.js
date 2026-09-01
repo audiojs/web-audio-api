@@ -4,7 +4,7 @@
 // Keys: ↑/↓ cycle color · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/noise.js'
+import { init } from './graphs/noise.js'
 import { args, sec, keys, status, clearLine, pausedTag, help } from './utils.js'
 
 help({
@@ -30,7 +30,7 @@ let demo
 let play = () => {
   for (let source of demo?.sources || []) { try { source.stop(ctx.currentTime) } catch {} }
   for (let node of demo?.nodes || []) { try { node.disconnect() } catch {} }
-  demo = build(ctx, { color: colors[cIdx], duration: dur, gain: 0.5, seed: Math.random() * 0xffffffff })
+  demo = init(ctx, { color: colors[cIdx], duration: dur, gain: 0.5, seed: Math.random() * 0xffffffff })
 }
 play()
 

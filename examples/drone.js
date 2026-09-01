@@ -1,17 +1,19 @@
-// Drone — tanpura-like harmonic drone with natural beating.
-// Four strings: Pa, Sa, Sa (detuned), Sa (low octave).
+// Drone — sustained tanpura, pad, shruti, or harmonic drone voice.
+// Tanpura strings: Pa, Sa, Sa (detuned), SA (low octave).
 // Run: node examples/drone.js 130.81 30s
 // Run: node examples/drone.js freq=C3 -d 2m
+// Run: node examples/drone.js voice=pad freq=D3 -d 1m
 // Keys: space pause · ↑/↓ ±semitone · ←/→ ±5 cents · 1-7 scale degrees · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/drone.js'
+import { init } from './graphs/drone.js'
 import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({
-  description: 'play a tanpura-like four-string harmonic drone',
-  usage: ['', '[frequency] [duration]', 'freq=C3 dur=2m'],
+  description: 'play a sustained tanpura, pad, shruti, or harmonic drone voice',
+  usage: ['', '[frequency] [duration]', 'freq=C3 dur=2m', 'voice=pad freq=D3 -d 1m'],
   options: [
+    ['voice=<type>', 'tanpura (default), pad, shruti, or harmonic'],
     ['freq=<hz|note>', 'Sa frequency or note name (default: 130.81 / C3)'],
     ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 5m)'],
   ],
@@ -23,13 +25,14 @@ help({
 
 let { pos, $ } = args()
 
+let voice = String($('voice', 'tanpura')).toLowerCase()
 let f = num(pos.find(t => /^\d/.test(t) && !/[smh]$/.test(t) || /^[A-G][#b]?\d$/i.test(t)) || $('freq', 130.81))
 let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '300'))
 
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = build(ctx, { frequency: f, duration: dur, seed: Math.random() * 0xffffffff })
+let demo = init(ctx, { frequency: f, duration: dur, voice, seed: Math.random() * 0xffffffff })
 let master = demo.data.master
 let retune = frequency => { f = frequency; demo.data.retune(frequency) }
 
@@ -58,6 +61,6 @@ keys({
   setTimeout(() => ctx.close(), 400)
 }, ctx)
 
-console.log(`Drone: Sa = ${f.toFixed(2)}Hz ${noteName(f)} (${dur}s)  ↑↓ semi · ←→ cents · 1-7 scale · q quit`)
+console.log(`Drone: ${voice}, Sa = ${f.toFixed(2)}Hz ${noteName(f)} (${dur}s)  ↑↓ semi · ←→ cents · 1-7 scale · q quit`)
 
 setTimeout(() => { clearInterval(ui); clearLine(); ctx.close(); process.exit(0) }, dur * 1000 + 200)

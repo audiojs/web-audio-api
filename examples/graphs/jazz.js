@@ -1,8 +1,8 @@
-// Generative jazz: Generate modal harmony, walking bass, plucked improvisation, and percussion.
+// Jazz: Generate modal harmony, walking bass, plucked improvisation, and percussion.
 // CLI: node examples/jazz.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
-export async function build(ctx, {
+export async function init(ctx, {
   duration: targetDuration = 270, destination = ctx.destination, AudioWorkletNodeClass = null,
 } = {}) {
   if (!AudioWorkletNodeClass) throw new TypeError('AudioWorkletNode is not available')

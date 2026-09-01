@@ -1,4 +1,4 @@
-// Acoustic beating: Hear amplitude beating produced by two nearby frequencies.
+// Beating: Hear amplitude beating produced by two nearby frequencies.
 // CLI: node examples/beating.js 440 3 5s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,7 +13,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   frequency = 440, difference = 3, duration = 4, gain = 0.14,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {

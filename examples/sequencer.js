@@ -4,7 +4,7 @@
 // Keys: q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/sequencer.js'
+import { init } from './graphs/sequencer.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -26,7 +26,7 @@ let dur = sec($('dur', steps * stepDuration))
 const ctx = new AudioContext()
 await ctx.resume()
 
-build(ctx, { bpm, duration: dur })
+init(ctx, { bpm, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`Sequencer: ${bpm} BPM, ${steps}-step pattern (${dur}s)  space pause · q quit`)

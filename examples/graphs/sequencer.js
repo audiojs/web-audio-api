@@ -6,7 +6,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   bpm = 140, duration = null, loops = 1, when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   let notes = [440, 0, 523.25, 0, 587.33, 0, 659.25, 0, 587.33, 523.25, 440, 0, 329.63, 0, 440, 0]

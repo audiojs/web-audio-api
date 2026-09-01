@@ -1,4 +1,4 @@
-// Custom AudioWorklet: Register a custom processor, expose a parameter, and render its output.
+// AudioWorklet: Register a custom processor, expose a parameter, and render its output.
 // CLI: node examples/worklet.js
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,7 +13,7 @@ export const processorSource = `class WhiteNoise extends AudioWorkletProcessor {
 }
 registerProcessor('white-noise', WhiteNoise)`
 
-export async function build(ctx, {
+export async function init(ctx, {
   duration = 1, gain = 0.18, when = ctx.currentTime, destination = ctx.destination,
   AudioWorkletNodeClass = null,
 } = {}) {

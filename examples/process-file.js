@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs'
 import { OfflineAudioContext } from 'web-audio-api'
-import { build as buildProcessedBuffer } from './graphs/process-file.js'
+import { init as buildProcessedBuffer } from './graphs/process-file.js'
 import { help } from './utils.js'
 
 help({

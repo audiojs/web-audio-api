@@ -4,7 +4,7 @@
 // Keys: space pause · f fire impulse · q quit
 
 import { AudioContext } from 'web-audio-api'
-import { build } from './graphs/impulse.js'
+import { init } from './graphs/impulse.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
 help({
@@ -25,8 +25,8 @@ let interval = sec(nums[1] || $('interval', '0.5'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let fire = () => build(ctx, { count: 1, gain: 1 })
-build(ctx, { count, interval, gain: 1 })
+let fire = () => init(ctx, { count: 1, gain: 1 })
+init(ctx, { count, interval, gain: 1 })
 
 keys({ f: fire }, () => { clearLine(); ctx.close() }, ctx)
 console.log(`${count} impulse(s), ${interval}s interval  space pause · f fire · q quit`)

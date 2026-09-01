@@ -2,7 +2,7 @@
 // Run: node examples/worklet.js
 
 import { OfflineAudioContext, AudioWorkletNode } from 'web-audio-api'
-import { build } from './graphs/worklet.js'
+import { init } from './graphs/worklet.js'
 import { help } from './utils.js'
 
 help({
@@ -15,7 +15,7 @@ const sr = 44100
 const duration = 1
 const ctx = new OfflineAudioContext(1, sr * duration, sr)
 
-await build(ctx, { duration, gain: 1, when: 0, AudioWorkletNodeClass: AudioWorkletNode })
+await init(ctx, { duration, gain: 1, when: 0, AudioWorkletNodeClass: AudioWorkletNode })
 
 let buf = await ctx.startRendering()
 let data = buf.getChannelData(0)

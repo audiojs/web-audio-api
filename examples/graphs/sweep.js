@@ -1,4 +1,4 @@
-// Frequency sweep: Sweep across a frequency range with linear or exponential automation.
+// Sweep: Sweep across a frequency range with linear or exponential automation.
 // CLI: node examples/sweep.js 20..20k exp 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -13,7 +13,7 @@ function safeStop(source, time) {
   try { source.stop(time) } catch { return }
 }
 
-export function build(ctx, {
+export function init(ctx, {
   from = 80, to = 8000, mode = 'exponential', duration = 3, gain = 0.2,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
