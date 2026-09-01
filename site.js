@@ -106,30 +106,6 @@ if (filters) {
   filters.append(makeButton(''), ...tags.map(makeButton))
 }
 
-let strips = document.querySelector('.install-strips')
-if (strips) {
-  let context = strips.getContext('2d')
-  let paint = () => {
-    let ratio = Math.min(devicePixelRatio || 1, 2)
-    let width = strips.offsetWidth * ratio, height = strips.offsetHeight * ratio
-    if (width < 1) return
-    if (strips.width !== width || strips.height !== height) { strips.width = width; strips.height = height }
-    // equal integer cells, each split black/transparent; the split falls linearly,
-    // so bars thin and gaps widen in equal steps with no rounding jitter
-    let cells = 10
-    let cell = Math.max(2, Math.round(width / cells))
-    context.clearRect(0, 0, width, height)
-    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
-    for (let k = 0; k < cells; k++) {
-      let bar = Math.round(cell * (1 - k / (cells - 1)))
-      if (!bar) continue
-      // clamp keeps a hairline gap (1 device px) in every cell even at full black
-      context.fillRect(k * cell, 0, Math.max(1, Math.min(bar, cell - 1)), height)
-    }
-  }
-  paint()
-  addEventListener('resize', paint)
-}
 
 let stack = document.querySelector('.hero-stack')
 let heroCode = document.getElementById('hero-code')

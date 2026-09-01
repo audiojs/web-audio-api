@@ -186,13 +186,19 @@ main {
 .hero-spec {
   align-self: stretch;
   display: flex;
-  align-items: center;
-  padding-inline: var(--space-md) var(--space-lg);
+  align-items: stretch;
   background: var(--color-white);
   color: var(--color-muted);
   font-family: var(--font-code);
   font-size: var(--text-xs);
   white-space: nowrap;
+}
+
+.hero-spec > * {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-md);
+  border-inline-end: var(--rule-hair) solid var(--color-rule);
 }
 
 .hero-spec a { color: var(--color-ink); }
@@ -314,22 +320,6 @@ h3 {
   position: relative;
   display: flex;
   align-items: stretch;
-}
-
-.install-strips-box {
-  flex: none;
-  width: var(--space-3xl);
-  /* Overlap the command rect so the first black cell merges with it seamlessly */
-  margin-inline-start: calc(-1 * var(--rule-hair));
-  position: relative;
-  background: var(--color-white);
-}
-
-.install-strips {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  inset: 0;
 }
 
 .install-command {

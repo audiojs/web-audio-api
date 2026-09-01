@@ -89,7 +89,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(!document.querySelector('[data-example-count]'), 'no static graph count')
   ok(document.querySelector('.faq table.bench'), 'realtime answer carries measured numbers')
   is(document.querySelector('.comparison tbody tr th').textContent, 'Engine', 'alternatives table lists aspects as rows, packages as columns')
-  ok(document.querySelector('.install-row .install-strips'), 'the install command dissolves into the strip band')
+  ok(document.querySelector('.install-row .hero-spec'), 'the install command carries its spec plate')
   let links = [...document.querySelectorAll('[data-open-example]')]
   is(links.length, examples.length)
   is([...document.querySelectorAll('.example-group h3')].map(node => node.textContent).join('|'), 'Utilities|Test signals|Illusions|Synthesis|Generative|API', 'groups run by search demand')
