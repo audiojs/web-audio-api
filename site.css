@@ -443,6 +443,14 @@ pre code { font: inherit; }
   color: var(--color-paper);
 }
 
+.example-filters .filter-count {
+  margin-inline-start: var(--space-2xs);
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.example-filters button[aria-pressed="true"] .filter-count { color: var(--color-muted-on-ink); }
+
 .example-filters button:active { transform: translateY(1px); }
 
 
@@ -775,7 +783,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   height: 100dvh;
   max-height: none;
   margin: 0;
-  padding: max(var(--space-md), env(safe-area-inset-top)) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-md), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
+  padding: max(var(--space-md), env(safe-area-inset-top)) max(var(--space-md), env(safe-area-inset-right)) max(var(--space-2xs), env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
   position: fixed;
   inset: 0;
   overflow-x: clip;

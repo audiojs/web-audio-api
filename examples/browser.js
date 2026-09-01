@@ -630,9 +630,7 @@ export function mountExample(root, id) {
     setButtonLabel(run, 'Copy command')
     setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
   } else {
-    setStatus(!controls.hidden && example.mode !== 'file'
-      ? 'Silent until you press play. Controls apply live.'
-      : 'Silent until you press play.')
+    setStatus('')
   }
 
   let startDemo = async () => {
@@ -704,7 +702,7 @@ export function mountExample(root, id) {
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)
     frequencyScale.removeEventListener('change', onScaleChange)
-    await stop('Closed.')
+    await stop('')
   }
 }
 

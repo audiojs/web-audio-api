@@ -4,7 +4,6 @@ import { highlightSyntax } from './syntax.js'
 
 const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
-const meta = document.getElementById('dialog-meta')
 const description = document.getElementById('dialog-description')
 let dispose = null
 let activeId = null
@@ -16,11 +15,6 @@ async function openExample(id, updateHistory = true) {
   if (dispose) await dispose()
   activeId = id
   title.textContent = example.title
-  meta.replaceChildren(...[example.category, example.job].map(value => {
-    let tag = document.createElement('span')
-    tag.textContent = value
-    return tag
-  }))
   description.textContent = example.description
   dispose = mountExample(dialog, id)
   if (!dialog.open) {
@@ -98,6 +92,10 @@ if (filters) {
     button.type = 'button'
     button.dataset.tag = tag
     button.textContent = tag || 'All'
+    let count = document.createElement('span')
+    count.className = 'filter-count'
+    count.textContent = tag ? counts.get(tag) : document.querySelectorAll('.example-entry').length
+    button.append(count)
     button.setAttribute('aria-pressed', String(tag === ''))
     button.addEventListener('click', () => apply(tag))
     return button
