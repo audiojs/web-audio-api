@@ -10,7 +10,8 @@
   --color-paper-2: oklch(93.8% 0.009 252);
   --color-paper-3: oklch(89.5% 0.011 252);
   --color-raise: oklch(97% 0.007 252);
-  --color-grid: oklch(100% 0 0);
+  --color-white: oklch(100% 0 0);
+  --color-grid: var(--color-white);
   --color-rule: oklch(85.5% 0.013 252);
   --color-rule-dark: oklch(33% 0.014 256);
   --color-accent: oklch(65.848% 0.11388 209.98);

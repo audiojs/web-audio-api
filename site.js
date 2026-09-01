@@ -1,5 +1,6 @@
 import { byId } from './examples/catalog.js'
 import { mountExample } from './examples/browser.js'
+import { highlightSyntax } from './syntax.js'
 
 const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
@@ -123,10 +124,26 @@ if (strips) {
       let black = 1 - ease(k / (cells - 1))
       if (!black) continue
       let x0 = Math.round(k * cell)
-      let x1 = Math.round(k * cell + cell * black)
+      // clamp keeps a visible gap (1 CSS px) before the next cell even at black=1
+      let x1 = Math.min(Math.round(k * cell + cell * black), Math.round((k + 1) * cell) - ratio)
       context.fillRect(x0, 0, Math.max(1, x1 - x0), height)
     }
   }
   paint()
   addEventListener('resize', paint)
+}
+
+let stack = document.querySelector('.hero-stack')
+let heroCode = document.getElementById('hero-code')
+if (stack && heroCode) {
+  let base = heroCode.textContent
+  let codeFor = engine => engine === 'deno' ? base.replace("'web-audio-api'", "'npm:web-audio-api'") : base
+  stack.addEventListener('click', event => {
+    let button = event.target.closest('button[data-engine]')
+    if (!button) return
+    for (let other of stack.querySelectorAll('button[data-engine]'))
+      other.setAttribute('aria-pressed', String(other === button))
+    heroCode.textContent = codeFor(button.dataset.engine)
+    highlightSyntax(heroCode.closest('.code-stage')).catch(() => {})
+  })
 }

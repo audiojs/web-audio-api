@@ -239,17 +239,32 @@ h3 {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm) var(--space-lg);
+  gap: var(--space-2xs) var(--space-xs);
   list-style: none;
 }
 
-.hero-stack li {
-  display: flex;
+.hero-stack li { display: contents; }
+
+.hero-stack button {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
+  height: 2rem;
+  padding-inline: var(--space-sm);
+  border: var(--rule-hair) solid transparent;
+  border-radius: var(--radius-pill);
+  background: none;
   color: var(--color-muted);
   font-size: var(--text-sm);
   white-space: nowrap;
+  opacity: 0.45;
+}
+
+.hero-stack button[aria-pressed="true"] {
+  border-color: var(--color-rule);
+  background: var(--color-white);
+  color: var(--color-ink);
+  opacity: 1;
 }
 
 .hero-stack img {
@@ -270,6 +285,8 @@ h3 {
 .install-strips-box {
   flex: none;
   width: var(--space-3xl);
+  /* Overlap the command rect so the first black cell merges with it seamlessly */
+  margin-inline-start: calc(-1 * var(--rule-hair));
   position: relative;
 }
 
@@ -323,8 +340,8 @@ pre {
 pre code { font: inherit; }
 
 .copy-icon {
-  border-color: var(--color-rule-dark);
-  background: var(--color-ink-2);
+  border: 0;
+  background: none;
   color: var(--color-paper);
 }
 
@@ -632,7 +649,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 .footer-brand svg {
-  width: 1.375rem;
+  width: 1.5rem;
   height: 1.5rem;
 }
 
@@ -1076,6 +1093,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   }
   .icon-button:hover { background: var(--color-paper-2); }
   .copy-icon:hover { background: var(--color-ink-3); }
+  .hero-stack button { transition: opacity var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
+  .hero-stack button:not([aria-pressed="true"]):hover { opacity: 0.8; }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
   .wpt-badge:hover { opacity: 0.85; }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
