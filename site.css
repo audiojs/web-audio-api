@@ -185,8 +185,9 @@ main {
 
 .hero-spec {
   position: absolute;
-  inset-block-start: var(--space-3xl);
-  inset-inline-end: 0;
+  inset-block-start: 0;
+  /* right edge rides the code block's column end (its 48rem max width) */
+  inset-inline-end: calc(100% - 48rem);
   display: grid;
   gap: var(--space-2xs);
   justify-items: end;
@@ -197,8 +198,11 @@ main {
 }
 
 @media (max-width: 64rem) {
+  .install-row { flex-wrap: wrap; }
+
   .hero-spec {
     position: static;
+    flex-basis: 100%;
     margin-block-start: var(--space-md);
     justify-items: start;
     text-align: start;
@@ -308,6 +312,7 @@ h3 {
 
 .install-row {
   margin-block-start: var(--space-xl);
+  position: relative;
   display: flex;
   align-items: stretch;
 }
