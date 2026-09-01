@@ -1,5 +1,5 @@
 // Step sequencer: Schedule a 16-step melody against the audio clock.
-// CLI: node examples/sequencer.js bpm=140 -d 10s
+// CLI: npx web-audio-api sequencer bpm=140 -d 10s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

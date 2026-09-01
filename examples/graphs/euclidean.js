@@ -1,5 +1,5 @@
 // Euclidean rhythms: Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count.
-// CLI: node examples/euclidean.js 120 16 3,5,7 20s
+// CLI: npx web-audio-api euclidean 120 16 3,5,7 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x4555434c) {

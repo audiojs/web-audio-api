@@ -1,5 +1,5 @@
 // Octave illusion: Swap two antiphase frequencies between ears so a single tone seems to jump register and side.
-// CLI: node examples/octave-illusion.js 400 800 2 12s
+// CLI: npx web-audio-api octave-illusion 400 800 2 12s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

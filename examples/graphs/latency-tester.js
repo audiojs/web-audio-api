@@ -1,5 +1,5 @@
 // Latency tester: Play short clicks through the speakers and time their return through the microphone to measure round-trip latency.
-// CLI: node examples/latency-tester.js
+// CLI: npx web-audio-api latency-tester
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x4c415445) {

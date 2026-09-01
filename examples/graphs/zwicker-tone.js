@@ -1,5 +1,5 @@
 // Zwicker tone: Notch broadband noise, cycle it on and off, and hear a faint after-tone linger in the silence.
-// CLI: node examples/zwicker-tone.js 2000 3 2 20s
+// CLI: npx web-audio-api zwicker-tone 2000 3 2 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x5a57434b) {

@@ -1,5 +1,5 @@
 // Continuity illusion: Punch gaps in a steady tone and fill them with louder noise bursts so the tone sounds unbroken.
-// CLI: node examples/continuity.js 440 0.6 on 15s
+// CLI: npx web-audio-api continuity 440 0.6 on 15s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x434f4e54) {

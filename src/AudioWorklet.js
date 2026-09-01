@@ -307,15 +307,21 @@ class AudioWorklet {
     this.#context = context
     this.#scope = new AudioWorkletGlobalScope(context)
     context._workletScope = this.#scope
-    // Wire up global scope port
+  }
+
+  // Global scope port is wired on first use: contexts that never touch
+  // worklets must not require MessageChannel (absent in minimal runtimes)
+  #wirePort() {
+    if (this.#port) return
     let channel = new MessageChannel()
     this.#port = channel.port1
     this.#scope.port = channel.port2
   }
 
-  get port() { return this.#port }
+  get port() { this.#wirePort(); return this.#port }
 
   async addModule(moduleOrSetup) {
+    this.#wirePort()
     if (typeof moduleOrSetup === 'function') {
       return moduleOrSetup(this.#scope)
     }

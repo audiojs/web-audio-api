@@ -1,5 +1,5 @@
 // Drone: Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.
-// CLI: node examples/drone.js C3 30s
+// CLI: npx web-audio-api drone C3 30s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x44524f4e) {

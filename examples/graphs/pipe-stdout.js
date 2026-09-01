@@ -1,5 +1,5 @@
 // Pipe PCM to stdout: Send raw PCM from an AudioContext to any Node writable stream.
-// CLI: node examples/pipe-stdout.js | ffplay -f s16le -ar 44100 -ac 2 -
+// CLI: npx web-audio-api pipe-stdout | ffplay -f s16le -ar 44100 -ac 2 -
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

@@ -1,5 +1,5 @@
 // Granular synth: Scatter short, jittered grains from a seeded source buffer into a granular cloud.
-// CLI: node examples/granular.js 0.08 15 4 10s
+// CLI: npx web-audio-api granular 0.08 15 4 10s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x4752414e) {

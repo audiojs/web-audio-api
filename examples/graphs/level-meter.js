@@ -1,5 +1,5 @@
 // Level meter: Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics.
-// CLI: node examples/level-meter.js
+// CLI: npx web-audio-api level-meter
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export function init(ctx, {

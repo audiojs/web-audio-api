@@ -1,5 +1,5 @@
 // AudioWorklet: Register a custom processor, expose a parameter, and render its output.
-// CLI: node examples/worklet.js
+// CLI: npx web-audio-api worklet
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export const processorSource = `class WhiteNoise extends AudioWorkletProcessor {

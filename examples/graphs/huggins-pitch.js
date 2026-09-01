@@ -1,5 +1,5 @@
 // Huggins pitch: Filter one ear's copy of identical noise through a narrow phase shift so a pitch emerges that exists in neither channel.
-// CLI: node examples/huggins-pitch.js 600 20s
+// CLI: npx web-audio-api huggins-pitch 600 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x4855474e) {

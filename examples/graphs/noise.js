@@ -1,5 +1,5 @@
 // Noise: Generate white, pink, brown, blue, or violet noise.
-// CLI: node examples/noise.js pink 2s
+// CLI: npx web-audio-api noise pink 2s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x574141) {

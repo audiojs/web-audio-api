@@ -1,5 +1,5 @@
 // Gamelan: Schedule interlocking slendro patterns with metalophone partials and gong structure.
-// CLI: node examples/gamelan.js 120 20s
+// CLI: npx web-audio-api gamelan 120 20s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

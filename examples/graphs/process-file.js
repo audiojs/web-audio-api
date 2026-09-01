@@ -1,5 +1,5 @@
 // Process a file: Decode an audio file, apply EQ and compression, then render the processed result.
-// CLI: node examples/process-file.js input.mp3
+// CLI: npx web-audio-api process-file input.mp3
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

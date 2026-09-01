@@ -1,5 +1,5 @@
 // Convolver reverb: Convolve a plucked string through a seeded exponential-decay impulse response and blend dry with wet.
-// CLI: node examples/reverb.js 2 0.35 3s
+// CLI: npx web-audio-api reverb 2 0.35 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function seeded(seed = 0x52455642) {

@@ -57,13 +57,28 @@ function replaceGenerated(source, name, content) {
   return source.replace(pattern, `${start}\n${content}\n        ${end}`)
 }
 
+function entryHTML(example, href, extra = '') {
+  let number = String(examples.indexOf(example) + 1).padStart(2, '0')
+  return `<a class="example-entry" href="${escapeAttr(href)}"${extra}><span class="example-number">${number}</span><span class="example-heading"><strong>${escapeHTML(example.title)}</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">${escapeHTML(example.description)}</span><small class="example-tag">${escapeHTML(example.job)}</small></a>`
+}
+
 function homeExamplesHTML() {
-  let numbered = examples.map((example, index) => ({ example, number: String(index + 1).padStart(2, '0') }))
   let categories = [...new Set(examples.map(example => example.category))]
   return categories.map(category => {
-    let entries = numbered.filter(({ example }) => example.category === category).map(({ example, number }) => `            <a class="example-entry" href="./examples/${escapeAttr(example.id)}/" data-open-example="${escapeAttr(example.id)}"><span class="example-number">${number}</span><span class="example-heading"><strong>${escapeHTML(example.title)}</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">${escapeHTML(example.description)}</span><small class="example-tag">${escapeHTML(example.job)}</small></a>`).join('\n')
+    let entries = examples.filter(example => example.category === category)
+      .map(example => '            ' + entryHTML(example, `./examples/${example.id}/`, ` data-open-example="${escapeAttr(example.id)}"`)).join('\n')
     return `        <section class="example-group" id="${category.toLowerCase().replace(/\s+/g, '-')}"><h3>${escapeHTML(category)}</h3><div class="example-grid">\n${entries}\n          </div></section>`
   }).join('\n')
+}
+
+// up to four same-category siblings, same job first
+function relatedHTML(example) {
+  let siblings = examples.filter(other => other.category === example.category && other.id !== example.id)
+    .sort((a, b) => (a.job === example.job ? 0 : 1) - (b.job === example.job ? 0 : 1))
+    .slice(0, 4)
+  if (!siblings.length) return ''
+  let entries = siblings.map(other => '      ' + entryHTML(other, `../${other.id}/`)).join('\n')
+  return `    <section class="detail-related" aria-label="Related examples"><h2>More ${escapeHTML(example.category.toLowerCase())}</h2><div class="example-grid">\n${entries}\n    </div></section>\n`
 }
 
 
@@ -136,7 +151,7 @@ ${warning}${note}
       </section>
     </div>
     <dl class="detail-facts"><div><dt>Graph</dt><dd>${escapeHTML(example.graph)}</dd></div><div><dt>Input</dt><dd>${escapeHTML(example.input)}</dd></div><div><dt>Output</dt><dd>${escapeHTML(example.output)}</dd></div></dl>
-${example.seo ? `    <p class="detail-seo">${escapeHTML(example.seo)}</p>\n` : ''}  </main>
+${relatedHTML(example)}${example.seo ? `    <p class="detail-seo">${escapeHTML(example.seo)}</p>\n` : ''}  </main>
   <canvas class="footer-strips" aria-hidden="true"></canvas>
   <footer class="site-footer"><div class="footer-inner footer-columns"><a class="footer-seal" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-ink)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="footer-specs"><span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span><span><a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span></div><div class="footer-side"><a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z"/><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z"/></g></svg>audiojs</a><a href="https://github.com/sponsors/audiojs">support development</a></div></div></footer>
   <script type="module" src="../browser.js"></script>
@@ -172,13 +187,38 @@ function generateDiscovery() {
   let urls = [baseUrl, ...examples.map(example => `${baseUrl}examples/${example.id}/`)]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(url => `  <url><loc>${url}</loc></url>`).join('\n')}\n</urlset>\n`
   writeFileSync(join(root, 'sitemap.xml'), xml)
+  writeFileSync(join(root, 'llms.txt'), llmsTxt())
+}
+
+function llmsTxt() {
+  let categories = [...new Set(examples.map(example => example.category))]
+  let sections = categories.map(category => `## ${category}\n\n` + examples
+    .filter(example => example.category === category)
+    .map(example => `- [${example.title}](${baseUrl}examples/${example.id}/): ${example.description} CLI: \`${example.command}\``)
+    .join('\n')).join('\n\n')
+  return `# Web Audio API without the browser
+
+> web-audio-api is a pure-JavaScript implementation of the W3C Web Audio API for Node, Deno, Bun, and edge runtimes. 100% Web Platform Tests conformance (${metrics.wptPass}/${metrics.wptPass + metrics.wptFail}). No native bindings, no compilation. Install: \`npm install web-audio-api\`. Run any example with \`npx web-audio-api <name>\`.
+
+Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through \`import 'web-audio-api/polyfill'\`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
+
+## Docs
+
+- [Homepage](${baseUrl})
+- [Move a graph from browser to Node](${baseUrl}guides/browser-to-node/)
+- [Test audio in CI](${baseUrl}guides/test-audio-in-ci/)
+- [Run Tone.js in Node](${baseUrl}guides/tonejs-node/)
+- [Repository](https://github.com/audiojs/web-audio-api)
+
+${sections}
+`
 }
 
 function stage() {
   let target = join(root, 'build/site')
   rmSync(target, { recursive: true, force: true })
   mkdirSync(join(target, 'examples'), { recursive: true })
-  for (let file of ['index.html', 'site.css', 'site.js', 'syntax.js', 'tokens.css', 'robots.txt', 'sitemap.xml']) cpSync(join(root, file), join(target, file))
+  for (let file of ['index.html', 'site.css', 'site.js', 'syntax.js', 'tokens.css', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
   cpSync(join(root, 'guides'), join(target, 'guides'), { recursive: true })
   for (let file of ['index.html', 'catalog.js', 'options.js', 'browser.js']) cpSync(join(root, 'examples', file), join(target, 'examples', file))
   cpSync(join(root, 'examples', 'graphs'), join(target, 'examples', 'graphs'), { recursive: true })

@@ -1,5 +1,5 @@
 // Offline render: Render a complete graph to an AudioBuffer with no speakers or audio device.
-// CLI: node examples/render-to-buffer.js
+// CLI: npx web-audio-api render-to-buffer
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

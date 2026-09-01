@@ -1,5 +1,5 @@
 // Mic level: Route a live microphone through a gain and analyser with an RMS meter.
-// CLI: node examples/mic.js gain=0.8
+// CLI: npx web-audio-api mic gain=0.8
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export function init(ctx, {

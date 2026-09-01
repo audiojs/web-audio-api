@@ -1,5 +1,5 @@
 // Missing fundamental: Play harmonics 2–6 while omitting the pitch the listener still perceives.
-// CLI: node examples/missing-fundamental.js 100 3s
+// CLI: npx web-audio-api missing-fundamental 100 3s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

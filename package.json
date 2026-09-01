@@ -17,6 +17,9 @@
   "types": "./index.d.ts",
   "files": [
     "src",
+    "examples/*.js",
+    "examples/graphs",
+    "bin.js",
     "index.js",
     "index.d.ts",
     "polyfill.js",
@@ -76,5 +79,8 @@
     "test:site": "node test/site.test.js",
     "prepublishOnly": "npm test"
   },
-  "funding": "https://github.com/sponsors/audiojs"
+  "funding": "https://github.com/sponsors/audiojs",
+  "bin": {
+    "web-audio-api": "./bin.js"
+  }
 }

@@ -1,5 +1,5 @@
 // Tritone paradox: Play sequential octave-complex tone pairs a tritone apart so up/down judgment turns ambiguous.
-// CLI: node examples/tritone-paradox.js 0 8 1.2
+// CLI: npx web-audio-api tritone-paradox 0 8 1.2
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

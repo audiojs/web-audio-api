@@ -1,5 +1,5 @@
 // Auditory streaming: Alternate two tones and let tempo and pitch distance decide fusion or split.
-// CLI: node examples/streaming.js 240 4 15s
+// CLI: npx web-audio-api streaming 240 4 15s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

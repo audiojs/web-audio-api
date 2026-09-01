@@ -1,5 +1,5 @@
 // Jazz: Generate modal harmony, walking bass, plucked improvisation, and percussion.
-// CLI: node examples/jazz.js
+// CLI: npx web-audio-api jazz
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 export async function init(ctx, {

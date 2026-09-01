@@ -1,5 +1,5 @@
 // Scale illusion: Interleave an ascending and descending major scale between ears so listeners regroup by pitch.
-// CLI: node examples/scale-illusion.js 200 261.63 8s
+// CLI: npx web-audio-api scale-illusion 200 261.63 8s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function fadeOut(param, when, duration, value) {

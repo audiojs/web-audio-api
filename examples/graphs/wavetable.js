@@ -1,5 +1,5 @@
 // Wavetable synth: Build custom Fourier wavetables and crossfade between two oscillators holding different timbres.
-// CLI: node examples/wavetable.js organ 220 0.3 6s
+// CLI: npx web-audio-api wavetable organ 220 0.3 6s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function buildTable(name, n = 24) {

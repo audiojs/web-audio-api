@@ -1,5 +1,5 @@
 // Subtractive synth: Shape a sawtooth oscillator with a resonant low-pass sweep and ADSR envelope.
-// CLI: node examples/subtractive-synth.js -d 5s
+// CLI: npx web-audio-api subtractive-synth -d 5s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
 function safeStop(source, time) {

@@ -1,0 +1,26 @@
+name: LLRT
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Bundling is the standard LLRT deployment shape (Lambda); optional
+      # audio-device and codec adapters stay external, the engine bundles.
+      - run: npx esbuild test/smoke.mjs --bundle --format=esm --platform=node --outfile=smoke-llrt.mjs "--external:@audio/*"
+      - run: |
+          curl -sL -o llrt.zip https://github.com/awslabs/llrt/releases/download/v0.8.1-beta/llrt-linux-x64.zip
+          unzip -o llrt.zip llrt
+          chmod +x llrt
+          ./llrt smoke-llrt.mjs

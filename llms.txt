@@ -1,0 +1,77 @@
+# Web Audio API without the browser
+
+> web-audio-api is a pure-JavaScript implementation of the W3C Web Audio API for Node, Deno, Bun, and edge runtimes. 100% Web Platform Tests conformance (4317/4317). No native bindings, no compilation. Install: `npm install web-audio-api`. Run any example with `npx web-audio-api <name>`.
+
+Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through `import 'web-audio-api/polyfill'`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
+
+## Docs
+
+- [Homepage](https://audiojs.dev/web-audio-api/)
+- [Move a graph from browser to Node](https://audiojs.dev/web-audio-api/guides/browser-to-node/)
+- [Test audio in CI](https://audiojs.dev/web-audio-api/guides/test-audio-in-ci/)
+- [Run Tone.js in Node](https://audiojs.dev/web-audio-api/guides/tonejs-node/)
+- [Repository](https://github.com/audiojs/web-audio-api)
+
+## Utilities
+
+- [Metronome](https://audiojs.dev/web-audio-api/examples/metronome/): Schedule a click pattern with accents, rests, tempo control, and instrument presets. CLI: `npx web-audio-api metronome 120 X-x-X-x-`
+- [Chromatic tuner](https://audiojs.dev/web-audio-api/examples/tuner/): Estimate microphone pitch, nearest note, and tuning error in cents. CLI: `npx web-audio-api tuner 440`
+- [Latency tester](https://audiojs.dev/web-audio-api/examples/latency-tester/): Play short clicks through the speakers and time their return through the microphone to measure round-trip latency. CLI: `npx web-audio-api latency-tester`
+- [Level meter](https://audiojs.dev/web-audio-api/examples/level-meter/): Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics. CLI: `npx web-audio-api level-meter`
+
+## Test signals
+
+- [Reference tone](https://audiojs.dev/web-audio-api/examples/tone/): Play a reference pitch with selectable waveform and frequency. CLI: `npx web-audio-api tone sine A4 2s`
+- [Sweep](https://audiojs.dev/web-audio-api/examples/sweep/): Sweep across a frequency range with linear or exponential automation. CLI: `npx web-audio-api sweep 20..20k exp 3s`
+- [Noise](https://audiojs.dev/web-audio-api/examples/noise/): Generate white, pink, brown, blue, or violet noise. CLI: `npx web-audio-api noise pink 2s`
+- [Impulse](https://audiojs.dev/web-audio-api/examples/impulse/): Fire a one-sample impulse for response and signal-path testing. CLI: `npx web-audio-api impulse 5 0.5s`
+- [DTMF dialer](https://audiojs.dev/web-audio-api/examples/dtmf/): Synthesize telephone keypad tones from paired row and column frequencies. CLI: `npx web-audio-api dtmf 5551234`
+- [Stereo test](https://audiojs.dev/web-audio-api/examples/stereo-test/): Identify left, right, and center channels with a panned reference tone. CLI: `npx web-audio-api stereo-test 1k 1s`
+
+## Illusions
+
+- [Shepard tone](https://audiojs.dev/web-audio-api/examples/shepard/): Layer octave-spaced voices to create a pitch that appears to rise or fall forever. CLI: `npx web-audio-api shepard up 15s`
+- [Risset rhythm](https://audiojs.dev/web-audio-api/examples/risset-rhythm/): Layer tempo cycles to create a beat that appears to accelerate or decelerate forever. CLI: `npx web-audio-api risset-rhythm up 120 20s`
+- [Binaural beats](https://audiojs.dev/web-audio-api/examples/binaural-beats/): Send nearby frequencies to opposite ears and hear their difference. CLI: `npx web-audio-api binaural-beats 200 10 10s`
+- [Missing fundamental](https://audiojs.dev/web-audio-api/examples/missing-fundamental/): Play harmonics 2–6 while omitting the pitch the listener still perceives. CLI: `npx web-audio-api missing-fundamental 100 3s`
+- [Beating](https://audiojs.dev/web-audio-api/examples/beating/): Hear amplitude beating produced by two nearby frequencies. CLI: `npx web-audio-api beating 440 3 5s`
+- [Octave illusion](https://audiojs.dev/web-audio-api/examples/octave-illusion/): Swap two antiphase frequencies between ears so a single tone seems to jump register and side. CLI: `npx web-audio-api octave-illusion 400 800 2 12s`
+- [Scale illusion](https://audiojs.dev/web-audio-api/examples/scale-illusion/): Interleave an ascending and descending major scale between ears so listeners regroup the notes by pitch. CLI: `npx web-audio-api scale-illusion 200 261.63 8s`
+- [Tritone paradox](https://audiojs.dev/web-audio-api/examples/tritone-paradox/): Play sequential octave-complex tone pairs a tritone apart so up/down judgment turns ambiguous. CLI: `npx web-audio-api tritone-paradox 0 8 1.2`
+- [Continuity illusion](https://audiojs.dev/web-audio-api/examples/continuity/): Punch gaps in a steady tone and fill them with louder noise bursts so the tone sounds unbroken. CLI: `npx web-audio-api continuity 440 0.6 on 15s`
+- [Auditory streaming](https://audiojs.dev/web-audio-api/examples/streaming/): Alternate two tones and let tempo and pitch distance decide whether they fuse into one stream or split into two. CLI: `npx web-audio-api streaming 240 4 15s`
+- [Huggins pitch](https://audiojs.dev/web-audio-api/examples/huggins-pitch/): Filter one ear’s copy of identical noise through a narrow phase shift so a pitch emerges that exists in neither channel. CLI: `npx web-audio-api huggins-pitch 600 20s`
+- [Zwicker tone](https://audiojs.dev/web-audio-api/examples/zwicker-tone/): Notch broadband noise, cycle it on and off, and hear a faint after-tone linger in the silence where the notch was. CLI: `npx web-audio-api zwicker-tone 2000 3 2 20s`
+
+## Synthesis
+
+- [Subtractive synth](https://audiojs.dev/web-audio-api/examples/subtractive-synth/): Shape a sawtooth oscillator with a resonant low-pass sweep and ADSR envelope. CLI: `npx web-audio-api subtractive-synth -d 5s`
+- [Additive synth](https://audiojs.dev/web-audio-api/examples/additive/): Construct square, saw, and triangle timbres from individual harmonics. CLI: `npx web-audio-api additive square 220 16 3s`
+- [FM synth](https://audiojs.dev/web-audio-api/examples/fm-synthesis/): Use one oscillator to modulate another oscillator’s frequency. CLI: `npx web-audio-api fm-synthesis 440 2 5 3s`
+- [Karplus–Strong](https://audiojs.dev/web-audio-api/examples/karplus-strong/): Turn a short noise burst and averaging delay into a plucked string. CLI: `npx web-audio-api karplus-strong A4 4s`
+- [Wavetable synth](https://audiojs.dev/web-audio-api/examples/wavetable/): Build custom Fourier wavetables and crossfade between two oscillators holding different timbres. CLI: `npx web-audio-api wavetable organ 220 0.3 6s`
+- [Granular synth](https://audiojs.dev/web-audio-api/examples/granular/): Scatter short, jittered grains from a seeded source buffer into a granular texture cloud. CLI: `npx web-audio-api granular 0.08 15 4 10s`
+
+## Generative
+
+- [Step sequencer](https://audiojs.dev/web-audio-api/examples/sequencer/): Schedule a 16-step melody against the audio clock. CLI: `npx web-audio-api sequencer bpm=140 -d 10s`
+- [Twelve-tone](https://audiojs.dev/web-audio-api/examples/serial/): Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows. CLI: `npx web-audio-api serial 72 30s`
+- [Gamelan](https://audiojs.dev/web-audio-api/examples/gamelan/): Schedule interlocking slendro patterns with metalophone partials and gong structure. CLI: `npx web-audio-api gamelan 120 20s`
+- [Jazz](https://audiojs.dev/web-audio-api/examples/jazz/): Generate modal harmony, walking bass, plucked improvisation, and percussion. CLI: `npx web-audio-api jazz`
+- [Euclidean rhythms](https://audiojs.dev/web-audio-api/examples/euclidean/): Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count. CLI: `npx web-audio-api euclidean 120 16 3,5,7 20s`
+- [Drone](https://audiojs.dev/web-audio-api/examples/drone/): Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks. CLI: `npx web-audio-api drone C3 30s`
+
+## API
+
+- [Speaker hello world](https://audiojs.dev/web-audio-api/examples/speaker/): Play the smallest useful realtime graph through the system output. CLI: `npx web-audio-api speaker`
+- [LFO tremolo](https://audiojs.dev/web-audio-api/examples/lfo/): Connect an oscillator to an AudioParam and modulate gain at audio-clock precision. CLI: `npx web-audio-api lfo rate=5 depth=0.5 -d 10s`
+- [Spatial panning](https://audiojs.dev/web-audio-api/examples/spatial/): Move a source from left to right through three-dimensional space. CLI: `npx web-audio-api spatial -d 5s`
+- [AudioWorklet](https://audiojs.dev/web-audio-api/examples/worklet/): Register a custom processor, expose a parameter, and render its output. CLI: `npx web-audio-api worklet`
+- [Linked AudioParams](https://audiojs.dev/web-audio-api/examples/linked-params/): Drive multiple gain parameters from one ConstantSourceNode. CLI: `npx web-audio-api linked-params`
+- [FFT spectrum](https://audiojs.dev/web-audio-api/examples/fft/): Render a two-tone signal and inspect its frequency-domain peaks. CLI: `npx web-audio-api fft`
+- [Offline render](https://audiojs.dev/web-audio-api/examples/render-to-buffer/): Render a complete graph to an AudioBuffer with no speakers or audio device. CLI: `npx web-audio-api render-to-buffer`
+- [Process a file](https://audiojs.dev/web-audio-api/examples/process-file/): Decode an audio file, apply EQ and compression, then render the processed result. CLI: `npx web-audio-api process-file input.mp3`
+- [Pipe PCM to stdout](https://audiojs.dev/web-audio-api/examples/pipe-stdout/): Send raw PCM from an AudioContext to any Node writable stream. CLI: `npx web-audio-api pipe-stdout | ffplay -f s16le -ar 44100 -ac 2 -`
+- [Mic level](https://audiojs.dev/web-audio-api/examples/mic/): Route a live microphone through a gain and analyser with an RMS meter. CLI: `npx web-audio-api mic gain=0.8`
+- [Sound recorder](https://audiojs.dev/web-audio-api/examples/recorder/): Capture microphone audio with a live level meter and save a recording. CLI: `npx web-audio-api recorder take1 gain=2`
+- [Convolver reverb](https://audiojs.dev/web-audio-api/examples/reverb/): Convolve a plucked string through a seeded exponential-decay impulse response and blend dry with wet. CLI: `npx web-audio-api reverb 2 0.35 3s`
