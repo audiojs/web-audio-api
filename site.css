@@ -379,15 +379,16 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* The blueprint dots end where the white field begins, on a dot row across
-   the code block's lower part (8rem above the section top keeps it on grid).
-   The field runs white through the examples; questions return to paper. */
+/* The blueprint dots end where the white field begins, across the code
+   block's lower part. The field runs white through the examples; questions
+   return to paper. --grid-stop is snapped to the 16px dot lattice by site.js
+   so the edge always lands on a grid row, whatever the content height. */
 .examples {
   padding-block: var(--space-md) var(--space-4xl);
   position: relative;
   background: var(--color-white);
   box-shadow: 0 0 0 100vmax var(--color-white);
-  clip-path: inset(-8rem -100vmax 0);
+  clip-path: inset(calc(-1 * var(--grid-stop, 8rem)) -100vmax 0);
 }
 
 .section-heading {
@@ -543,7 +544,7 @@ pre code { font: inherit; }
 .example-entry[data-state="success"]::after { content: "✓"; color: var(--color-success); }
 
 .faq {
-  padding-block: 0 var(--space-4xl);
+  padding-block: var(--space-2xl) var(--space-4xl);
   background: var(--color-paper);
   box-shadow: 0 0 0 100vmax var(--color-paper);
   clip-path: inset(0 -100vmax);
@@ -660,12 +661,11 @@ table.bench td { font-variant-numeric: tabular-nums; }
 
 tbody th { color: var(--color-ink); white-space: nowrap; }
 
-.header-strips {
+.field-strips {
   display: block;
   width: 100%;
   height: 8rem;
   position: absolute;
-  inset-block-start: 0;
   inset-inline-start: 0;
   z-index: -1;
   pointer-events: none;
