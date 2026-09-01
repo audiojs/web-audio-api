@@ -327,10 +327,7 @@ h3 {
 @media (max-width: 64rem) {
   .install-row { flex-wrap: wrap; }
 
-  .install-command { width: 100%; }
-
   .hero-spec {
-    flex-basis: 100%;
     padding-block: var(--space-sm);
     white-space: normal;
   }
