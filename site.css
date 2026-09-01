@@ -727,6 +727,21 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   align-content: start;
 }
 
+.footer-name {
+  color: var(--color-paper);
+  font-weight: 500;
+}
+
+.footer-install {
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+}
+
+.footer-row {
+  display: inline-flex;
+  gap: var(--space-md);
+}
+
 .footer-side {
   margin-inline-start: auto;
   display: grid;
