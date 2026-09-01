@@ -123,8 +123,8 @@ if (strips) {
     for (let k = 0; k < cells; k++) {
       let bar = Math.round(cell * (1 - k / (cells - 1)))
       if (!bar) continue
-      // clamp keeps a visible gap (1 CSS px) in every cell even at full black
-      context.fillRect(k * cell, 0, Math.max(1, Math.min(bar, cell - ratio)), height)
+      // clamp keeps a hairline gap (1 device px) in every cell even at full black
+      context.fillRect(k * cell, 0, Math.max(1, Math.min(bar, cell - 1)), height)
     }
   }
   paint()

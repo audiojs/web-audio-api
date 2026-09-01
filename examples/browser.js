@@ -714,3 +714,27 @@ if (detailPage) {
   addEventListener('pagehide', cleanup)
 }
 highlightSyntax().catch(() => {})
+
+let footerStrips = document.querySelector('.footer-strips')
+if (footerStrips) {
+  let context = footerStrips.getContext('2d')
+  let paint = () => {
+    let ratio = Math.min(devicePixelRatio || 1, 2)
+    let width = footerStrips.offsetWidth * ratio, height = footerStrips.offsetHeight * ratio
+    if (height < 1) return
+    if (footerStrips.width !== width || footerStrips.height !== height) { footerStrips.width = width; footerStrips.height = height }
+    // equal integer cells; each bar grows linearly toward the footer until the band turns solid
+    let cells = 16
+    let cell = Math.max(2, Math.round(height / cells))
+    context.clearRect(0, 0, width, height)
+    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
+    for (let k = 0; k < cells; k++) {
+      let bar = Math.round(cell * k / (cells - 1))
+      if (!bar) continue
+      context.fillRect(0, (k + 1) * cell - bar, width, bar)
+    }
+    context.fillRect(0, cells * cell, width, height - cells * cell)
+  }
+  paint()
+  addEventListener('resize', paint)
+}
