@@ -715,26 +715,31 @@ if (detailPage) {
 }
 highlightSyntax().catch(() => {})
 
-let footerStrips = document.querySelector('.footer-strips')
-if (footerStrips) {
-  let context = footerStrips.getContext('2d')
+// horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
+function stripBand(canvas, solidTop) {
+  let context = canvas.getContext('2d')
   let paint = () => {
     let ratio = Math.min(devicePixelRatio || 1, 2)
-    let width = footerStrips.offsetWidth * ratio, height = footerStrips.offsetHeight * ratio
+    let width = canvas.offsetWidth * ratio, height = canvas.offsetHeight * ratio
     if (height < 1) return
-    if (footerStrips.width !== width || footerStrips.height !== height) { footerStrips.width = width; footerStrips.height = height }
-    // equal integer cells; each bar grows linearly toward the footer until the band turns solid
-    let cells = 16
+    if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
+    let cells = Math.max(2, Math.round(canvas.offsetHeight / 8))
     let cell = Math.max(2, Math.round(height / cells))
     context.clearRect(0, 0, width, height)
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
     for (let k = 0; k < cells; k++) {
-      let bar = Math.round(cell * k / (cells - 1))
+      let t = k / (cells - 1)
+      let bar = Math.round(cell * (solidTop ? 1 - t : t))
       if (!bar) continue
-      context.fillRect(0, (k + 1) * cell - bar, width, bar)
+      context.fillRect(0, solidTop ? k * cell : (k + 1) * cell - bar, width, bar)
     }
-    context.fillRect(0, cells * cell, width, height - cells * cell)
+    if (!solidTop) context.fillRect(0, cells * cell, width, height - cells * cell)
   }
   paint()
   addEventListener('resize', paint)
 }
+
+let footerStrips = document.querySelector('.footer-strips')
+if (footerStrips) stripBand(footerStrips, false)
+let headerStrips = document.querySelector('.header-strips')
+if (headerStrips) stripBand(headerStrips, true)

@@ -633,6 +633,13 @@ table.bench td { font-variant-numeric: tabular-nums; }
 
 tbody th { color: var(--color-ink); white-space: nowrap; }
 
+.header-strips {
+  display: block;
+  width: 100%;
+  height: 4rem;
+  margin-block-start: var(--space-md);
+}
+
 .footer-strips {
   display: block;
   width: 100%;
@@ -667,18 +674,36 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   gap: var(--space-md);
 }
 
-.footer-facts {
-  margin-inline: auto;
-  display: inline-flex;
+.footer-columns {
+  display: flex;
   flex-wrap: wrap;
-  gap: var(--space-md);
+  align-items: flex-start;
+  gap: var(--space-lg) var(--space-xl);
 }
 
-.footer-actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md);
+.footer-seal {
+  flex: none;
+  color: var(--color-paper);
+}
+
+.footer-seal svg {
+  width: 3rem;
+  height: 3rem;
+  display: block;
+}
+
+.footer-specs {
+  display: grid;
+  gap: var(--space-2xs);
+  align-content: start;
+}
+
+.footer-side {
+  margin-inline-start: auto;
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: end;
+  text-align: end;
 }
 
 .footer-brand {
