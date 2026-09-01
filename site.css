@@ -346,6 +346,8 @@ h3 {
   max-width: 48rem;
   margin-block-start: var(--space-2xl);
   position: relative;
+  /* stays above the grid-stopper line that crosses behind its lower half */
+  z-index: var(--z-base);
   border: var(--rule-hair) solid var(--color-rule-dark);
   background: var(--color-ink-2);
   color: var(--color-paper);
@@ -392,20 +394,22 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* The blueprint dot grid ends here: a white stopper line, then plain paper below */
+/* The blueprint dot grid ends on a dot row halfway up the code block:
+   a white stopper line there, then plain paper below. 12rem = half the
+   256px code block plus the hero's 4rem bottom padding. */
 .examples {
-  padding-block: var(--space-xl) var(--space-4xl);
+  padding-block: var(--space-2xl) var(--space-4xl);
   position: relative;
   background: var(--color-paper);
   box-shadow: 0 0 0 100vmax var(--color-paper);
-  clip-path: inset(calc(-1 * var(--rule-heavy)) -100vmax 0);
+  clip-path: inset(calc(-12rem - var(--rule-heavy)) -100vmax 0);
 }
 
 .examples::before {
   content: '';
   position: absolute;
   inset-inline: -100vmax;
-  inset-block-start: calc(-1 * var(--rule-heavy));
+  inset-block-start: calc(-12rem - var(--rule-heavy));
   height: var(--rule-heavy);
   background: var(--color-white);
 }
@@ -750,59 +754,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   align-content: start;
 }
 
-.footer-name {
-  color: var(--color-paper);
-  font-weight: 500;
-}
-
-.footer-name [data-version] {
-  font-family: var(--font-code);
-  font-weight: 400;
-}
-
-.site-footer .footer-install-line {
-  margin: 0 auto;
-  align-self: flex-end;
-  display: block;
-  text-align: center;
-}
-
-.footer-install {
-  font-family: var(--font-code);
-  font-size: var(--text-sm);
-  color: var(--color-paper);
-  text-decoration: none;
-}
-
-.footer-install code {
-  display: inline-block;
-  width: 25ch;
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: bottom;
-  text-align: start;
-  border-inline-end: var(--rule-heavy) solid transparent;
-}
-
-.footer-install.is-typed code {
-  border-color: var(--color-paper);
-  animation: footer-typing 1.8s steps(25, end), footer-caret 1.2s step-end infinite;
-}
-
-@keyframes footer-typing {
-  from { width: 0; }
-  to { width: 25ch; }
-}
-
-@keyframes footer-caret {
-  50% { border-color: transparent; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .footer-install.is-typed code { animation: none; }
-}
-
 .footer-side {
+  margin-inline-start: auto;
   display: grid;
   gap: var(--space-2xs);
   justify-items: end;
