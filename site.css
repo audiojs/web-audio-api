@@ -275,6 +275,8 @@ h3 {
   width: 1.25rem;
   height: 1.25rem;
   flex: none;
+  filter: grayscale(1);
+  mix-blend-mode: multiply;
 }
 
 .wpt-badge { display: inline-flex; }
