@@ -39,6 +39,15 @@ html {
 }
 
 body { min-width: 0; }
+
+/* document cap: the standard's bold head rule, out of flow to keep the grid */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--space-2xs);
+  background: var(--color-ink);
+}
 html.modal-open { overflow: hidden; }
 
 button,
