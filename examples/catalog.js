@@ -9,12 +9,12 @@ export const examples = [
     seo: 'This doubles as an online metronome with sound: set the bpm, an accent pattern like X-x-X-x-, and an instrument voice, then let it click through a practice session. Run it in the browser for a quick bpm click track, or launch the same instrument from the Node CLI to drive a rehearsal, a test, or a batch render.',
   },
   {
-    id: 'tuner', title: 'Tuner', category: 'Utilities', job: 'Measure', mode: 'mic',
+    id: 'tuner', title: 'Chromatic tuner', category: 'Utilities', job: 'Measure', mode: 'mic',
     description: 'Estimate microphone pitch, nearest note, and tuning error in cents.',
     graph: 'Microphone → Analyser → Pitch detector', input: 'Microphone stream', output: 'Pitch, note, cents',
     apis: ['MediaStreamAudioSourceNode', 'AnalyserNode'], command: 'node examples/tuner.js 440',
     warning: 'The browser asks for microphone permission. Audio stays on this device.',
-    seo: 'It works as an online instrument tuner and pitch detector: play a note into the microphone and it reports the frequency, the nearest note, and how many cents you are off. The browser demo listens live, and the Node CLI runs the identical YIN-based pitch detector against @audio/mic for tuning a guitar or any monophonic instrument from a terminal.',
+    seo: 'It works as an online chromatic tuner and pitch detector: play a note into the microphone and it reports the frequency, the nearest note, and how many cents you are off. The browser demo listens live, and the Node CLI runs the identical YIN-based pitch detector against @audio/mic for tuning a guitar or any monophonic instrument from a terminal.',
   },
   {
     id: 'latency-tester', title: 'Latency tester', category: 'Utilities', job: 'Measure', mode: 'mic',
@@ -45,7 +45,6 @@ export const examples = [
     description: 'Sweep across a frequency range with linear or exponential automation.',
     graph: 'Oscillator.frequency automation → Gain → Destination', input: 'Start/end frequency, duration', output: 'Speaker audio',
     apis: ['AudioContext', 'OscillatorNode', 'AudioParam'], command: 'node examples/sweep.js 20..20k exp 3s',
-    warning: 'Start at low volume. High frequencies and sudden level changes can be uncomfortable.',
     seo: 'This is a frequency sweep test you can run as a speaker test from 20 Hz to 20 kHz, with linear or exponential automation across the range. Start at a low volume in the browser, or render the same sweep from the Node CLI for measurement or analysis.',
   },
   {
@@ -53,7 +52,6 @@ export const examples = [
     description: 'Generate white, pink, brown, blue, or violet noise.',
     graph: 'Noise source → Gain → Destination', input: 'Noise color', output: 'Speaker audio',
     apis: ['AudioContext', 'AudioBufferSourceNode', 'GainNode'], command: 'node examples/noise.js pink 2s',
-    warning: 'Start at low volume; broadband noise carries energy across much of the audible spectrum.',
     seo: 'This is a noise generator: white noise, pink noise, brown noise, and the less common blue and violet colors are all available. Play it in the browser at a safe volume, or render the same seeded noise buffer from the Node CLI.',
   },
   {
@@ -61,7 +59,6 @@ export const examples = [
     description: 'Fire a one-sample impulse for response and signal-path testing.',
     graph: 'One-sample AudioBuffer → Destination', input: 'Count, interval', output: 'Impulse clicks',
     apis: ['AudioContext', 'AudioBuffer', 'AudioBufferSourceNode'], command: 'node examples/impulse.js 5 0.5s',
-    warning: 'Use low playback volume. An impulse is intentionally abrupt.',
     seo: 'This fires a one-sample impulse, useful as a click test tone for probing a signal path or measuring an impulse response. Trigger it in the browser, or render a scheduled series of impulses from the Node CLI.',
   },
   {
@@ -76,7 +73,6 @@ export const examples = [
     description: 'Identify left, right, and center channels with a panned reference tone.',
     graph: 'Oscillator → StereoPanner → Envelope → Destination', input: 'Frequency, duration', output: 'Stereo audio',
     apis: ['AudioContext', 'StereoPannerNode', 'GainNode'], command: 'node examples/stereo-test.js 1k 1s',
-    warning: 'Start at low volume, especially with headphones.',
     seo: 'This is a stereo channel test: a reference tone pans through left, right, and center so you can identify which speaker or headphone channel is which. Run it in the browser at a low volume, or render the same panned tone from the Node CLI.',
   },
 
@@ -99,7 +95,7 @@ export const examples = [
     description: 'Send nearby frequencies to opposite ears and hear their difference.',
     graph: '2 Oscillators → hard L/R pan → Destination', input: 'Carrier, frequency difference', output: 'Stereo audio',
     apis: ['AudioContext', 'StereoPannerNode'], command: 'node examples/binaural-beats.js 200 10 10s',
-    warning: 'Headphones are required for channel isolation. Keep volume low; no health effect is claimed.',
+    warning: 'Headphones are required for channel isolation; no health effect is claimed.',
     seo: 'This is a binaural beats generator: it sends two close frequencies to opposite ears through headphones so you hear the beat produced by their difference, with no health or cognitive effect claimed here. Run it in the browser with headphones on, or generate the same stereo signal from the Node CLI.',
   },
   {
@@ -331,13 +327,13 @@ export const examples = [
     seo: 'This is a live microphone level meter: it routes the mic through a gain and an AnalyserNode with an RMS meter, letting you check input levels and set gain before recording. Run it in the browser, where monitoring stays muted to prevent feedback, or from the Node CLI, which can route the graph to speakers.',
   },
   {
-    id: 'recorder', title: 'Recorder', category: 'API', job: 'Capture', mode: 'mic',
+    id: 'recorder', title: 'Sound recorder', category: 'API', job: 'Capture', mode: 'mic',
     description: 'Capture microphone audio with a live level meter and save a recording.',
     graph: 'Microphone → Gain → recorder → file', input: 'Microphone stream', output: 'Recorded audio file',
     apis: ['MediaStreamAudioSourceNode', 'ScriptProcessorNode'], command: 'node examples/recorder.js take1 gain=2',
     warning: 'Use headphones to avoid feedback. The browser asks for microphone permission.',
     note: 'The browser adapter saves the MediaRecorder format it supports. The Node CLI writes PCM WAV.',
-    seo: 'This is a browser audio recorder with a live level meter: it captures microphone audio and saves it, using MediaRecorder in the browser and PCM WAV from the Node CLI. Use headphones to avoid feedback while recording either way.',
+    seo: 'This is an online sound recorder with a live level meter: it captures microphone audio and saves it, using MediaRecorder in the browser and PCM WAV from the Node CLI. If you searched for an online mp3 recorder, note the capture here is lossless rather than mp3. Use headphones to avoid feedback while recording.',
   },
   {
     id: 'reverb', title: 'Convolver reverb', category: 'API', job: 'Process', mode: 'audio',

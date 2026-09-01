@@ -797,6 +797,12 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   color: var(--color-body);
 }
 
+/* shorter dialogs center vertically; taller ones scroll from the top */
+.example-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
 .example-dialog::-webkit-scrollbar-thumb {
   border: var(--space-2xs) solid transparent;
   border-radius: var(--radius-pill);
@@ -815,7 +821,7 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .dialog-shell {
   width: min(100%, var(--page-max));
   min-width: 0;
-  margin-inline: auto;
+  margin: auto;
   overflow: clip;
   border: 0;
   border-radius: var(--radius-lg);
@@ -857,25 +863,32 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   height: 1.5rem;
 }
 
-.detail-tags {
+.detail-crumbs {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-xs);
+  color: var(--color-muted);
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
 }
 
-.detail-tags span {
-  padding: var(--space-3xs) var(--space-sm);
-  border: var(--rule-hair) solid var(--color-rule);
-  border-radius: var(--radius-pill);
-  color: var(--color-muted);
-  font-size: var(--text-xs);
-  line-height: 1.5;
+.detail-crumbs a {
+  color: inherit;
+  text-decoration: none;
 }
+
+.detail-crumbs a:hover { text-decoration: underline; }
 
 .dialog-body {
   min-width: 0;
   display: grid;
   align-items: stretch;
+}
+
+/* the source scrolls inside the modal instead of stretching it */
+.example-dialog .code-output {
+  max-height: min(60dvh, 32rem);
+  overflow-y: auto;
 }
 
 .demo-panel,

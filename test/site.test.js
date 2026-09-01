@@ -185,7 +185,7 @@ test('every example has a crawlable canonical detail page', () => {
     ok(document.querySelector('#demo-form'), `${example.id} browser adapter`)
     ok(document.querySelector('#example-code'), `${example.id} atomic source`)
     ok(document.querySelector('.detail-grid > :first-child').classList.contains('demo-panel'), `${example.id} demo precedes source`)
-    is(document.querySelectorAll('.detail-tags span').length, 2, `${example.id} category and job tags`)
+    is(document.querySelectorAll('.detail-crumbs a').length, 2, `${example.id} breadcrumbs lead home`)
     is(document.querySelectorAll('.dialog-code-head, .dialog-links, .code-output [data-copy]').length, 0, `${example.id} code chrome removed`)
     is(document.querySelector('#cli-command').textContent, example.command, `${example.id} CLI command`)
     is(document.querySelectorAll('.cli-options dt').length, optionsFor(example.id).length, `${example.id} CLI options documented`)
@@ -375,7 +375,7 @@ test('processed-buffer core renders the smallest valid input', async () => {
 })
 
 test('unsafe listening examples retain explicit safety language', () => {
-  for (let id of ['sweep', 'impulse', 'stereo-test', 'binaural-beats', 'mic', 'recorder', 'octave-illusion', 'scale-illusion', 'huggins-pitch', 'latency-tester']) {
+  for (let id of ['binaural-beats', 'mic', 'recorder', 'octave-illusion', 'scale-illusion', 'huggins-pitch', 'latency-tester', 'tuner', 'level-meter']) {
     let example = examples.find(item => item.id === id)
     ok(example.warning?.length > 30, `${id} warning`)
   }

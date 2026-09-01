@@ -1,4 +1,4 @@
-// Recorder: Capture microphone audio with a live level meter and save a recording.
+// Sound recorder: Capture microphone audio with a live level meter and save a recording.
 // CLI: node examples/recorder.js take1 gain=2
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
