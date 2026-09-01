@@ -523,6 +523,7 @@ pre code { font: inherit; }
   stroke-width: 1.3;
   stroke-linecap: round;
   stroke-linejoin: round;
+  opacity: 0;
 }
 
 .example-description {
@@ -733,7 +734,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 .site-footer .footer-install-line {
-  margin: var(--space-xl) auto 0;
+  margin: 0 auto;
+  align-self: flex-end;
   display: block;
   text-align: center;
 }
@@ -774,7 +776,6 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 }
 
 .footer-side {
-  margin-inline-start: auto;
   display: grid;
   gap: var(--space-2xs);
   justify-items: end;
@@ -1251,8 +1252,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .detail-actions .brand { transition: color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
   .corner-action .brand:hover,
   .detail-actions .brand:hover { color: var(--color-ink-3); }
-  .example-arrow { transition: stroke var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out); }
-  .example-entry:hover .example-arrow { stroke: var(--color-ink); transform: translate(2px, -2px); }
+  .example-arrow { transition: opacity var(--dur-short) var(--ease-out), stroke var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out); }
+  .example-entry:hover .example-arrow { opacity: 1; stroke: var(--color-ink); transform: translate(2px, -2px); }
   .demo-action:hover,
   .file-label:hover { transform: translateY(-1px); }
 }
