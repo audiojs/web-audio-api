@@ -129,6 +129,19 @@ select:focus-visible,
   text-decoration: none;
 }
 
+.spec-facts {
+  display: inline-flex;
+  gap: var(--space-md);
+  color: var(--color-muted);
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 64rem) {
+  .spec-facts { display: none; }
+}
+
 .corner-links {
   display: flex;
   align-items: center;
@@ -488,6 +501,7 @@ pre code { font: inherit; }
   padding: 0 var(--space-xs);
   border: var(--rule-hair) solid var(--color-ink);
   border-radius: var(--radius-pill);
+  background: var(--color-paper-2);
   color: var(--color-ink);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -638,7 +652,12 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
 .header-strips {
   display: block;
   width: 100%;
-  height: 4rem;
+  height: 10rem;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .footer-strips {
@@ -1163,6 +1182,10 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .copy-icon:hover { background: var(--color-ink-3); }
   .hero-stack button { transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out); }
   .hero-stack button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); color: var(--color-ink); }
+  .hero-stack button img { transition: filter var(--dur-short) var(--ease-out); }
+  .hero-stack button:hover img { filter: none; }
+  .example-tag { transition: background-color var(--dur-short) var(--ease-out); }
+  .example-tag:hover { background: var(--color-white); }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
   .wpt-badge:hover { opacity: 0.85; }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }

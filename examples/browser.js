@@ -716,14 +716,14 @@ if (detailPage) {
 highlightSyntax().catch(() => {})
 
 // horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
-function stripBand(canvas, solidTop, colorToken = '--color-ink') {
+function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = 8) {
   let context = canvas.getContext('2d')
   let paint = () => {
     let ratio = Math.min(devicePixelRatio || 1, 2)
     let width = canvas.offsetWidth * ratio, height = canvas.offsetHeight * ratio
     if (height < 1) return
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
-    let cells = Math.max(2, Math.round(canvas.offsetHeight / 8))
+    let cells = Math.max(2, Math.round(canvas.offsetHeight / cellSize))
     let cell = Math.max(2, Math.round(height / cells))
     context.clearRect(0, 0, width, height)
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(colorToken).trim()
