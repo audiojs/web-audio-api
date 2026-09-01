@@ -113,16 +113,15 @@ if (strips) {
     let width = strips.offsetWidth * ratio, height = strips.offsetHeight * ratio
     if (width < 1) return
     if (strips.width !== width || strips.height !== height) { strips.width = width; strips.height = height }
+    // equal-width cells, each split black/transparent; the split ratio eases in-out
+    let cells = 10
+    let cell = width / cells
+    let ease = t => t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2
+    context.clearRect(0, 0, width, height)
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim()
-    context.fillRect(0, 0, width, height)
-    // white slits cut into the ink: many, starting hairline and thickening smoothly
-    let x = 2 * ratio
-    while (x < width) {
-      let t = x / width
-      let slit = (0.5 + 6.5 * t * t) * ratio
-      let bar = (5 - 2.5 * t) * ratio
-      context.clearRect(x, 0, slit, height)
-      x += slit + bar
+    for (let k = 0; k < cells; k++) {
+      let black = 1 - ease(k / (cells - 1))
+      context.fillRect(k * cell, 0, Math.max(1, cell * black), height)
     }
   }
   paint()

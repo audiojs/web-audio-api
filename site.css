@@ -417,7 +417,7 @@ pre code { font: inherit; }
 .example-entry {
   width: 100%;
   min-width: 0;
-  padding: var(--space-md) 0;
+  padding: var(--space-sm) 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: var(--space-md);
@@ -624,11 +624,12 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   text-decoration: none;
 }
 
-.footer-brand img {
-  width: 1.5rem;
+.footer-brand svg {
+  width: 1.375rem;
   height: 1.5rem;
-  border-radius: var(--radius-pill);
 }
+
+.site-footer .wpt-badge img { height: 1.25rem; display: block; }
 
 .example-dialog {
   width: 100%;
@@ -1078,8 +1079,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .detail-actions .brand { transition: color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
   .corner-action .brand:hover,
   .detail-actions .brand:hover { color: var(--color-ink-3); }
-  .example-arrow { transition: stroke var(--dur-short) var(--ease-out), stroke-width var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out); }
-  .example-entry:hover .example-arrow { stroke: var(--color-ink); stroke-width: 2.2; transform: translate(2px, -2px); }
+  .example-arrow { transition: stroke var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out); }
+  .example-entry:hover .example-arrow { stroke: var(--color-ink); transform: translate(2px, -2px); }
   .demo-action:hover,
   .file-label:hover { transform: translateY(-1px); }
 }
