@@ -1,6 +1,5 @@
 import { byId } from './examples/catalog.js'
 import { mountExample, stripBand } from './examples/browser.js'
-import { highlightSyntax } from './syntax.js'
 
 const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
@@ -123,17 +122,3 @@ if (examples) {
 }
 if (fieldStrips) stripBand(fieldStrips, false, '--color-white')
 
-let stack = document.querySelector('.hero-stack')
-let heroCode = document.getElementById('hero-code')
-if (stack && heroCode) {
-  let base = heroCode.textContent
-  let codeFor = engine => engine === 'deno' ? base.replace("'web-audio-api'", "'npm:web-audio-api'") : base
-  stack.addEventListener('click', event => {
-    let button = event.target.closest('button[data-engine]')
-    if (!button) return
-    for (let other of stack.querySelectorAll('button[data-engine]'))
-      other.setAttribute('aria-pressed', String(other === button))
-    heroCode.textContent = codeFor(button.dataset.engine)
-    highlightSyntax(heroCode.closest('.code-stage')).catch(() => {})
-  })
-}

@@ -268,31 +268,23 @@ h3 {
   font-weight: 500;
 }
 
-/* icon-only engine selector, inline in the lede after "Any JS engine:" */
+/* verified engines, listed after the lede */
 .hero-stack {
-  margin-inline-start: var(--space-2xs);
-  display: inline-flex;
-  gap: var(--space-2xs);
-  vertical-align: bottom;
+  margin-block-start: var(--space-xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
 }
 
-.hero-stack button {
-  height: 2rem;
-  padding-inline: var(--space-xs) var(--space-sm);
+.hero-stack > span {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: none;
+  height: 2rem;
   color: var(--color-muted);
   font-size: var(--text-sm);
   white-space: nowrap;
-}
-
-.hero-stack button[aria-pressed="true"] {
-  background: var(--color-white);
-  color: var(--color-ink);
 }
 
 .hero-stack img {
@@ -302,8 +294,6 @@ h3 {
   filter: grayscale(1);
   mix-blend-mode: multiply;
 }
-
-.hero-stack button[aria-pressed="true"] img { filter: none; }
 
 .wpt-badge { display: inline-flex; }
 .wpt-badge img { height: 1.25rem; display: block; }
@@ -1251,10 +1241,8 @@ tbody th { color: var(--color-ink); white-space: nowrap; }
   .icon-button:hover { background: var(--color-paper-2); }
   .copy-icon:hover,
   .dialog-close:hover { background: var(--color-ink-3); }
-  .hero-stack button { transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out); }
-  .hero-stack button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); color: var(--color-ink); }
-  .hero-stack button img { transition: filter var(--dur-short) var(--ease-out); }
-  .hero-stack button:hover img { filter: none; }
+  .hero-stack img { transition: filter var(--dur-short) var(--ease-out); }
+  .hero-stack > span:hover img { filter: none; }
   .example-filters button { transition: background-color var(--dur-short) var(--ease-out); }
   .example-filters button:not([aria-pressed="true"]):hover { background: var(--color-paper-2); }
   .wpt-badge { transition: opacity var(--dur-short) var(--ease-out); }
