@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Pure JavaScript Web Audio API for Node, CI, and servers",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
