@@ -1,0 +1,100 @@
+/* index2 · tokens · neutral paper/ink · Inter + JetBrains Mono */
+:root {
+  --color-ink: oklch(15% 0.006 260);
+  --color-ink-2: oklch(19.5% 0.007 260);
+  --color-ink-3: oklch(31% 0.009 260);
+  --color-body: oklch(30% 0.009 260);
+  --color-muted: oklch(50% 0.01 260);
+  --color-muted-on-ink: oklch(74% 0.008 260);
+  --color-paper: oklch(96.5% 0.002 90);
+  --color-paper-2: oklch(94% 0.003 90);
+  --color-paper-3: oklch(90% 0.004 90);
+  --color-raise: oklch(98% 0.002 90);
+  --color-white: oklch(100% 0 0);
+  --color-grid: oklch(84% 0.005 90);
+  --color-grid-on-ink: oklch(32% 0.008 260);
+  --color-rule: oklch(87% 0.005 90);
+  --color-rule-dark: oklch(30% 0.009 260);
+  --color-accent: oklch(72% 0.14 218);
+  --color-accent-strong: oklch(52% 0.14 218);
+  --color-accent-soft: oklch(92% 0.04 218);
+  --color-accent-ink: oklch(15% 0.006 260);
+  --color-focus: oklch(52% 0.14 218);
+  /* the code's blue, hue 218, carries the graph's wires and tints its shadows */
+  --color-wire: oklch(72% 0.14 218);
+  --color-shadow: oklch(30% 0.07 218 / 0.18);
+  --color-error: oklch(55% 0.19 29);
+  --color-success: oklch(46% 0.11 156);
+  --color-warning: oklch(60% 0.13 75);
+  --color-backdrop: oklch(10% 0.005 260 / 0.72);
+
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* one hue, 218: keywords in the deeper blue; calls, methods, and properties in the bright
+     cyan (#2dd8ff); variables the foreground; strings and numbers a step dimmer */
+  --syntax-comment: oklch(55% 0.01 260);
+  --syntax-keyword: oklch(73% 0.15 218);
+  --syntax-operator: var(--color-muted-on-ink);
+  --syntax-string: var(--color-paper-2);
+  --syntax-constant: var(--color-paper-2);
+  --syntax-function: oklch(87% 0.11 217);
+  --syntax-type: oklch(87% 0.11 217);
+  --syntax-variable: var(--color-paper);
+  --syntax-method: oklch(87% 0.11 217);
+  --syntax-property: oklch(87% 0.11 217);
+  --syntax-punctuation: var(--color-muted-on-ink);
+  --syntax-tag: var(--color-accent);
+  --syntax-selector: var(--color-accent);
+  --syntax-inserted: oklch(78% 0.07 150);
+  --syntax-deleted: oklch(70% 0.12 29);
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 2.75rem;
+  --text-display-s: clamp(2.25rem, 7vw, 4.5rem);
+  --text-display-sub: clamp(1.75rem, 4.5vw, 3.25rem);
+  --text-display: clamp(2.5rem, 6vw, 4rem);
+
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+
+  --page-gutter: clamp(1rem, 4vw, 3.5rem);
+  --page-max: 72rem;
+  --copy-max: 66ch;
+
+  --rule-hair: 1px;
+  --rule-heavy: 2px;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}

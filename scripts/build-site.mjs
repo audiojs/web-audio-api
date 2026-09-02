@@ -62,15 +62,6 @@ function entryHTML(example, href, extra = '') {
   return `<a class="example-entry" href="${escapeAttr(href)}"${extra}><span class="example-number">${number}</span><span class="example-heading"><strong>${escapeHTML(example.title)}</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">${escapeHTML(example.description)}</span><small class="example-tag">${escapeHTML(example.job)}</small></a>`
 }
 
-function homeExamplesHTML() {
-  let categories = [...new Set(examples.map(example => example.category))]
-  return categories.map(category => {
-    let entries = examples.filter(example => example.category === category)
-      .map(example => '            ' + entryHTML(example, `./examples/${example.id}/`, ` data-open-example="${escapeAttr(example.id)}"`)).join('\n')
-    return `        <section class="example-group" id="${category.toLowerCase().replace(/\s+/g, '-')}"><h3>${escapeHTML(category)}</h3><div class="example-grid">\n${entries}\n          </div></section>`
-  }).join('\n')
-}
-
 // up to four same-category siblings, same job first
 function relatedHTML(example) {
   let siblings = examples.filter(other => other.category === example.category && other.id !== example.id)
@@ -163,7 +154,6 @@ ${relatedHTML(example)}${example.seo ? `    <p class="detail-seo">${escapeHTML(e
 function updateHome() {
   let path = join(root, 'index.html')
   let html = readFileSync(path, 'utf8')
-  html = replaceGenerated(html, 'home-examples', homeExamplesHTML())
   html = html.replaceAll(/<span data-version>v[^<]+<\/span>/g, `<span data-version>v${pkg.version}</span>`)
   writeFileSync(path, html)
 }
@@ -218,7 +208,7 @@ function stage() {
   let target = join(root, 'build/site')
   rmSync(target, { recursive: true, force: true })
   mkdirSync(join(target, 'examples'), { recursive: true })
-  for (let file of ['index.html', 'site.css', 'site.js', 'syntax.js', 'tokens.css', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
+  for (let file of ['index.html', 'site.css', 'site2.css', 'site.js', 'syntax.js', 'tokens.css', 'tokens2.css', 'graph.js', 'hero.js', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
   cpSync(join(root, 'guides'), join(target, 'guides'), { recursive: true })
   for (let file of ['index.html', 'catalog.js', 'options.js', 'browser.js']) cpSync(join(root, 'examples', file), join(target, 'examples', file))
   cpSync(join(root, 'examples', 'graphs'), join(target, 'examples', 'graphs'), { recursive: true })

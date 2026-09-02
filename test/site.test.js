@@ -56,12 +56,12 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   let document = documentOf('index.html')
   is(document.querySelector('#hero-title strong').textContent, 'Web Audio API')
   is(document.querySelector('#hero-title span').textContent, 'without browser')
-  is(document.querySelector('.hero-lede').textContent, 'Use one Web Audio graph to process files, test DSP in CI, stream PCM from servers, and run Tone.js headlessly.', 'lede states concrete jobs')
+  is(document.querySelector('.hero-lede').textContent, 'Your Web Audio code, cross-platform. No native bindings to build. Process files in batch, test DSP in CI, stream PCM from servers, run Tone.js and other browser libraries headless, script audio from the CLI.', 'lede states concrete jobs')
   let pageClaims = [document.querySelector('meta[name="description"]').content, document.querySelector('meta[property="og:description"]').content, document.querySelector('.hero-lede').textContent, read('llms.txt'), read('scripts/build-site.mjs')].join(' ')
-  ok(!/no native bindings|no compilation|nothing to compile/i.test(pageClaims), 'copy does not deny the native speaker boundary')
+  ok(!/no native bindings(?! to build)|no compilation|nothing to compile/i.test(pageClaims), 'copy does not deny the native speaker boundary: its binaries come prebuilt, so there is nothing to build')
   is(document.querySelectorAll('.hero-stack').length, 1, 'one engine row')
-  let engines = [...document.querySelectorAll('.hero-code + .hero-stack > span')].map(node => node.textContent.trim())
-  is(engines.join('|'), 'Node|Deno|Bun|LLRT', 'passing engines follow the code sample')
+  let engines = [...document.querySelectorAll('.hero-stack > span')].map(node => node.textContent.trim())
+  is(engines.join('|'), 'Node|Deno|Bun|LLRT', 'passing engines ride the intro')
   ok(!engines.includes('Porffor') && read('.github/workflows/porffor.yml').includes('Porffor cannot run the engine yet'), 'tracking-only Porffor is not advertised')
   ok(!document.querySelector('.site-footer .wpt-badge'), 'no badge in the footer')
   ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
@@ -72,7 +72,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(document.querySelector('header a.version-link[href="https://www.npmjs.com/package/web-audio-api"] [data-version]'), 'the version links to npm')
   ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
   is(document.querySelectorAll('header nav').length, 1, 'one primary navigation')
-  is(document.querySelector('.install-command').textContent.trim(), 'npm install web-audio-api')
+  is(document.querySelector('.install-command code').textContent.trim(), 'npm install web-audio-api')
   is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
   ok(!document.body.textContent.includes('Basic usage'))
   is(document.querySelector('.hero-spec a[href="https://packagephobia.com/result?p=web-audio-api"]').textContent, '137 KB gzipped', 'size leads to packagephobia')
@@ -83,7 +83,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   is(document.querySelector('.hero-spec a[href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml"]').textContent, 'W3C WPT 100%', 'the WPT claim rides the spec plate as plain text')
   ok(document.querySelector('.site-footer a[href="https://github.com/sponsors/audiojs"]'), 'footer invites support')
   ok(document.querySelector('.site-footer a[href="https://github.com/sebpiq"]') && document.querySelector('.site-footer a[href="https://github.com/dy"]'), 'authors are credited with links')
-  is(document.querySelector('.hero-code [data-copy]').textContent.trim(), '', 'code copy is icon-only')
+  ok(!document.querySelector('.hero-code [data-copy]'), 'the hero code has no copy button')
   is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples|Questions')
   ok(document.querySelector('.section-heading #example-filters[role="group"]'), 'examples are filterable by tag')
   ok(read('site.js').includes("querySelector('.example-tag')"), 'the filter reads the tag element the entries actually render')
@@ -109,7 +109,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(dialog)
   ok(dialog.querySelector('.dialog-body > :first-child').classList.contains('demo-panel'), 'demo precedes source')
   is(dialog.querySelectorAll('.dialog-code-head, .dialog-links, .code-output [data-copy]').length, 0, 'code view has no redundant chrome')
-  is([...dialog.querySelectorAll('.code-tab')].map(tab => tab.dataset.pane).join('|'), 'cli|code', 'source panel offers CLI and code views')
+  is([...dialog.querySelectorAll('.code-tab')].map(tab => tab.dataset.pane).join('|'), 'cli|code|graph', 'source panel offers CLI, code, and graph views')
   ok(dialog.querySelector('.code-tab[data-pane="cli"][aria-pressed="true"]'), 'CLI view is the default')
   ok(dialog.querySelector('.cli-command [data-copy="#cli-command"]'), 'CLI command is copyable')
   ok(dialog.querySelector('.code-output[hidden]'), 'code stays hidden until requested')
@@ -199,12 +199,136 @@ test('every example has a crawlable canonical detail page', () => {
   }
 })
 
+test('hero.js connects a feedback graph and renders a pluck that decays', async () => {
+  let { runHero } = await import('../scripts/render.mjs')
+  let { audio, nodes, edges } = await runHero(read('hero.js'), 3)
+  let names = edge => `${edge.from.constructor.name}>${edge.to.constructor.name}`
+  is(nodes.map(node => node.constructor.name).join(','), 'AudioBufferSourceNode,DelayNode,BiquadFilterNode,GainNode,AudioDestinationNode', 'the graph is the string')
+  ok(edges.map(names).includes('GainNode>DelayNode'), 'feedback closes the loop')
+  ok(edges.map(names).includes('DelayNode>AudioDestinationNode'), 'the string reaches the output')
+  let data = audio.getChannelData(0)
+  let level = (from, to) => Math.sqrt(data.slice(from * audio.sampleRate, to * audio.sampleRate).reduce((sum, sample) => sum + sample * sample, 0) / ((to - from) * audio.sampleRate))
+  ok(data.every(Number.isFinite), 'finite')
+  ok(data.reduce((peak, sample) => Math.max(peak, Math.abs(sample)), 0) <= 1, 'the loop never grows past the click')
+  ok(level(0.25, 0.75) > 1e-3, 'the string rings')
+  ok(level(2.25, 2.75) < level(0.25, 0.75) / 4, 'and decays: a lowpass with resonance would make the loop grow')
+})
+
+test('the graph recorder runs a source twice, resolves AudioParam targets, and draws loops and parameters', async () => {
+  let { runHero } = await import('../scripts/render.mjs')
+  let { graphSVG, recordConnections, resolveGraph } = await import('../graph.js')
+  let hero = await runHero(read('hero.js'), 0.1)
+  is(hero.nodes.length, 5, 'the same source records again in the same process')
+  let drawn = graphSVG(hero.nodes, hero.edges)
+  is((drawn.match(/class="node"/g) || []).length, 5, 'one box per node')
+  is((drawn.match(/class="edge back"/g) || []).length, 1, 'the feedback loop is a back edge')
+  let marker = drawn.match(/<marker id="([^"]+)"/)[1]
+  ok(marker !== graphSVG(hero.nodes, hero.edges).match(/<marker id="([^"]+)"/)[1] && drawn.split(`url(#${marker})`).length === 6, 'each drawing owns its arrowhead, on all five edges')
+  let shade = drawn.match(/<filter id="([^"]+)"/)[1]
+  ok(drawn.includes('<feDropShadow') && drawn.split(`filter="url(#${shade})"`).length === 6, 'and its shadow, under all five cards')
+  let { collapseGraph } = await import('../graph.js')
+  let voices = new OfflineAudioContext(1, 1, 44100)
+  let chorus = await recordConnections(Object.getPrototypeOf(Object.getPrototypeOf(voices.createGain())), () => {
+    for (let i = 0; i < 3; i++) voices.createOscillator().connect(voices.createGain()).connect(voices.destination)
+  })
+  let full = resolveGraph(chorus), folded = collapseGraph(full.nodes, full.edges)
+  is(`${full.nodes.length}>${folded.nodes.length}`, '7>3', 'three voices fold into one voice')
+  is(folded.nodes.map(node => `${node.constructor.name}×${folded.counts.get(node)}`).join(','), 'OscillatorNode×3,GainNode×3,AudioDestinationNode×1', 'each box keeps its count')
+  is(folded.edges.length, 2, 'and the edges fold with them')
+  ok(graphSVG(folded.nodes, folded.edges, 'chorus', folded.counts).includes('>× 3<'), 'the count is drawn')
+  let heroFolded = collapseGraph(hero.nodes, hero.edges)
+  is(`${heroFolded.nodes.length},${heroFolded.edges.length},${Math.max(...heroFolded.counts.values())}`, '5,5,1', 'distinct roles never fold')
+  is(collapseGraph([], []).nodes.length, 0, 'nothing folds to nothing')
+  let proto = new OfflineAudioContext(1, 1, 44100).createGain()
+  while (!Object.hasOwn(proto, 'connect')) proto = Object.getPrototypeOf(proto)
+  let connect = proto.connect, failed = null
+  await recordConnections(proto, () => { throw new Error('mid-run') }).catch(error => failed = error)
+  is(failed?.message, 'mid-run', 'a failing run still throws')
+  is(proto.connect, connect, 'and leaves connect() as it was')
+  let { nodes, edges } = await runHero([
+    "import { AudioContext } from 'web-audio-api'",
+    'const ctx = new AudioContext()',
+    'const lfo = ctx.createOscillator(), tremolo = ctx.createGain(), orphan = ctx.createGain()',
+    'lfo.connect(tremolo.gain)',
+    'lfo.connect(orphan.gain)',
+    'tremolo.connect(ctx.destination)',
+    'lfo.start()',
+  ].join('\n'), 0.1)
+  let describe = edge => `${edge.from.constructor.name}>${edge.to.constructor.name}${edge.param ? '.' + edge.param : ''}`
+  is(edges.map(describe).join(','), 'OscillatorNode>GainNode.gain,OscillatorNode>AudioParam,GainNode>AudioDestinationNode', 'a parameter of a connected node resolves to that node; one of an unconnected node stays a parameter')
+  is(nodes.map(node => node.constructor.name).join(','), 'OscillatorNode,GainNode,AudioDestinationNode,AudioParam')
+  ok(graphSVG(nodes, edges).includes('>.gain<'), 'parameter edges are labeled')
+})
+
+test('the homepage wires the hero play, the graph tab, and the page-side Web Audio', () => {
+  let document = documentOf('index.html')
+  let play = document.querySelector('.hero-code [data-run="./hero.js"]')
+  ok(play?.querySelector('.play-glyph') && play.querySelector('.pause-glyph'), 'one play button with both glyphs')
+  ok(!document.querySelector('.hero-code [data-copy]'), 'no copy control on the hero code')
+  ok(document.querySelector('.install-row > .install-command + .hero-spec') && !document.querySelector('.install-row [data-copy]'), 'the install row is the command and its figures, nothing to press')
+  is([...document.querySelectorAll('.site-footer .footer-specs > *')].map(node => node.textContent.trim().split(/[\s,]/)[0]).join(','), 'since,MIT', 'the right column runs since, licence')
+  ok(document.querySelector('.site-footer .footer-left > .footer-brand + a[href="https://github.com/sponsors/audiojs"]'), 'sponsor sits under audiojs at the left')
+  for (let file of ['site2.css', 'graph.js', 'site.js']) ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab)\(/i.test(read(file).replace(/url\(#[\w-]+\)/g, '')), `${file} takes every color from a token`)
+  ok(document.querySelector('.hero-art .graph') && document.querySelector('.hero-signal .hero-spectrum'), 'the graph rides the hero, the render rides the code')
+  let map = JSON.parse(document.querySelector('script[type="importmap"]').textContent)
+  let shim = decodeURIComponent(map.imports['web-audio-api'])
+  ok(map.imports['web-audio-api'].startsWith('data:text/javascript,') && shim.includes('extends globalThis.AudioContext') && shim.includes('AnalyserNode'), 'the package name resolves to the page\'s own context, tapped for the live panel')
+  ok(shim.includes('AudioNode.prototype.connect') && shim.includes('nodes ??= new Set()'), 'whatever connects stays alive with its context: Chrome collects unreferenced nodes mid-sound')
+  ok(document.querySelector('#example-dialog .code-tab[data-pane="graph"]') && document.querySelector('#example-dialog #graph-pane[hidden]'), 'the modal offers a graph tab, hidden until chosen')
+  ok(document.querySelector('#example-dialog .demo-stage .demo-bar .demo-runbar #demo-run') && document.querySelector('#example-dialog .demo-bar #demo-status'), 'play and volume sit under the spectrogram with the meter, the status beneath')
+  let site = read('site.js')
+  for (let hook of ["'audiocontext'", 'data-run', 'graph-pane', 'recordConnections', 'collapseGraph', "'wheel'", 'getFloatTimeDomainData', 'highlightSyntax()', "highlights.set('method'"]) ok(site.includes(hook), `site.js carries ${hook}`)
+  ok(read('site2.css').includes('::highlight(method)') && read('tokens2.css').includes('--syntax-method'), 'methods have their own highlight and token')
+  let browser = read('examples/browser.js')
+  for (let hook of ["remember(frequencyScale, 'demo-frequency-scale')", "remember(volume, 'demo-volume')", 'if (!data) return']) ok(browser.includes(hook), `the demo ${hook.startsWith('remember') ? 'remembers ' + hook.slice(9, -1) : 'draws only the axis before it plays'}`)
+})
+
+test('thumbnail projections put a known signal where it belongs on the lattice', async () => {
+  let { draw } = await import('../scripts/render.mjs')
+  let rate = 44100
+  let buffer = (fill, seconds = 2) => {
+    let length = rate * seconds
+    let audio = new OfflineAudioContext(2, length, rate).createBuffer(2, length, rate)
+    for (let c = 0; c < 2; c++) { let data = audio.getChannelData(c); for (let i = 0; i < length; i++) data[i] = fill(i / rate, c) }
+    return audio
+  }
+  let silence = buffer(() => 0)
+  let tone = buffer(t => 0.5 * Math.sin(2 * Math.PI * 440 * t))
+  let leftOnly = buffer((t, c) => c ? 0 : 0.5 * Math.sin(2 * Math.PI * 440 * t))
+  for (let kind of Object.keys(draw)) ok(draw[kind](tone).every(segment => segment.every(value => value >= 0 && value <= 96)), `${kind} stays inside the box`)
+  let ends = segments => segments.flatMap(([, y1, , y2]) => [y1, y2])
+  is(draw.wave(silence).length, 16, 'silence is one mark per column')
+  ok(ends(draw.wave(silence)).every(y => y === 48), 'a dot on the axis')
+  ok(draw.wave(tone).length === 16 && draw.wave(tone).every(([, y1, , y2]) => y1 === 6 && y2 === 90), 'a steady tone is a full bar in every column')
+  ok(ends(draw.wave(leftOnly)).every(y => y <= 48), 'a left-only signal stays above the axis')
+  is(draw.roll(tone).length, 16, 'a tone is one dash per column')
+  ok(ends(draw.roll(tone)).every(y => y === 48), 'a lone pitch sits on the axis: the range fits the notes')
+  let twoTones = buffer(t => 0.5 * Math.sin(2 * Math.PI * (t < 1 ? 440 : 880) * t))
+  is(ends(draw.roll(twoTones)).map(y => y === 90 ? 'low' : y === 6 ? 'high' : y).join(','), Array(8).fill('low,low').concat(Array(8).fill('high,high')).join(','), 'two pitches span the rails, low first')
+  let heights = draw.spectrum(tone).map(([, y1, , y2]) => Math.abs(y1 - y2))
+  is(heights.indexOf(Math.max(...heights)), Math.floor(Math.log(440 / 40) / Math.log(400) * 16), 'the spectrum peaks in the bin of its frequency')
+  ok(draw.shape(tone).length === 16 && draw.shape(tone).every(([, y1, , y2]) => y1 === 48 || y2 === 48), 'the waveform touches the axis in every column')
+  ok(ends(draw.shape(tone)).some(y => y === 6 || y === 90), 'and reaches a rail')
+  is(JSON.stringify(draw.wave(tone)), JSON.stringify(draw.wave(tone)), 'drawing is deterministic')
+  is(draw.roll(silence).length + draw.ears(silence).length + draw.pan(silence).length + draw.raster(silence).length, 0, 'silence draws nothing on the pitch, ear, pan, and onset projections')
+  let split = buffer((t, c) => 0.5 * Math.sin(2 * Math.PI * (c ? 880 : 440) * t))
+  is(draw.ears(split).map(([, y]) => y === 42 ? 'L' : y === 54 ? 'R' : y).join(''), 'L'.repeat(16) + 'R'.repeat(16), 'each ear on its own half, its pitch at its rail')
+  let pans = buffer((t, c) => t < 1 ? (c ? 0 : 0.5) : t < 2 ? (c ? 0.5 : 0) : 0.5, 3)
+  is(draw.pan(pans).map(([x]) => x === 2 ? 'L' : x === 92 ? 'R' : x === 50 ? 'C' : x).join(''), 'L'.repeat(5) + 'R'.repeat(5) + 'C'.repeat(5), 'left, right, centre, one dash per row, time running down')
+  let clicks = buffer(t => Number.isInteger(t * 4) ? 0.5 : 0, 3)
+  is(draw.raster(clicks).map(([x, y]) => `${x},${y}`).join(' '), Array.from({ length: 12 }, (_, n) => `${3 + (n * 20 % 16) * 6},${6 + Math.floor(n * 20 / 16) * 6}`).join(' '), 'a click every quarter second is a dot every twenty cells, scanning row by row')
+  let thumbs = [...documentOf('index.html').querySelectorAll('.example-thumb')]
+  is(thumbs.length, examples.length, 'every example has a thumbnail on the page')
+  ok(thumbs.every(thumb => thumb.getAttribute('viewBox') === '0 0 96 96'), 'all square')
+  ok(thumbs.every(thumb => [...thumb.querySelectorAll('path')].every(path => /^[MLh\d.\s-]+$/.test(path.getAttribute('d')))), 'straight strokes and dots only, no curves')
+})
+
 test('all local HTML, CSS, JS, and navigation targets resolve', () => {
   let missing = []
   for (let path of htmlFiles) {
     let document = documentOf(path)
-    for (let element of document.querySelectorAll('[href], [src]')) {
-      let value = element.getAttribute('href') || element.getAttribute('src')
+    for (let element of document.querySelectorAll('[href], [src], [data-run]')) {
+      let value = element.getAttribute('href') || element.getAttribute('src') || element.getAttribute('data-run')
       if (value == null) continue
       let target = localTarget(path, value)
       if (target && !existsSync(target)) missing.push(`${path}: ${value}`)
@@ -235,6 +359,7 @@ test('every realtime or offline graph core renders finite audible samples', asyn
     dtmf: { digits: '5', speed: 0.06 },
     'stereo-test': { durationPerChannel: 0.06, gap: 0.01 },
     metronome: { pattern: 'X', bpm: 600 },
+    'risset-rhythm': { bpm: 600 },
     sequencer: { bpm: 600 },
   }
   for (let id of Object.keys(graphBuilders)) {
@@ -262,7 +387,7 @@ test('metronome presets share deterministic, distinct instrument models', async 
     await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.12, sound, seed: 17, when: 0 })
     return Array.from((await ctx.startRendering()).getChannelData(0))
   }
-  let expectedVoices = { classic: 3, wood: 4, bell: 4, beep: 2, signal: 1, karatala: 5 }
+  let expectedVoices = { classic: 5, wood: 5, bell: 7, beep: 2, signal: 1, karatala: 9 }
   for (let [sound, voices] of Object.entries(expectedVoices)) {
     let ctx = new OfflineAudioContext(1, 512, 44100)
     let graph = await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.01, sound, seed: 17, when: 0 })
@@ -304,6 +429,38 @@ test('metronome schedules upfront offline but in a bounded window on live contex
   ok(liveGraph.sources.length < 200, `live scheduling stays inside the lookahead window (${liveGraph.sources.length} sources)`)
   state = 'closed'
   await new Promise(resolve => setTimeout(resolve, 1100)) // scheduler timer sees the closed state and clears itself
+})
+
+test('risset layers sit an octave apart and nest their beats', async () => {
+  for (let direction of ['up', 'down']) {
+    let ctx = new OfflineAudioContext(1, 128, 44100)
+    let hits = []
+    let graph = await buildGraph('risset-rhythm', ctx, { direction, bpm: 120, duration: 40, when: 0, hit: (time, mark, level) => hits.push({ time, mark, level }) })
+    let beats = graph.data.beats
+    ok(beats.length > 200 && hits.length === beats.length, `${direction}: beats reach the instrument (${beats.length})`)
+    let byLayer = [0, 1, 2].map(layer => beats.filter(beat => beat.layer === layer).map(beat => beat.time))
+    let tempoAt = (times, at) => { let i = times.findIndex(time => time > at); return 60 / (times[i] - times[i - 1]) }
+    for (let at of [9, 15, 21, 27]) {
+      let tempos = byLayer.map(times => tempoAt(times, at)).sort((a, b) => a - b)
+      ok(Math.abs(tempos[1] / tempos[0] - 2) < 0.08 && Math.abs(tempos[2] / tempos[1] - 2) < 0.08, `${direction} at ${at}s: octave-spaced tempos (${tempos.map(t => t.toFixed(1)).join(', ')})`)
+    }
+    // every beat of a slower layer falls on a beat of each faster layer active at that moment
+    let nested = 0, checked = 0
+    let settled = time => time % 6 > 1.5 && time % 6 < 4.5 // away from a layer's entry or exit ramp, where inaudible beats are skipped
+    for (let beat of beats) for (let other of byLayer) {
+      if (!settled(beat.time)) continue
+      let i = other.findIndex(time => time >= beat.time - 1e-6)
+      if (i < 1 || i >= other.length - 1 || other === byLayer[beat.layer]) continue
+      let ownTimes = byLayer[beat.layer], j = ownTimes.indexOf(beat.time)
+      if (j < 1 || j >= ownTimes.length - 1) continue
+      if (other[i + 1] - other[i - 1] >= (ownTimes[j + 1] - ownTimes[j - 1]) * 0.9) continue
+      checked++
+      if (Math.abs(other[i] - beat.time) < 1e-6) nested++
+    }
+    ok(checked > 50 && nested === checked, `${direction}: slower beats nest in faster layers (${nested}/${checked})`)
+    let seconds = Array.from({ length: 36 }, (_, s) => beats.filter(beat => beat.time >= s + 2 && beat.time < s + 3).reduce((sum, beat) => sum + beat.level, 0))
+    ok(Math.max(...seconds) < Math.min(...seconds) * 2, `${direction}: windowed loudness stays level`)
+  }
 })
 
 test('shepard bank sweeps beyond 12 kHz', async () => {
