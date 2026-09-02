@@ -24,6 +24,18 @@ function setButtonLabel(button, label) {
   if (button?.classList?.contains('is-iconic')) button.setAttribute('aria-label', label)
 }
 
+// a control that keeps its setting across sessions
+function remember(input, key) {
+  if (!input || input.dataset.remembered) return
+  input.dataset.remembered = key
+  try {
+    // a range clamps what it is given; a select must be offered the value
+    let stored = localStorage.getItem(key)
+    if (stored !== null && (!input.options || [...input.options].some(option => option.value === stored))) input.value = stored
+  } catch { return }
+  input.addEventListener('change', () => { try { localStorage.setItem(key, input.value) } catch { return } })
+}
+
 async function copyText(button, text) {
   let iconOnly = button.classList.contains('copy-icon')
   let previous = iconOnly ? button.getAttribute('aria-label') : button.querySelector('span')?.textContent || button.textContent
@@ -93,6 +105,35 @@ function createControls(id, container) {
       heading.append(output)
     }
     label.append(heading)
+    if (spec.type === 'file') {
+      // A drop target that is also a picker; the demo panel forwards dropped files here
+      let picker = document.createElement('span')
+      picker.className = 'file-label control-file'
+      let input = document.createElement('input')
+      input.type = 'file'; input.accept = spec.accept || 'audio/*'
+      input.name = spec.key; input.id = `control-${spec.key}`
+      let caption = document.createElement('span')
+      let clear = document.createElement('button')
+      clear.type = 'button'; clear.className = 'file-clear'; clear.textContent = 'Clear'; clear.hidden = true
+      let prompt = `Drop or choose a ${spec.label.toLowerCase()}`
+      let reflect = () => {
+        caption.textContent = input.files[0]?.name || prompt
+        clear.hidden = !input.files[0]
+        picker.classList.toggle('has-file', !!input.files[0])
+      }
+      input.addEventListener('change', reflect)
+      clear.addEventListener('click', () => {
+        input.value = ''
+        input.dispatchEvent(new Event('change', { bubbles: true }))
+      })
+      reflect()
+      picker.append(input, caption)
+      heading.append(clear)
+      label.htmlFor = input.id
+      label.append(picker)
+      container.append(label)
+      continue
+    }
     let control
     if (spec.type === 'select') {
       control = document.createElement('select')
@@ -126,7 +167,7 @@ function readOptions(id, container) {
   let options = {}
   for (let spec of controlSpecs[id] || []) {
     let input = container.elements[spec.key]
-    options[spec.key] = spec.type === 'range' ? Number(input.value) : input.value
+    options[spec.key] = spec.type === 'range' ? Number(input.value) : spec.type === 'file' ? input.files?.[0] || null : input.value
   }
   return options
 }
@@ -146,15 +187,17 @@ function drawWave(canvas, data = null) {
   ctx.strokeStyle = css('--color-rule-dark')
   ctx.lineWidth = Math.max(1, devicePixelRatio || 1)
   ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke()
+  // before anything plays there is only the axis
+  if (!data) return
   ctx.strokeStyle = css('--color-accent')
   ctx.lineWidth = Math.max(2, (devicePixelRatio || 1) * 1.5)
   ctx.beginPath()
-  let length = data?.length || 256
+  let length = data.length
   let stride = Math.max(1, Math.floor(length / Math.max(256, width)))
   let points = Math.ceil(length / stride)
   for (let index = 0, point = 0; index < length; index += stride, point++) {
     let x = point / Math.max(1, points - 1) * width
-    let value = data ? data[index] : Math.sin(point / points * Math.PI * 8) * 0.3
+    let value = data[index]
     let y = height * (0.5 - value * 0.42)
     if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
   }
@@ -368,6 +411,7 @@ export function mountExample(root, id) {
   let canvas = find('#demo-canvas')
   let spectrogram = find('#demo-spectrogram')
   let frequencyScale = find('#demo-frequency-scale')
+  remember(frequencyScale, 'demo-frequency-scale')
   let resultContainer = find('#demo-result')
   let meter = find('#demo-meter-fill')
   let meterValue = find('#demo-meter-value')
@@ -417,6 +461,7 @@ export function mountExample(root, id) {
   activatePane('cli')
 
   let volume = find('#demo-volume')
+  remember(volume, 'demo-volume')
   if (volume) volume.hidden = !['audio', 'worklet'].includes(example.mode)
   let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0, reloadTimer = 0
   let outputGain = null
@@ -509,11 +554,19 @@ export function mountExample(root, id) {
     // (or worklet-driven event) per beat rather than looping a fixed voice bank still need a
     // bounded default, or a 600s run would build thousands of nodes upfront in a live context.
     let scaledDurationDefaults = {
-      jazz: 7, sequencer: 1.75, gamelan: 20, serial: 30, 'risset-rhythm': 20,
+      sequencer: 1.75,
       continuity: 15, 'octave-illusion': 12, 'scale-illusion': 8, streaming: 15, 'zwicker-tone': 20,
     }
     if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
     if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = AudioWorkletNode
+    // Dropped files reach the graph as decoded AudioBuffers, the same as sample=<file> in the CLI
+    for (let [key, value] of Object.entries(options)) if (value instanceof File) options[key] = await context.decodeAudioData(await value.arrayBuffer())
+    // The metronome's instrument collection plays the beats of other rhythm graphs on request;
+    // building it here keeps every graph module atomic
+    if (id === 'risset-rhythm' && (options.sound !== 'click' || options.sample)) {
+      let { createInstrument } = await import('./graphs/metronome.js')
+      options.hit = createInstrument(context, { sound: options.sound, sample: options.sample, destination: analyser }).hit
+    }
     let { init } = await import(`./graphs/${id}.js`)
     demo = await init(context, options)
     setButtonLabel(run, 'Stop demo')
@@ -626,6 +679,24 @@ export function mountExample(root, id) {
 
   controls.hidden = fields.childElementCount === 0 && actions.childElementCount === 0
 
+  // Any file control makes the whole demo panel a drop target
+  let panel = root.querySelector('.demo-panel')
+  let dropInput = fields.querySelector('input[type="file"]')
+  let onDrag = event => {
+    if (!dropInput || ![...event.dataTransfer?.types || []].includes('Files')) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    panel.classList.toggle('is-dropping', event.type !== 'dragleave' && event.type !== 'drop')
+    if (event.type !== 'drop') return
+    let file = [...event.dataTransfer.files].find(item => item.type.startsWith('audio/') || /\.(wav|mp3|ogg|oga|opus|flac|m4a|aac|aiff?|webm)$/i.test(item.name))
+    if (!file) return setStatus('Drop an audio file to use it as the sample.', 'error')
+    let transfer = new DataTransfer()
+    transfer.items.add(file)
+    dropInput.files = transfer.files
+    dropInput.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+  if (dropInput) for (let type of ['dragenter', 'dragover', 'dragleave', 'drop']) panel.addEventListener(type, onDrag)
+
   if (example.mode === 'node') {
     setButtonLabel(run, 'Copy command')
     setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
@@ -674,7 +745,7 @@ export function mountExample(root, id) {
   }
 
   let scheduleReload = event => {
-    if (!live || event.target?.type === 'file' || event.target === volume) return
+    if (!live || event.target === volume) return
     clearTimeout(reloadTimer)
     reloadTimer = setTimeout(reloadDemo, 180)
   }
@@ -698,6 +769,7 @@ export function mountExample(root, id) {
     live = false
     clearTimeout(reloadTimer)
     observer.disconnect()
+    if (dropInput) for (let type of ['dragenter', 'dragover', 'dragleave', 'drop']) panel.removeEventListener(type, onDrag)
     volume?.removeEventListener('input', onVolume)
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)

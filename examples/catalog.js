@@ -87,7 +87,7 @@ export const examples = [
     id: 'risset-rhythm', title: 'Risset rhythm', category: 'Illusions', job: 'Explore', mode: 'audio',
     description: 'Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.',
     graph: 'Scheduled click layers → Destination', input: 'Direction, center tempo', output: 'Rhythm illusion',
-    apis: ['AudioContext', 'OscillatorNode', 'AudioParam'], command: 'npx web-audio-api risset-rhythm up 120 20s',
+    apis: ['AudioContext', 'OscillatorNode', 'AudioBufferSourceNode', 'AudioParam'], command: 'npx web-audio-api risset-rhythm up 120 20s',
     seo: 'This renders the Risset rhythm illusion, the rhythmic cousin of the Shepard tone, where layered tempo cycles create a beat that seems to keep accelerating or decelerating without ever arriving. Hear it live in the browser, or render it from the Node CLI for a talk, a test signal, or further processing.',
   },
   {
@@ -241,14 +241,14 @@ export const examples = [
     id: 'euclidean', title: 'Euclidean rhythms', category: 'Generative', job: 'Create', mode: 'audio',
     description: 'Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count.',
     graph: 'Euclidean patterns → percussion voices → Destination', input: 'Tempo, steps, pulses per voice', output: 'Generative rhythm',
-    apis: ['AudioContext', 'AudioBufferSourceNode', 'BiquadFilterNode', 'AudioParam'], command: 'npx web-audio-api euclidean 120 16 3,5,7 20s',
+    apis: ['AudioContext', 'AudioBufferSourceNode', 'BiquadFilterNode', 'DynamicsCompressorNode', 'ConvolverNode'], command: 'npx web-audio-api euclidean 120 16 3,5,7 20s',
     seo: "This is a Euclidean rhythm generator built on Bjorklund's algorithm: two or three percussion voices each get their own evenly distributed step and pulse count, and the interlocking result is a generative rhythm. Try it in the browser, or render the same pattern from the Node CLI.",
   },
   {
     id: 'drone', title: 'Drone', category: 'Generative', job: 'Create', mode: 'audio',
     description: 'Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.',
     graph: 'Seeded voice bank (tanpura/pad/shruti/harmonic) → Master Gain → Destination', input: 'Voice, base pitch', output: 'Continuous drone',
-    apis: ['AudioContext', 'OscillatorNode', 'GainNode', 'ConvolverNode'], command: 'npx web-audio-api drone C3 30s',
+    apis: ['AudioContext', 'OscillatorNode', 'GainNode', 'StereoPannerNode', 'ConvolverNode'], command: 'npx web-audio-api drone C3 30s',
     seo: 'This plays a tanpura drone in the browser: choose the tanpura, pad, shruti, or harmonic voice for a sustained meditation drone tone built from seeded, slowly drifting oscillator banks with no steps or clicks. The Node CLI renders the same drone for practice, backing a raga, or looping in the background while you work.',
   },
 

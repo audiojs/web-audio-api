@@ -22,7 +22,7 @@ help({
     ['sound=<preset>', 'classic stick (default), wood, bell, beep, signal, or karatala'],
     ['hi=<hz>', 'classic stick accent resonance (default: 1900)'],
     ['lo=<hz>', 'classic stick regular resonance (default: 1250)'],
-    ['sample=<file>', 'use an audio file as the click sound instead of a preset'],
+    ['sample=<file>', 'audio file to use as the click sound instead of a preset'],
   ],
   controls: [
     ['Space', 'pause/resume'], ['← / →', 'offset tempo by −/+2 BPM'], ['↑ / ↓', 'cycle sound preset'],

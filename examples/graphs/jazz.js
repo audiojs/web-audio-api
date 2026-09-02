@@ -198,49 +198,82 @@ export async function init(ctx, {
 
   let t0 = ctx.currentTime
 
+  // --- Room: every chain plays into a small club, dry plus a darkening tail ---
+  let room = ctx.createConvolver(), roomIn = ctx.createGain(), roomOut = ctx.createGain()
+  {
+    let seconds = 1.1, length = Math.ceil(ctx.sampleRate * seconds)
+    let ir = ctx.createBuffer(2, length, ctx.sampleRate)
+    for (let channel = 0; channel < 2; channel++) {
+      let data = ir.getChannelData(channel), smooth = 0
+      for (let i = 0; i < length; i++) {
+        let t = i / length
+        smooth += (1 - 0.93 * Math.sqrt(t)) * ((Math.random() * 2 - 1) - smooth)
+        data[i] = smooth * Math.exp(-6.9 * t) * (1 - Math.exp(-i / 30))
+      }
+    }
+    room.buffer = ir
+  }
+  roomOut.gain.value = 0.22
+  roomIn.connect(room).connect(roomOut).connect(destination)
+  let place = (position, target = roomIn) => {
+    let panner = ctx.createStereoPanner()
+    panner.pan.value = position
+    panner.connect(destination); panner.connect(target)
+    return panner
+  }
+
   // --- Audio chains ---
   let padLp = ctx.createBiquadFilter()
   padLp.type = 'lowpass'; padLp.Q.value = 0.5
   let padOut = ctx.createGain(); padOut.gain.value = 0.06
-  padLp.connect(padOut).connect(destination)
+  let padPan = place(0)
+  padLp.connect(padOut).connect(padPan)
 
   let bassLp = ctx.createBiquadFilter()
   bassLp.type = 'lowpass'; bassLp.frequency.value = 350
   let bassOut = ctx.createGain(); bassOut.gain.value = 0.3
-  bassLp.connect(bassOut).connect(destination)
+  let bassPan = place(-0.1)
+  bassLp.connect(bassOut).connect(bassPan)
 
   // Guitar chain: warm lowpass → output (hollow-body jazz tone)
   let guitLp = ctx.createBiquadFilter()
   guitLp.type = 'lowpass'; guitLp.frequency.value = 2200; guitLp.Q.value = 0.7
   let guitOut = ctx.createGain(); guitOut.gain.value = 0.25
-  guitLp.connect(guitOut).connect(destination)
+  let guitPan = place(0.35)
+  guitLp.connect(guitOut).connect(guitPan)
 
   // --- Percussion chains (all share the noise worklet, gated by gain automation) ---
   let noise = new AudioWorkletNodeClass(ctx, 'noise')
 
-  // Ride cymbal: bandpass noise ~8kHz for metallic shimmer
+  let kitPan = place(-0.3)
+
+  // Ride cymbal: bandpass noise ~8kHz for metallic shimmer, with a stick "ping" partial
   let rideBp = ctx.createBiquadFilter()
   rideBp.type = 'bandpass'; rideBp.frequency.value = 8000; rideBp.Q.value = 1.5
   let rideG = ctx.createGain(); rideG.gain.value = 0
-  noise.connect(rideBp).connect(rideG).connect(destination)
+  noise.connect(rideBp).connect(rideG).connect(kitPan)
+  let ping = ctx.createOscillator(); ping.frequency.value = 5150
+  let pingG = ctx.createGain(); pingG.gain.value = 0
+  ping.connect(pingG).connect(kitPan)
+  ping.start(t0); ping.stop(t0 + duration)
 
   // Hi-hat: highpass noise ~10kHz, very tight
   let hhHp = ctx.createBiquadFilter()
   hhHp.type = 'highpass'; hhHp.frequency.value = 10000
   let hhG = ctx.createGain(); hhG.gain.value = 0
-  noise.connect(hhHp).connect(hhG).connect(destination)
+  noise.connect(hhHp).connect(hhG).connect(kitPan)
 
   // Ghost snare: bandpass noise ~300Hz, barely audible
   let ghostBp = ctx.createBiquadFilter()
   ghostBp.type = 'bandpass'; ghostBp.frequency.value = 300; ghostBp.Q.value = 2
   let ghostG = ctx.createGain(); ghostG.gain.value = 0
-  noise.connect(ghostBp).connect(ghostG).connect(destination)
+  noise.connect(ghostBp).connect(ghostG).connect(kitPan)
 
   // Brush: highpass noise with LFO swoosh
   let brushHp = ctx.createBiquadFilter()
   brushHp.type = 'highpass'; brushHp.frequency.value = 6000
   let brushG = ctx.createGain(); brushG.gain.value = 0.006
-  noise.connect(brushHp).connect(brushG).connect(destination)
+  noise.connect(brushHp).connect(brushG).connect(kitPan)
   let swoosh = ctx.createOscillator(); swoosh.type = 'triangle'
   swoosh.frequency.value = bpm / 60 / 2
   let swooshG = ctx.createGain(); swooshG.gain.value = 0.005
@@ -249,7 +282,7 @@ export async function init(ctx, {
 
   // Kick: sine with pitch envelope
   let kickOut = ctx.createGain(); kickOut.gain.value = 1
-  kickOut.connect(destination)
+  kickOut.connect(place(0, roomIn))
   let scheduleKick = (when) => {
     let osc = ctx.createOscillator()
     osc.frequency.setValueAtTime(150, when)
@@ -267,7 +300,7 @@ export async function init(ctx, {
 
   // --- Schedule chords ---
   let chordLog = []
-  for (let c = 0; c < nChords; c++) {
+  let scheduleChord = c => {
     let root = roots[c], e = energy(c)
     let cs = t0 + c * bpc * beat, ce = cs + bpc * beat
 
@@ -329,6 +362,8 @@ export async function init(ctx, {
         let vol = (accent ? 0.04 : 0.022) * (0.5 + e * 0.5)
         rideG.gain.setValueAtTime(vol, when)
         rideG.gain.exponentialRampToValueAtTime(0.001, when + (accent ? 0.15 : 0.1))
+        pingG.gain.setValueAtTime(vol * 0.35, when)
+        pingG.gain.exponentialRampToValueAtTime(0.0005, when + 0.05)
       }
 
       for (let b of [1, 3]) {
@@ -349,10 +384,23 @@ export async function init(ctx, {
         scheduleKick(bs)
     }
   }
+  // Offline contexts render faster than wall clock, so the whole performance is scheduled
+  // upfront; live contexts schedule a chord ahead at a time, keeping the node count bounded
+  let scheduled = 0
+  let scheduleUntil = horizon => { while (scheduled < nChords && t0 + scheduled * bpc * beat < horizon) scheduleChord(scheduled++) }
+  if (typeof ctx.startRendering === 'function') scheduleUntil(Infinity)
+  else {
+    let lookahead = bpc * beat * 1.5
+    scheduleUntil(ctx.currentTime + lookahead)
+    let timer = setInterval(() => {
+      if (ctx.state !== 'running' || scheduled >= nChords) return clearInterval(timer)
+      scheduleUntil(ctx.currentTime + lookahead)
+    }, 500)
+  }
 
   return {
-    sources: [noise, swoosh],
-    nodes: [padLp, padOut, bassLp, bassOut, guitLp, guitOut, noise, rideBp, rideG, hhHp, hhG, ghostBp, ghostG, brushHp, brushG, swoosh, swooshG, kickOut],
+    sources: [noise, swoosh, ping],
+    nodes: [padLp, padOut, padPan, bassLp, bassOut, bassPan, guitLp, guitOut, guitPan, noise, rideBp, rideG, ping, pingG, hhHp, hhG, ghostBp, ghostG, brushHp, brushG, swoosh, swooshG, kickOut, kitPan, room, roomIn, roomOut],
     duration,
     graph: 'Modal harmony + walking bass + improvised guitar + percussion → Destination',
     data: { bpm, chordLog },
