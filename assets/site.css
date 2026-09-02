@@ -197,7 +197,7 @@ main {
 
 .hero-intro {
   grid-column: 1;
-  padding-inline-end: var(--space-2xl);
+  padding-inline-end: var(--space-md);
 }
 
 /* the graph hero.js connects, over the dot grid */
@@ -379,7 +379,10 @@ h3 {
   box-shadow: 0 8px 24px var(--color-shadow);
 }
 
+/* the ones still in the works show their mark only, dimmed; the name stays in the markup for readers and the tip */
 .hero-stack .is-wip {
+  gap: 0;
+  font-size: 0;
   opacity: 0.4;
   transition: opacity var(--dur-short) var(--ease-out);
 }
