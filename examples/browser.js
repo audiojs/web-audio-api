@@ -86,7 +86,7 @@ function createControls(id, container) {
   let specs = controlSpecs[id] || []
   for (let spec of specs) {
     let label = document.createElement('label')
-    let initialValue = spec.browserValue ?? spec.value
+    let initialValue = spec.value
     label.className = 'control-field'
     let heading = document.createElement('span')
     let name = document.createElement('span')
@@ -441,7 +441,7 @@ async function showGraph(id, pane) {
   pane.innerHTML = '<p class="graph-note">Recording the graph…</p>'
   try {
     let { init } = await import(`./graphs/${id}.js`)
-    let options = Object.fromEntries(controlsFor(id).map(control => [control.key, control.browserValue ?? control.value]))
+    let options = Object.fromEntries(controlsFor(id).map(control => [control.key, control.value]))
     let context = new OfflineAudioContext(2, 128, 44100)
     let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: AudioWorkletNode }))
     let resolved = resolveGraph(edges)

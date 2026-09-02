@@ -8,12 +8,12 @@ import { args, num, help } from './utils.js'
 help({
   description: 'render white noise from a custom AudioWorkletProcessor',
   usage: ['', 'gain=0.5'],
-  options: [['gain=<0..1>', 'peak of the amplitude parameter automation (default: 1)']],
+  options: [['gain=<0..1>', 'peak of the amplitude parameter automation (default: 0.18)']],
   notes: ['Renders one second offline and prints RMS measurements through an automated fade.'],
 })
 
 let { $ } = args()
-let gain = num($('gain', 1))
+let gain = num($('gain', 0.18))
 
 const sr = 44100
 const duration = 1
