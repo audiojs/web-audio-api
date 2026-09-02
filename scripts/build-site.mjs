@@ -163,7 +163,7 @@ function updateHome() {
   html = html.replaceAll(/<span data-version>v[^<]+<\/span>/g, `<span data-version>v${pkg.version}</span>`)
   let [{ size }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
   if (!html.includes(' data-pack-size>')) throw new Error('index.html no longer has the data-pack-size link')
-  html = html.replace(/(<a[^>]* data-pack-size>)[^<]*(<\/a>)/, `$1${Math.round(size / 1000)} KB gzipped$2`)
+  html = html.replaceAll(/(<(a|span)[^>]* data-pack-size>)[^<]*(<\/\2>)/g, `$1${Math.round(size / 1000)} KB gzipped$3`)
   writeFileSync(path, html)
 }
 
