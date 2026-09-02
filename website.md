@@ -214,7 +214,8 @@ The homepage FAQ should answer these first, in this order:
 6. Can it run without speakers?
 7. Does it support AudioWorklets?
 8. What differs from native browser Web Audio?
-9. How does it compare with alternatives?
+9. Where does it run?
+10. How does it compare with alternatives?
 
 Implementation trivia belongs in source documentation, not the homepage FAQ.
 

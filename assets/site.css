@@ -797,7 +797,18 @@ pre code { font: inherit; }
   scrollbar-color: color-mix(in oklab, var(--color-ink) 35%, transparent) transparent;
 }
 
-.table-note, .faq .table-note {
+/* formats by family: a term column and its list */
+.format-list {
+  margin: var(--space-md) 0 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.format-list dt { color: var(--color-ink); font-weight: 600; }
+.format-list dd { margin: 0; }
+
+.table-note, .faq p.table-note {
   margin: var(--space-md) 0 0;
   color: var(--color-muted);
   font-size: var(--text-xs);
@@ -805,7 +816,6 @@ pre code { font: inherit; }
 
 table {
   width: 100%;
-  min-width: 62rem;
   table-layout: fixed;
   border-collapse: collapse;
   color: var(--color-body);
@@ -839,10 +849,11 @@ thead th {
   font-weight: 700;
 }
 
-table.bench {
-  min-width: 0;
-  margin-block-start: var(--space-md);
-}
+/* a framed table keeps readable columns and scrolls on phones; the alternatives ask for more */
+.table-scroll table { min-width: 36rem; }
+.comparison table { min-width: 62rem; }
+
+table.bench { margin-block-start: var(--space-md); }
 
 table.bench td { font-variant-numeric: tabular-nums; }
 tbody th { color: var(--color-ink); }

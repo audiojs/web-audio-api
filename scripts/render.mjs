@@ -6,7 +6,8 @@
 //   home-examples  the catalogue: sounding examples drawn from their own offline
 //                  render, input and API examples wearing a designed grille
 // Everything is produced by web-audio-api in Node; the grilles are the only hand-drawn marks.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import rfft from 'fourier-transform'
@@ -276,7 +277,6 @@ async function thumb(id) {
 
 // Run the hero file against a recording context: every connect() it makes is
 // kept, then the same context renders its output.
-let runs = 0
 export async function runHero(source, seconds) {
   let probe = new OfflineAudioContext(1, 1, RATE)
   let proto = probe.createGain()
@@ -287,14 +287,17 @@ export async function runHero(source, seconds) {
     resume() { return Promise.resolve() }
     close() { return Promise.resolve() }
   }
-  // modules are cached by URL; a fresh fragment on the shim and the source runs both again
-  let tag = '#' + runs++
-  let shim = 'data:text/javascript,export const AudioContext = globalThis.__recordingAudioContext' + tag
+  // the source and a shim standing in for the package, as files: every runtime imports files, and Bun
+  // hands back an empty module for a data: URL; modules are cached by URL, so a fresh directory runs both again
+  let dir = mkdtempSync(join(tmpdir(), 'hero-'))
+  writeFileSync(join(dir, 'web-audio-api.js'), 'export const AudioContext = globalThis.__recordingAudioContext\n')
+  writeFileSync(join(dir, 'hero.js'), source.replace(/(['"])web-audio-api\1/, "'./web-audio-api.js'"))
   let edges
   try {
-    edges = await recordConnections(proto, () => import('data:text/javascript,' + encodeURIComponent(source.replace(/(['"])web-audio-api\1/, `'${shim}'`)) + tag))
+    edges = await recordConnections(proto, () => import(pathToFileURL(join(dir, 'hero.js')).href))
   } finally {
     delete globalThis.__recordingAudioContext
+    rmSync(dir, { recursive: true, force: true })
   }
   if (!contexts.length) throw new Error(`${HERO} never constructed an AudioContext`)
   let audio = await contexts[0].startRendering()

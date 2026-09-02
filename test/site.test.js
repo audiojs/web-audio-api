@@ -121,7 +121,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(!dialog.querySelector('.detail-seo'), 'SEO text never rides the modal')
   is(document.querySelectorAll('[role="tab"]').length, 0)
   let questions = [...document.querySelectorAll('.faq summary')].map(node => node.textContent.trim())
-  for (let expected of ['Is it fast enough for realtime?', 'How do speakers and mics work?', 'Which formats can it decode?', 'How heavy is it?', 'Does Tone.js work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'What differs from a browser?', 'How does it compare to alternatives?']) ok(questions.includes(expected), expected)
+  for (let expected of ['Is it fast enough for realtime?', 'How do speakers and mics work?', 'Which formats can it decode?', 'How heavy is it?', 'Do Tone.js and other libraries work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'Where does it run?', 'What differs from a browser?', 'How does it compare to alternatives?']) ok(questions.includes(expected), expected)
 })
 
 test('every CLI option schema matches its source and --help output', () => {
@@ -684,8 +684,8 @@ test('FAQ uses scoped adapter links, practical code, and broader decoder context
   let document = documentOf('index.html')
   ok(document.querySelector('a[href="https://github.com/audiojs/speaker"] code').textContent.includes('@audio/speaker'))
   ok(document.querySelector('a[href="https://github.com/audiojs/mic"] code').textContent.includes('@audio/mic'))
-  ok(document.body.textContent.includes('broader and more predictable'))
-  for (let question of ['Does Tone.js work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?']) {
+  ok(document.body.textContent.includes('does not vary by browser or operating system'))
+  for (let question of ['Do Tone.js and other libraries work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?']) {
     let details = [...document.querySelectorAll('.faq details')].find(item => item.querySelector('summary').textContent === question)
     ok(details.querySelector('pre > code.language-javascript'), `${question} code`)
   }

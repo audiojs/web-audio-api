@@ -35,7 +35,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: deno run --allow-read --allow-env test/index.js
+      - run: deno run --allow-read --allow-env --allow-write=/tmp test/index.js
 
   bun:
     runs-on: ubuntu-latest
