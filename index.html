@@ -238,9 +238,9 @@ setTimeout(() =&gt; ctx.close(), 6000)</code></pre>
               <tr><th scope="row">8-voice polyphony</th><td>4.1 ms (244&#215;)</td><td>1.5 ms (667&#215;)</td></tr>
             </tbody>
           </table></div></details>
-        <details><summary>How does audio I/O work?</summary><div><p><a href="https://github.com/audiojs/speaker"><code>@audio/speaker</code></a> provides the default output device. Microphone examples use the optional <a href="https://github.com/audiojs/mic"><code>@audio/mic</code></a> adapter, then feed PCM into a <code>MediaStreamTrack</code>. You can also set <code>sinkId</code> to any Node writable stream.</p></div></details>
+        <details><summary>How do speakers and mics work?</summary><div><p><a href="https://github.com/audiojs/speaker"><code>@audio/speaker</code></a> provides the default output device. Microphone examples use the optional <a href="https://github.com/audiojs/mic"><code>@audio/mic</code></a> adapter, then feed PCM into a <code>MediaStreamTrack</code>. You can also set <code>sinkId</code> to any Node writable stream.</p></div></details>
         <details><summary>Which formats can it decode?</summary><div><p><code>decodeAudioData()</code> uses <a href="https://github.com/audiojs/decode"><code>@audio/decode</code></a>. Its codec and container coverage is broader and more predictable than the native <code>decodeAudioData()</code> set in a typical browser, which varies by browser and operating system. Codecs are detected and loaded on demand for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, QOA, WebM, WMA, AC-3, DTS, tracker modules, DSD, and more. Supported tracks can also be extracted from MP4, MOV, MKV, WebM, and AVI without FFmpeg or native bindings. Codec packages carry their own licences.</p></div></details>
-        <details><summary>How big is the install?</summary><div><p>The engine core is 208 KB unpacked; the package also ships all 46 runnable examples, so <code>npx web-audio-api metronome</code> works with no install. Codecs load on demand through <code>@audio/decode</code>, typedefs ship in the package, and the project has been maintained since 2013.</p></div></details>
+        <details><summary>How do I get it?</summary><div><p><code>npm install web-audio-api</code> brings the engine, its typings, and all 46 examples, so <code>npx web-audio-api metronome</code> plays with nothing else installed. Codecs load on demand through <a href="https://github.com/audiojs/decode"><code>@audio/decode</code></a>. From a CDN it loads as plain ESM in a browser tab or a Web Worker, where no Web Audio exists.</p><pre><code class="language-javascript">import { OfflineAudioContext } from 'https://esm.sh/web-audio-api'</code></pre></div></details>
         <details><summary>Does Tone.js work?</summary><div><p>Yes. Install the globals before dynamically importing <a href="https://github.com/Tonejs/Tone.js">Tone.js</a> so its browser checks see the Web Audio constructors.</p><pre><code class="language-javascript">import 'web-audio-api/polyfill'
 const Tone = await import('tone')
 
@@ -249,7 +249,7 @@ await ctx.resume()
 Tone.setContext(ctx)
 new Tone.Synth().toDestination()
   .triggerAttackRelease('C4', '8n')</code></pre><p>Or start Node with the polyfill already loaded, <code>node --import web-audio-api/polyfill app.js</code>, and a static <code>import * as Tone from 'tone'</code> works.</p></div></details>
-        <details><summary>Can I test audio in CI?</summary><div><p>Yes. Render in memory, then assert samples, peaks, RMS, spectra, duration, or channel count. No audio device is opened.</p><pre><code class="language-javascript">import assert from 'node:assert/strict'
+        <details><summary>How do I test audio in CI?</summary><div><p>Render in memory, then assert samples, peaks, RMS, spectra, duration, or channel count. No audio device is opened.</p><pre><code class="language-javascript">import assert from 'node:assert/strict'
 import { OfflineAudioContext } from 'web-audio-api'
 
 const ctx = new OfflineAudioContext(1, 44100, 44100)

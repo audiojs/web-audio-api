@@ -207,10 +207,10 @@ Do not flatten this into “ours wins every column.” The native Rust implement
 The homepage FAQ should answer these first, in this order:
 
 1. Is it fast enough for realtime audio?
-2. How do microphones and speakers work in Node?
+2. How do speakers and mics work in Node?
 3. Which formats can `decodeAudioData()` read?
 4. Does it run Tone.js and browser-oriented libraries?
-5. Can I test audio in CI?
+5. How do I test audio in CI?
 6. Can it run without speakers?
 7. Does it support AudioWorklets?
 8. What differs from native browser Web Audio?
