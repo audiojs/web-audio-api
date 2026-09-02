@@ -255,7 +255,7 @@ const ctx = new AudioContext()
 await ctx.resume()
 Tone.setContext(ctx)
 new Tone.Synth().toDestination()
-  .triggerAttackRelease('C4', '8n')</code></pre><p>Or start Node with the polyfill already loaded, <code>node --import web-audio-api/polyfill app.js</code>, and a static <code>import * as Tone from 'tone'</code> works.</p></div></details>
+  .triggerAttackRelease('C4', '8n')</code></pre><p>Or start Node with the polyfill already loaded, <code>node --import web-audio-api/polyfill app.js</code>, and a static <code>import * as Tone from 'tone'</code> works.</p><p class="table-note">Also checked through the polyfill: tunajs effects, smplr with its soundfonts fetched over the network, and Pizzicato once its context is resumed. soundfont-player and Howler reach for <code>XMLHttpRequest</code>, <code>navigator</code>, and HTML5 Audio, which Node does not have.</p></div></details>
         <details><summary>How do I test audio in CI?</summary><div><p>Render in memory, then assert samples, peaks, RMS, spectra, duration, or channel count. No audio device is opened.</p><pre><code class="language-javascript">import assert from 'node:assert/strict'
 import { OfflineAudioContext } from 'web-audio-api'
 
@@ -286,20 +286,23 @@ await ctx.audioWorklet.addModule(scope =&gt; {
 })
 
 const node = new AudioWorkletNode(ctx, 'pass-through')</code></pre></div></details>
-        <details><summary>Where does it run?</summary><div><p>Any JavaScript runtime with ES modules runs the engine; audio devices come from adapters, so each runtime is listed with what is verified there.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Runtime support">
+        <details><summary>Where does it run?</summary><div><p>The engine asks a runtime for ES modules, <code>EventTarget</code>, and timers; audio devices come from adapters. Each runtime is listed with what is verified there.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Runtime support">
           <table>
             <thead><tr><th scope="col">Runtime</th><th scope="col">Offline render</th><th scope="col">Speaker</th><th scope="col">Microphone</th><th scope="col">Decoding</th></tr></thead>
             <tbody>
               <tr><th scope="row">Node 18+</th><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
               <tr><th scope="row">Deno 2</th><td>Yes</td><td>Yes</td><td>Untested</td><td>Yes</td></tr>
               <tr><th scope="row">Bun</th><td>Yes</td><td>Yes</td><td>Untested</td><td>Yes</td></tr>
-              <tr><th scope="row">LLRT</th><td>Yes</td><td>No device</td><td>No</td><td>Codecs stay external</td></tr>
               <tr><th scope="row">Browser tab, Web Worker</th><td>Yes</td><td>Through the browser&#8217;s Web Audio</td><td>Untested</td><td>Yes</td></tr>
+              <tr><th scope="row">LLRT</th><td>Yes</td><td>No device</td><td>No</td><td>Untested</td></tr>
+              <tr><th scope="row">Cloudflare workerd</th><td>Yes</td><td>No device</td><td>No</td><td>Untested</td></tr>
+              <tr><th scope="row">QuickJS</th><td>Yes, with a shim</td><td>No device</td><td>No</td><td>Untested</td></tr>
+              <tr><th scope="row">JavaScriptCore</th><td>Yes, with a shim</td><td>No device</td><td>No</td><td>Untested</td></tr>
               <tr><th scope="row">Porffor</th><td>Not yet</td><td colspan="3">Cannot run the engine yet, tracked weekly</td></tr>
               <tr><th scope="row">JZ</th><td>Experimental</td><td colspan="3">JS to WASM path in progress</td></tr>
             </tbody>
           </table>
-        </div><p class="table-note">Node runs the full suite and 4,317 WPT in CI. Deno, Bun, and LLRT render offline in CI; Deno and Bun devices and decoding were checked on macOS, the browser row by loading esm.sh in Chromium. Not yet tried: Cloudflare Workers, QuickJS, Hermes, GraalJS.</p></div></details>
+        </div><p class="table-note">Node runs the full suite and 4,317 WPT in CI. Deno, Bun, and LLRT render offline in CI; Deno and Bun devices and decoding were checked on macOS, the browser row by loading esm.sh in Chromium, workerd and the bare engine shells with the engine bundled and its adapters stubbed. The shim a bare shell needs is <code>EventTarget</code>, <code>Event</code>, <code>queueMicrotask</code>, and timers. Not yet tried: Hermes, GraalJS.</p></div></details>
         <details><summary>What differs from a browser?</summary><div><p>The I/O boundary. Everything else follows the same specification: the graph API, the 128-frame render quantum, automation, and node behavior.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Browser and Node differences">
           <table>
             <thead><tr><th scope="col">Aspect</th><th scope="col">Browser</th><th scope="col">Node</th></tr></thead>
