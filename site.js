@@ -79,6 +79,36 @@ function follow(context) {
   requestAnimationFrame(frame)
 }
 
+// Each runtime mark explains itself: its tip opens under the mark on hover and focus, a click or tap
+// pins it, Escape or a press elsewhere closes it. One tip at a time; the popover rides the top layer.
+let openTip = null
+const placeTip = () => {
+  if (!openTip) return
+  let { mark, tip } = openTip, rect = mark.getBoundingClientRect()
+  tip.style.left = `${Math.max(16, Math.min(rect.left, innerWidth - tip.offsetWidth - 16))}px`
+  tip.style.top = `${rect.bottom + 8}px`
+}
+const closeTip = () => { openTip?.tip.hidePopover(); openTip = null }
+for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedby]')) {
+  let tip = document.getElementById(mark.getAttribute('aria-describedby'))
+  if (!tip?.showPopover) continue
+  let show = pinned => {
+    if (openTip && openTip.tip !== tip) closeTip()
+    if (!tip.matches(':popover-open')) tip.showPopover()
+    openTip = { mark, tip, pinned: pinned || Boolean(openTip?.pinned) }
+    placeTip()
+  }
+  let rest = () => { if (openTip?.tip === tip && !openTip.pinned) closeTip() }
+  mark.addEventListener('click', () => openTip?.tip === tip && openTip.pinned ? closeTip() : show(true))
+  mark.addEventListener('focus', () => show(false))
+  mark.addEventListener('blur', rest)
+  mark.addEventListener('pointerenter', () => show(false))
+  mark.addEventListener('pointerleave', rest)
+}
+addEventListener('pointerdown', event => { if (openTip && !event.target.closest('.hero-stack')) closeTip() })
+addEventListener('keydown', event => { if (event.key === 'Escape' && openTip) closeTip() })
+addEventListener('resize', placeTip)
+
 highlight()
 
 // Highlighting is one registry for the whole page; whenever the modal loads

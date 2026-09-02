@@ -333,8 +333,11 @@ h3 {
   gap: var(--space-2xs) var(--space-lg);
 }
 
-.hero-stack > span {
+.hero-stack > button {
   height: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
@@ -352,8 +355,29 @@ h3 {
   mix-blend-mode: multiply;
 }
 
-/* every runtime says on hover what is verified there; the ones still in the works ride along dimmed */
-.hero-stack > span[title] { cursor: help; }
+/* every runtime says what is verified there: a tip under the mark on hover and focus, pinned by a click or
+   tap, dismissed by Escape or a press elsewhere; a popover, so nothing clips it. Browsers without popovers
+   keep the tip hidden. The ones still in the works ride along dimmed. */
+.hero-stack > button { cursor: help; }
+
+.runtime-tip { display: none; }
+
+.runtime-tip:popover-open {
+  display: block;
+  position: fixed;
+  inset: auto;
+  max-width: min(22rem, 100% - 2rem);
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px var(--color-shadow);
+}
 
 .hero-stack .is-wip {
   opacity: 0.4;
@@ -1486,7 +1510,7 @@ tbody th { color: var(--color-ink); }
   .copy-icon:hover,
   .dialog-close:hover { background: var(--color-ink-3); }
   .hero-stack img { transition: filter var(--dur-short) var(--ease-out); }
-  .hero-stack > span:hover img { filter: none; }
+  .hero-stack > button:hover img { filter: none; }
   .example-filters button { transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
   .example-filters button:not([aria-pressed="true"]):hover { border-color: var(--color-ink); }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
