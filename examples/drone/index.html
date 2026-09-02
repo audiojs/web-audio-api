@@ -14,42 +14,92 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="../../assets/tokens.css">
   <link rel="stylesheet" href="../../assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Drone: web-audio-api example","description":"Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.","url":"https://audiojs.dev/web-audio-api/examples/drone/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/drone.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Drone","description":"Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.","step":[{"@type":"HowToStep","name":"Build the graph","text":"Import examples/graphs/drone.js and pass a Web Audio context."},{"@type":"HowToStep","name":"Run in Node","text":"npx web-audio-api drone C3 30s"}]}]}</script>
 </head>
 <body data-example="drone">
   <a class="skip-link" href="#demo-form">Skip to demo</a>
-  <header class="detail-actions"><a class="brand" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="corner-links"><a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a></div></header>
+  <header class="corner-action">
+    <canvas class="header-strips" aria-hidden="true"></canvas>
+    <div class="header-inner">
+    <a class="brand" href="../../" aria-label="Web Audio API home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../../#examples">Examples</a>
+      <a href="../../#faq">Questions</a>
+    </nav>
+    <div class="corner-links">
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.4</span></a>
+      <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
+      </a>
+    </div>
+    </div>
+  </header>
   <main class="example-detail">
     <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../../#generative">Generative</a><span>/</span><a href="../../#examples">Create</a></nav><h1>Drone</h1><p>Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.</p></header>
-
     <div class="detail-grid">
-      <section class="demo-panel" aria-label="Browser demo">
-        <div class="demo-stage"><div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div><div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div><div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div></div><div class="demo-results" id="demo-result"></div>
-        <form class="demo-form" id="demo-form"><div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div><div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"><p class="demo-help" id="demo-status" role="status" aria-live="polite"></p></div></form>
-      </section>
-      <section class="dialog-code code-stage" aria-label="Graph source">
-        <div class="code-tabs" role="group" aria-label="Source view"><button class="code-tab" type="button" data-pane="cli" aria-pressed="true">CLI</button><button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button></div>
-        <div class="code-pane cli-pane" id="cli-pane">
-          <div class="cli-command"><button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button><pre><code class="language-shell" id="cli-command">npx web-audio-api drone C3 30s</code></pre></div>
-          <dl class="cli-options"><div><dt><code>voice=&lt;type&gt;</code></dt><dd>tanpura, pad, shruti, or harmonic</dd></div><div><dt><code>freq=&lt;hz|note&gt;</code></dt><dd>frequency or note name in the CLI (default: 130.81)</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 300s)</dd></div></dl>
-        </div>
-        <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
-      </section>
+
+        <section class="demo-panel" aria-label="Browser demo">
+          <div class="demo-bar">
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+          </div>
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+          </div>
+          <div class="demo-results" id="demo-result"></div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+
+          </form>
+        </section>
+        <section class="dialog-code code-stage" aria-label="Graph source">
+          <div class="code-tabs" role="group" aria-label="Source view">
+            <button class="code-tab" type="button" data-pane="graph" aria-pressed="true">Graph</button>
+            <button class="code-tab" type="button" data-pane="cli" aria-pressed="false">CLI</button>
+            <button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button>
+          </div>
+          <div class="code-pane cli-pane" id="cli-pane">
+            <div class="cli-command">
+              <button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command">
+                <svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1" /></svg>
+                <svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+              </button>
+              <pre><code class="language-shell" id="cli-command">npx web-audio-api drone C3 30s</code></pre>
+            </div>
+            <dl class="cli-options" id="cli-options"><div><dt><code>voice=&lt;type&gt;</code></dt><dd>tanpura, pad, shruti, or harmonic</dd></div><div><dt><code>freq=&lt;hz|note&gt;</code></dt><dd>frequency or note name in the CLI (default: 130.81)</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 300s)</dd></div></dl>
+          </div>
+          <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
+          <div class="graph-pane dots" id="graph-pane" hidden></div>
+        </section>
+      
     </div>
-    <dl class="detail-facts"><div><dt>Graph</dt><dd>Seeded voice bank (tanpura/pad/shruti/harmonic) → Master Gain → Destination</dd></div><div><dt>Input</dt><dd>Voice, base pitch</dd></div><div><dt>Output</dt><dd>Continuous drone</dd></div></dl>
-    <section class="detail-related" aria-label="Related examples"><h2>More generative</h2><div class="example-grid">
-      <a class="example-entry" href="../sequencer/"><span class="example-number">29</span><span class="example-heading"><strong>Step sequencer</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Schedule a 16-step melody against the audio clock.</span><small class="example-tag">Create</small></a>
-      <a class="example-entry" href="../serial/"><span class="example-number">30</span><span class="example-heading"><strong>Twelve-tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.</span><small class="example-tag">Create</small></a>
-      <a class="example-entry" href="../gamelan/"><span class="example-number">31</span><span class="example-heading"><strong>Gamelan</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Schedule interlocking slendro patterns with metalophone partials and gong structure.</span><small class="example-tag">Create</small></a>
-      <a class="example-entry" href="../jazz/"><span class="example-number">32</span><span class="example-heading"><strong>Jazz</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Generate modal harmony, walking bass, plucked improvisation, and percussion.</span><small class="example-tag">Create</small></a>
+    <dl class="detail-facts"><div><dt>Input</dt><dd>Voice, base pitch</dd></div><div><dt>Output</dt><dd>Continuous drone</dd></div></dl>
+    <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
+      <a class="example-entry" href="../sequencer/"><span class="example-number">29</span><span class="example-heading"><strong>Step sequencer</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a 16-step melody against the audio clock.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M14 30L16 30M20 6L22 6M44 90L46 90M62 54L64 54M68 30L70 30M86 54L88 54M92 30L94 30" /></svg></a>
+      <a class="example-entry" href="../serial/"><span class="example-number">30</span><span class="example-heading"><strong>Twelve-tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 66L4 66M38 78L40 78M38 54L40 54M44 78L46 78M44 54L46 54M50 78L52 78M50 54L52 54M56 78L58 78M62 78L64 78M68 90L70 90M68 66L70 66M86 6L88 6M92 6L94 6" /></svg></a>
+      <a class="example-entry" href="../gamelan/"><span class="example-number">31</span><span class="example-heading"><strong>Gamelan</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule interlocking slendro patterns with metalophone partials and gong structure.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 90L4 90M2 30L4 30M8 90L10 90M8 30L10 30M14 90L16 90M20 90L22 90M20 30L22 30M26 90L28 90M26 30L28 30M32 90L34 90M32 30L34 30M38 90L40 90M38 30L40 30M44 90L46 90M44 30L46 30M50 90L52 90M56 90L58 90M56 12L58 12M62 90L64 90M62 12L64 12M68 6L70 6M74 90L76 90M74 6L76 6M80 66L82 66M86 66L88 66M92 66L94 66" /></svg></a>
+      <a class="example-entry" href="../jazz/"><span class="example-number">32</span><span class="example-heading"><strong>Jazz</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Generate modal harmony, walking bass, plucked improvisation, and percussion.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 90L4 90M2 30L4 30M8 90L10 90M8 30L10 30M14 30L16 30M14 6L16 6M20 72L22 72M20 18L22 18M26 72L28 72M26 24L28 24M32 72L34 72M32 30L34 30M38 72L40 72M38 6L40 6M44 72L46 72M44 30L46 30M50 6L52 6M50 30L52 30M56 6L58 6M56 30L58 30M62 72L64 72M62 30L64 30M68 72L70 72M68 6L70 6M74 72L76 72M74 30L76 30M80 72L82 72M80 30L82 30M86 72L88 72M86 6L88 6M92 30L94 30M92 6L94 6" /></svg></a>
     </div></section>
     <p class="detail-seo">This plays a tanpura drone in the browser: choose the tanpura, pad, shruti, or harmonic voice for a sustained meditation drone tone built from seeded, slowly drifting oscillator banks with no steps or clicks. The Node CLI renders the same drone for practice, backing a raga, or looping in the background while you work.</p>
   </main>
-  <canvas class="footer-strips" aria-hidden="true"></canvas>
-  <footer class="site-footer"><div class="footer-inner footer-columns"><a class="footer-seal" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-ink)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="footer-specs"><span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span><span><a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span></div><div class="footer-side"><a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z"/><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z"/></g></svg>audiojs</a><a href="https://github.com/sponsors/audiojs">support development</a></div></div></footer>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-left">
+        <a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z" /><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z" /></g></svg>audiojs</a>
+      </p>
+      <p class="footer-specs">
+        <span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span>
+        <span><a href="https://github.com/sponsors/audiojs">Sponsor</a>&#160;&#160;&#160;<a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span>
+      </p>
+    </div>
+  </footer>
   <script type="module" src="../browser.js"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 import { byId } from './catalog.js'
 import { controlsFor, optionsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
+import { collapseGraph, graphSVG, recordConnections, resolveGraph } from '../graph.js'
 import { init as buildProcessedBuffer } from './graphs/process-file.js'
 import { init as buildWorklet } from './graphs/worklet.js'
 
@@ -386,6 +387,19 @@ function createLatencyTracker(context, click, intervalSeconds) {
   }
 }
 
+// The highlighter files every member access under one category; a member that is called is a method
+function splitMethods() {
+  let properties = CSS.highlights?.get('property')
+  if (!properties) return
+  let methods = new Highlight()
+  for (let range of [...properties]) {
+    let node = range.endContainer
+    if (node.nodeType === Node.TEXT_NODE && node.data[range.endOffset] === '(') { properties.delete(range); methods.add(range) }
+  }
+  CSS.highlights.set('method', methods)
+}
+export const highlight = root => highlightSyntax(root).then(splitMethods).catch(() => {})
+
 async function loadCode(example, root = document) {
   let code = root.querySelector('#example-code')
   if (!code) return
@@ -396,7 +410,48 @@ async function loadCode(example, root = document) {
   } catch {
     code.textContent = `// Source could not be loaded.\n// Open examples/graphs/${example.id}.js in the repository.`
   }
-  highlightSyntax(code.closest('.code-stage')).catch(() => {})
+  // numbered like the hero's code
+  let pane = code.closest('.code-output')
+  if (pane) {
+    let gutter = pane.querySelector('.lines') || pane.insertBefore(document.createElement('span'), code)
+    gutter.className = 'lines'
+    gutter.setAttribute('aria-hidden', 'true')
+    gutter.textContent = Array.from({ length: code.textContent.split('\n').length }, (_, i) => String(i + 1).padStart(2, '0')).join('\n')
+  }
+  highlight(code.closest('.code-stage'))
+}
+
+// The graph tab: run the example's graph module against an offline context with its default
+// options, record what it connects, and draw it at its own size, zoomable with a pinch (or ctrl and the wheel)
+function zoomGraph(pane, factor) {
+  pane.dataset.zoom = Math.min(3, Math.max(0.5, Number(pane.dataset.zoom || 1) * factor))
+  let graph = pane.querySelector('.graph')
+  if (graph) graph.style.width = `${graph.getAttribute('width') * pane.dataset.zoom}px`
+}
+
+async function showGraph(id, pane) {
+  if (!pane.dataset.zoom) {
+    pane.dataset.zoom = '1'
+    pane.addEventListener('wheel', event => {
+      if (!event.ctrlKey) return
+      event.preventDefault()
+      zoomGraph(pane, event.deltaY < 0 ? 1.1 : 0.9)
+    }, { passive: false })
+  }
+  pane.innerHTML = '<p class="graph-note">Recording the graph…</p>'
+  try {
+    let { init } = await import(`./graphs/${id}.js`)
+    let options = Object.fromEntries(controlsFor(id).map(control => [control.key, control.browserValue ?? control.value]))
+    let context = new OfflineAudioContext(2, 128, 44100)
+    let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: AudioWorkletNode }))
+    let resolved = resolveGraph(edges)
+    if (!resolved.nodes.length) { pane.innerHTML = '<p class="graph-note">This example connects nothing until it runs.</p>'; return }
+    let { nodes, edges: merged, counts } = collapseGraph(resolved.nodes, resolved.edges)
+    pane.innerHTML = graphSVG(nodes, merged, `The graph ${id} connects`, counts)
+    zoomGraph(pane, 1)
+  } catch (error) {
+    pane.innerHTML = `<p class="graph-note">This graph needs a live input, so it cannot be recorded here. ${error.message}</p>`
+  }
 }
 
 export function mountExample(root, id) {
@@ -446,9 +501,9 @@ export function mountExample(root, id) {
     }))
   }
 
-  // Code loads lazily: the CLI tab is the default view
+  // The graph opens first, recorded on the spot; the code loads lazily
   let codeLoaded = false
-  let panes = { cli: find('#cli-pane'), code: find('#code-pane') }
+  let panes = { cli: find('#cli-pane'), code: find('#code-pane'), graph: find('#graph-pane') }
   let tabs = [...root.querySelectorAll('.code-tab')]
   let activatePane = name => {
     for (let tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.pane === name))
@@ -457,9 +512,10 @@ export function mountExample(root, id) {
       codeLoaded = true
       loadCode(example, root)
     }
+    if (name === 'graph' && panes.graph) showGraph(id, panes.graph)
   }
   for (let tab of tabs) tab.onclick = () => activatePane(tab.dataset.pane)
-  activatePane('cli')
+  activatePane('graph')
 
   let volume = find('#demo-volume')
   remember(volume, 'demo-volume')
@@ -550,12 +606,11 @@ export function mountExample(root, id) {
     connectOutput()
     let options = readOptions(id, form)
     options.destination = analyser
-    // The duration control lives in the CLI only now; the browser demo runs long and relies on
-    // the play/stop button, same as any other realtime instrument. Graphs that schedule a node
-    // (or worklet-driven event) per beat rather than looping a fixed voice bank still need a
-    // bounded default, or a 600s run would build thousands of nodes upfront in a live context.
+    // Duration is a browser control only where it shapes the music (a tempo ramp, a performance
+    // arc, a loop count); elsewhere the demo runs long and relies on the play/stop button, same
+    // as any other realtime instrument. Graphs that schedule a node (or worklet-driven event) per
+    // beat upfront still need a bounded default, or a 600s run would build thousands of nodes.
     let scaledDurationDefaults = {
-      sequencer: 1.75,
       continuity: 15, 'octave-illusion': 12, 'scale-illusion': 8, streaming: 15, 'zwicker-tone': 20,
     }
     if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
@@ -763,7 +818,7 @@ if (detailPage) {
   let cleanup = mountExample(document, detailPage.dataset.example)
   addEventListener('pagehide', cleanup)
 }
-highlightSyntax().catch(() => {})
+highlight()
 
 // horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
 export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = 8) {
@@ -791,5 +846,5 @@ export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize
   addEventListener('resize', paint)
 }
 
-let footerStrips = document.querySelector('.footer-strips')
-if (footerStrips) stripBand(footerStrips, false)
+for (let canvas of document.querySelectorAll('.header-strips')) stripBand(canvas, true, '--color-white')
+for (let canvas of document.querySelectorAll('.footer-strips')) stripBand(canvas, false)

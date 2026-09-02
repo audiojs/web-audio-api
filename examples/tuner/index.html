@@ -14,41 +14,92 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="../../assets/tokens.css">
   <link rel="stylesheet" href="../../assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Chromatic tuner: web-audio-api example","description":"Estimate microphone pitch, nearest note, and tuning error in cents.","url":"https://audiojs.dev/web-audio-api/examples/tuner/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/tuner.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Chromatic tuner","description":"Estimate microphone pitch, nearest note, and tuning error in cents.","step":[{"@type":"HowToStep","name":"Build the graph","text":"Import examples/graphs/tuner.js and pass a Web Audio context."},{"@type":"HowToStep","name":"Run in Node","text":"npx web-audio-api tuner 440"}]}]}</script>
 </head>
 <body data-example="tuner">
   <a class="skip-link" href="#demo-form">Skip to demo</a>
-  <header class="detail-actions"><a class="brand" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="corner-links"><a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a></div></header>
+  <header class="corner-action">
+    <canvas class="header-strips" aria-hidden="true"></canvas>
+    <div class="header-inner">
+    <a class="brand" href="../../" aria-label="Web Audio API home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../../#examples">Examples</a>
+      <a href="../../#faq">Questions</a>
+    </nav>
+    <div class="corner-links">
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.4</span></a>
+      <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
+      </a>
+    </div>
+    </div>
+  </header>
   <main class="example-detail">
     <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../../#utilities">Utilities</a><span>/</span><a href="../../#examples">Measure</a></nav><h1>Chromatic tuner</h1><p>Estimate microphone pitch, nearest note, and tuning error in cents.</p></header>
-<aside class="warning">The browser asks for microphone permission. Audio stays on this device.</aside>
     <div class="detail-grid">
-      <section class="demo-panel" aria-label="Browser demo">
-        <div class="demo-stage"><div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div><div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div><div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div></div><div class="demo-results" id="demo-result"></div>
-        <form class="demo-form" id="demo-form"><div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div><div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"><p class="demo-help" id="demo-status" role="status" aria-live="polite"></p></div></form>
-      </section>
-      <section class="dialog-code code-stage" aria-label="Graph source">
-        <div class="code-tabs" role="group" aria-label="Source view"><button class="code-tab" type="button" data-pane="cli" aria-pressed="true">CLI</button><button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button></div>
-        <div class="code-pane cli-pane" id="cli-pane">
-          <div class="cli-command"><button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button><pre><code class="language-shell" id="cli-command">npx web-audio-api tuner 440</code></pre></div>
-          <dl class="cli-options"><div><dt><code>a=&lt;hz&gt;</code></dt><dd>reference pitch for A4</dd></div><div><dt><code>rate=&lt;hz&gt;</code></dt><dd>microphone sample rate (default: 44100)</dd></div><div><dt><code>ch=&lt;number&gt;</code></dt><dd>input channels (default: 1)</dd></div><div><dt><code>bit=&lt;number&gt;</code></dt><dd>input PCM bit depth (default: 16)</dd></div><div><dt><code>backend=&lt;name&gt;</code></dt><dd>@audio/mic backend: miniaudio/auto or process</dd></div></dl>
-        </div>
-        <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
-      </section>
+
+        <section class="demo-panel" aria-label="Browser demo">
+          <div class="demo-bar">
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+          </div>
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+          </div>
+          <div class="demo-results" id="demo-result"></div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+
+          </form>
+        </section>
+        <section class="dialog-code code-stage" aria-label="Graph source">
+          <div class="code-tabs" role="group" aria-label="Source view">
+            <button class="code-tab" type="button" data-pane="graph" aria-pressed="true">Graph</button>
+            <button class="code-tab" type="button" data-pane="cli" aria-pressed="false">CLI</button>
+            <button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button>
+          </div>
+          <div class="code-pane cli-pane" id="cli-pane">
+            <div class="cli-command">
+              <button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command">
+                <svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1" /></svg>
+                <svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+              </button>
+              <pre><code class="language-shell" id="cli-command">npx web-audio-api tuner 440</code></pre>
+            </div>
+            <dl class="cli-options" id="cli-options"><div><dt><code>a=&lt;hz&gt;</code></dt><dd>reference pitch for A4</dd></div><div><dt><code>rate=&lt;hz&gt;</code></dt><dd>microphone sample rate (default: 44100)</dd></div><div><dt><code>ch=&lt;number&gt;</code></dt><dd>input channels (default: 1)</dd></div><div><dt><code>bit=&lt;number&gt;</code></dt><dd>input PCM bit depth (default: 16)</dd></div><div><dt><code>backend=&lt;name&gt;</code></dt><dd>@audio/mic backend: miniaudio/auto or process</dd></div></dl>
+          </div>
+          <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
+          <div class="graph-pane dots" id="graph-pane" hidden></div>
+        </section>
+      
     </div>
-    <dl class="detail-facts"><div><dt>Graph</dt><dd>Microphone → Analyser → Pitch detector</dd></div><div><dt>Input</dt><dd>Microphone stream</dd></div><div><dt>Output</dt><dd>Pitch, note, cents</dd></div></dl>
-    <section class="detail-related" aria-label="Related examples"><h2>More utilities</h2><div class="example-grid">
-      <a class="example-entry" href="../latency-tester/"><span class="example-number">03</span><span class="example-heading"><strong>Latency tester</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Play short clicks through the speakers and time their return through the microphone to measure round-trip latency.</span><small class="example-tag">Measure</small></a>
-      <a class="example-entry" href="../level-meter/"><span class="example-number">04</span><span class="example-heading"><strong>Level meter</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics.</span><small class="example-tag">Measure</small></a>
-      <a class="example-entry" href="../metronome/"><span class="example-number">01</span><span class="example-heading"><strong>Metronome</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small class="example-tag">Create</small></a>
+    <aside class="callout callout-warning"><p class="callout-label">Warning</p><p>The browser asks for microphone permission. Audio stays on this device.</p></aside>
+    <dl class="detail-facts"><div><dt>Input</dt><dd>Microphone stream</dd></div><div><dt>Output</dt><dd>Pitch, note, cents</dd></div></dl>
+    <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
+      <a class="example-entry" href="../latency-tester/"><span class="example-number">03</span><span class="example-heading"><strong>Latency tester</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Play short clicks through the speakers and time their return through the microphone to measure round-trip latency.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M48 48h.01M60 48h.01M58.4 54h.01M54 58.4h.01M48 60h.01M42 58.4h.01M37.6 54h.01M36 48h.01M37.6 42h.01M42 37.6h.01M48 36h.01M54 37.6h.01M58.4 42h.01M72 48h.01M68.8 60h.01M60 68.8h.01M48 72h.01M36 68.8h.01M27.2 60h.01M24 48h.01M27.2 36h.01M36 27.2h.01M48 24h.01M60 27.2h.01M68.8 36h.01M84 48h.01M79.2 66h.01M66 79.2h.01M48 84h.01M30 79.2h.01M16.8 66h.01M12 48h.01M16.8 30h.01M30 16.8h.01M48 12h.01M66 16.8h.01M79.2 30h.01M93 48h.01M87 70.5h.01M70.5 87h.01M48 93h.01M25.5 87h.01M9 70.5h.01M3 48h.01M9 25.5h.01M25.5 9h.01M48 3h.01M70.5 9h.01M87 25.5h.01" /></svg></a>
+      <a class="example-entry" href="../level-meter/"><span class="example-number">04</span><span class="example-heading"><strong>Level meter</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M21 6L45 6M51 6L75 6M21 12L45 12M51 12L75 12M21 18L45 18M51 18L75 18M21 24L45 24M51 24L75 24M21 30L45 30M51 30L75 30M21 36L45 36M51 36L75 36M21 42L45 42M51 42L75 42M21 48L45 48M51 48L75 48M21 54L45 54M51 54L75 54M21 60L45 60M51 60L75 60M21 66L45 66M51 66L75 66M21 72L45 72M51 72L75 72M21 78L45 78M51 78L75 78M21 84L45 84M51 84L75 84M21 90L45 90M51 90L75 90" /></svg></a>
+      <a class="example-entry" href="../metronome/"><span class="example-number">01</span><span class="example-heading"><strong>Metronome</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-wave" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6L3 90M9 48h.01M15 48h.01M21 48h.01M27 12L27 84M33 48h.01M39 48h.01M45 48h.01M51 12L51 84M57 48h.01M63 48h.01M69 48h.01M75 12L75 84M81 48h.01M87 48h.01M93 48h.01" /></svg></a>
     </div></section>
     <p class="detail-seo">It works as an online chromatic tuner and pitch detector: play a note into the microphone and it reports the frequency, the nearest note, and how many cents you are off. The browser demo listens live, and the Node CLI runs the identical YIN-based pitch detector against @audio/mic for tuning a guitar or any monophonic instrument from a terminal.</p>
   </main>
-  <canvas class="footer-strips" aria-hidden="true"></canvas>
-  <footer class="site-footer"><div class="footer-inner footer-columns"><a class="footer-seal" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-ink)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="footer-specs"><span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span><span><a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span></div><div class="footer-side"><a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z"/><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z"/></g></svg>audiojs</a><a href="https://github.com/sponsors/audiojs">support development</a></div></div></footer>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-left">
+        <a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z" /><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z" /></g></svg>audiojs</a>
+      </p>
+      <p class="footer-specs">
+        <span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span>
+        <span><a href="https://github.com/sponsors/audiojs">Sponsor</a>&#160;&#160;&#160;<a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span>
+      </p>
+    </div>
+  </footer>
   <script type="module" src="../browser.js"></script>
 </body>
 </html>

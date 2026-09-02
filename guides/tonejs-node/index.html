@@ -7,11 +7,28 @@
 <meta name="robots" content="index, follow"><link rel="canonical" href="https://audiojs.dev/web-audio-api/guides/tonejs-node/">
   <meta property="og:type" content="article"><meta property="og:title" content="Run Tone.js in Node and CI"><meta property="og:description" content="The exact import order, realtime recipe, and offline test."><meta property="og:url" content="https://audiojs.dev/web-audio-api/guides/tonejs-node/">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Orbitron:wght@700&amp;display=swap"><link rel="stylesheet" href="../../assets/tokens.css"><link rel="stylesheet" href="../../assets/site.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap"><link rel="stylesheet" href="../../assets/tokens.css"><link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body>
   <a class="skip-link" href="#guide">Skip to guide</a>
-  <header class="site-nav"><div class="nav-inner"><a class="brand" href="../../"><span class="brand-parent">audio JS</span><span class="brand-slash" aria-hidden="true">/</span><span>web-audio-api</span></a><nav class="desktop-nav" aria-label="Primary"><a href="../../#jobs">Use cases</a><a href="../../examples/">Examples</a><a href="../../#compatibility">Compatibility</a><a href="../../#faq">FAQ</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav><a class="nav-install" href="https://npmjs.com/package/web-audio-api">npm&nbsp;i</a><details class="mobile-nav"><summary>Menu</summary><nav aria-label="Mobile"><a href="../../">Home</a><a href="../../examples/">Examples</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a></nav></details></div></header>
+  <header class="corner-action">
+    <canvas class="header-strips" aria-hidden="true"></canvas>
+    <div class="header-inner">
+    <a class="brand" href="../../" aria-label="Web Audio API home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../../#examples">Examples</a>
+      <a href="../../#faq">Questions</a>
+    </nav>
+    <div class="corner-links">
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.4</span></a>
+      <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
+      </a>
+    </div>
+    </div>
+  </header>
   <main id="guide">
     <section class="example-head"><div class="example-head-inner"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Home</a><span aria-hidden="true">/</span><span>Guides</span><span aria-hidden="true">/</span><span>Tone.js in Node</span></nav><p class="example-kicker">Compatibility, Tone.js, Node</p><h1>Tone.js in Node</h1><p>Give Tone the browser globals it expects, then run its familiar synths and scheduling against WAA.</p></div></section>
     <article class="example-main guide-content">
@@ -46,6 +63,16 @@ assert.ok(peak &gt; 0.1)</code></pre><p>This exact integration is covered by the
       <section class="guide-section"><h2>Supported features</h2><dl class="spec-list"><div><dt>Synths</dt><dd>oscillators, envelopes, filters, effects</dd><span>Yes</span></div><div><dt>Scheduling</dt><dd>Transport, Sequence, Loop, musical time</dd><span>Yes</span></div><div><dt>Offline render</dt><dd>Tone graph into AudioBuffer</dd><span>Yes</span></div><div><dt>Browser UI</dt><dd>DOM and user-interface code</dd><span>Adapter</span></div><div><dt>Low latency</dt><dd>current synchronous worklet boundary</dd><span>See limits</span></div></dl><div class="guide-actions"><a class="primary-link" href="https://github.com/audiojs/web-audio-api#does-it-work-with-tonejs">Read the README recipe →</a><a href="../../guides/test-audio-in-ci/">Test audio in CI →</a></div></section>
     </article>
   </main>
-  <canvas class="footer-strips" aria-hidden="true"></canvas><footer class="site-footer"><div class="footer-inner"><p class="footer-statement">Tone.js<br>in Node.</p><p class="footer-audiojs"><strong>web-audio-api</strong> is part of <a href="https://audiojs.dev/">AudioJS</a>.</p><div class="footer-meta"><span>Tone.js integration, MIT</span><nav aria-label="Footer"><a href="../../examples/">Examples</a><a href="https://npmjs.com/package/web-audio-api">npm</a><a href="https://github.com/audiojs/web-audio-api">GitHub</a><a href="https://audiojs.dev/">AudioJS</a></nav></div></div></footer><script type="module" src="../../examples/browser.js"></script>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-left">
+        <a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z" /><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z" /></g></svg>audiojs</a>
+      </p>
+      <p class="footer-specs">
+        <span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span>
+        <span><a href="https://github.com/sponsors/audiojs">Sponsor</a>&#160;&#160;&#160;<a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span>
+      </p>
+    </div>
+  </footer><script type="module" src="../../examples/browser.js"></script>
 </body>
 </html>

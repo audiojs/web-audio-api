@@ -14,42 +14,93 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="../../assets/tokens.css">
   <link rel="stylesheet" href="../../assets/site.css">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareSourceCode","name":"Huggins pitch: web-audio-api example","description":"Filter one ear’s copy of identical noise through a narrow phase shift so a pitch emerges that exists in neither channel.","url":"https://audiojs.dev/web-audio-api/examples/huggins-pitch/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/huggins-pitch.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"},{"@type":"HowTo","name":"Huggins pitch","description":"Filter one ear’s copy of identical noise through a narrow phase shift so a pitch emerges that exists in neither channel.","step":[{"@type":"HowToStep","name":"Build the graph","text":"Import examples/graphs/huggins-pitch.js and pass a Web Audio context."},{"@type":"HowToStep","name":"Run in Node","text":"npx web-audio-api huggins-pitch 600 20s"}]}]}</script>
 </head>
 <body data-example="huggins-pitch">
   <a class="skip-link" href="#demo-form">Skip to demo</a>
-  <header class="detail-actions"><a class="brand" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="corner-links"><a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a></div></header>
+  <header class="corner-action">
+    <canvas class="header-strips" aria-hidden="true"></canvas>
+    <div class="header-inner">
+    <a class="brand" href="../../" aria-label="Web Audio API home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../../#examples">Examples</a>
+      <a href="../../#faq">Questions</a>
+    </nav>
+    <div class="corner-links">
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.4</span></a>
+      <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
+      </a>
+    </div>
+    </div>
+  </header>
   <main class="example-detail">
     <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../../#illusions">Illusions</a><span>/</span><a href="../../#examples">Explore</a></nav><h1>Huggins pitch</h1><p>Filter one ear’s copy of identical noise through a narrow phase shift so a pitch emerges that exists in neither channel.</p></header>
-<aside class="warning">Headphones are required; the pitch only emerges from the interaural phase difference, and the effect is subtle.</aside>
     <div class="detail-grid">
-      <section class="demo-panel" aria-label="Browser demo">
-        <div class="demo-stage"><div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div><div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div><div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div></div><div class="demo-results" id="demo-result"></div>
-        <form class="demo-form" id="demo-form"><div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div><div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"><p class="demo-help" id="demo-status" role="status" aria-live="polite"></p></div></form>
-      </section>
-      <section class="dialog-code code-stage" aria-label="Graph source">
-        <div class="code-tabs" role="group" aria-label="Source view"><button class="code-tab" type="button" data-pane="cli" aria-pressed="true">CLI</button><button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button></div>
-        <div class="code-pane cli-pane" id="cli-pane">
-          <div class="cli-command"><button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command"><svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1"/></svg><svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button><pre><code class="language-shell" id="cli-command">npx web-audio-api huggins-pitch 600 20s</code></pre></div>
-          <dl class="cli-options"><div><dt><code>freq=&lt;hz&gt;</code></dt><dd>target frequency</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 20s)</dd></div></dl>
-        </div>
-        <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
-      </section>
+
+        <section class="demo-panel" aria-label="Browser demo">
+          <div class="demo-bar">
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+          </div>
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+          </div>
+          <div class="demo-results" id="demo-result"></div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+
+          </form>
+        </section>
+        <section class="dialog-code code-stage" aria-label="Graph source">
+          <div class="code-tabs" role="group" aria-label="Source view">
+            <button class="code-tab" type="button" data-pane="graph" aria-pressed="true">Graph</button>
+            <button class="code-tab" type="button" data-pane="cli" aria-pressed="false">CLI</button>
+            <button class="code-tab" type="button" data-pane="code" aria-pressed="false">Code</button>
+          </div>
+          <div class="code-pane cli-pane" id="cli-pane">
+            <div class="cli-command">
+              <button class="icon-button copy-icon" type="button" data-copy="#cli-command" aria-label="Copy command">
+                <svg class="copy-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h11v11H8zM5 16H4V4h12v1" /></svg>
+                <svg class="check-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+              </button>
+              <pre><code class="language-shell" id="cli-command">npx web-audio-api huggins-pitch 600 20s</code></pre>
+            </div>
+            <dl class="cli-options" id="cli-options"><div><dt><code>freq=&lt;hz&gt;</code></dt><dd>target frequency</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 20s)</dd></div></dl>
+          </div>
+          <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
+          <div class="graph-pane dots" id="graph-pane" hidden></div>
+        </section>
+      
     </div>
-    <dl class="detail-facts"><div><dt>Graph</dt><dd>Noise → dry + cascaded Allpass → ChannelMerger → Destination</dd></div><div><dt>Input</dt><dd>Target frequency</dd></div><div><dt>Output</dt><dd>Binaural pitch illusion</dd></div></dl>
-    <section class="detail-related" aria-label="Related examples"><h2>More illusions</h2><div class="example-grid">
-      <a class="example-entry" href="../shepard/"><span class="example-number">11</span><span class="example-heading"><strong>Shepard tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Layer octave-spaced voices to create a pitch that appears to rise or fall forever.</span><small class="example-tag">Explore</small></a>
-      <a class="example-entry" href="../risset-rhythm/"><span class="example-number">12</span><span class="example-heading"><strong>Risset rhythm</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.</span><small class="example-tag">Explore</small></a>
-      <a class="example-entry" href="../binaural-beats/"><span class="example-number">13</span><span class="example-heading"><strong>Binaural beats</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Send nearby frequencies to opposite ears and hear their difference.</span><small class="example-tag">Explore</small></a>
-      <a class="example-entry" href="../missing-fundamental/"><span class="example-number">14</span><span class="example-heading"><strong>Missing fundamental</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">Play harmonics 2–6 while omitting the pitch the listener still perceives.</span><small class="example-tag">Explore</small></a>
+    <aside class="callout callout-warning"><p class="callout-label">Warning</p><p>Headphones are required; the pitch only emerges from the interaural phase difference, and the effect is subtle.</p></aside>
+    <dl class="detail-facts"><div><dt>Input</dt><dd>Target frequency</dd></div><div><dt>Output</dt><dd>Binaural pitch illusion</dd></div></dl>
+    <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
+      <a class="example-entry" href="../shepard/"><span class="example-number">11</span><span class="example-heading"><strong>Shepard tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Layer octave-spaced voices to create a pitch that appears to rise or fall forever.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 72L4 72M2 24L4 24M8 66L10 66M8 18L10 18M14 66L16 66M14 12L16 12M20 60L22 60M20 6L22 6M26 54L28 54M32 48L34 48M38 42L40 42M44 90L46 90M44 36L46 36M50 36L52 36M50 84L52 84M56 30L58 30M56 84L58 84M62 78L64 78M62 24L64 24M68 72L70 72M68 18L70 18M74 66L76 66M74 12L76 12M80 66L82 66M80 12L82 12M86 6L88 6M86 54L88 54M92 54L94 54" /></svg></a>
+      <a class="example-entry" href="../risset-rhythm/"><span class="example-number">12</span><span class="example-heading"><strong>Risset rhythm</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Layer tempo cycles to create a beat that appears to accelerate or decelerate forever.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-raster" viewBox="0 0 96 96" aria-hidden="true"><path d="M15 6h.01M45 6h.01M69 6h.01M93 6h.01M27 12h.01M45 12h.01M69 12h.01M93 12h.01M15 18h.01M39 18h.01M57 18h.01M75 18h.01M21 24h.01M57 24h.01M87 24h.01M21 30h.01M57 30h.01M87 30h.01M15 36h.01M45 36h.01M69 36h.01M93 36h.01M21 42h.01M45 42h.01M69 42h.01M93 42h.01M15 48h.01M39 48h.01M57 48h.01M75 48h.01M93 48h.01M15 54h.01M51 54h.01M87 54h.01M21 60h.01M51 60h.01M81 60h.01M15 66h.01M45 66h.01M69 66h.01M93 66h.01M21 72h.01M45 72h.01M69 72h.01M93 72h.01M15 78h.01M39 78h.01M57 78h.01M75 78h.01M15 84h.01M51 84h.01M87 84h.01M21 90h.01M51 90h.01M81 90h.01" /></svg></a>
+      <a class="example-entry" href="../binaural-beats/"><span class="example-number">13</span><span class="example-heading"><strong>Binaural beats</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Send nearby frequencies to opposite ears and hear their difference.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-shape" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 48L3 72M9 48L9 42M15 48L15 18M21 48L21 12M27 48L27 30M33 48L33 66M39 48L39 84M45 48L45 84M51 48L51 60M57 48L57 24M63 48L63 6M69 48L69 18M75 48h.01M81 48L81 78M87 48L87 90M93 48L93 72" /></svg></a>
+      <a class="example-entry" href="../missing-fundamental/"><span class="example-number">14</span><span class="example-heading"><strong>Missing fundamental</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Play harmonics 2–6 while omitting the pitch the listener still perceives.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-shape" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 48h.01M9 48L9 6M15 48L15 36M21 48h.01M27 48L27 54M33 48L33 60M39 48L39 54M45 48L45 54M51 48L51 42M57 48L57 42M63 48L63 36M69 48L69 36M75 48h.01M81 48L81 54M87 48L87 84M93 48L93 72" /></svg></a>
     </div></section>
     <p class="detail-seo">This renders Huggins pitch, a binaural pitch illusion: identical noise is sent to both ears, but one channel is passed through a narrow phase shift, and a faint pitch emerges that exists in neither channel alone. Headphones are required; hear it in the browser, or render the same dual-channel noise from the Node CLI.</p>
   </main>
-  <canvas class="footer-strips" aria-hidden="true"></canvas>
-  <footer class="site-footer"><div class="footer-inner footer-columns"><a class="footer-seal" href="../../" aria-label="Web Audio API home"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor"/><g fill="none" stroke="var(--color-ink)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5"/><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174"/><path d="M3.355 24.3584h41.29"/></g></svg></a><div class="footer-specs"><span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span><span><a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span></div><div class="footer-side"><a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z"/><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z"/></g></svg>audiojs</a><a href="https://github.com/sponsors/audiojs">support development</a></div></div></footer>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-left">
+        <a class="footer-brand" href="https://audiojs.dev/"><svg viewBox="0 0 80 90" aria-hidden="true"><g fill="currentColor" stroke="currentColor"><path d="M28.6572 0L45 45H0L15.8672 0H28.6572Z" /><path d="M51.3428 89.9999L35 44.9999H80L64.1328 89.9999H51.3428Z" /></g></svg>audiojs</a>
+      </p>
+      <p class="footer-specs">
+        <span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span>
+        <span><a href="https://github.com/sponsors/audiojs">Sponsor</a>&#160;&#160;&#160;<a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span>
+      </p>
+    </div>
+  </footer>
   <script type="module" src="../browser.js"></script>
 </body>
 </html>

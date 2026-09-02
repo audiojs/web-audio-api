@@ -67,7 +67,7 @@ export const exampleOptions = {
         text('to', 'bpm=<bpm|start..end>', 'To', '240', 'tempo reached by the end; blank holds the tempo', '\\d*'),
       ],
     },
-    { ...duration(600, 600), browserValue: 30, browser: false },
+    { ...duration(600, 600), browserValue: 30, min: 5, step: 5 },
     text('pattern', 'pat=<pattern>', 'Pattern', 'X-x-x-x-', 'X accent, x hit, - or . rest', '[Xx.-]+'),
     select('sound', 'sound=<preset>', 'Sound', 'classic', clickSounds, 'classic, wood, bell, beep, signal, or karatala'),
     range('hi', 'hi=<hz>', 'Accent resonance', 1900, 200, 4000, 10, 'Hz', 'classic stick accent resonance'),
@@ -199,7 +199,7 @@ export const exampleOptions = {
   sequencer: [
     range('bpm', 'bpm=<number>', 'Tempo', 140, 40, 300, 1, 'BPM', 'tempo'),
     text('pattern', 'pat=<steps>', 'Pattern', 'A4,-,C5,-,D5,-,E5,-,D5,C5,A4,-,E4,-,A4,-', 'comma-separated note names, - or . rests', '[A-Ga-g#b0-9,. -]+'),
-    { ...duration(1.75, 30), browser: false },
+    { ...duration(1.75, 30), browserValue: 7 },
   ],
   serial: [
     range('tempo', 'tempo=<bpm>', 'Tempo', 72, 30, 240, 1, 'BPM', 'approximate tempo'),
@@ -216,7 +216,7 @@ export const exampleOptions = {
   ],
   jazz: [
     range('bpm', 'bpm=<number>', 'Tempo', 84, 60, 140, 1, 'BPM', 'performance tempo (default: random 76..92)'),
-    { ...duration(270, 600), browser: false },
+    { ...duration(270, 600), browserValue: 120, min: 30, step: 10 },
   ],
   euclidean: [
     range('tempo', 'tempo=<bpm>', 'Tempo', 120, 40, 300, 1, 'BPM', 'step tempo'),

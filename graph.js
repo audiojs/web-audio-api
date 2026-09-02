@@ -125,7 +125,7 @@ export function graphSVG(nodes, edges, label = 'Audio graph', counts = new Map()
   for (let n of nodes) (rows[layer.get(n)] ||= []).push(n)
   let box = new Map(nodes.map(n => {
     let name = n.constructor.name, count = counts.get(n) || 1
-    let sub = count > 1 ? `× ${count}` : describe[name]?.(n) ?? ''
+    let sub = count > 1 ? `${count} nodes` : describe[name]?.(n) ?? ''
     return [n, { name, sub, w: Math.max(name.length, sub.length) * CHAR + PAD * 2, h: sub ? 44 : 30 }]
   }))
   let rowWidth = rows.map(row => row.reduce((sum, n) => sum + box.get(n).w, 0) + COL_GAP * (row.length - 1))
@@ -155,5 +155,5 @@ export function graphSVG(nodes, edges, label = 'Audio graph', counts = new Map()
     let b = box.get(n)
     return `<g class="node" transform="translate(${r(b.x)} ${r(b.y)})"><rect class="card" width="${r(b.w)}" height="${b.h}" rx="8" filter="url(#${shade})"/><rect class="sheen" x="1" y="1" width="${r(b.w - 2)}" height="${b.h - 2}" rx="7"/><text x="${r(b.w / 2)}" y="${b.sub ? 18 : 19}">${escapeHTML(b.name)}</text>${b.sub ? `<text class="sub" x="${r(b.w / 2)}" y="33">${escapeHTML(b.sub)}</text>` : ''}</g>`
   })
-  return `<svg class="graph" width="${r(width)}" height="${r(height)}" viewBox="0 0 ${r(width)} ${r(height)}" role="img" aria-label="${escapeHTML(label)}: ${nodes.map(n => n.constructor.name).join(', ')}"><defs><marker id="${arrow}" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z"/></marker><filter id="${shade}" x="-20%" y="-30%" width="140%" height="190%"><feMorphology in="SourceAlpha" operator="erode" radius="3" result="thinner"/><feGaussianBlur in="thinner" stdDeviation="6" result="soft"/><feOffset in="soft" dy="7" result="cast"/><feFlood class="shadow-far" result="tint"/><feComposite in="tint" in2="cast" operator="in" result="far"/><feDropShadow class="shadow-near" in="SourceGraphic" dx="0" dy="1" stdDeviation="1" result="near"/><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge></filter></defs>${paths.join('')}${boxes.join('')}</svg>`
+  return `<svg class="graph" width="${r(width)}" height="${r(height)}" viewBox="0 0 ${r(width)} ${r(height)}" role="img" aria-label="${escapeHTML(label)}: ${nodes.map(n => n.constructor.name).join(', ')}"><defs><marker id="${arrow}" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z"/></marker><filter id="${shade}" x="-20%" y="-30%" width="140%" height="190%"><feMorphology in="SourceAlpha" operator="erode" radius="4" result="thinner"/><feGaussianBlur in="thinner" stdDeviation="9" result="soft"/><feOffset in="soft" dy="8" result="cast"/><feFlood class="shadow-far" result="tint"/><feComposite in="tint" in2="cast" operator="in" result="far"/><feDropShadow class="shadow-near" in="SourceGraphic" dx="0" dy="1.5" stdDeviation="1.5" result="near"/><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge></filter></defs>${paths.join('')}${boxes.join('')}</svg>`
 }
