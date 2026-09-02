@@ -7,9 +7,6 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 ## Docs
 
 - [Homepage](https://audiojs.dev/web-audio-api/)
-- [Move a graph from browser to Node](https://audiojs.dev/web-audio-api/guides/browser-to-node/)
-- [Test audio in CI](https://audiojs.dev/web-audio-api/guides/test-audio-in-ci/)
-- [Run Tone.js in Node](https://audiojs.dev/web-audio-api/guides/tonejs-node/)
 - [Repository](https://github.com/audiojs/web-audio-api)
 
 ## Utilities

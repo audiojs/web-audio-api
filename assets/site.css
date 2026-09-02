@@ -1,4 +1,4 @@
-/* web-audio-api: one sheet for the homepage, the example pages, and the guides.
+/* web-audio-api: one sheet for the homepage and the example pages.
    Neutral paper and ink, Inter and JetBrains Mono, every colour from tokens.css. */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -307,8 +307,7 @@ h3 {
 }
 
 /* the jobs under the lede: an en dash at the paragraph's edge, the words hanging off it */
-.hero-intro ul,
-.guide-checklist {
+.hero-intro ul {
   max-width: 34rem;
   margin: var(--space-sm) 0 0;
   padding: 0 0 0 var(--space-xs);
@@ -318,14 +317,12 @@ h3 {
   line-height: 1.6;
 }
 
-.hero-intro li,
-.guide-checklist li {
+.hero-intro li {
   display: grid;
   grid-template-columns: 1.25rem minmax(0, 1fr);
 }
 
-.hero-intro li::before,
-.guide-checklist li::before { content: "\2013"; }
+.hero-intro li::before { content: "\2013"; }
 
 /* verified engines */
 .hero-stack {
@@ -355,13 +352,13 @@ h3 {
   mix-blend-mode: multiply;
 }
 
-/* runtimes still in the works ride along, dimmed, and say so on hover */
+/* every runtime says on hover what is verified there; the ones still in the works ride along dimmed */
+.hero-stack > span[title] { cursor: help; }
+
 .hero-stack .is-wip {
   opacity: 0.4;
-  cursor: help;
   transition: opacity var(--dur-short) var(--ease-out);
 }
-
 
 .install-row {
   grid-column: 1 / 3;
@@ -998,8 +995,7 @@ tbody th { color: var(--color-ink); }
 .code-output,
 .cli-pane,
 .graph-pane,
-.cli-command pre,
-.guide-content pre {
+.cli-command pre {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--color-paper) 35%, transparent) transparent;
 }
@@ -1353,19 +1349,16 @@ tbody th { color: var(--color-ink); }
 ::highlight(boolean) { color: var(--syntax-constant); }
 
 /* ---- example pages: the modal's stage on a page of its own ---- */
-.example-detail,
-#guide {
+.example-detail {
   width: 100%;
   max-width: var(--page-max);
   margin-inline: auto;
   padding: var(--space-2xl) var(--page-gutter) var(--space-4xl);
 }
 
-.detail-head,
-.example-head-inner { max-width: 54rem; }
+.detail-head { max-width: 54rem; }
 
-.detail-crumbs,
-.breadcrumb {
+.detail-crumbs {
   display: flex;
   gap: var(--space-xs);
   color: var(--color-muted);
@@ -1373,17 +1366,14 @@ tbody th { color: var(--color-ink); }
   font-size: var(--text-xs);
 }
 
-.detail-crumbs a,
-.breadcrumb a {
+.detail-crumbs a {
   color: inherit;
   text-decoration: none;
 }
 
-.detail-crumbs a:hover,
-.breadcrumb a:hover { color: var(--color-ink); }
+.detail-crumbs a:hover { color: var(--color-ink); }
 
-.detail-head h1,
-.example-head h1 {
+.detail-head h1 {
   max-width: 20ch;
   margin: var(--space-sm) 0 0;
   color: var(--color-ink);
@@ -1395,8 +1385,7 @@ tbody th { color: var(--color-ink); }
   text-wrap: balance;
 }
 
-.detail-head > p,
-.example-head-inner > p:last-child {
+.detail-head > p {
   max-width: 34rem;
   margin: var(--space-lg) 0 0;
   color: var(--color-muted);
@@ -1426,6 +1415,9 @@ tbody th { color: var(--color-ink); }
 .callout-warning { border-color: var(--color-warning); }
 .callout-warning .callout-label { color: var(--color-warning); }
 
+/* the one short page: keep the footer at the foot */
+.not-found { min-height: calc(100dvh - 14rem); }
+
 .detail-grid {
   min-width: 0;
   margin-block-start: var(--space-xl);
@@ -1451,9 +1443,7 @@ tbody th { color: var(--color-ink); }
   border-block-end: var(--rule-hair) solid var(--color-rule);
 }
 
-.detail-facts dt,
-.example-kicker,
-.spec-list span {
+.detail-facts dt {
   color: var(--color-muted);
   font-family: var(--font-code);
   font-size: var(--text-xs);
@@ -1476,99 +1466,13 @@ tbody th { color: var(--color-ink); }
   font-weight: 700;
 }
 
-.detail-seo,
-.guide-note {
+.detail-seo {
   max-width: 68ch;
   margin: var(--space-2xl) 0 0;
   color: var(--color-muted);
   font-size: var(--text-sm);
   line-height: 1.6;
 }
-
-/* ---- guides: an example page's head, then prose ---- */
-.example-kicker { margin: var(--space-md) 0 0; }
-
-.guide-content {
-  max-width: 44rem;
-  margin-block-start: var(--space-2xl);
-  color: var(--color-body);
-  line-height: 1.6;
-}
-
-.guide-section + .guide-section { margin-block-start: var(--space-2xl); }
-
-.guide-content h2 {
-  margin: 0 0 var(--space-sm);
-  color: var(--color-ink);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.guide-content p { margin: var(--space-sm) 0; }
-.guide-note { margin-block-start: var(--space-md); }
-
-.guide-content pre {
-  margin: var(--space-md) 0;
-  padding: var(--space-lg);
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font-family: var(--font-code);
-  font-size: var(--text-sm);
-  line-height: 1.5rem;
-  font-variant-ligatures: none;
-}
-
-.guide-content code { font-family: var(--font-code); }
-
-.guide-content p code,
-.guide-content li code,
-.guide-content dd code {
-  padding: 0 var(--space-2xs);
-  border-radius: var(--radius-xs);
-  background: var(--color-paper-2);
-  font-size: 0.9em;
-}
-
-.command-line {
-  display: block;
-  margin: var(--space-md) 0;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font-size: var(--text-sm);
-}
-
-.spec-list {
-  margin: var(--space-md) 0;
-  display: grid;
-  border-block-start: var(--rule-heavy) solid var(--color-ink);
-}
-
-.spec-list > div {
-  padding-block: var(--space-sm);
-  display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr) auto;
-  gap: var(--space-md);
-  align-items: baseline;
-  border-block-end: var(--rule-hair) solid var(--color-rule);
-}
-
-.spec-list dt { color: var(--color-ink); font-weight: 600; }
-.spec-list dd { margin: 0; }
-
-.guide-actions {
-  margin-block-start: var(--space-lg);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm) var(--space-lg);
-}
-
-.guide-actions a { color: var(--color-ink); }
-.primary-link { font-weight: 600; }
 
 @media (hover: hover) and (pointer: fine) {
   .hero-stack .is-wip:hover { opacity: 1; }
@@ -1690,16 +1594,9 @@ tbody th { color: var(--color-ink); }
     row-gap: var(--space-md);
   }
   .hero-art { padding: var(--space-sm); }
-  .hero-intro ul,
-  .guide-checklist { padding-inline-start: 0; }
-  .example-detail,
-  #guide { padding-block: var(--space-xl) var(--space-2xl); }
+  .hero-intro ul { padding-inline-start: 0; }
+  .example-detail { padding-block: var(--space-xl) var(--space-2xl); }
   .detail-facts { grid-template-columns: minmax(0, 1fr); }
-  .spec-list > div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2xs);
-  }
-  .guide-content pre { padding: var(--space-md); }
   .hero-wave,
   .hero-spectrum { aspect-ratio: 400 / 64; }
   .hero-spectrum { margin-block-start: var(--space-sm); }
@@ -1767,6 +1664,11 @@ tbody th { color: var(--color-ink); }
     width: 4rem;
     height: 4rem;
   }
+}
+
+@media (max-width: 22.5rem) {
+  .corner-action nav { gap: var(--space-md); }
+  .version-link { display: none; }
 }
 
 @media (max-height: 40rem) {

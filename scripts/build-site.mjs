@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseHTML } from 'linkedom'
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { examples } from '../examples/catalog.js'
@@ -12,6 +12,7 @@ const args = new Set(process.argv.slice(2))
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const baseUrl = pkg.homepage
 const metricsPath = join(root, 'site-metrics.json')
+const sitePath = new URL(baseUrl).pathname
 
 const escapeHTML = value => String(value)
   .replaceAll('&', '&amp;')
@@ -61,13 +62,17 @@ function replaceGenerated(source, name, content) {
 // up to four same-category siblings, same job first
 const home = parseHTML(readFileSync(join(root, 'index.html'), 'utf8')).document
 
-// The homepage owns the chrome: other pages borrow its fonts, header, and footer with links made relative
+// The homepage owns the chrome: other pages borrow its fonts, icons, social card, header, and footer with links made relative
 const fromHome = selector => home.querySelector(selector) ?? (() => { throw new Error(`index.html no longer has ${selector}, which every other page borrows`) })()
+const allFromHome = selector => { let found = [...home.querySelectorAll(selector)]; if (!found.length) throw new Error(`index.html no longer has ${selector}, which every other page borrows`); return found }
 
 function chrome(rel) {
-  let relative = html => html.replaceAll('href="./"', `href="${rel}"`).replaceAll('href="#', `href="${rel}#`)
+  let relative = html => html.replaceAll('href="./', `href="${rel}`).replaceAll('href="#', `href="${rel}#`)
+  let lines = nodes => nodes.map(node => relative(node.outerHTML)).join('\n  ')
   return {
-    fonts: fromHome('link[rel="stylesheet"][href^="https://fonts.googleapis.com"]').outerHTML,
+    fonts: lines(allFromHome('link[rel="preload"][as="font"]')),
+    icons: lines([fromHome('link[rel="icon"]'), fromHome('link[rel="apple-touch-icon"]')]),
+    card: lines(allFromHome('meta[property^="og:image"], meta[name="twitter:card"], meta[name="theme-color"]')),
     header: relative(fromHome('header.corner-action').outerHTML),
     footer: relative(fromHome('footer.site-footer').outerHTML),
   }
@@ -98,34 +103,21 @@ function relatedHTML(example) {
 
 
 function examplePage(example) {
-  let { fonts, header, footer } = chrome('../../')
+  let { fonts, icons, card, header, footer } = chrome('../../')
   // one callout, in the manner of GitHub's: the warning if there is one, else the runtime note
   let callout = example.warning
     ? `    <aside class="callout callout-warning"><p class="callout-label">Warning</p><p>${escapeHTML(example.warning)}</p></aside>\n`
     : example.note ? `    <aside class="callout"><p class="callout-label">Note</p><p>${escapeHTML(example.note)}</p></aside>\n` : ''
   let schema = JSON.stringify({
     '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'SoftwareSourceCode',
-        name: `${example.title}: web-audio-api example`,
-        description: example.description,
-        url: `${baseUrl}examples/${example.id}/`,
-        codeRepository: `https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/${example.id}.js`,
-        programmingLanguage: 'JavaScript',
-        runtimePlatform: 'Browser, Node.js',
-        license: 'https://opensource.org/licenses/MIT',
-      },
-      {
-        '@type': 'HowTo',
-        name: example.title,
-        description: example.description,
-        step: [
-          { '@type': 'HowToStep', name: 'Build the graph', text: `Import examples/graphs/${example.id}.js and pass a Web Audio context.` },
-          { '@type': 'HowToStep', name: 'Run in Node', text: example.command },
-        ],
-      },
-    ],
+    '@type': 'SoftwareSourceCode',
+    name: `${example.title}: web-audio-api example`,
+    description: example.description,
+    url: `${baseUrl}examples/${example.id}/`,
+    codeRepository: `https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/${example.id}.js`,
+    programmingLanguage: 'JavaScript',
+    runtimePlatform: 'Browser, Node.js',
+    license: 'https://opensource.org/licenses/MIT',
   }).replaceAll('<', '\\u003c')
   return `<!doctype html>
 <html lang="en">
@@ -140,9 +132,8 @@ function examplePage(example) {
   <meta property="og:url" content="${baseUrl}examples/${example.id}/">
   <meta property="og:title" content="${escapeAttr(example.title)} | web-audio-api">
   <meta property="og:description" content="${escapeAttr(example.description)}">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  ${card}
+  ${icons}
   ${fonts}
   <link rel="stylesheet" href="../../assets/tokens.css">
   <link rel="stylesheet" href="../../assets/site.css">
@@ -165,11 +156,43 @@ ${relatedHTML(example)}${example.seo ? `    <p class="detail-seo">${escapeHTML(e
 `
 }
 
+// version and packed size come from the package itself, so the hero cannot drift from what npm ships
 function updateHome() {
   let path = join(root, 'index.html')
   let html = readFileSync(path, 'utf8')
   html = html.replaceAll(/<span data-version>v[^<]+<\/span>/g, `<span data-version>v${pkg.version}</span>`)
+  let [{ size }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  if (!html.includes(' data-pack-size>')) throw new Error('index.html no longer has the data-pack-size link')
+  html = html.replace(/(<a[^>]* data-pack-size>)[^<]*(<\/a>)/, `$1${Math.round(size / 1000)} KB gzipped$2`)
   writeFileSync(path, html)
+}
+
+// GitHub Pages serves this for any missing path under the site, so its links are absolute
+function notFoundPage() {
+  let { fonts, icons, card, header, footer } = chrome(sitePath)
+  writeFileSync(join(root, '404.html'), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Not found | web-audio-api</title>
+  <meta name="robots" content="noindex">
+  ${card}
+  ${icons}
+  ${fonts}
+  <link rel="stylesheet" href="${sitePath}assets/tokens.css">
+  <link rel="stylesheet" href="${sitePath}assets/site.css">
+</head>
+<body>
+  ${header}
+  <main class="example-detail not-found">
+    <header class="detail-head"><h1>Not found</h1><p>No page lives at this address. <a href="${sitePath}#examples">Browse the examples</a> or <a href="${sitePath}">start from the homepage</a>.</p></header>
+  </main>
+  ${footer}
+  <script type="module" src="${sitePath}examples/browser.js"></script>
+</body>
+</html>
+`)
 }
 
 function updateCatalog() {
@@ -183,22 +206,6 @@ function generatePages() {
     let dir = join(root, 'examples', example.id)
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, 'index.html'), examplePage(example))
-  }
-}
-
-// The guides are written by hand; only their fonts, header, and footer are the homepage's
-function updateGuides() {
-  let { fonts, header, footer } = chrome('../../')
-  for (let dir of readdirSync(join(root, 'guides'), { withFileTypes: true }).filter(entry => entry.isDirectory())) {
-    let path = join(root, 'guides', dir.name, 'index.html')
-    if (!existsSync(path)) continue
-    let preconnect = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    let html = readFileSync(path, 'utf8')
-      .replace(/<link rel="preconnect" href="https:\/\/fonts\.[^>]*>|<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*>/g, '')
-      .replace('<link rel="stylesheet" href="../../assets/tokens.css">', `${preconnect}${fonts}<link rel="stylesheet" href="../../assets/tokens.css">`)
-      .replace(/<header class="(?:site-nav|corner-action)">[\s\S]*?<\/header>/, header)
-      .replace(/(?:<canvas class="footer-strips"[^>]*><\/canvas>\s*)?<footer class="site-footer">[\s\S]*?<\/footer>/, footer)
-    writeFileSync(path, html)
   }
 }
 
@@ -225,9 +232,6 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 ## Docs
 
 - [Homepage](${baseUrl})
-- [Move a graph from browser to Node](${baseUrl}guides/browser-to-node/)
-- [Test audio in CI](${baseUrl}guides/test-audio-in-ci/)
-- [Run Tone.js in Node](${baseUrl}guides/tonejs-node/)
 - [Repository](https://github.com/audiojs/web-audio-api)
 
 ${sections}
@@ -238,9 +242,8 @@ function stage() {
   let target = join(root, 'build/site')
   rmSync(target, { recursive: true, force: true })
   mkdirSync(join(target, 'examples'), { recursive: true })
-  for (let file of ['index.html', 'site.js', 'syntax.js', 'graph.js', 'hero.js', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
+  for (let file of ['index.html', '404.html', 'site.js', 'syntax.js', 'graph.js', 'hero.js', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
   cpSync(join(root, 'assets'), join(target, 'assets'), { recursive: true })
-  cpSync(join(root, 'guides'), join(target, 'guides'), { recursive: true })
   for (let file of ['index.html', 'catalog.js', 'options.js', 'browser.js']) cpSync(join(root, 'examples', file), join(target, 'examples', file))
   cpSync(join(root, 'examples', 'graphs'), join(target, 'examples', 'graphs'), { recursive: true })
   for (let example of examples) {
@@ -255,7 +258,7 @@ function stage() {
 updateHome()
 updateCatalog()
 generatePages()
-updateGuides()
+notFoundPage()
 generateDiscovery()
 if (args.has('--stage')) stage()
 process.stdout.write(`Built ${examples.length} example pages, v${pkg.version}, WPT ${metrics.wptPass}/${metrics.wptPass + metrics.wptFail}\n`)

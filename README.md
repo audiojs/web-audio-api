@@ -59,23 +59,35 @@ const buffer = await ctx.startRendering()
 | [stereo-test.js](examples/stereo-test.js) | Left, right, center – `1k 1s` |
 | [metronome.js](examples/metronome.js) | Programmable stick click – `80..240 10m X-x-x-x-` |
 | [tuner.js](examples/tuner.js) | Guitar tuner – mic pitch in cents – `440` (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
+| [latency-tester.js](examples/latency-tester.js) | Round-trip latency: speakers → mic, in ms (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
+| [level-meter.js](examples/level-meter.js) | Mic RMS and peak in dBFS, fast or slow ballistics (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
 | **Illusions** | |
 | [shepard.js](examples/shepard.js) | Pitch that rises forever – `up 15s` |
 | [risset-rhythm.js](examples/risset-rhythm.js) | Beat that accelerates forever – `up 120 20s` |
 | [binaural-beats.js](examples/binaural-beats.js) | Third tone from two (headphones!) – `200 10 10s` |
 | [missing-fundamental.js](examples/missing-fundamental.js) | Your brain fills in the note – `100 3s` |
 | [beating.js](examples/beating.js) | Two close frequencies dance – `440 3 5s` |
+| [octave-illusion.js](examples/octave-illusion.js) | One tone jumps register and side (headphones!) – `400 800 2 12s` |
+| [scale-illusion.js](examples/scale-illusion.js) | Two scales split between ears, regrouped by pitch (headphones!) – `200 261.63 8s` |
+| [tritone-paradox.js](examples/tritone-paradox.js) | Up or down? Tritone pairs that refuse to decide – `0 8 1.2` |
+| [continuity.js](examples/continuity.js) | A tone sounds unbroken through noise bursts – `440 0.6 on 15s` |
+| [streaming.js](examples/streaming.js) | Two tones fuse into one stream or split into two – `240 4 15s` |
+| [huggins-pitch.js](examples/huggins-pitch.js) | A pitch that exists in neither ear (headphones!) – `600 20s` |
+| [zwicker-tone.js](examples/zwicker-tone.js) | An after-tone lingers where the notch was – `2000 3 2 20s` |
 | **Synthesis** | |
 | [subtractive-synth.js](examples/subtractive-synth.js) | Sawtooth → filter sweep → ADSR |
 | [additive.js](examples/additive.js) | Waveforms from harmonics – `square 220 16 3s` |
 | [fm-synthesis.js](examples/fm-synthesis.js) | DX7 frequency modulation – `440 2 5 3s` |
 | [karplus-strong.js](examples/karplus-strong.js) | A string plucked from noise – `A4 4s` |
+| [wavetable.js](examples/wavetable.js) | Fourier wavetables, crossfaded – `organ 220 0.3 6s` |
+| [granular.js](examples/granular.js) | Grain cloud from a seeded buffer – `0.08 15 4 10s` |
 | **Generative** | |
 | [sequencer.js](examples/sequencer.js) | Step sequencer – precise timing |
 | [serial.js](examples/serial.js) | Twelve-tone rows (Webern) – `72 30s` |
 | [gamelan.js](examples/gamelan.js) | Balinese kotekan – two parts, one melody – `120 20s` |
 | [drone.js](examples/drone.js) | Tanpura shimmer – `C3 30s` |
 | [jazz.js](examples/jazz.js) | Modal jazz – new every time |
+| [euclidean.js](examples/euclidean.js) | Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s` |
 | **API** | |
 | [speaker.js](examples/speaker.js) | Hello world |
 | [lfo.js](examples/lfo.js) | Tremolo via LFO |
@@ -88,6 +100,7 @@ const buffer = await ctx.startRendering()
 | [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout – pipe to `aplay`, `sox`, etc. |
 | [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
 | [recorder.js](examples/recorder.js) | Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
+| [reverb.js](examples/reverb.js) | Convolver with a seeded impulse response – `2 0.35 3s` |
 
 ## FAQ
 

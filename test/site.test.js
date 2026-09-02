@@ -12,13 +12,8 @@ import { buildGraph, buildProcessedBuffer, graphBuilders, stopGraph } from '../e
 const root = fileURLToPath(new URL('..', import.meta.url))
 const read = path => readFileSync(join(root, path), 'utf8')
 const pkg = JSON.parse(read('package.json'))
-const guidePages = [
-  'guides/browser-to-node/index.html',
-  'guides/test-audio-in-ci/index.html',
-  'guides/tonejs-node/index.html',
-]
 const examplePages = ['examples/index.html', ...examples.map(example => `examples/${example.id}/index.html`)]
-const htmlFiles = ['index.html', ...guidePages, ...examplePages]
+const htmlFiles = ['index.html', ...examplePages]
 
 function documentOf(path) {
   return parseHTML(read(path)).document
@@ -64,7 +59,8 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   let engines = [...document.querySelectorAll('.hero-stack > span:not(.is-wip)')].map(node => node.textContent.trim())
   is(engines.join('|'), 'Node|Deno|Bun|LLRT', 'passing engines ride the intro')
   let coming = [...document.querySelectorAll('.hero-stack > span.is-wip')]
-  is(coming.map(node => node.querySelector('img').alt).join('|'), 'Porffor|JZ', 'runtimes in the works ride along as dimmed marks')
+  is(coming.map(node => node.textContent.trim()).join('|'), 'Porffor|JZ', 'runtimes in the works ride along, dimmed and named')
+  ok([...document.querySelectorAll('.hero-stack > span')].every(node => node.title.length > 20 && node.querySelector('img').alt === ''), 'every runtime says on hover what is verified there; its mark is decorative')
   ok(coming.every(node => /work in progress/i.test(node.title)) && read('.github/workflows/porffor.yml').includes('Porffor cannot run the engine yet'), 'each says so on hover, and Porffor stays tracking-only in CI')
   ok(!document.querySelector('.site-footer .wpt-badge'), 'no badge in the footer')
   ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
@@ -78,7 +74,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   is(document.querySelector('.install-command code').textContent.trim(), 'npm install web-audio-api')
   is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
   ok(!document.body.textContent.includes('Basic usage'))
-  is(document.querySelector('.hero-spec a[href="https://packagephobia.com/result?p=web-audio-api"]').textContent, '137 KB gzipped', 'size leads to packagephobia')
+  ok(/^\d{2,3} KB gzipped$/.test(document.querySelector('.hero-spec a[href="https://packagephobia.com/result?p=web-audio-api"][data-pack-size]').textContent), 'packed size leads to packagephobia')
   is(document.querySelector('.site-footer a[href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE"]').textContent, 'MIT', 'MIT leads to the license')
   ok(document.querySelector('.site-footer a[href="https://github.com/krishnized/license"]'), 'krishnized dedication rides the footer')
   ok(document.querySelector('.site-footer').textContent.includes('2013'), 'footer carries since 2013')
@@ -164,19 +160,39 @@ test('package, decoder, README, and homepage agree', () => {
   for (let example of examples) ok(sitemap.includes(`${pkg.homepage}examples/${example.id}/`), `${example.id} sitemap URL`)
 })
 
-test('homepage, guides, and example pages share the AudioJS favicon', () => {
+test('homepage and example pages share the AudioJS favicon', () => {
   let homeIcons = documentOf('index.html').querySelectorAll('link[rel="icon"]')
   is(homeIcons.length, 1, 'homepage: one favicon')
   let homeIcon = homeIcons[0]
   is(homeIcon.type, 'image/svg+xml')
   ok(homeIcon.getAttribute('href').startsWith('data:image/svg+xml,'))
-  for (let path of [...guidePages, ...examplePages.slice(1)]) {
-    ok(documentOf(path).querySelector('header.corner-action .header-strips') && documentOf(path).querySelector('link[href*="JetBrains+Mono"]'), `${path}: the homepage's header and fonts`)
+  for (let path of examplePages.slice(1)) {
+    ok(documentOf(path).querySelector('header.corner-action .header-strips') && documentOf(path).querySelector('link[rel="preload"][as="font"][href$="jetbrains-mono-latin.woff2"]'), `${path}: the homepage's header and fonts`)
     let icons = documentOf(path).querySelectorAll('link[rel="icon"]')
     is(icons.length, 1, `${path}: one favicon`)
     is(icons[0].type, homeIcon.type, `${path}: favicon type`)
     is(icons[0].getAttribute('href'), homeIcon.getAttribute('href'), `${path}: favicon source`)
   }
+})
+
+test('every page carries a social card, theme colour, and touch icon; 404 wears the chrome', () => {
+  let og = documentOf('index.html').querySelector('meta[property="og:image"]').content
+  ok(og.startsWith(pkg.homepage) && og.endsWith('.png'), 'homepage og:image is an absolute PNG URL')
+  ok(existsSync(join(root, og.slice(pkg.homepage.length))), 'og:image file exists')
+  for (let path of ['index.html', '404.html', ...examplePages.slice(1)]) {
+    let doc = documentOf(path)
+    is(doc.querySelector('meta[property="og:image"]')?.content, og, `${path}: og:image`)
+    is(doc.querySelector('meta[name="twitter:card"]')?.content, 'summary_large_image', `${path}: twitter card`)
+    ok(doc.querySelector('meta[name="theme-color"]')?.content, `${path}: theme-color`)
+    let touch = doc.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href')
+    if (touch?.startsWith('/')) touch = './' + touch.slice(new URL(pkg.homepage).pathname.length)
+    ok(touch && existsSync(localTarget(path, touch)), `${path}: apple-touch-icon`)
+    ok(!doc.querySelector('link[href*="fonts.googleapis.com"]'), `${path}: fonts are self-hosted`)
+  }
+  let notFound = documentOf('404.html')
+  ok(notFound.querySelector('header.corner-action') && notFound.querySelector('footer.site-footer'), '404 borrows the chrome')
+  is(notFound.querySelector('meta[name="robots"]')?.content, 'noindex', '404 is not indexed')
+  ok(notFound.querySelector(`a[href="${new URL(pkg.homepage).pathname}#examples"]`), '404 points at the examples')
 })
 
 test('every example has a crawlable canonical detail page', () => {
@@ -590,7 +606,7 @@ test('unsafe listening examples retain explicit safety language', () => {
 
 test('code uses MicroLighter with plain-code fallback', () => {
   ok(read('syntax.js').includes('microlighter@2.1.0/dist/index.js'))
-  for (let path of ['index.html', ...guidePages]) {
+  for (let path of ['index.html']) {
     for (let code of documentOf(path).querySelectorAll('pre > code')) ok([...code.classList].some(name => name.startsWith('language-')), `${path}: language class`)
   }
 })
@@ -629,7 +645,7 @@ function deadRules(sheet, pages, scripts) {
 
 test('every stylesheet rule can match a page that loads it', () => {
   let scripts = ['examples/browser.js', 'syntax.js', 'site.js', 'graph.js', 'scripts/render.mjs', 'scripts/build-site.mjs']
-  is(deadRules('assets/site.css', ['index.html', ...guidePages, ...examplePages], scripts).join(' | '), '', 'the sheet carries no rule its pages cannot use')
+  is(deadRules('assets/site.css', ['index.html', '404.html', ...examplePages], scripts).join(' | '), '', 'the sheet carries no rule its pages cannot use')
 })
 
 test('site CSS keeps the token system and Catalogue constraints', () => {
