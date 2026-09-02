@@ -54,11 +54,12 @@ test('catalog covers every CLI and portable graph module exactly once', () => {
 
 test('homepage is only the hero, example catalogue, compact FAQ, and footer', () => {
   let document = documentOf('index.html')
-  is(document.querySelector('#hero-title strong').textContent, 'Web Audio API')
+  is(document.querySelector('#hero-title strong').textContent.replace(/\s/g, ' '), 'Web Audio API')
   is(document.querySelector('#hero-title span').textContent, 'without browser')
-  is(document.querySelector('.hero-lede').textContent, 'Your Web Audio code, cross-platform. No native bindings to build. Process files in batch, test DSP in CI, stream PCM from servers, run Tone.js and other browser libraries headless, script audio from the CLI.', 'lede states concrete jobs')
-  let pageClaims = [document.querySelector('meta[name="description"]').content, document.querySelector('meta[property="og:description"]').content, document.querySelector('.hero-lede').textContent, read('llms.txt'), read('scripts/build-site.mjs')].join(' ')
-  ok(!/no native bindings(?! to build)|no compilation|nothing to compile/i.test(pageClaims), 'copy does not deny the native speaker boundary: its binaries come prebuilt, so there is nothing to build')
+  let lede = document.querySelector('.hero-intro').textContent
+  let jobs = ['CI', 'server', 'Tone.js', 'CLI', 'batch', 'render', 'decode', 'test', 'headless', 'PCM', 'process'].filter(job => lede.toLowerCase().includes(job.toLowerCase()))
+  ok(jobs.length >= 3, `lede states concrete jobs (${jobs.join(', ') || 'none'})`)
+  ok(document.querySelectorAll('.faq a[href="https://github.com/audiojs/speaker"]').length >= 2, 'the FAQ discloses the speaker adapter the claims lean on')
   is(document.querySelectorAll('.hero-stack').length, 1, 'one engine row')
   let engines = [...document.querySelectorAll('.hero-stack > span')].map(node => node.textContent.trim())
   is(engines.join('|'), 'Node|Deno|Bun|LLRT', 'passing engines ride the intro')
@@ -116,7 +117,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(dialog.querySelector('#demo-spectrogram'), 'demo includes a spectrogram')
   ok(dialog.querySelector('.demo-spectrogram-wrap #demo-frequency-scale'), 'scale selector overlays the spectrogram')
   is(dialog.querySelectorAll('#demo-frequency-scale option').length, 3, 'linear, mel, and log scales are available')
-  ok(dialog.querySelector('.demo-runbar #demo-run .play-glyph'), 'run action is a play control in its own footer')
+  ok(dialog.querySelector('.demo-runbar #demo-run .play-glyph'), 'run action is a play control in the playback row')
   ok(dialog.querySelector('.demo-runbar #demo-volume'), 'output volume rides the runbar')
   ok(!dialog.querySelector('.detail-seo'), 'SEO text never rides the modal')
   is(document.querySelectorAll('[role="tab"]').length, 0)
@@ -132,6 +133,7 @@ test('every CLI option schema matches its source and --help output', () => {
     let documented = block ? [...block.matchAll(/\[\s*(['"`])(.+?)\1\s*,/g)].map(match => match[2]) : []
     let schema = optionsFor(example.id).map(option => option.syntax)
     is(schema.join('|'), documented.join('|'), `${example.id}: schema and CLI source`)
+    ok(!controlsFor(example.id).some(control => control.type === 'file'), `${example.id}: no file control in the browser; files stay a CLI option`)
     if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) {
       let output = execFileSync(process.execPath, [`examples/${example.id}.js`, '--help'], { cwd: root, encoding: 'utf8' })
       let section = output.match(/\nOptions:\n([\s\S]*?)(?=\n\n(?:Controls:|Note:| {2}-h, --help))/)?.[1]
@@ -266,21 +268,41 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   ok(play?.querySelector('.play-glyph') && play.querySelector('.pause-glyph'), 'one play button with both glyphs')
   ok(!document.querySelector('.hero-code [data-copy]'), 'no copy control on the hero code')
   ok(document.querySelector('.install-row > .install-command + .hero-spec') && !document.querySelector('.install-row [data-copy]'), 'the install row is the command and its figures, nothing to press')
-  is([...document.querySelectorAll('.site-footer .footer-specs > *')].map(node => node.textContent.trim().split(/[\s,]/)[0]).join(','), 'since,MIT', 'the right column runs since, licence')
-  ok(document.querySelector('.site-footer .footer-left > .footer-brand + a[href="https://github.com/sponsors/audiojs"]'), 'sponsor sits under audiojs at the left')
-  for (let file of ['site2.css', 'graph.js', 'site.js']) ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab)\(/i.test(read(file).replace(/url\(#[\w-]+\)/g, '')), `${file} takes every color from a token`)
+  is([...document.querySelectorAll('.site-footer .footer-specs > *')].map(node => node.textContent.trim().split(/[\s,]/)[0].toLowerCase()).join(','), 'since,sponsor', 'the right column runs since, then sponsor and licence')
+  ok(document.querySelector('.site-footer .footer-specs span:last-child > a[href="https://github.com/sponsors/audiojs"] + a[href$="/LICENSE"]'), 'sponsor leads the licence line at the right')
+  for (let file of ['assets/site2.css', 'graph.js', 'site.js']) ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab)\(/i.test(read(file).replace(/url\(#[\w-]+\)/g, '')), `${file} takes every color from a token`)
   ok(document.querySelector('.hero-art .graph') && document.querySelector('.hero-signal .hero-spectrum'), 'the graph rides the hero, the render rides the code')
+  let wave = document.querySelector('.hero-signal .hero-wave'), spectrum = document.querySelector('.hero-signal .hero-spectrum')
+  let grid = path => [...path.getAttribute('d').matchAll(/M([\d.]+) /g)].map(match => match[1]).join()
+  is(wave.getAttribute('viewBox'), spectrum.getAttribute('viewBox'), 'wave and spectrum share one box')
+  is(grid(wave.querySelector('.wave-peak')), grid(spectrum.querySelector('path')), 'wave and spectrum share one bar grid')
+  is(grid(wave.querySelector('.wave-rms')), grid(wave.querySelector('.wave-peak')), 'both envelopes sit on it')
+  is(wave.getAttribute('preserveAspectRatio') + spectrum.getAttribute('preserveAspectRatio'), 'nonenone', 'both fill whatever height the layout gives them')
+  let zero = path => Math.min(...[...path.getAttribute('d').matchAll(/ ([\d.]+)V([\d.]+)/g)].map(m => Math.abs(m[2] - m[1])))
+  is(zero(spectrum.querySelector('path')), 1, 'a silent bin is a one-unit dot')
+  ok(zero(wave.querySelector('.wave-peak')) >= 1, 'no wave bin is drawn thinner than that dot')
+  ok(read('site.js').includes('} 220V${(220 - Math.max(1, ') && read('site.js').includes('Math.max(0.5, level(v) * 106)'), 'the live panel keeps the same box and dot')
+  ok(read('site.js').includes('new Float32Array(100), levels = new Float32Array(100), bins = new Float32Array(100)') && read('site.js').includes('M${2 + i * 4} '), 'the live panel draws on the same grid')
   let map = JSON.parse(document.querySelector('script[type="importmap"]').textContent)
   let shim = decodeURIComponent(map.imports['web-audio-api'])
   ok(map.imports['web-audio-api'].startsWith('data:text/javascript,') && shim.includes('extends globalThis.AudioContext') && shim.includes('AnalyserNode'), 'the package name resolves to the page\'s own context, tapped for the live panel')
   ok(shim.includes('AudioNode.prototype.connect') && shim.includes('nodes ??= new Set()'), 'whatever connects stays alive with its context: Chrome collects unreferenced nodes mid-sound')
   ok(document.querySelector('#example-dialog .code-tab[data-pane="graph"]') && document.querySelector('#example-dialog #graph-pane[hidden]'), 'the modal offers a graph tab, hidden until chosen')
-  ok(document.querySelector('#example-dialog .demo-stage .demo-bar .demo-runbar #demo-run') && document.querySelector('#example-dialog .demo-bar #demo-status'), 'play and volume sit under the spectrogram with the meter, the status beneath')
+  ok(document.querySelector('#example-dialog .demo-panel > .demo-bar:first-child .demo-runbar #demo-run') && document.querySelector('#example-dialog .demo-bar #demo-status'), 'play, volume, and the meter head the demo column')
+  ok((read('assets/site2.css').match(/min-height: var\(--toolbar\)/g) || []).length === 2, 'the playback row and the tab row share one height')
+  ok(/\.dialog-code \{[^}]*contain: size/.test(read('assets/site2.css')) && /\.example-dialog \.code-output,\n\.example-dialog \.cli-pane \{[^}]*overflow-y: auto/.test(read('assets/site2.css')), 'the source column never sizes the modal; its panes scroll inside')
+  ok(document.querySelector('#example-dialog #graph-pane.dots'), 'the graph pane carries the blueprint dots')
+  ok(read('scripts/build-site.mjs').includes("cpSync(join(root, 'assets')") && read('.github/workflows/pages.yml').includes("'assets/**'"), 'the stylesheets ship from assets and changes there deploy')
+  let clicks = [...document.querySelector('[data-open-example="metronome"] .example-thumb path').getAttribute('d').matchAll(/M[\d.]+ [\d.]+(L|h\.01)/g)].map(match => match[1] === 'L' ? 'bar' : 'dot')
+  is(clicks.join(' '), Array.from({ length: 16 }, (_, k) => k % 4 ? 'dot' : 'bar').join(' '), 'the metronome thumb is a bar every fourth column')
+  ok(/@media \(40rem <= width <= 64rem\) \{[^@]*\.example-grid > :nth-child\(even\)/.test(read('assets/site2.css')), 'the two-column catalogue tweaks stay inside their range, never on phones')
   let site = read('site.js')
   for (let hook of ["'audiocontext'", 'data-run', 'graph-pane', 'recordConnections', 'collapseGraph', "'wheel'", 'getFloatTimeDomainData', 'highlightSyntax()', "highlights.set('method'"]) ok(site.includes(hook), `site.js carries ${hook}`)
-  ok(read('site2.css').includes('::highlight(method)') && read('tokens2.css').includes('--syntax-method'), 'methods have their own highlight and token')
+  ok(read('assets/site2.css').includes('.example-tag,\n.example-filters button {') && read('assets/site2.css').includes('.code-tab[aria-pressed="true"] {\n  border-block-end-color'), 'tags and filters share one pill rule; tabs underline')
+  ok(read('assets/site2.css').includes('::highlight(method)') && read('assets/tokens2.css').includes('--syntax-method'), 'methods have their own highlight and token')
   let browser = read('examples/browser.js')
   for (let hook of ["remember(frequencyScale, 'demo-frequency-scale')", "remember(volume, 'demo-volume')", 'if (!data) return']) ok(browser.includes(hook), `the demo ${hook.startsWith('remember') ? 'remembers ' + hook.slice(9, -1) : 'draws only the axis before it plays'}`)
+  ok(browser.includes('drawWaveColumn(canvas, samples)') && (browser.match(/columnStep\(\)/g) || []).length === 3, 'the live envelope and the spectrogram advance one shared column per frame')
 })
 
 test('thumbnail projections put a known signal where it belongs on the lattice', async () => {
@@ -379,6 +401,21 @@ test('every realtime or offline graph core renders finite audible samples', asyn
     ok(peak <= 1, `${id}: safety ceiling`)
     ok(energy > 1e-10, `${id}: energy`)
   }
+})
+
+test('metronome takes its ramp as bpm=start..end or as a separate to', async () => {
+  let { init } = await import('../examples/graphs/metronome.js')
+  let render = async options => {
+    let ctx = new OfflineAudioContext(1, 44100 * 2, 44100)
+    init(ctx, { sound: 'beep', duration: 2, ...options })
+    return (await ctx.startRendering()).getChannelData(0)
+  }
+  let same = (a, b) => a.length === b.length && a.every((value, index) => value === b[index])
+  let ramp = await render({ bpm: '80..160' }), held = await render({ bpm: '80' })
+  ok(same(ramp, await render({ bpm: '80', to: '160' })), 'the two fields make the same ramp as start..end')
+  ok(same(held, await render({ bpm: '80', to: '' })), 'a blank to holds the tempo')
+  ok(same(held, await render({ bpm: '80', to: 'soon' })), 'a to that is not a number holds the tempo')
+  ok(!same(ramp, held), 'the ramp is audible')
 })
 
 test('metronome presets share deterministic, distinct instrument models', async () => {
@@ -546,8 +583,46 @@ test('code uses MicroLighter with plain-code fallback', () => {
   }
 })
 
+// A rule nothing can match is dead weight: every selector must find its skeleton on a page that loads the
+// sheet, once classes the scripts add and children they build are counted as present.
+function deadRules(sheet, pages, scripts) {
+  let css = read(sheet), js = scripts.map(read).join('\n'), docs = pages.map(documentOf)
+  let rules = [], stack = [], segment = 0
+  for (let i = 0; i < css.length; i++) {
+    let c = css[i]
+    if (c === '/' && css[i + 1] === '*') { i = css.indexOf('*/', i + 2) + 1; continue }
+    if (c === '"' || c === "'") { let q = c; for (i++; i < css.length && css[i] !== q; i++) if (css[i] === '\\') i++; continue }
+    if (c === '{') { stack.push(css.slice(segment, i).replace(/\/\*[\s\S]*?\*\//g, '').trim()); segment = i + 1 }
+    else if (c === '}') { let head = stack.pop(); if (!head.startsWith('@') && !stack.some(at => /^@(keyframes|font-face|property)/.test(at))) rules.push(head); segment = i + 1 }
+    else if (c === ';') segment = i + 1
+  }
+  let skeleton = selector => selector
+    .replace(/::?[a-z-]+\([^)]*\)/gi, m => /^:(not|is|where|nth-child|nth-of-type|nth-last-child|has)\(/i.test(m) ? m : '')
+    .replace(/::[a-z-]+/gi, '')
+    .replace(/:(hover|focus|focus-visible|focus-within|active|disabled|checked|open|target|visited|empty|placeholder-shown|invalid|valid|required|enabled|link|any-link|popover-open|modal|defined)\b/gi, '')
+    .replace(/\[[^\]]*\]/g, '').trim()
+  let onPage = selector => docs.some(doc => { try { return !!doc.querySelector(selector) } catch { return true } })
+  let live = selector => {
+    let bones = skeleton(selector)
+    if (!bones || /^(:root|html|body|\*)$/.test(bones) || onPage(bones)) return true
+    let compounds = bones.split(/\s*[>+~]\s*|\s+(?![^(]*\))/).filter(Boolean).map(compound => {
+      let rest = compound.replace(/[.#]([A-Za-z_][\w-]*)/g, (m, id) => js.includes(id) ? '' : m).trim()
+      return rest.replace(/^[a-z][\w-]*$/i, '*') || '*'
+    })
+    while (compounds.length && compounds.at(-1) === '*') compounds.pop()
+    return !compounds.length || onPage(compounds.join(' '))
+  }
+  return rules.filter(head => !head.split(/,(?![^(]*\))/).some(selector => live(selector.trim())))
+}
+
+test('every stylesheet rule can match a page that loads it', () => {
+  let scripts = ['examples/browser.js', 'syntax.js']
+  is(deadRules('assets/site2.css', ['index.html'], [...scripts, 'site.js', 'graph.js', 'scripts/render.mjs']).join(' | '), '', 'site2.css carries no rule the homepage cannot use')
+  is(deadRules('assets/site.css', [...guidePages, ...examplePages], [...scripts, 'scripts/build-site.mjs']).join(' | '), '', 'site.css carries no rule the example and guide pages cannot use')
+})
+
 test('site CSS keeps the token system and Catalogue constraints', () => {
-  let css = read('site.css')
+  let css = read('assets/site.css')
   let rules = css.replace(/\/\*[\s\S]*?\*\//g, '')
   ok(css.startsWith('/* Hallmark ·'))
   ok(css.includes('macrostructure: Catalogue'))
@@ -557,18 +632,20 @@ test('site CSS keeps the token system and Catalogue constraints', () => {
   ok(!/#[0-9a-f]{3,8}\b/i.test(rules))
   ok(!/\b(?:rgb|hsl|oklch)\(/i.test(rules), 'raw colors stay in tokens')
   ok(!/font-family\s*:(?!\s*var\()/i.test(rules))
-  ok(read('tokens.css').includes('--font-display: "Geist"'))
-  ok(!read('tokens.css').includes('Orbitron'))
+  ok(read('assets/tokens.css').includes('--font-display: "Geist"'))
+  ok(!read('assets/tokens.css').includes('Orbitron'))
   ok(rules.includes('overflow-x: clip'))
   ok(rules.includes('scrollbar-gutter: stable'))
   ok(rules.includes('scrollbar-color: transparent transparent'))
-  ok(rules.includes('scrollbar-color: var(--color-muted) transparent'), 'modal scrollbar remains visible')
-  ok(rules.includes('html.modal-open { overflow: hidden; }'))
-  ok(!/\.hero\s*\{[^}]*border-block-end/s.test(rules), 'no divider before Examples')
-  ok(!/\.faq\s*\{[^}]*border-block-start/s.test(rules), 'no divider before Questions')
-  ok(/\.hero\s*\{[^}]*position:\s*relative[^}]*z-index:\s*var\(--z-base\)/s.test(rules), 'the whole hero stays above the following white field')
-  ok(/\.example-group h3\s*\{[^}]*position:\s*sticky/s.test(rules), 'category headers stick while their group scrolls')
   ok(/\.demo-panel\s*\{[^}]*position:\s*sticky/s.test(rules), 'demo panel pins beside the scrolling source column')
+  // the homepage and its modal live in the second sheet
+  let home = read('assets/site2.css').replace(/\/\*[\s\S]*?\*\//g, '')
+  ok(home.includes('scrollbar-color: color-mix(in oklab, var(--color-paper) 35%, transparent) transparent'), 'modal panes scroll on a transparent track with a visible thumb')
+  ok(home.includes('html.modal-open { overflow: hidden; }'))
+  ok(!/\.hero\s*\{[^}]*border-block-end/s.test(home), 'no divider before Examples')
+  ok(!/\.faq\s*\{[^}]*border-block-start/s.test(home), 'no divider before Questions')
+  ok(/\.example-group h3\s*\{[^}]*position:\s*sticky/s.test(home), 'category headers stick while their group scrolls')
+  ok(/\.demo-panel\s*\{[^}]*position:\s*sticky/s.test(home), 'the modal demo panel pins beside its scrolling source column')
   ok(!/(?:^|[{}])\s*\.brand\b/m.test(rules), 'home mark styles do not override guide brand links')
   ok(/\.corner-action \.brand\s*\{/.test(rules), 'home mark styles stay scoped to its header')
   ok(/\.demo-stage\s*\{[^}]*position:\s*sticky/s.test(rules), 'visualizations stick to the viewport top')

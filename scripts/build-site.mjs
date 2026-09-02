@@ -117,8 +117,8 @@ function examplePage(example) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
-  <link rel="stylesheet" href="../../tokens.css">
-  <link rel="stylesheet" href="../../site.css">
+  <link rel="stylesheet" href="../../assets/tokens.css">
+  <link rel="stylesheet" href="../../assets/site.css">
   <script type="application/ld+json">${schema}</script>
 </head>
 <body data-example="${escapeAttr(example.id)}">
@@ -208,7 +208,8 @@ function stage() {
   let target = join(root, 'build/site')
   rmSync(target, { recursive: true, force: true })
   mkdirSync(join(target, 'examples'), { recursive: true })
-  for (let file of ['index.html', 'site.css', 'site2.css', 'site.js', 'syntax.js', 'tokens.css', 'tokens2.css', 'graph.js', 'hero.js', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
+  for (let file of ['index.html', 'site.js', 'syntax.js', 'graph.js', 'hero.js', 'robots.txt', 'sitemap.xml', 'llms.txt']) cpSync(join(root, file), join(target, file))
+  cpSync(join(root, 'assets'), join(target, 'assets'), { recursive: true })
   cpSync(join(root, 'guides'), join(target, 'guides'), { recursive: true })
   for (let file of ['index.html', 'catalog.js', 'options.js', 'browser.js']) cpSync(join(root, 'examples', file), join(target, 'examples', file))
   cpSync(join(root, 'examples', 'graphs'), join(target, 'examples', 'graphs'), { recursive: true })

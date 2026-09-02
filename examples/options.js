@@ -14,9 +14,6 @@ const text = (key, syntax, label, value, description, pattern) => ({
 
 const cliOnly = (syntax, description) => ({ syntax, description, browser: false })
 
-// An audio file the browser decodes into an AudioBuffer before the graph starts; the CLI reads it from disk
-const file = (key, syntax, label, description) => ({ key, syntax, label, type: 'file', accept: 'audio/*', description })
-
 const clickSounds = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala']
 
 const duration = (value, max = Math.max(10, value)) => range(
@@ -63,13 +60,19 @@ export const exampleOptions = {
     { ...duration(1, 5), key: 'durationPerChannel', label: 'Time per channel', browser: false },
   ],
   metronome: [
-    text('bpm', 'bpm=<bpm|start..end>', 'Tempo', '80..240', 'fixed tempo or a linear tempo ramp'),
+    {
+      syntax: 'bpm=<bpm|start..end>', description: 'fixed tempo or a linear tempo ramp',
+      controls: [
+        text('bpm', 'bpm=<bpm|start..end>', 'Tempo', '80', 'tempo at the start', '\\d+'),
+        text('to', 'bpm=<bpm|start..end>', 'To', '240', 'tempo reached by the end; blank holds the tempo', '\\d*'),
+      ],
+    },
     { ...duration(600, 600), browserValue: 30, browser: false },
     text('pattern', 'pat=<pattern>', 'Pattern', 'X-x-x-x-', 'X accent, x hit, - or . rest', '[Xx.-]+'),
     select('sound', 'sound=<preset>', 'Sound', 'classic', clickSounds, 'classic, wood, bell, beep, signal, or karatala'),
     range('hi', 'hi=<hz>', 'Accent resonance', 1900, 200, 4000, 10, 'Hz', 'classic stick accent resonance'),
     range('lo', 'lo=<hz>', 'Regular resonance', 1250, 200, 4000, 10, 'Hz', 'classic stick regular resonance'),
-    file('sample', 'sample=<file>', 'Sample', 'audio file to use as the click sound instead of a preset'),
+    cliOnly('sample=<file>', 'audio file to use as the click sound instead of a preset'),
   ],
   tuner: [
     range('a4', 'a=<hz>', 'A4 reference', 440, 400, 480, 1, 'Hz', 'reference pitch for A4'),
@@ -104,7 +107,7 @@ export const exampleOptions = {
     range('bpm', 'bpm=<number>', 'Center tempo', 120, 40, 240, 1, 'BPM', 'center tempo'),
     { ...duration(20, 120), browser: false },
     select('sound', 'sound=<preset>', 'Sound', 'click', ['click', ...clickSounds], 'click (default) or a metronome preset: classic, wood, bell, beep, signal, karatala'),
-    file('sample', 'sample=<file>', 'Sample', 'use an audio file as the click sound instead of a preset'),
+    cliOnly('sample=<file>', 'use an audio file as the click sound instead of a preset'),
   ],
   'binaural-beats': [
     frequency(200, 'Carrier', 40, 1000),

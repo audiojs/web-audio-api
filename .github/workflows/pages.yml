@@ -5,12 +5,9 @@ on:
     branches: [master]
     paths:
       - 'index.html'
-      - 'site.css'
       - 'site.js'
       - 'syntax.js'
-      - 'tokens.css'
-      - 'tokens2.css'
-      - 'site2.css'
+      - 'assets/**'
       - 'graph.js'
       - 'hero.js'
       - 'robots.txt'

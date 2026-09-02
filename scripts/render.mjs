@@ -199,7 +199,8 @@ const looks = {
 }
 // how long to look, how to set the example up, and how to read it, so its idiom lands on the lattice
 const settings = {
-  metronome: { bpm: 80, pattern: 'Xxxx', range: 18 },
+  // a second and a half of eighth-note clicks at 80 bpm: a bar every fourth column, |...|...|...|...
+  metronome: { bpm: 80, pattern: 'Xxxx', range: 18, duration: 1.5 },
   impulse: { count: 1 },
   dtmf: { speed: 0.3, duration: 3.6 },
   noise: { frames: 1 },
@@ -306,13 +307,14 @@ function codeHTML(source) {
 }
 
 function artHTML(audio, seconds) {
-  let count = 200
+  // one bar system for both: 100 bars, four units apart
+  let count = 100, x = i => 2 + i * 4, width = count * 4
   let peaks = bins(audio, count, peak), levels = bins(audio, count, rms)
   let top = Math.max(...peaks) || 1
-  let layer = values => values.map((v, i) => bar(1 + i * 2, 110, Math.max(0.5, v / top * 106))).join('')
-  let wave = `<svg class="hero-wave" viewBox="0 0 ${count * 2} 220" aria-hidden="true"><path class="wave-peak" d="${layer(peaks)}"/><path class="wave-rms" d="${layer(levels)}"/></svg>`
-  let values = spectrumBins(audio, 100)
-  let spec = `<svg class="hero-spectrum" viewBox="0 0 400 64" aria-hidden="true"><path d="${values.map((v, i) => `M${2 + i * 4} 64V${r(64 - Math.max(0.5, v * 62))}`).join('')}"/></svg>`
+  let layer = values => values.map((v, i) => bar(x(i), 110, Math.max(0.5, v / top * 106))).join('')
+  let wave = `<svg class="hero-wave" viewBox="0 0 ${width} 220" preserveAspectRatio="none" aria-hidden="true"><path class="wave-peak" d="${layer(peaks)}"/><path class="wave-rms" d="${layer(levels)}"/></svg>`
+  let values = spectrumBins(audio, count)
+  let spec = `<svg class="hero-spectrum" viewBox="0 0 ${width} 220" preserveAspectRatio="none" aria-hidden="true"><path d="${values.map((v, i) => `M${x(i)} 220V${r(220 - Math.max(1, v * 106))}`).join('')}"/></svg>`
   let row = (a, b) => `<div class="art-row"><span>${a}</span><span>${b}</span></div>`
   return [`<div class="art-row"><span class="art-end">${audio.numberOfChannels} ch, ${kHz(audio.sampleRate)}</span></div>`, wave, row('0 s', `${seconds} s`), spec, row('40 Hz', '16 kHz')].join('\n        ')
 }

@@ -49,13 +49,13 @@ function follow(context) {
   let peakPath = signal.querySelector('.wave-peak'), rmsPath = signal.querySelector('.wave-rms')
   let spectrumPath = signal.querySelector('.hero-spectrum path')
   let samples = new Float32Array(tap.fftSize), decibels = new Float32Array(tap.frequencyBinCount)
-  let peaks = new Float32Array(200), levels = new Float32Array(200), bins = new Float32Array(100)
-  let bar = (i, half) => `M${1 + i * 2} ${(110 - half).toFixed(1)}V${(110 + half).toFixed(1)}`
+  let peaks = new Float32Array(100), levels = new Float32Array(100), bins = new Float32Array(100)
+  let bar = (i, half) => `M${2 + i * 4} ${(110 - half).toFixed(1)}V${(110 + half).toFixed(1)}`
   let binOf = f => Math.floor(Math.log(f / 40) / Math.log(16000 / 40) * bins.length)
   // 48 dB of level under full scale, as the catalogue draws it; 80 dB of spectrum under -10 dBFS
   let level = amplitude => amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
   let strength = dB => Math.min(1, Math.max(0, (dB + 90) / 80))
-  // the envelope spans three seconds whatever the frame rate: one bin per 15 ms of clock
+  // the envelope spans three seconds whatever the frame rate: one bin per 30 ms of clock
   let step = 3000 / peaks.length, last = performance.now()
   let frame = now => {
     if (followed !== context || context.state === 'closed') return
@@ -74,7 +74,7 @@ function follow(context) {
       let k = binOf(bin * context.sampleRate / tap.fftSize)
       if (k >= 0 && k < bins.length) bins[k] = Math.max(bins[k], decibels[bin])
     }
-    spectrumPath.setAttribute('d', Array.from(bins, (dB, i) => `M${2 + i * 4} 64V${(64 - Math.max(0.5, strength(dB) * 62)).toFixed(1)}`).join(''))
+    spectrumPath.setAttribute('d', Array.from(bins, (dB, i) => `M${2 + i * 4} 220V${(220 - Math.max(1, strength(dB) * 106)).toFixed(1)}`).join(''))
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)

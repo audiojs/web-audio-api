@@ -204,13 +204,14 @@ export function createInstrument(ctx, {
 }
 
 export function init(ctx, {
-  bpm = '80..240', pattern = 'X-x-x-x-', duration = 600, sound = 'classic',
+  bpm = '80..240', to = null, pattern = 'X-x-x-x-', duration = 600, sound = 'classic',
   hi = 1900, lo = 1250, seed = 0x4d455452, sample = null,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
+  // the ramp is bpm=start..end in the CLI, or a separate `to` from the browser's second field
   let [startBpm, endBpm] = String(bpm).split('..').map(Number)
   if (!Number.isFinite(startBpm) || startBpm <= 0) startBpm = 80
-  if (!Number.isFinite(endBpm) || endBpm <= 0) endBpm = startBpm
+  if (!(endBpm > 0)) endBpm = to > 0 ? Number(to) : startBpm
   if (!pattern) pattern = 'X-x-x-x-'
   let instrument = createInstrument(ctx, { sound, hi, lo, seed, sample, destination, track: true })
   let elapsed = 0, step = 0

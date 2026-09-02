@@ -105,35 +105,6 @@ function createControls(id, container) {
       heading.append(output)
     }
     label.append(heading)
-    if (spec.type === 'file') {
-      // A drop target that is also a picker; the demo panel forwards dropped files here
-      let picker = document.createElement('span')
-      picker.className = 'file-label control-file'
-      let input = document.createElement('input')
-      input.type = 'file'; input.accept = spec.accept || 'audio/*'
-      input.name = spec.key; input.id = `control-${spec.key}`
-      let caption = document.createElement('span')
-      let clear = document.createElement('button')
-      clear.type = 'button'; clear.className = 'file-clear'; clear.textContent = 'Clear'; clear.hidden = true
-      let prompt = `Drop or choose a ${spec.label.toLowerCase()}`
-      let reflect = () => {
-        caption.textContent = input.files[0]?.name || prompt
-        clear.hidden = !input.files[0]
-        picker.classList.toggle('has-file', !!input.files[0])
-      }
-      input.addEventListener('change', reflect)
-      clear.addEventListener('click', () => {
-        input.value = ''
-        input.dispatchEvent(new Event('change', { bubbles: true }))
-      })
-      reflect()
-      picker.append(input, caption)
-      heading.append(clear)
-      label.htmlFor = input.id
-      label.append(picker)
-      container.append(label)
-      continue
-    }
     let control
     if (spec.type === 'select') {
       control = document.createElement('select')
@@ -167,7 +138,7 @@ function readOptions(id, container) {
   let options = {}
   for (let spec of controlSpecs[id] || []) {
     let input = container.elements[spec.key]
-    options[spec.key] = spec.type === 'range' ? Number(input.value) : spec.type === 'file' ? input.files?.[0] || null : input.value
+    options[spec.key] = spec.type === 'range' ? Number(input.value) : input.value
   }
   return options
 }
@@ -180,28 +151,58 @@ function sizeCanvas(canvas) {
   return changed
 }
 
+// one column per animation frame, two or three device pixels; the spectrogram and the envelope share it
+const columnStep = () => Math.max(2, Math.round(Math.min(devicePixelRatio || 1, 2) * 1.5))
+
+// the level scale of the homepage panel: 48 dB under full scale
+const level = amplitude => amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
+
+function envelopeOf(data, from = 0, to = data.length) {
+  let peak = 0, energy = 0
+  for (let index = from; index < to; index++) { let value = data[index]; peak = Math.max(peak, Math.abs(value)); energy += value * value }
+  return { peak, rms: Math.sqrt(energy / Math.max(1, to - from)) }
+}
+
+// a column of the envelope: the axis, a faint bar out to the peak, a solid one out to the rms
+function drawEnvelopeColumn(ctx, x, step, height, { peak, rms }, ink) {
+  let mid = height / 2, reach = height * 0.46
+  ctx.fillStyle = ink.axis
+  ctx.fillRect(x, Math.round(mid), step, 1)
+  ctx.fillStyle = ink.accent
+  for (let [value, alpha] of [[peak, 0.38], [rms, 1]]) {
+    let half = level(value) * reach
+    if (half < 0.5) continue
+    ctx.globalAlpha = alpha
+    ctx.fillRect(x, mid - half, step - 1, half * 2)
+  }
+  ctx.globalAlpha = 1
+}
+
+const inkOf = () => ({ axis: css('--color-rule-dark'), accent: css('--color-accent') })
+
+// the whole of a buffer as bars across the width; before anything plays there is only the axis
 function drawWave(canvas, data = null) {
   sizeCanvas(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
+  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = columnStep(), ink = inkOf()
   ctx.clearRect(0, 0, width, height)
-  ctx.strokeStyle = css('--color-rule-dark')
-  ctx.lineWidth = Math.max(1, devicePixelRatio || 1)
-  ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke()
-  // before anything plays there is only the axis
+  ctx.fillStyle = ink.axis
+  ctx.fillRect(0, Math.round(height / 2), width, 1)
   if (!data) return
-  ctx.strokeStyle = css('--color-accent')
-  ctx.lineWidth = Math.max(2, (devicePixelRatio || 1) * 1.5)
-  ctx.beginPath()
-  let length = data.length
-  let stride = Math.max(1, Math.floor(length / Math.max(256, width)))
-  let points = Math.ceil(length / stride)
-  for (let index = 0, point = 0; index < length; index += stride, point++) {
-    let x = point / Math.max(1, points - 1) * width
-    let value = data[index]
-    let y = height * (0.5 - value * 0.42)
-    if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+  let columns = Math.floor(width / step)
+  for (let k = 0; k < columns; k++) {
+    drawEnvelopeColumn(ctx, k * step, step, height, envelopeOf(data, Math.floor(k / columns * data.length), Math.floor((k + 1) / columns * data.length)), ink)
   }
-  ctx.stroke()
+}
+
+// live, in step with the spectrogram: the history slides left and the newest frame lands at the right edge
+function drawWaveColumn(canvas, samples) {
+  if (sizeCanvas(canvas)) drawWave(canvas)
+  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = columnStep()
+  if (width <= step) return drawWave(canvas)
+  ctx.globalCompositeOperation = 'copy'
+  ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
+  ctx.globalCompositeOperation = 'source-over'
+  drawEnvelopeColumn(ctx, width - step, step, height, envelopeOf(samples), inkOf())
 }
 
 function frequencyAt(row, rows, sampleRate, scale) {
@@ -226,7 +227,7 @@ function resetSpectrogram(canvas) {
 function drawSpectrogramColumn(canvas, data, sampleRate, scale) {
   if (sizeCanvas(canvas)) resetSpectrogram(canvas)
   let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
-  let step = Math.max(2, Math.round(Math.min(devicePixelRatio || 1, 2) * 1.5))
+  let step = columnStep()
   if (width <= step) { resetSpectrogram(canvas); return }
   ctx.globalAlpha = 1
   // 'copy' scrolls the transparent history left without alpha accumulation
@@ -503,7 +504,7 @@ export function mountExample(root, id) {
     if (spectrum.length !== analyser.frequencyBinCount) spectrum = new Float32Array(analyser.frequencyBinCount)
     analyser.getFloatTimeDomainData(samples)
     analyser.getFloatFrequencyData(spectrum)
-    drawWave(canvas, samples)
+    drawWaveColumn(canvas, samples)
     drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value)
     let level = rms(samples)
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
@@ -559,13 +560,11 @@ export function mountExample(root, id) {
     }
     if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
     if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = AudioWorkletNode
-    // Dropped files reach the graph as decoded AudioBuffers, the same as sample=<file> in the CLI
-    for (let [key, value] of Object.entries(options)) if (value instanceof File) options[key] = await context.decodeAudioData(await value.arrayBuffer())
     // The metronome's instrument collection plays the beats of other rhythm graphs on request;
     // building it here keeps every graph module atomic
-    if (id === 'risset-rhythm' && (options.sound !== 'click' || options.sample)) {
+    if (id === 'risset-rhythm' && options.sound !== 'click') {
       let { createInstrument } = await import('./graphs/metronome.js')
-      options.hit = createInstrument(context, { sound: options.sound, sample: options.sample, destination: analyser }).hit
+      options.hit = createInstrument(context, { sound: options.sound, destination: analyser }).hit
     }
     let { init } = await import(`./graphs/${id}.js`)
     demo = await init(context, options)
@@ -679,24 +678,6 @@ export function mountExample(root, id) {
 
   controls.hidden = fields.childElementCount === 0 && actions.childElementCount === 0
 
-  // Any file control makes the whole demo panel a drop target
-  let panel = root.querySelector('.demo-panel')
-  let dropInput = fields.querySelector('input[type="file"]')
-  let onDrag = event => {
-    if (!dropInput || ![...event.dataTransfer?.types || []].includes('Files')) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'copy'
-    panel.classList.toggle('is-dropping', event.type !== 'dragleave' && event.type !== 'drop')
-    if (event.type !== 'drop') return
-    let file = [...event.dataTransfer.files].find(item => item.type.startsWith('audio/') || /\.(wav|mp3|ogg|oga|opus|flac|m4a|aac|aiff?|webm)$/i.test(item.name))
-    if (!file) return setStatus('Drop an audio file to use it as the sample.', 'error')
-    let transfer = new DataTransfer()
-    transfer.items.add(file)
-    dropInput.files = transfer.files
-    dropInput.dispatchEvent(new Event('change', { bubbles: true }))
-  }
-  if (dropInput) for (let type of ['dragenter', 'dragover', 'dragleave', 'drop']) panel.addEventListener(type, onDrag)
-
   if (example.mode === 'node') {
     setButtonLabel(run, 'Copy command')
     setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
@@ -769,7 +750,6 @@ export function mountExample(root, id) {
     live = false
     clearTimeout(reloadTimer)
     observer.disconnect()
-    if (dropInput) for (let type of ['dragenter', 'dragover', 'dragleave', 'drop']) panel.removeEventListener(type, onDrag)
     volume?.removeEventListener('input', onVolume)
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)
