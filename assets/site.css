@@ -772,7 +772,7 @@ pre code { font: inherit; }
   padding-block: 0 var(--space-xl);
 }
 
-.faq p { max-width: 68ch; margin: 0; }
+.faq p { max-width: 68ch; &:first-of-type { margin-block-start:  0; } }
 
 .faq pre {
   max-width: 48rem;
