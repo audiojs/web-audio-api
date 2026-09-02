@@ -1,6 +1,6 @@
 # web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-[Web Audio](https://audiojs.dev/web-audio-api/): headless & cross-platform.
+Headless [Web Audio API](https://audiojs.dev/web-audio-api/) for any JS engine.
 
 * **100% [WPT](https://web-platform-tests.org/) conformance**, no native bindings, no compile.
 * **Audio in CI** – `OfflineAudioContext` renders without speakers.
