@@ -79,30 +79,36 @@ function follow(context) {
   requestAnimationFrame(frame)
 }
 
-// Each runtime mark explains itself: its tip opens under the mark on hover and focus, a click or tap
-// pins it, Escape or a press elsewhere closes it. One tip at a time; the popover rides the top layer.
-let openTip = null
+// Each runtime mark explains itself: its tip opens above the mark, or below when the top of the
+// viewport is too close, after a moment of hover and at once on focus or click; a click or tap pins it,
+// Escape or a press elsewhere closes it. One tip at a time, and while one is open or just closed the
+// next mark opens without the wait. The popover rides the top layer, placed in document coordinates
+// so it scrolls with its mark.
+const TIP_DELAY = 600
+let openTip = null, warmUntil = 0
 const placeTip = () => {
   if (!openTip) return
-  let { mark, tip } = openTip, rect = mark.getBoundingClientRect()
-  tip.style.left = `${Math.max(16, Math.min(rect.left, innerWidth - tip.offsetWidth - 16))}px`
-  tip.style.top = `${rect.bottom + 8}px`
+  let { mark, tip } = openTip, rect = mark.getBoundingClientRect(), above = rect.top - tip.offsetHeight - 8
+  tip.style.left = `${scrollX + Math.max(16, Math.min(rect.left, innerWidth - tip.offsetWidth - 16))}px`
+  tip.style.top = `${scrollY + (above >= 8 ? above : rect.bottom + 8)}px`
 }
-const closeTip = () => { openTip?.tip.hidePopover(); openTip = null }
+const closeTip = () => { openTip?.tip.hidePopover(); openTip = null; warmUntil = performance.now() + TIP_DELAY }
 for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedby]')) {
   let tip = document.getElementById(mark.getAttribute('aria-describedby'))
   if (!tip?.showPopover) continue
+  let wait = 0
   let show = pinned => {
+    clearTimeout(wait)
     if (openTip && openTip.tip !== tip) closeTip()
     if (!tip.matches(':popover-open')) tip.showPopover()
     openTip = { mark, tip, pinned: pinned || Boolean(openTip?.pinned) }
     placeTip()
   }
-  let rest = () => { if (openTip?.tip === tip && !openTip.pinned) closeTip() }
+  let rest = () => { clearTimeout(wait); if (openTip?.tip === tip && !openTip.pinned) closeTip() }
   mark.addEventListener('click', () => openTip?.tip === tip && openTip.pinned ? closeTip() : show(true))
   mark.addEventListener('focus', () => show(false))
   mark.addEventListener('blur', rest)
-  mark.addEventListener('pointerenter', () => show(false))
+  mark.addEventListener('pointerenter', () => { wait = setTimeout(() => show(false), openTip || performance.now() < warmUntil ? 0 : TIP_DELAY) })
   mark.addEventListener('pointerleave', rest)
 }
 addEventListener('pointerdown', event => { if (openTip && !event.target.closest('.hero-stack')) closeTip() })

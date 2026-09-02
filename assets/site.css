@@ -364,7 +364,7 @@ h3 {
 
 .runtime-tip:popover-open {
   display: block;
-  position: fixed;
+  position: absolute;
   inset: auto;
   max-width: min(22rem, 100% - 2rem);
   margin: 0;
@@ -784,11 +784,14 @@ pre code { font: inherit; }
   color: var(--color-paper);
 }
 
+/* the comparison scrolls sideways on a transparent track; a thin ink thumb shows as it moves, as the code panes' paper one does */
 .table-scroll {
   max-width: 100%;
   overflow: auto;
   border: var(--rule-hair) solid var(--color-rule);
   border-radius: var(--radius-lg);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-ink) 35%, transparent) transparent;
 }
 
 .table-note, .faq .table-note {
