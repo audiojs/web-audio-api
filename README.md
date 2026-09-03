@@ -1,8 +1,6 @@
 # web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-[Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation.
-
-Useful for:
+[Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation. Useful for:
 
 * **Agents and bots** – any writable stream, no audio device needed.
 * **Audio analysis** – `decodeAudioData` for 20+ formats, `AnalyserNode` as in browser.
