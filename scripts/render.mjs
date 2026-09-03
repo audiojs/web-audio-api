@@ -288,13 +288,14 @@ export async function runHero(source, seconds) {
     close() { return Promise.resolve() }
   }
   // the source and a shim standing in for the package, as files: every runtime imports files, and Bun
-  // hands back an empty module for a data: URL; modules are cached by URL, so a fresh directory runs both again
+  // hands back an empty module for a data: URL; modules are cached by URL, so a fresh directory runs both
+  // again. The extension is .mjs because a .js file outside any package is CommonJS to Node 18.
   let dir = mkdtempSync(join(tmpdir(), 'hero-'))
-  writeFileSync(join(dir, 'web-audio-api.js'), 'export const AudioContext = globalThis.__recordingAudioContext\n')
-  writeFileSync(join(dir, 'hero.js'), source.replace(/(['"])web-audio-api\1/, "'./web-audio-api.js'"))
+  writeFileSync(join(dir, 'web-audio-api.mjs'), 'export const AudioContext = globalThis.__recordingAudioContext\n')
+  writeFileSync(join(dir, 'hero.mjs'), source.replace(/(['"])web-audio-api\1/, "'./web-audio-api.mjs'"))
   let edges
   try {
-    edges = await recordConnections(proto, () => import(pathToFileURL(join(dir, 'hero.js')).href))
+    edges = await recordConnections(proto, () => import(pathToFileURL(join(dir, 'hero.mjs')).href))
   } finally {
     delete globalThis.__recordingAudioContext
     rmSync(dir, { recursive: true, force: true })
