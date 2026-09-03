@@ -159,8 +159,12 @@ function readOptions(id, container) {
   return options
 }
 
+// a phone paints its own pixels: at four or nine for each, these panels drop frames, and a dropped
+// frame is sound they never see. Its short side names it, whichever way it is held.
+const phone = () => Math.min(innerWidth, innerHeight) < 500
+
 function sizeCanvas(canvas) {
-  let rect = canvas.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, 2)
+  let rect = canvas.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, phone() ? 1 : 2)
   let width = Math.max(1, Math.round(rect.width * ratio)), height = Math.max(1, Math.round(rect.height * ratio))
   let changed = canvas.width !== width || canvas.height !== height
   if (changed) { canvas.width = width; canvas.height = height }
@@ -183,30 +187,23 @@ function columnStep(width = 0) {
 // the level scale of the homepage panel: 48 dB under full scale
 const level = amplitude => amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
 
-function envelopeOf(data, from = 0, to = data.length, stride = 1) {
-  let peak = 0, energy = 0, taken = 0
+function peakOf(data, from = 0, to = data.length, stride = 1) {
+  let peak = 0
   for (let index = from; index < to; index += stride) {
-    let value = data[index]
-    peak = Math.max(peak, Math.abs(value))
-    energy += value * value
-    taken++
+    let value = data[index] < 0 ? -data[index] : data[index]
+    if (value > peak) peak = value
   }
-  return { peak, rms: Math.sqrt(energy / Math.max(1, taken)) }
+  return peak
 }
 
-// a column of the envelope: the axis, a faint bar out to the peak, a solid one out to the rms
-function drawEnvelopeColumn(ctx, x, step, height, { peak, rms }, ink) {
-  let mid = height / 2, reach = height * 0.46
+// a column of the envelope: the axis, and one bar out to what the frame peaked at
+function drawEnvelopeColumn(ctx, x, step, height, peak, ink) {
+  let mid = Math.round(height / 2), half = level(peak) * height * 0.46
   ctx.fillStyle = ink.axis
-  ctx.fillRect(x, Math.round(mid), step, 1)
+  ctx.fillRect(x, mid, step, 1)
+  if (half < 0.5) return
   ctx.fillStyle = ink.accent
-  for (let [value, alpha] of [[peak, 0.38], [rms, 1]]) {
-    let half = level(value) * reach
-    if (half < 0.5) continue
-    ctx.globalAlpha = alpha
-    ctx.fillRect(x, mid - half, step, half * 2)
-  }
-  ctx.globalAlpha = 1
+  ctx.fillRect(x, mid - half, step, half * 2)
 }
 
 const inkOf = () => ({ axis: css('--color-rule-dark'), accent: css('--color-accent') })
@@ -221,7 +218,7 @@ function drawWave(canvas, data = null) {
   if (!data) return
   let columns = Math.floor(width / step)
   for (let k = 0; k < columns; k++) {
-    drawEnvelopeColumn(ctx, k * step, step, height, envelopeOf(data, Math.floor(k / columns * data.length), Math.floor((k + 1) / columns * data.length)), ink)
+    drawEnvelopeColumn(ctx, k * step, step, height, peakOf(data, Math.floor(k / columns * data.length), Math.floor((k + 1) / columns * data.length)), ink)
   }
 }
 
@@ -233,7 +230,7 @@ function drawWaveColumn(canvas, samples, step) {
   ctx.globalCompositeOperation = 'copy'
   ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
   ctx.globalCompositeOperation = 'source-over'
-  drawEnvelopeColumn(ctx, width - step, step, height, envelopeOf(samples, 0, samples.length, 4), inkOf())
+  drawEnvelopeColumn(ctx, width - step, step, height, peakOf(samples, 0, samples.length, 4), inkOf())
 }
 
 function frequencyAt(row, rows, sampleRate, scale) {
@@ -269,32 +266,35 @@ function rowsFor(height, bins, sampleRate, scale) {
   return binRows.rows
 }
 
-// the newest column as pixels, blitted once, rather than a filled rectangle per row
-let columnPixels = { key: '', image: null, rgb: [0, 0, 0] }
-function spectrogramColumn(ctx, height, step, data, sampleRate, scale) {
+// the newest column is a single pixel wide, painted once and stretched to the step the sweep asks
+// for: a phone writes one pixel per row of it, whatever the column's width on screen
+let columnPixels = { key: '', canvas: null, context: null, image: null, rgb: [0, 0, 0] }
+function spectrogramColumn(height, data, sampleRate, scale) {
   let tint = css('--color-accent')
-  let key = `${height}/${step}/${tint}`
+  let key = `${height}/${tint}`
   if (columnPixels.key !== key) {
+    let column = document.createElement('canvas')
+    column.width = 1
+    column.height = height
     let probe = document.createElement('canvas').getContext('2d')
     probe.fillStyle = tint
     probe.fillRect(0, 0, 1, 1)
-    columnPixels = { key, image: ctx.createImageData(step, height), rgb: [...probe.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+    let context = column.getContext('2d')
+    columnPixels = { key, canvas: column, context, image: context.createImageData(1, height), rgb: [...probe.getImageData(0, 0, 1, 1).data].slice(0, 3) }
   }
-  let { image, rgb } = columnPixels
+  let { canvas, context, image, rgb } = columnPixels
   let rows = rowsFor(height, data.length, sampleRate, scale)
   // the analyser hands back bytes over its decibel window, so the level needs no logarithm here
   for (let y = 0; y < height; y++) {
     let amount = data[rows[y]] / 255
-    let alpha = amount * amount * 255
-    for (let x = 0; x < step; x++) {
-      let index = (y * step + x) * 4
-      image.data[index] = rgb[0]
-      image.data[index + 1] = rgb[1]
-      image.data[index + 2] = rgb[2]
-      image.data[index + 3] = alpha
-    }
+    let index = y * 4
+    image.data[index] = rgb[0]
+    image.data[index + 1] = rgb[1]
+    image.data[index + 2] = rgb[2]
+    image.data[index + 3] = amount * amount * 255
   }
-  return image
+  context.putImageData(image, 0, 0)
+  return canvas
 }
 
 function drawSpectrogramColumn(canvas, data, sampleRate, scale, step) {
@@ -305,7 +305,7 @@ function drawSpectrogramColumn(canvas, data, sampleRate, scale, step) {
   ctx.globalCompositeOperation = 'copy'
   ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
   ctx.globalCompositeOperation = 'source-over'
-  ctx.putImageData(spectrogramColumn(ctx, height, step, data, sampleRate, scale), width - step, 0)
+  ctx.drawImage(spectrogramColumn(height, data, sampleRate, scale), width - step, 0, step, height)
 }
 
 function drawBufferSpectrogram(canvas, data, sampleRate, scale) {

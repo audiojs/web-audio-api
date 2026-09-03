@@ -261,7 +261,7 @@ main > *,
 /* hero.js rendered, beside its code: envelopes over time, then its spectrum, each with its axis */
 .hero-signal {
   --signal-pad: var(--space-lg);
-  padding: var(--space-xl) var(--signal-pad) 0;
+  padding: var(--space-xl) var(--signal-pad) var(--space-sm);
   display: flex;
   flex-direction: column;
   border-inline-start: var(--rule-hair) solid var(--color-rule-dark);
@@ -279,19 +279,14 @@ main > *,
 
 .art-end { margin-inline-start: auto; }
 
-/* playback pins to the panel's foot, its rule running the panel's full width */
-.hero-signal .demo-runbar {
-  background-color: var(--color-ink);
+/* playback pins to the foot of the code column, its rule running that column's full width */
+.code-col .demo-runbar {
   margin-block-start: auto;
-  margin-inline: calc(-1 * var(--signal-pad));
   padding-block: var(--space-sm);
-  padding-inline: var(--signal-pad);
+  padding-inline: var(--space-xl) var(--space-sm);
   justify-content: flex-start;
   border-block-start: var(--rule-hair) solid var(--color-rule-dark);
 }
-
-/* the gap above the rule survives the pin when the panel is exactly content-height */
-.hero-signal > .art-row:has(+ .demo-runbar) { margin-block-end: var(--space-md); }
 
 /* the first row labels the wave from inside it, so the wave starts at the panel's top edge */
 .hero-signal > .art-row:first-child {
@@ -309,6 +304,10 @@ main > *,
     repeating-linear-gradient(to right, var(--color-plot-grid) 0 var(--rule-hair), transparent var(--rule-hair) var(--space-md)),
     repeating-linear-gradient(to bottom, var(--color-plot-grid) 0 var(--rule-hair), transparent var(--rule-hair) var(--space-md));
 }
+
+/* the two plots share whatever height the code beside them asks for */
+.hero-signal .hero-wave,
+.hero-signal .hero-spectrum { flex: 1; min-height: 0; }
 
 .hero-wave,
 .hero-spectrum {
@@ -539,6 +538,8 @@ h3 {
 
 .code-col {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   position: relative;
 }
 
@@ -1225,8 +1226,9 @@ tbody th { color: var(--color-ink); }
 /* the meter leads the footer: a bar of fixed length, its reading in a column of its own;
    nothing in it moves when the text does */
 .demo-meter {
-  width: 12rem;
-  flex: none;
+  /* the bar gives way before the reading does when the footer runs out of room */
+  flex: 0 1 12rem;
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-sm);
@@ -1276,10 +1278,24 @@ tbody th { color: var(--color-ink); }
 .dialog-shell,
 .example-detail { --toolbar: 3.5rem; }
 
+.demo-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-column > .dialog-foot {
+  margin-block-start: auto;
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--z-raised);
+}
+
 .dialog-foot {
   min-height: var(--toolbar);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  padding: var(--space-2xs) var(--space-md);
+  /* play sits by the bar's own edge, the reading and status keeping the measure at the other */
+  padding-block: var(--space-2xs);
+  padding-inline: var(--space-md) var(--space-2xs);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1287,16 +1303,6 @@ tbody th { color: var(--color-ink); }
   border-block-start: var(--rule-hair) solid var(--color-rule-dark);
   background: var(--color-ink);
   color: var(--color-paper);
-}
-
-/* in the modal the playback bar docks: it rides the sheet's lower edge over whatever scrolls
-   beneath, so the params never reach past it and play stays in reach */
-.example-dialog .dialog-foot {
-  position: sticky;
-  inset-block-end: 0;
-  z-index: var(--z-raised);
-  border-radius: 0;
-  padding-block-end: max(var(--space-2xs), env(safe-area-inset-bottom));
 }
 
 .demo-runbar {
@@ -1628,7 +1634,6 @@ tbody th { color: var(--color-ink); }
 /* a block with edges of its own -- a panel's ink, a callout's rule -- holds the measure by standing
    inside the gutter rather than carrying it, so its edges land where the text around it starts */
 .detail-grid,
-.detail-foot,
 .callout {
   width: calc(100% - 2 * var(--page-gutter));
   max-width: calc(var(--page-max) - 2 * var(--page-gutter));
@@ -1637,19 +1642,13 @@ tbody th { color: var(--color-ink); }
 
 .detail-grid { padding-inline: 0; }
 
-.detail-foot {
-  border: var(--rule-hair) solid var(--color-rule-dark);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-
 .detail-grid {
   min-width: 0;
   margin-block-start: var(--space-xl);
   display: grid;
   overflow: clip;
   border: var(--rule-hair) solid var(--color-rule-dark);
-  border-block-end: 0;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-lg);
   background: var(--color-ink);
   color: var(--color-paper);
 }
@@ -1700,7 +1699,7 @@ tbody th { color: var(--color-ink); }
   .brand:hover { color: var(--color-ink-3); }
   .example-thumb { transition: color var(--dur-short) var(--ease-out); }
   .example-entry:hover .example-thumb { color: var(--color-ink); }
-  .demo-action:hover,
+  .demo-action:not(.demo-run):hover,
   .file-label:hover { transform: translateY(-1px); }
   .demo-form select,
   .demo-form input:not([type="range"]):not([type="file"]) { transition: border-color var(--dur-short) var(--ease-out); }
@@ -1720,7 +1719,11 @@ tbody th { color: var(--color-ink); }
 
 @media (min-width: 60rem) {
   .dialog-body,
-  .detail-grid { grid-template-columns: minmax(22rem, 1fr) minmax(0, 1fr); align-items: stretch; background: var(--color-ink); }
+  .detail-grid {
+    grid-template-columns: minmax(22rem, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    background: var(--color-ink);
+  }
   .dialog-code {
     border-block-start: 0;
     border-inline-start: var(--rule-hair) solid var(--color-rule-dark);
@@ -1916,10 +1919,8 @@ tbody th { color: var(--color-ink); }
     width: 4rem;
     height: 4rem;
   }
-  .demo-meter {
-    width: 9rem;
-    grid-template-columns: minmax(0, 1fr) 11ch;
-  }
+  /* the level is the first thing a phone's footer can do without: the status has more to say */
+  .demo-meter { display: none; }
 }
 
 @media (max-width: 22.5rem) {

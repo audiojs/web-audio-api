@@ -132,6 +132,14 @@ string.connect(ctx.destination)
 pluck.start()
 setTimeout(() =&gt; ctx.close(), 6000)</code></pre>
 <!-- GENERATED:hero-code:end -->
+        <div class="demo-runbar">
+          <button class="demo-action demo-run is-iconic" type="button" data-run="./hero.js" aria-label="Play hero.js in the browser">
+            <svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
+            <svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13"/></svg>
+            <span>Play hero.js</span>
+          </button>
+          <input class="demo-volume" type="range" id="hero-volume" min="0" max="100" value="60" aria-label="Output volume">
+        </div>
         </div>
         <!-- hero.js rendered offline by web-audio-api in Node: peak and RMS envelopes, then its spectrum -->
         <div class="hero-signal">
@@ -142,14 +150,6 @@ setTimeout(() =&gt; ctx.close(), 6000)</code></pre>
         <svg class="hero-spectrum" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true"><path d="M2 220V219M6 220V219M10 220V219M14 220V219M18 220V219M22 220V219M26 220V219M30 220V219M34 220V216.1M38 220V219M42 220V208.2M46 220V219M50 220V198.4M54 220V219M58 220V185.9M62 220V219M66 220V168.2M70 220V219M74 220V134.6M78 220V114M82 220V116.5M86 220V219M90 220V146.1M94 220V173.2M98 220V189.2M102 220V200.8M106 220V209.5M110 220V213.2M114 220V200.6M118 220V180.9M122 220V156.4M126 220V116.1M130 220V130.2M134 220V176.8M138 220V206.2M142 220V218.9M146 220V201M150 220V138M154 220V117.4M158 220V175.7M162 220V211.9M166 220V198M170 220V151.8M174 220V122.5M178 220V186.4M182 220V216.8M186 220V131.3M190 220V146.7M194 220V219M198 220V140.8M202 220V145M206 220V211.8M210 220V137.5M214 220V199.8M218 220V145.7M222 220V219M226 220V153.9M230 220V214.4M234 220V163.9M238 220V197.3M242 220V177.2M246 220V186.4M250 220V203.5M254 220V219M258 220V218.7M262 220V219M266 220V219M270 220V219M274 220V219M278 220V219M282 220V219M286 220V219M290 220V219M294 220V219M298 220V219M302 220V219M306 220V219M310 220V219M314 220V219M318 220V219M322 220V219M326 220V219M330 220V219M334 220V219M338 220V219M342 220V219M346 220V219M350 220V219M354 220V219M358 220V219M362 220V219M366 220V219M370 220V219M374 220V219M378 220V219M382 220V219M386 220V219M390 220V219M394 220V219M398 220V219"/></svg>
         <div class="art-row"><span>40 Hz</span><span>16 kHz</span></div>
 <!-- GENERATED:hero-wave:end -->
-        <div class="demo-runbar">
-          <button class="demo-action demo-run is-iconic" type="button" data-run="./hero.js" aria-label="Play hero.js in the browser">
-            <svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
-            <svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13"/></svg>
-            <span>Play hero.js</span>
-          </button>
-          <input class="demo-volume" type="range" id="hero-volume" min="0" max="100" value="60" aria-label="Output volume">
-        </div>
         </div>
       </div>
     </section>
@@ -314,17 +314,24 @@ const node = new AudioWorkletNode(ctx, 'pass-through')</code></pre></div></detai
         <button class="icon-button dialog-close" type="button" data-close-dialog aria-label="Close example"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
       </header>
       <div class="dialog-body">
-        <section class="demo-panel" aria-label="Browser demo">
-          <div class="demo-stage">
-            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
-            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
-          </div>
-          <div class="demo-results" id="demo-result"></div>
-          <form class="demo-form" id="demo-form">
-            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+        <div class="demo-column">
+          <section class="demo-panel" aria-label="Browser demo">
+            <div class="demo-stage">
+              <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+              <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+            </div>
+            <div class="demo-results" id="demo-result"></div>
+            <form class="demo-form" id="demo-form">
+              <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
 
-          </form>
-        </section>
+            </form>
+          </section>
+          <footer class="dialog-foot">
+            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13"/></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+          </footer>
+        </div>
         <section class="dialog-code code-stage" aria-label="Graph source">
           <div class="code-tabs" role="group" aria-label="Source view">
             <button class="code-tab" type="button" data-pane="graph" aria-pressed="true">Graph</button>
@@ -345,11 +352,6 @@ const node = new AudioWorkletNode(ctx, 'pass-through')</code></pre></div></detai
           <div class="graph-pane dots" id="graph-pane" hidden></div>
         </section>
       </div>
-      <footer class="dialog-foot">
-        <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-        <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
-        <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13"/></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
-      </footer>
     </div>
   </dialog>
 
