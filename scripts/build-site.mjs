@@ -151,8 +151,9 @@ function examplePage(example) {
     <div class="detail-grid">
 ${demoHTML(example)}
     </div>
+    <div class="detail-foot dialog-foot">${fromHome('#example-dialog .dialog-foot').innerHTML}</div>
 ${callout}
-${relatedHTML(example)}${example.seo ? `    <p class="detail-seo">${escapeHTML(example.seo)}</p>\n` : ''}  </main>
+${relatedHTML(example)}${example.seo ? `    <div class="detail-seo"><p>${escapeHTML(example.seo)}</p></div>\n` : ''}  </main>
   ${footer}
   <script type="module" src="../browser.js"></script>
 </body>

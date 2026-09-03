@@ -29,6 +29,14 @@ textarea { font: inherit; }
 button,
 summary { cursor: pointer; }
 
+/* a second tap is a second tap, not a zoom */
+a,
+button,
+summary,
+label,
+input,
+select { touch-action: manipulation; }
+
 a {
   color: var(--color-ink);
   text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
@@ -77,6 +85,7 @@ select:focus-visible,
 }
 
 .header-strips {
+  background: linear-gradient(var(--color-white) 2px, transparent 2px);
   position: absolute;
   inset: calc(-1 * var(--space-xs)) 0 auto;
   z-index: -1;
@@ -179,11 +188,22 @@ select:focus-visible,
   background: transparent;
 }
 
-main {
+main { width: 100%; }
+
+main > *,
+.examples > *,
+.faq > * {
   width: 100%;
   max-width: var(--page-max);
   margin-inline: auto;
   padding-inline: var(--page-gutter);
+}
+
+/* the fields and the bands between them span the window */
+.examples,
+.faq {
+  max-width: none;
+  padding-inline: 0;
 }
 
 /* hero: 20 columns; intro 9, art 11, install 12, code 12 + graph 8 */
@@ -205,6 +225,7 @@ main {
   grid-column: 2 / 4;
   grid-row: 1;
   align-self: stretch;
+  position: relative;
   padding: var(--space-lg);
   display: grid;
   place-items: center;
@@ -215,20 +236,36 @@ main {
   --graph-sub: var(--color-muted);
 }
 
-.hero-art .graph {
+/* the dot field carries on a few units behind the code below it, taking no room from the layout */
+.hero-art::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 calc(-1 * (var(--space-4xl) + var(--space-2xl)));
+  z-index: -1;
+  background-image: radial-gradient(circle, var(--dot, var(--color-grid)) 1px, transparent 1.2px);
+  background-size: var(--space-md) var(--space-md);
+  background-position: center;
+}
+
+.graph-scroll {
   width: 100%;
   max-width: 28rem;
+}
+
+.hero-art .graph {
+  width: 100%;
   height: auto;
+  display: block;
 }
 
 /* hero.js rendered, beside its code: envelopes over time, then its spectrum, each with its axis */
 .hero-signal {
-  padding: var(--space-xl) var(--space-lg) var(--space-lg);
-  display: grid;
-  align-content: start;
-  gap: var(--space-xs);
+  --signal-pad: var(--space-lg);
+  padding: var(--space-xl) var(--signal-pad) 0;
+  display: flex;
+  flex-direction: column;
   border-inline-start: var(--rule-hair) solid var(--color-rule-dark);
-  background: var(--color-ink);
+  background-color: var(--color-ink);
 }
 
 .art-row {
@@ -241,6 +278,37 @@ main {
 }
 
 .art-end { margin-inline-start: auto; }
+
+/* playback pins to the panel's foot, its rule running the panel's full width */
+.hero-signal .demo-runbar {
+  background-color: var(--color-ink);
+  margin-block-start: auto;
+  margin-inline: calc(-1 * var(--signal-pad));
+  padding-block: var(--space-sm);
+  padding-inline: var(--signal-pad);
+  justify-content: flex-start;
+  border-block-start: var(--rule-hair) solid var(--color-rule-dark);
+}
+
+/* the gap above the rule survives the pin when the panel is exactly content-height */
+.hero-signal > .art-row:has(+ .demo-runbar) { margin-block-end: var(--space-md); }
+
+/* the first row labels the wave from inside it, so the wave starts at the panel's top edge */
+.hero-signal > .art-row:first-child {
+  margin-block-end: calc(-1 * var(--space-lg));
+  position: relative;
+  z-index: var(--z-base);
+  pointer-events: none;
+}
+
+/* the panel is ruled in the cell the graph's dots keep, the tiling started at the content corner so the
+   plots sit on whole cells whatever padding the panel carries */
+.hero-signal,
+.demo-stage {
+  background-image:
+    repeating-linear-gradient(to right, var(--color-plot-grid) 0 var(--rule-hair), transparent var(--rule-hair) var(--space-md)),
+    repeating-linear-gradient(to bottom, var(--color-plot-grid) 0 var(--rule-hair), transparent var(--rule-hair) var(--space-md));
+}
 
 .hero-wave,
 .hero-spectrum {
@@ -257,7 +325,7 @@ main {
 }
 
 .hero-wave .wave-peak { stroke: color-mix(in oklab, var(--color-paper) 38%, transparent); }
-.hero-spectrum { margin-block-start: var(--space-lg); }
+.hero-spectrum { margin-block-start: var(--space-2xs); }
 
 h1,
 h2,
@@ -458,6 +526,8 @@ h3 {
 
 .hero-code {
   grid-column: 1 / 4;
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   overflow: clip;
@@ -470,15 +540,6 @@ h3 {
 .code-col {
   min-width: 0;
   position: relative;
-}
-
-.code-actions {
-  position: absolute;
-  inset-block-start: var(--space-xs);
-  inset-inline-end: var(--space-xs);
-  z-index: var(--z-raised);
-  display: flex;
-  gap: var(--space-2xs);
 }
 
 pre {
@@ -561,10 +622,6 @@ pre code { font: inherit; }
   text-anchor: start;
 }
 
-/* the hero play button: a pause while its sound lasts */
-[data-run] .pause-glyph { display: none; }
-[data-run][data-state="playing"] .play-glyph { display: none; }
-[data-run][data-state="playing"] .pause-glyph { display: block; }
 
 .copy-icon {
   border: 0;
@@ -585,24 +642,28 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* catalogue: a white field the band above dissolves the paper into; the questions below
-   break straight back to paper */
-.examples {
-  padding-block: var(--space-lg) var(--space-3xl);
-  position: relative;
-  background: var(--color-white);
-  box-shadow: 0 0 0 100vmax var(--color-white);
-  clip-path: inset(0 -100vmax 0);
-}
+/* catalogue: a white field the band above dissolves the paper into; below, the questions'
+   own band hands the white back */
+.examples { padding-block: var(--space-lg) var(--space-2xl); }
+
+/* the homepage's few sit on a white field the band above them dissolves the paper into; the
+   catalogue page keeps the paper, and the questions below break straight back to it */
+.examples.is-field { background: var(--color-white); }
 
 .field-strips {
-  width: 100%;
-  height: 12rem;
-  position: absolute;
-  inset-inline-start: 0;
-  z-index: -1;
+  margin-block-start: calc(-1 * (var(--space-2xl) + var(--space-xl)));
   display: block;
-  pointer-events: none;
+  width: 100%;
+  max-width: none;
+  height: 6rem;
+  padding-inline: 0;
+  background: linear-gradient(transparent calc(100% - 2px), var(--color-white) 0);
+}
+
+/* the field hands its white back to the paper the way the paper offered it */
+.faq-strips {
+  margin-block-start: 0;
+  background: linear-gradient(var(--color-white) 2px, transparent 2px);
 }
 
 .section-heading {
@@ -695,7 +756,7 @@ pre code { font: inherit; }
   inset-block-start: 0;
   z-index: var(--z-raised);
   border-block-end: var(--rule-heavy) solid var(--color-ink);
-  background: var(--color-white);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-size: var(--text-lg);
   font-weight: 700;
@@ -775,9 +836,9 @@ pre code { font: inherit; }
 
 .example-entry:active { transform: translateY(1px); }
 
-/* questions */
-/* the break sits midway: as much paper before the questions as white after the last example */
-.faq { padding-block: var(--space-3xl) var(--space-4xl); }
+/* questions: the field's white dissolves back into the paper on the way in, and the paper
+   runs a little after them before the footer's band takes it to ink */
+.faq { padding-block: var(--space-xl) var(--space-2xl); }
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
 .faq details:last-child { border-block-end: 0; }
@@ -912,17 +973,17 @@ table.bench { margin-block-start: var(--space-md); }
 table.bench td { font-variant-numeric: tabular-nums; }
 tbody th { color: var(--color-ink); }
 
-/* footer: the stripe band dissolves paper into ink, unchanged */
+/* footer: the stripe band dissolves paper into ink */
 .footer-strips {
   display: block;
   width: 100%;
-  height: 8rem;
-  background: var(--color-paper);
-  margin-bottom: -1px;
+  height: 6rem;
+  margin-block-end: -1px;
+  background: linear-gradient(var(--color-paper) calc(100% - 2px), var(--color-ink) 0);
 }
 
 .site-footer {
-  padding-block: var(--space-sm) var(--space-lg);
+  padding-block: var(--space-lg) var(--space-2xl);
   background: var(--color-ink);
   color: var(--color-muted-on-ink);
   font-size: var(--text-sm);
@@ -1019,7 +1080,6 @@ tbody th { color: var(--color-ink); }
 .dialog-shell {
   width: min(100%, var(--page-max));
   min-width: 0;
-  max-height: calc(100dvh - var(--space-md) - var(--space-2xs));
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -1087,7 +1147,7 @@ tbody th { color: var(--color-ink); }
 }
 
 /* panes that scroll do so on a transparent track; a thin thumb shows as it moves */
-.hero-art,
+.graph-scroll,
 .hero-code pre,
 .code-output,
 .cli-pane,
@@ -1133,7 +1193,7 @@ tbody th { color: var(--color-ink); }
 .demo-stage {
   padding: var(--space-md);
   display: grid;
-  background: var(--color-ink);
+  background-color: var(--color-ink);
 }
 
 .demo-canvas-wrap { height: 8rem; }
@@ -1162,8 +1222,11 @@ tbody th { color: var(--color-ink); }
   font-size: var(--text-xs);
 }
 
+/* the meter leads the footer: a bar of fixed length, its reading in a column of its own;
+   nothing in it moves when the text does */
 .demo-meter {
-  margin-block-start: var(--space-md);
+  width: 12rem;
+  flex: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-sm);
@@ -1171,6 +1234,14 @@ tbody th { color: var(--color-ink); }
   color: var(--color-accent);
   font-family: var(--font-code);
   font-size: var(--text-xs);
+}
+
+.demo-meter > span {
+  min-width: 8ch;
+  overflow: hidden;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .demo-meter-track { height: var(--space-xs); background: var(--color-rule-dark); }
@@ -1189,27 +1260,44 @@ tbody th { color: var(--color-ink); }
   gap: var(--space-md);
 }
 
-.demo-fields { display: grid; gap: var(--space-sm); }
+.demo-fields {
+  --fold: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm) var(--space-2xl);
+}
+
+.control-field { grid-column: span 2; }
+.control-field:has(> :is(select, input:not([type="range"]))) { grid-column: span var(--fold); }
 .demo-extras { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
 .demo-extras:empty { display: none; }
 
-/* under the spectrogram, one row: the dBFS meter, then volume, then play; the status line beneath */
-/* the playback row heads the demo column and the tab row heads the source column, at one height */
-.dialog-body,
-.detail-grid { --toolbar: 3.5rem; }
+/* the playback row and the tab row keep one height */
+.dialog-shell,
+.example-detail { --toolbar: 3.5rem; }
 
-.demo-bar {
+.dialog-foot {
   min-height: var(--toolbar);
-  padding: 0 var(--space-md);
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: var(--space-2xs) var(--space-md);
+  display: flex;
   align-items: center;
-  column-gap: var(--space-md);
-  border-block-end: var(--rule-hair) solid var(--color-rule-dark);
+  justify-content: space-between;
+  gap: var(--space-md);
+  border-block-start: var(--rule-hair) solid var(--color-rule-dark);
+  background: var(--color-ink);
+  color: var(--color-paper);
 }
 
-.demo-bar .demo-meter { margin: 0; }
+/* in the modal the playback bar docks: it rides the sheet's lower edge over whatever scrolls
+   beneath, so the params never reach past it and play stays in reach */
+.example-dialog .dialog-foot {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--z-raised);
+  border-radius: 0;
+  padding-block-end: max(var(--space-2xs), env(safe-area-inset-bottom));
+}
 
 .demo-runbar {
   display: flex;
@@ -1218,19 +1306,24 @@ tbody th { color: var(--color-ink); }
   gap: var(--space-sm);
 }
 
-/* the status stays a live region for screen readers and out of the layout for everyone else */
-.demo-bar .demo-help {
-  width: 1px;
-  height: 1px;
-  position: absolute;
+/* the status says where the demo stands, trimmed rather than wrapped so the footer keeps its height */
+.dialog-foot .demo-help {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
   overflow: hidden;
-  clip-path: inset(50%);
+  color: var(--color-muted-on-ink);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .control-field {
   min-width: 0;
   display: grid;
-  gap: var(--space-3xs);
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-xs);
   color: var(--color-paper-2);
   font-size: var(--text-xs);
   font-weight: 700;
@@ -1238,22 +1331,45 @@ tbody th { color: var(--color-ink); }
 
 .control-field > span {
   min-height: 1.25rem;
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* a value begins where every other value begins */
+.demo-form .control-field > :is(select, input) { grid-column: 2 / -1; justify-self: start; }
+/* a slider is the exception: it takes the room, its reading closing the line */
+.demo-form .control-field > input[type="range"] { grid-column: 2; justify-self: stretch; }
+.control-field > output {
+  grid-column: 3;
+  min-width: 5ch;
+  font-family: var(--font-code);
+  font-weight: 400;
+  text-align: center;
+}
+
+/* a value you can edit, not a box: the code face; its rule surfaces on hover, the accent on focus */
 .demo-form select,
 .demo-form input:not([type="range"]):not([type="file"]) {
-  width: 100%;
-  min-height: 2.75rem;
-  padding-inline: var(--space-sm);
-  border: var(--rule-hair) solid var(--color-rule-dark);
-  border-radius: var(--radius-xs);
-  outline: var(--rule-heavy) solid transparent;
-  outline-offset: var(--space-3xs);
-  background: var(--color-ink-2);
+  /* field-sizing sets the width from the value; the start keeps the grid from stretching it back */
+  justify-self: start;
+  max-width: 100%;
+  min-height: 2.25rem;
+  padding: 0 0 var(--space-3xs);
+  field-sizing: content;
+  border: 0;
+  border-block-end: var(--rule-hair) solid var(--color-rule-dark);
+  border-radius: 0;
+  background: none;
   color: var(--color-paper);
+  font-family: var(--font-code);
+  font-size: var(--text-sm);
+}
+
+.demo-form select:focus-visible,
+.demo-form input:not([type="range"]):not([type="file"]):focus-visible {
+  outline: none;
+  border-block-end-color: var(--color-accent);
 }
 
 .demo-form input[type="range"] { width: 100%; min-height: 2.25rem; accent-color: var(--color-accent); }
@@ -1446,21 +1562,16 @@ tbody th { color: var(--color-ink); }
 ::highlight(boolean) { color: var(--syntax-constant); }
 
 /* ---- example pages: the modal's stage on a page of its own ---- */
-.example-detail {
-  width: 100%;
-  max-width: var(--page-max);
-  margin-inline: auto;
-  padding: var(--space-2xl) var(--page-gutter) var(--space-4xl);
-}
+.example-detail { padding-block: var(--space-2xl) var(--space-4xl); }
 
-.detail-head { max-width: 54rem; }
+.detail-head h1,
+.detail-head .detail-crumbs { max-width: 54rem; }
 
 .detail-crumbs {
   display: flex;
   gap: var(--space-xs);
   color: var(--color-muted);
-  font-family: var(--font-code);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
 }
 
 .detail-crumbs a {
@@ -1493,8 +1604,7 @@ tbody th { color: var(--color-ink); }
 
 /* one callout after the stage, in the manner of GitHub's notes: a coloured rule and label */
 .callout {
-  max-width: 54rem;
-  margin: var(--space-lg) 0 0;
+  margin-block: var(--space-lg) 0;
   padding: var(--space-2xs) var(--space-md);
   border-inline-start: var(--rule-heavy) solid var(--color-accent-strong);
   color: var(--color-body);
@@ -1502,7 +1612,7 @@ tbody th { color: var(--color-ink); }
   line-height: 1.6;
 }
 
-.callout p { margin: 0; }
+.callout p { max-width: 54rem; margin: 0; }
 
 .callout .callout-label {
   color: var(--color-accent-strong);
@@ -1515,13 +1625,31 @@ tbody th { color: var(--color-ink); }
 /* the one short page: keep the footer at the foot */
 .not-found { min-height: calc(100dvh - 14rem); }
 
+/* a block with edges of its own -- a panel's ink, a callout's rule -- holds the measure by standing
+   inside the gutter rather than carrying it, so its edges land where the text around it starts */
+.detail-grid,
+.detail-foot,
+.callout {
+  width: calc(100% - 2 * var(--page-gutter));
+  max-width: calc(var(--page-max) - 2 * var(--page-gutter));
+  margin-inline: auto;
+}
+
+.detail-grid { padding-inline: 0; }
+
+.detail-foot {
+  border: var(--rule-hair) solid var(--color-rule-dark);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
 .detail-grid {
   min-width: 0;
   margin-block-start: var(--space-xl);
   display: grid;
   overflow: clip;
   border: var(--rule-hair) solid var(--color-rule-dark);
-  border-radius: var(--radius-lg);
+  border-block-end: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-ink);
   color: var(--color-paper);
 }
@@ -1537,9 +1665,12 @@ tbody th { color: var(--color-ink); }
   font-weight: 700;
 }
 
-.detail-seo {
+/* the block holds the measure, its line stopping short of it the way the head's lines do */
+.detail-seo { margin-block: var(--space-2xl) 0; }
+
+.detail-seo p {
   max-width: 68ch;
-  margin: var(--space-2xl) 0 0;
+  margin: 0;
   color: var(--color-muted);
   font-size: var(--text-sm);
   line-height: 1.6;
@@ -1571,6 +1702,10 @@ tbody th { color: var(--color-ink); }
   .example-entry:hover .example-thumb { color: var(--color-ink); }
   .demo-action:hover,
   .file-label:hover { transform: translateY(-1px); }
+  .demo-form select,
+  .demo-form input:not([type="range"]):not([type="file"]) { transition: border-color var(--dur-short) var(--ease-out); }
+  .demo-form select:not(:focus-visible):hover,
+  .demo-form input:not([type="range"]):not([type="file"]):not(:focus-visible):hover { border-block-end-color: var(--color-rule-dark); }
 }
 
 @media (min-width: 40rem) {
@@ -1581,7 +1716,6 @@ tbody th { color: var(--color-ink); }
     padding-inline-start: var(--space-xl);
     border-inline-start: var(--rule-hair) solid var(--color-rule);
   }
-  .demo-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 60rem) {
@@ -1602,22 +1736,33 @@ tbody th { color: var(--color-ink); }
     inset-block-start: 0;
     align-self: start;
   }
-  .example-dialog .demo-panel { max-height: calc(100dvh - var(--space-xl)); }
   .demo-form { min-height: 0; }
   .demo-controls { min-height: 0; overflow-y: auto; }
 }
 
 @media (max-width: 64rem) {
-  .hero { grid-template-columns: minmax(0, 1fr); }
-  .hero-intro { padding-inline-end: 0; }
-  .hero-art,
-  .install-row,
-  .hero-code { grid-column: 1; grid-row: auto; }
-  /* stacked: intro, install, graph, code */
-  .hero-art { order: 1; }
-  .hero-code { order: 2; }
   .hero-wave,
   .hero-spectrum { max-height: 14rem; }
+}
+
+/* the graph holds the right of the row down to the phone, standing over the text at its own size;
+   the text passes under it and fades out rather than meeting it at a line */
+@media (48rem < width <= 64rem) {
+  .hero-art {
+    justify-self: end;
+    padding-inline-end: 0;
+  }
+  /* the graph holds its legible size at the narrow end and grows into the wide layout's own by the
+     top of the band, so nothing jumps at either edge */
+  .graph-scroll {
+    width: clamp(24rem, 44vw, 28rem);
+    max-width: none;
+  }
+  .hero-intro { padding-inline-end: var(--space-sm); }
+  /* the running text is what reaches the graph; it dissolves at that edge instead of ending against it */
+  .hero-intro > :where(p, ul) {
+    mask-image: linear-gradient(to right, var(--color-ink) calc(100% - var(--space-xl)), transparent);
+  }
 }
 
 @media (40rem <= width <= 64rem) {
@@ -1643,10 +1788,29 @@ tbody th { color: var(--color-ink); }
   .code-output,
   .site-footer { font-size: var(--text-xs); }
 
-  /* the graph keeps its own size and scrolls, rather than shrinking its labels out of legibility */
+  /* no room to fold two parameters onto a line here */
+  .demo-fields { --fold: 2; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero-intro { padding-inline-end: 0; }
+  .hero-art,
+  .install-row,
+  .hero-code { grid-column: 1; grid-row: auto; }
+  /* stacked: intro, install, graph, code */
+  .hero-art { order: 1; }
+  .hero-code { order: 2; }
+  /* the dots run to both edges and pass under the code, which is the graph's own */
   .hero-art {
-    justify-items: start;
-    overflow-x: auto;
+    margin-inline: calc(-1 * var(--page-gutter));
+    /* the pull is deeper than the row gap, so what is left is the overlap */
+    margin-block-end: calc(-1 * var(--space-2xl));
+    padding: var(--space-sm) var(--page-gutter) calc(var(--space-sm) + var(--space-2xl));
+    justify-items: center;
+  }
+  /* the graph keeps its own size and scrolls sideways, rather than shrinking its labels out of
+     legibility; it never scrolls down, and the field it stands on does not move with it */
+  .graph-scroll {
+    justify-self: start;
+    overflow: auto hidden;
   }
   .hero-art .graph { min-width: 25rem; }
   .hero-code { grid-template-columns: minmax(0, 1fr); }
@@ -1659,7 +1823,8 @@ tbody th { color: var(--color-ink); }
   .hero-code .lines,
   .code-output .lines { display: none; }
   .hero-signal {
-    padding: var(--space-sm) var(--space-md);
+    --signal-pad: var(--space-md);
+    padding: var(--space-sm) var(--signal-pad) 0;
     border-inline-start: 0;
     border-block-start: var(--rule-hair) solid var(--color-rule-dark);
   }
@@ -1668,9 +1833,10 @@ tbody th { color: var(--color-ink); }
     padding-block: var(--space-xl) var(--space-2xl);
     row-gap: var(--space-md);
   }
-  .hero-art { padding: var(--space-sm); }
-  /* less paper to cross here, so the band crosses it in less height */
+  /* less paper to cross here, so the bands cross it in less height */
   .field-strips { height: 5rem; }
+  .faq-strips { height: 5rem; }
+  .footer-strips { height: 4rem; }
   .hero-intro ul { padding-inline-start: 0; }
   /* a tighter row keeps more runtimes named before the labels start dropping */
   .hero-stack { gap: var(--space-2xs) var(--space-md); }
@@ -1678,8 +1844,8 @@ tbody th { color: var(--color-ink); }
   .hero-wave,
   .hero-spectrum { aspect-ratio: 400 / 64; }
   .hero-spectrum { margin-block-start: var(--space-sm); }
-  .examples { padding-block: var(--space-md) var(--space-2xl); }
-  .faq { padding-block: var(--space-2xl) var(--space-2xl); }
+  .examples { padding-block: var(--space-sm) var(--space-xl); }
+  .faq { padding-block: 5rem var(--space-2xl); }
   .section-heading { margin-block-end: var(--space-md); }
   .example-groups { gap: var(--space-xl); }
   /* one row of tags, bleeding to the edge and scrolling past it; the counts wait for a wider screen */
@@ -1719,12 +1885,20 @@ tbody th { color: var(--color-ink); }
   }
 }
 
-@media (width < 60rem) {
-  /* stacked, the modal scrolls as one sheet */
+@media (width < 60rem), (height < 44rem) {
+  /* stacked, the modal scrolls as one sheet: it keeps its content's height and nothing
+     inside it scrolls or sticks */
   .dialog-shell {
+    flex: none;
     max-height: none;
     overflow: visible;
   }
+  .example-dialog .demo-panel {
+    max-height: none;
+    position: static;
+  }
+  .example-dialog .demo-controls { overflow-y: visible; }
+  .dialog-code { contain: none; }
   .dialog-code .code-output,
   .dialog-code .cli-pane,
   .graph-pane { flex: none; }
@@ -1741,6 +1915,10 @@ tbody th { color: var(--color-ink); }
   .example-thumb {
     width: 4rem;
     height: 4rem;
+  }
+  .demo-meter {
+    width: 9rem;
+    grid-template-columns: minmax(0, 1fr) 11ch;
   }
 }
 

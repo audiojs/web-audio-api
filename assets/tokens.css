@@ -33,6 +33,8 @@
   --color-white: oklch(100% 0 0);
   --color-grid: oklch(84% 0.005 90);
   --color-grid-on-ink: oklch(32% 0.008 260);
+  /* fainter still: the field a plot stands on, which must never read louder than the signal */
+  --color-plot-grid: oklch(24% 0.006 260);
   --color-rule: oklch(87% 0.005 90);
   --color-rule-dark: oklch(30% 0.009 260);
   --color-accent: oklch(72% 0.14 218);

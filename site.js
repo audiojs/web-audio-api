@@ -1,5 +1,5 @@
 import { byId } from './examples/catalog.js'
-import { highlight, mountExample } from './examples/browser.js'
+import { highlight, mountExample, remember } from './examples/browser.js'
 
 const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
@@ -12,6 +12,12 @@ const homeURL = new URL('./', location.href)
 
 // The hero file runs here unchanged: the import map hands it the page's own Web
 // Audio, whose constructor announces each context so the button can follow it.
+// the hero plays at whatever level the panel's slider is set to, kept across sessions
+const volume = document.getElementById('hero-volume')
+let heard = null
+remember(volume, 'hero-volume')
+volume?.addEventListener('input', () => { if (heard?.level) heard.level.gain.value = Number(volume.value) / 100 })
+
 for (let button of document.querySelectorAll('[data-run]')) {
   let playing = null, starting = false
   button.addEventListener('click', async () => {
@@ -19,13 +25,15 @@ for (let button of document.querySelectorAll('[data-run]')) {
     // a context already closing rejects a second close, which is the outcome wanted anyway
     if (playing) return playing.close().catch(() => {})
     starting = true
-    button.dataset.state = 'playing'
+    button.dataset.state = 'running'
     try { await import(`${button.dataset.run}?${Date.now()}`) } catch { delete button.dataset.state } finally { starting = false }
   })
   addEventListener('audiocontext', ({ detail: context }) => {
     if (!starting) return
     playing?.close().catch(() => {})
     playing = context
+    heard = context
+    if (context.level) context.level.gain.value = Number(volume?.value ?? 60) / 100
     follow(context)
     context.addEventListener('statechange', () => {
       if (context.state !== 'closed' || playing !== context) return
@@ -111,6 +119,15 @@ for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedb
   mark.addEventListener('pointerenter', () => { wait = setTimeout(() => show(false), openTip || performance.now() < warmUntil ? 0 : TIP_DELAY) })
   mark.addEventListener('pointerleave', rest)
 }
+// wider than the phone it is read on: the graph opens centred, not against its left edge
+const art = document.querySelector('.hero-art')
+if (art) {
+  let centre = () => { art.scrollLeft = (art.scrollWidth - art.clientWidth) / 2 }
+  centre()
+  addEventListener('resize', centre)
+  addEventListener('load', centre)
+}
+
 // The row of runtimes stays on one line whatever the width: while the last mark reaches past the
 // row's edge, labels drop one by one from the end. A dropped label still names its mark to a screen
 // reader and to its tip. Without this script the marks wrap instead.

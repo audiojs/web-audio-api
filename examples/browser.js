@@ -6,7 +6,11 @@ import { init as buildProcessedBuffer } from './graphs/process-file.js'
 import { init as buildWorklet } from './graphs/worklet.js'
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
-const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+const colours = new Map()
+const css = name => {
+  if (!colours.has(name)) colours.set(name, getComputedStyle(document.documentElement).getPropertyValue(name).trim())
+  return colours.get(name)
+}
 
 function stopGraph(graph, time = 0) {
   if (!graph) return
@@ -26,7 +30,7 @@ function setButtonLabel(button, label) {
 }
 
 // a control that keeps its setting across sessions
-function remember(input, key) {
+export function remember(input, key) {
   if (!input || input.dataset.remembered) return
   input.dataset.remembered = key
   try {
@@ -91,6 +95,8 @@ function createControls(id, container) {
     let heading = document.createElement('span')
     let name = document.createElement('span')
     name.textContent = spec.label
+    // the name keeps to one line, so the whole of it waits under the pointer
+    heading.title = spec.label
     heading.append(name)
     let format = value => {
       if (spec.unit === 's' && Number(value) >= 120) {
@@ -103,7 +109,6 @@ function createControls(id, container) {
     if (spec.type === 'range') {
       output = document.createElement('output')
       output.textContent = format(initialValue)
-      heading.append(output)
     }
     label.append(heading)
     let control
@@ -131,6 +136,7 @@ function createControls(id, container) {
     if (output) control.addEventListener('input', () => { output.textContent = format(control.value) })
     label.htmlFor = control.id
     label.append(control)
+    if (output) label.append(output)
     container.append(label)
   }
   // a control that follows another takes its value from that one's choice, until changed by hand
@@ -162,15 +168,30 @@ function sizeCanvas(canvas) {
 }
 
 // one column per animation frame, two or three device pixels; the spectrogram and the envelope share it
-const columnStep = () => Math.max(2, Math.round(Math.min(devicePixelRatio || 1, 2) * 1.5))
+const SWEEP = 4000
+let sweptAt = 0
+// how far the panels advance for this frame: the width they cross in SWEEP milliseconds, whatever
+// the frame rate. A phone that paints ten times a second moves ten wide columns, not ten thin ones.
+function startSweep() { sweptAt = 0 }
+function columnStep(width = 0) {
+  let now = performance.now()
+  let elapsed = sweptAt ? Math.min(500, now - sweptAt) : 16
+  sweptAt = now
+  return Math.max(2, Math.round(width * elapsed / SWEEP))
+}
 
 // the level scale of the homepage panel: 48 dB under full scale
 const level = amplitude => amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
 
-function envelopeOf(data, from = 0, to = data.length) {
-  let peak = 0, energy = 0
-  for (let index = from; index < to; index++) { let value = data[index]; peak = Math.max(peak, Math.abs(value)); energy += value * value }
-  return { peak, rms: Math.sqrt(energy / Math.max(1, to - from)) }
+function envelopeOf(data, from = 0, to = data.length, stride = 1) {
+  let peak = 0, energy = 0, taken = 0
+  for (let index = from; index < to; index += stride) {
+    let value = data[index]
+    peak = Math.max(peak, Math.abs(value))
+    energy += value * value
+    taken++
+  }
+  return { peak, rms: Math.sqrt(energy / Math.max(1, taken)) }
 }
 
 // a column of the envelope: the axis, a faint bar out to the peak, a solid one out to the rms
@@ -183,7 +204,7 @@ function drawEnvelopeColumn(ctx, x, step, height, { peak, rms }, ink) {
     let half = level(value) * reach
     if (half < 0.5) continue
     ctx.globalAlpha = alpha
-    ctx.fillRect(x, mid - half, step - 1, half * 2)
+    ctx.fillRect(x, mid - half, step, half * 2)
   }
   ctx.globalAlpha = 1
 }
@@ -193,7 +214,7 @@ const inkOf = () => ({ axis: css('--color-rule-dark'), accent: css('--color-acce
 // the whole of a buffer as bars across the width; before anything plays there is only the axis
 function drawWave(canvas, data = null) {
   sizeCanvas(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = columnStep(), ink = inkOf()
+  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = Math.max(2, Math.round(width / 200)), ink = inkOf()
   ctx.clearRect(0, 0, width, height)
   ctx.fillStyle = ink.axis
   ctx.fillRect(0, Math.round(height / 2), width, 1)
@@ -205,14 +226,14 @@ function drawWave(canvas, data = null) {
 }
 
 // live, in step with the spectrogram: the history slides left and the newest frame lands at the right edge
-function drawWaveColumn(canvas, samples) {
+function drawWaveColumn(canvas, samples, step) {
   if (sizeCanvas(canvas)) drawWave(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = columnStep()
+  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
   if (width <= step) return drawWave(canvas)
   ctx.globalCompositeOperation = 'copy'
   ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
   ctx.globalCompositeOperation = 'source-over'
-  drawEnvelopeColumn(ctx, width - step, step, height, envelopeOf(samples), inkOf())
+  drawEnvelopeColumn(ctx, width - step, step, height, envelopeOf(samples, 0, samples.length, 4), inkOf())
 }
 
 function frequencyAt(row, rows, sampleRate, scale) {
@@ -228,31 +249,63 @@ function frequencyAt(row, rows, sampleRate, scale) {
 }
 
 function resetSpectrogram(canvas) {
+  startSweep()
   sizeCanvas(canvas)
   let ctx = canvas.getContext('2d')
   ctx.globalAlpha = 1
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 }
 
-function drawSpectrogramColumn(canvas, data, sampleRate, scale) {
+// which analyser bin each row of the spectrogram reads, kept until the shape or the scale changes
+let binRows = { key: '', rows: null }
+function rowsFor(height, bins, sampleRate, scale) {
+  let key = `${height}/${bins}/${sampleRate}/${scale}`
+  if (binRows.key !== key) {
+    let rows = new Uint16Array(height)
+    for (let y = 0; y < height; y++)
+      rows[y] = Math.min(bins - 1, Math.max(0, Math.round(frequencyAt(y, height, sampleRate, scale) / (sampleRate / 2) * (bins - 1))))
+    binRows = { key, rows }
+  }
+  return binRows.rows
+}
+
+// the newest column as pixels, blitted once, rather than a filled rectangle per row
+let columnPixels = { key: '', image: null, rgb: [0, 0, 0] }
+function spectrogramColumn(ctx, height, step, data, sampleRate, scale) {
+  let tint = css('--color-accent')
+  let key = `${height}/${step}/${tint}`
+  if (columnPixels.key !== key) {
+    let probe = document.createElement('canvas').getContext('2d')
+    probe.fillStyle = tint
+    probe.fillRect(0, 0, 1, 1)
+    columnPixels = { key, image: ctx.createImageData(step, height), rgb: [...probe.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+  }
+  let { image, rgb } = columnPixels
+  let rows = rowsFor(height, data.length, sampleRate, scale)
+  // the analyser hands back bytes over its decibel window, so the level needs no logarithm here
+  for (let y = 0; y < height; y++) {
+    let amount = data[rows[y]] / 255
+    let alpha = amount * amount * 255
+    for (let x = 0; x < step; x++) {
+      let index = (y * step + x) * 4
+      image.data[index] = rgb[0]
+      image.data[index + 1] = rgb[1]
+      image.data[index + 2] = rgb[2]
+      image.data[index + 3] = alpha
+    }
+  }
+  return image
+}
+
+function drawSpectrogramColumn(canvas, data, sampleRate, scale, step) {
   if (sizeCanvas(canvas)) resetSpectrogram(canvas)
   let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
-  let step = columnStep()
   if (width <= step) { resetSpectrogram(canvas); return }
-  ctx.globalAlpha = 1
   // 'copy' scrolls the transparent history left without alpha accumulation
   ctx.globalCompositeOperation = 'copy'
   ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
   ctx.globalCompositeOperation = 'source-over'
-  ctx.fillStyle = css('--color-accent')
-  for (let y = 0; y < height; y++) {
-    let frequency = frequencyAt(y, height, sampleRate, scale)
-    let bin = Math.min(data.length - 1, Math.max(0, Math.round(frequency / (sampleRate / 2) * (data.length - 1))))
-    let amount = Math.max(0, Math.min(1, (data[bin] + 100) / 75))
-    ctx.globalAlpha = amount * amount
-    ctx.fillRect(width - step, y, step, 1)
-  }
-  ctx.globalAlpha = 1
+  ctx.putImageData(spectrogramColumn(ctx, height, step, data, sampleRate, scale), width - step, 0)
 }
 
 function drawBufferSpectrogram(canvas, data, sampleRate, scale) {
@@ -328,6 +381,12 @@ function rms(data) {
   let sum = 0
   for (let value of data) sum += value * value
   return Math.sqrt(sum / data.length)
+}
+
+// the meter's own words: a level in decibels, or silence said out loud rather than as -120.0
+function dbLabel(level) {
+  let db = 20 * Math.log10(Math.max(level, 1e-6))
+  return db <= -99 ? '-inf dB' : `${db.toFixed(1)} dB`
 }
 
 function detectPitch(data, sampleRate) {
@@ -455,14 +514,17 @@ async function showGraph(id, pane) {
     // is the shape of its first seconds, so the recording is capped at three
     options.duration = Math.min(3, Number(options.duration) || 3)
     let context = new OfflineAudioContext(2, 128, 44100)
-    let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: AudioWorkletNode }))
+    let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: globalThis.AudioWorkletNode }))
     let resolved = resolveGraph(edges)
     if (!resolved.nodes.length) { pane.innerHTML = '<p class="graph-note">This example connects nothing until it runs.</p>'; return }
     let { nodes, edges: merged, counts } = collapseGraph(resolved.nodes, resolved.edges)
     pane.innerHTML = graphSVG(nodes, merged, `The graph ${id} connects`, counts)
     zoomGraph(pane, 1)
   } catch (error) {
-    pane.innerHTML = `<p class="graph-note">This graph needs a live input, so it cannot be recorded here. ${error.message}</p>`
+    let missing = /AudioWorkletNode|is not a constructor|undefined/i.test(error.message) && !globalThis.AudioWorkletNode
+    pane.innerHTML = missing
+      ? '<p class="graph-note">This graph is built from an AudioWorklet, which this browser does not expose here.</p>'
+      : `<p class="graph-note">This graph needs a live input, so it cannot be recorded here. ${error.message}</p>`
   }
 }
 
@@ -547,7 +609,7 @@ export function mountExample(root, id) {
   }
   paintVolume()
   volume?.addEventListener('input', onVolume)
-  let samples = new Float32Array(2048), spectrum = new Float32Array(1024), recorder = null, chunks = []
+  let samples = new Float32Array(2048), spectrum = new Uint8Array(1024), recorder = null, chunks = []
   let lastBuffer = null, live = false, busy = false, disposed = false
   let levelMeter = null, latencyTracker = null
   let observer = new ResizeObserver(() => {
@@ -569,20 +631,25 @@ export function mountExample(root, id) {
   function animate() {
     if (!analyser) return
     if (samples.length !== analyser.fftSize) samples = new Float32Array(analyser.fftSize)
-    if (spectrum.length !== analyser.frequencyBinCount) spectrum = new Float32Array(analyser.frequencyBinCount)
+    if (spectrum.length !== analyser.frequencyBinCount) spectrum = new Uint8Array(analyser.frequencyBinCount)
     analyser.getFloatTimeDomainData(samples)
-    analyser.getFloatFrequencyData(spectrum)
-    drawWaveColumn(canvas, samples)
-    drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value)
+    analyser.getByteFrequencyData(spectrum)
+    // one step for both panels, so their columns stay side by side
+    let step = columnStep(canvas.width)
+    drawWaveColumn(canvas, samples, step)
+    drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value, step)
     let level = rms(samples)
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
-    meterValue.textContent = id === 'tuner'
+    meterValue.textContent = dbLabel(level)
+    // what this example measures, in its own words: pitch, ballistics, round trip, tempo
+    let reading = id === 'tuner'
       ? pitchLabel(detectPitch(samples, context.sampleRate), Number(form.elements.a4?.value || 440))
       : id === 'level-meter' && levelMeter
       ? levelMeter(samples)
       : id === 'latency-tester' && latencyTracker
       ? latencyTracker(samples)
-      : `${(20 * Math.log10(Math.max(level, 1e-6))).toFixed(1)} dBFS`
+      : demo?.readout?.(context.currentTime) ?? ''
+    if (reading && !run.classList.contains('is-error')) status.textContent = reading
     if (reducedMotion.matches) frame = setTimeout(animate, 160)
     else frame = requestAnimationFrame(animate)
   }
@@ -593,7 +660,7 @@ export function mountExample(root, id) {
     frame = 0
   }
 
-  async function stop(message = 'Stopped. The context and any device stream are closed.') {
+  async function stop(message = '') {
     clearTimeout(timer)
     cancelVisual()
     if (recorder?.state === 'recording') recorder.stop()
@@ -611,6 +678,7 @@ export function mountExample(root, id) {
 
   async function runPortable() {
     lastBuffer = null
+    drawWave(canvas)
     resetSpectrogram(spectrogram)
     context = new AudioContext()
     await context.resume()
@@ -626,7 +694,7 @@ export function mountExample(root, id) {
       continuity: 15, 'octave-illusion': 12, 'scale-illusion': 8, streaming: 15, 'zwicker-tone': 20,
     }
     if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
-    if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = AudioWorkletNode
+    if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = globalThis.AudioWorkletNode
     // The metronome's instrument collection plays the beats of other rhythm graphs on request;
     // building it here keeps every graph module atomic
     if (id === 'risset-rhythm' && options.sound !== 'click') {
@@ -660,7 +728,7 @@ export function mountExample(root, id) {
     let peak = 0
     for (let value of data) peak = Math.max(peak, Math.abs(value))
     meter.style.transform = `scaleX(${Math.min(1, peak)})`
-    meterValue.textContent = `peak ${(20 * Math.log10(Math.max(peak, 1e-6))).toFixed(1)} dBFS`
+    meterValue.textContent = dbLabel(peak)
     setRenderedAudio(resultContainer, buffer, example.id)
     setButtonLabel(run, 'Render again')
     run.removeAttribute('aria-busy')
@@ -693,8 +761,8 @@ export function mountExample(root, id) {
     context = new AudioContext(); await context.resume()
     analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
     connectOutput()
-    demo = await buildWorklet(context, { ...readOptions(id, form), destination: analyser, AudioWorkletNodeClass: AudioWorkletNode })
-    setButtonLabel(run, 'Stop demo'); setStatus('Custom AudioWorkletProcessor is running in the browser worklet thread.', 'running')
+    demo = await buildWorklet(context, { ...readOptions(id, form), destination: analyser, AudioWorkletNodeClass: globalThis.AudioWorkletNode })
+    setButtonLabel(run, 'Stop demo'); setStatus('', 'running')
     animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
   }
 
@@ -727,7 +795,7 @@ export function mountExample(root, id) {
       recorder.start()
     }
     setButtonLabel(run, id === 'recorder' ? 'Stop and save' : 'Stop microphone')
-    setStatus(id === 'tuner' ? 'Listening for a stable pitch. Audio stays on this device.'
+    setStatus(id === 'tuner' ? ''
       : id === 'recorder' ? 'Recording. Audio stays on this device until you download it.'
       : id === 'latency-tester' ? 'Clicking through the speakers and timing the return on the microphone.'
       : id === 'level-meter' ? 'Reading microphone level. Monitoring is muted to prevent feedback.'
@@ -871,8 +939,10 @@ if (filters) {
   filters.append(makeButton(''), ...tags.map(makeButton))
 }
 
-// horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
-export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = 8) {
+// horizontal stripe band: equal cells whose bars grow linearly toward the solid edge;
+// every band steps in the same half rem, whatever its own height
+const stripStep = Math.max(2, parseFloat(getComputedStyle(document.documentElement).fontSize) / 2 || 8)
+export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = stripStep) {
   let context = canvas.getContext('2d')
   let painted = ''
   let paint = () => {
@@ -883,10 +953,10 @@ export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize
     if (painted === `${width}x${height}`) return
     painted = `${width}x${height}`
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
-    let cells = Math.max(2, Math.round(canvas.offsetHeight / cellSize))
-    let cell = Math.max(2, Math.round(height / cells))
+    let cell = Math.max(2, Math.round(cellSize * ratio))
+    let cells = Math.max(2, Math.ceil(height / cell))
     context.clearRect(0, 0, width, height)
-    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(colorToken).trim()
+    context.fillStyle = css(colorToken)
     for (let k = 0; k < cells; k++) {
       let t = k / (cells - 1)
       let bar = Math.round(cell * (solidTop ? 1 - t : t))
@@ -895,7 +965,8 @@ export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize
       if (solidTop) bar = Math.min(bar, cell - 1)
       context.fillRect(0, solidTop ? k * cell : (k + 1) * cell - bar, width, bar)
     }
-    if (!solidTop) context.fillRect(0, cells * cell, width, height - cells * cell)
+    // the solid end runs past the last cell: the bitmap's edge row is whole, whatever the rounding
+    if (!solidTop) context.fillRect(0, cells * cell, width, height - cells * cell + cell)
   }
   paint()
   addEventListener('resize', paint)
@@ -904,13 +975,5 @@ export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize
 for (let canvas of document.querySelectorAll('.header-strips')) stripBand(canvas, true, '--color-white')
 for (let canvas of document.querySelectorAll('.footer-strips')) stripBand(canvas, false)
 
-// the field band lands on the paper right above the white examples field, dissolving one into the other
-let field = document.querySelector('.examples')
-let fieldStrips = document.querySelector('.field-strips')
-if (field && fieldStrips) {
-  let place = () => { fieldStrips.style.insetBlockStart = `${field.getBoundingClientRect().top + scrollY - fieldStrips.offsetHeight}px` }
-  place()
-  addEventListener('resize', place)
-  addEventListener('load', place)
-  stripBand(fieldStrips, false, '--color-white')
-}
+// the bands stand between the sections, dissolving the paper into the white field and back again
+for (let canvas of document.querySelectorAll('.field-strips')) stripBand(canvas, canvas.classList.contains('faq-strips'), '--color-white')

@@ -50,11 +50,6 @@
     <div class="detail-grid">
 
         <section class="demo-panel" aria-label="Browser demo">
-          <div class="demo-bar">
-            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
-            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
-          </div>
           <div class="demo-stage">
             <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
             <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
@@ -86,6 +81,11 @@
         </section>
       
     </div>
+    <div class="detail-foot dialog-foot">
+        <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+        <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+        <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+      </div>
 
     <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
       <a class="example-entry" href="../shepard/"><span class="example-number">11</span><span class="example-heading"><strong>Shepard tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Layer octave-spaced voices to create a pitch that appears to rise or fall forever.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 72L4 72M2 24L4 24M8 66L10 66M8 18L10 18M14 66L16 66M14 12L16 12M20 60L22 60M20 6L22 6M26 54L28 54M32 48L34 48M38 42L40 42M44 90L46 90M44 36L46 36M50 36L52 36M50 84L52 84M56 30L58 30M56 84L58 84M62 78L64 78M62 24L64 24M68 72L70 72M68 18L70 18M74 66L76 66M74 12L76 12M80 66L82 66M80 12L82 12M86 6L88 6M86 54L88 54M92 54L94 54" /></svg></a>
@@ -93,7 +93,7 @@
       <a class="example-entry" href="../missing-fundamental/"><span class="example-number">14</span><span class="example-heading"><strong>Missing fundamental</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Play harmonics 2–6 while omitting the pitch the listener still perceives.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-shape" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 48h.01M9 48L9 6M15 48L15 36M21 48h.01M27 48L27 54M33 48L33 60M39 48L39 54M45 48L45 54M51 48L51 42M57 48L57 42M63 48L63 36M69 48L69 36M75 48h.01M81 48L81 54M87 48L87 84M93 48L93 72" /></svg></a>
       <a class="example-entry" href="../beating/"><span class="example-number">15</span><span class="example-heading"><strong>Beating</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Hear amplitude beating produced by two nearby frequencies.</span><small class="example-tag">Explore</small><svg class="example-thumb thumb-shape" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 48L3 72M9 48L9 42M15 48L15 12M21 48L21 6M27 48L27 30M33 48L33 66M39 48L39 90M45 48L45 84M51 48L51 54M57 48L57 24M63 48L63 6M69 48L69 18M75 48h.01M81 48L81 78M87 48L87 90M93 48L93 72" /></svg></a>
     </div></section>
-    <p class="detail-seo">This renders the Risset rhythm illusion, the rhythmic cousin of the Shepard tone, where layered tempo cycles create a beat that seems to keep accelerating or decelerating without ever arriving. Hear it live in the browser, or render it from the Node CLI for a talk, a test signal, or further processing.</p>
+    <div class="detail-seo"><p>This renders the Risset rhythm illusion, the rhythmic cousin of the Shepard tone, where layered tempo cycles create a beat that seems to keep accelerating or decelerating without ever arriving. Hear it live in the browser, or render it from the Node CLI for a talk, a test signal, or further processing.</p></div>
   </main>
   <canvas class="footer-strips" aria-hidden="true"></canvas>
   <footer class="site-footer">

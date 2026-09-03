@@ -50,11 +50,6 @@
     <div class="detail-grid">
 
         <section class="demo-panel" aria-label="Browser demo">
-          <div class="demo-bar">
-            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
-            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
-          </div>
           <div class="demo-stage">
             <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
             <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
@@ -86,6 +81,11 @@
         </section>
       
     </div>
+    <div class="detail-foot dialog-foot">
+        <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+        <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+        <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+      </div>
     <aside class="callout callout-warning"><p class="callout-label">Warning</p><p>Requires speakers, not headphones, so the microphone can hear the click; keep the volume moderate. The browser asks for microphone permission.</p></aside>
 
     <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
@@ -93,7 +93,7 @@
       <a class="example-entry" href="../level-meter/"><span class="example-number">04</span><span class="example-heading"><strong>Level meter</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M21 6L45 6M51 6L75 6M21 12L45 12M51 12L75 12M21 18L45 18M51 18L75 18M21 24L45 24M51 24L75 24M21 30L45 30M51 30L75 30M21 36L45 36M51 36L75 36M21 42L45 42M51 42L75 42M21 48L45 48M51 48L75 48M21 54L45 54M51 54L75 54M21 60L45 60M51 60L75 60M21 66L45 66M51 66L75 66M21 72L45 72M51 72L75 72M21 78L45 78M51 78L75 78M21 84L45 84M51 84L75 84M21 90L45 90M51 90L75 90" /></svg></a>
       <a class="example-entry" href="../metronome/"><span class="example-number">01</span><span class="example-heading"><strong>Metronome</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-wave" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6L3 90M9 48h.01M15 48h.01M21 48h.01M27 12L27 84M33 48h.01M39 48h.01M45 48h.01M51 12L51 84M57 48h.01M63 48h.01M69 48h.01M75 12L75 84M81 48h.01M87 48h.01M93 48h.01" /></svg></a>
     </div></section>
-    <p class="detail-seo">This is an audio latency test: it plays short clicks through the speakers and times how long the microphone takes to hear them back, reporting the median round-trip latency in milliseconds. Try it in the browser to check a laptop or headset audio latency, or run the Node CLI version against @audio/mic for scripted round-trip latency measurements.</p>
+    <div class="detail-seo"><p>This is an audio latency test: it plays short clicks through the speakers and times how long the microphone takes to hear them back, reporting the median round-trip latency in milliseconds. Try it in the browser to check a laptop or headset audio latency, or run the Node CLI version against @audio/mic for scripted round-trip latency measurements.</p></div>
   </main>
   <canvas class="footer-strips" aria-hidden="true"></canvas>
   <footer class="site-footer">

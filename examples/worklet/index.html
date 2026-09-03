@@ -50,11 +50,6 @@
     <div class="detail-grid">
 
         <section class="demo-panel" aria-label="Browser demo">
-          <div class="demo-bar">
-            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
-            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
-          </div>
           <div class="demo-stage">
             <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
             <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
@@ -86,6 +81,11 @@
         </section>
       
     </div>
+    <div class="detail-foot dialog-foot">
+        <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+        <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+        <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+      </div>
     <aside class="callout"><p class="callout-label">Note</p><p>The browser adapter registers a Blob URL. WAA also supports inline callback registration in Node.</p></aside>
 
     <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
@@ -94,7 +94,7 @@
       <a class="example-entry" href="../spatial/"><span class="example-number">37</span><span class="example-heading"><strong>Spatial panning</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Move a source from left to right through three-dimensional space.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6h.01M3 30h.01M3 54h.01M3 78h.01M9 24h.01M9 48h.01M9 72h.01M15 18h.01M15 42h.01M15 66h.01M15 90h.01M21 12h.01M21 36h.01M21 60h.01M21 84h.01M27 6h.01M27 30h.01M27 54h.01M27 78h.01M33 24h.01M33 48h.01M33 72h.01M39 18h.01M39 42h.01M39 66h.01M39 90h.01M45 12h.01M45 36h.01M45 60h.01M45 84h.01M51 6h.01M51 30h.01M51 54h.01M51 78h.01M57 24h.01M57 48h.01M57 72h.01M63 18h.01M63 42h.01M63 66h.01M63 90h.01M69 12h.01M69 36h.01M69 60h.01M69 84h.01M75 6h.01M75 30h.01M75 54h.01M75 78h.01M81 24h.01M81 48h.01M81 72h.01M87 18h.01M87 42h.01M87 66h.01M87 90h.01M93 12h.01M93 36h.01M93 60h.01M93 84h.01" /></svg></a>
       <a class="example-entry" href="../linked-params/"><span class="example-number">39</span><span class="example-heading"><strong>Linked AudioParams</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Drive multiple gain parameters from one ConstantSourceNode.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M21 12L21 84M33 24L81 24M33 48L81 48M33 72L81 72" /></svg></a>
     </div></section>
-    <p class="detail-seo">This is an AudioWorklet example: it registers a custom AudioWorkletProcessor, exposes an AudioParam, and renders the output of that processor. Run it in the browser, where the adapter registers a Blob URL for the processor, or from the Node CLI, which also supports inline callback registration.</p>
+    <div class="detail-seo"><p>This is an AudioWorklet example: it registers a custom AudioWorkletProcessor, exposes an AudioParam, and renders the output of that processor. Run it in the browser, where the adapter registers a Blob URL for the processor, or from the Node CLI, which also supports inline callback registration.</p></div>
   </main>
   <canvas class="footer-strips" aria-hidden="true"></canvas>
   <footer class="site-footer">

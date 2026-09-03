@@ -243,6 +243,8 @@ export function init(ctx, {
     nodes: instrument.nodes,
     duration,
     graph: 'Shared metronome instrument → audio-clock scheduler → Destination',
+    // where the ramp has reached, for a player watching the tempo climb
+    readout: time => `${Math.round(startBpm + (endBpm - startBpm) * Math.min(1, Math.max(0, (time - when) / Math.max(duration, 0.001))))} BPM`,
     data: { instrument },
   }
 }
