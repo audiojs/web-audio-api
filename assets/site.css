@@ -744,10 +744,9 @@ pre code { font: inherit; }
 .example-entry:active { transform: translateY(1px); }
 
 /* questions */
-.faq { padding-block: var(--space-2xl) var(--space-4xl); }
+.faq { padding-block: 0 var(--space-4xl); }
 
 .faq-list {
-  max-width: 52rem;
 }
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
@@ -889,6 +888,7 @@ tbody th { color: var(--color-ink); }
   width: 100%;
   height: 8rem;
   background: var(--color-paper);
+  margin-bottom: -1px;
 }
 
 .site-footer {
@@ -905,7 +905,7 @@ tbody th { color: var(--color-ink); }
   padding-inline: var(--page-gutter);
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-lg) var(--space-xl);
 }
