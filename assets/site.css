@@ -508,6 +508,13 @@ pre {
 
 pre code { font: inherit; }
 
+/* inline code carries the code face at seven eighths, so it lands on the same steps as the text around it
+   rather than on the browser's own monospace default */
+:not(pre) > code {
+  font-family: var(--font-code);
+  font-size: 0.875em;
+}
+
 /* a recorded graph: cards for nodes, blue dashes for connections; the panel sets the surface.
    Light from above: a dimmed face, a whiter edge inside, a tight contact shadow, a wide faint one */
 .graph { display: block; }
@@ -578,8 +585,25 @@ pre code { font: inherit; }
 .copy-icon[data-state="copied"] .copy-glyph { display: none; }
 .copy-icon[data-state="copied"] .check-glyph { display: block; }
 
-/* catalogue */
-.examples { padding-block: var(--space-2xl) var(--space-4xl); }
+/* catalogue: a white field the band above dissolves the paper into; the questions below
+   break straight back to paper */
+.examples {
+  padding-block: var(--space-lg) var(--space-3xl);
+  position: relative;
+  background: var(--color-white);
+  box-shadow: 0 0 0 100vmax var(--color-white);
+  clip-path: inset(0 -100vmax 0);
+}
+
+.field-strips {
+  width: 100%;
+  height: 12rem;
+  position: absolute;
+  inset-inline-start: 0;
+  z-index: -1;
+  display: block;
+  pointer-events: none;
+}
 
 .section-heading {
   margin-block-end: var(--space-xl);
@@ -671,7 +695,7 @@ pre code { font: inherit; }
   inset-block-start: 0;
   z-index: var(--z-raised);
   border-block-end: var(--rule-heavy) solid var(--color-ink);
-  background: var(--color-paper);
+  background: var(--color-white);
   color: var(--color-ink);
   font-size: var(--text-lg);
   font-weight: 700;
@@ -752,7 +776,8 @@ pre code { font: inherit; }
 .example-entry:active { transform: translateY(1px); }
 
 /* questions */
-.faq { padding-block: 0 var(--space-4xl); }
+/* the break sits midway: as much paper before the questions as white after the last example */
+.faq { padding-block: var(--space-3xl) var(--space-4xl); }
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
 .faq details:last-child { border-block-end: 0; }
@@ -897,7 +922,7 @@ tbody th { color: var(--color-ink); }
 }
 
 .site-footer {
-  padding-block: var(--space-md) var(--space-xl);
+  padding-block: var(--space-sm) var(--space-lg);
   background: var(--color-ink);
   color: var(--color-muted-on-ink);
   font-size: var(--text-sm);
@@ -1062,6 +1087,7 @@ tbody th { color: var(--color-ink); }
 }
 
 /* panes that scroll do so on a transparent track; a thin thumb shows as it moves */
+.hero-art,
 .hero-code pre,
 .code-output,
 .cli-pane,
@@ -1606,6 +1632,23 @@ tbody th { color: var(--color-ink); }
 }
 
 @media (max-width: 48rem) {
+  /* three sizes of text on a phone, under the two the hero keeps: 16 reading, 14 supporting, 12 fine
+     print. Code and the footer join the fine print; section headings step back under the title. */
+  .section-heading h2 { font-size: var(--text-xl); }
+  .example-group h3 { font-size: var(--text-md); }
+  .hero-lede,
+  .hero-intro ul,
+  .detail-head > p { font-size: var(--text-base); }
+  .hero-code pre,
+  .code-output,
+  .site-footer { font-size: var(--text-xs); }
+
+  /* the graph keeps its own size and scrolls, rather than shrinking its labels out of legibility */
+  .hero-art {
+    justify-items: start;
+    overflow-x: auto;
+  }
+  .hero-art .graph { min-width: 25rem; }
   .hero-code { grid-template-columns: minmax(0, 1fr); }
   .install-command .prompt { display: none; }
   .hero-code pre,
@@ -1624,10 +1667,12 @@ tbody th { color: var(--color-ink); }
   }
   /* compact: the graph leads, the signal is a short strip the height of its spectrum */
   .hero {
-    padding-block: var(--space-xl) var(--space-lg);
+    padding-block: var(--space-xl) var(--space-2xl);
     row-gap: var(--space-md);
   }
   .hero-art { padding: var(--space-sm); }
+  /* less paper to cross here, so the band crosses it in less height */
+  .field-strips { height: 5rem; }
   .hero-intro ul { padding-inline-start: 0; }
   /* a tighter row keeps more runtimes named before the labels start dropping */
   .hero-stack { gap: var(--space-2xs) var(--space-md); }
@@ -1635,8 +1680,8 @@ tbody th { color: var(--color-ink); }
   .hero-wave,
   .hero-spectrum { aspect-ratio: 400 / 64; }
   .hero-spectrum { margin-block-start: var(--space-sm); }
-  .examples,
-  .faq { padding-block: var(--space-xl) var(--space-2xl); }
+  .examples { padding-block: var(--space-md) var(--space-2xl); }
+  .faq { padding-block: var(--space-2xl) var(--space-2xl); }
   .section-heading { margin-block-end: var(--space-md); }
   .example-groups { gap: var(--space-xl); }
   /* one row of tags, bleeding to the edge and scrolling past it; the counts wait for a wider screen */
@@ -1660,7 +1705,6 @@ tbody th { color: var(--color-ink); }
     font-size: var(--text-base);
     font-weight: 600;
   }
-  .site-footer { padding-block: var(--space-lg); }
   /* the modal is a sheet: edge to edge, the close button over the title's corner */
   .example-dialog { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   .dialog-shell { border-radius: 0; }

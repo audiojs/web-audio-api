@@ -903,3 +903,14 @@ export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize
 
 for (let canvas of document.querySelectorAll('.header-strips')) stripBand(canvas, true, '--color-white')
 for (let canvas of document.querySelectorAll('.footer-strips')) stripBand(canvas, false)
+
+// the field band lands on the paper right above the white examples field, dissolving one into the other
+let field = document.querySelector('.examples')
+let fieldStrips = document.querySelector('.field-strips')
+if (field && fieldStrips) {
+  let place = () => { fieldStrips.style.insetBlockStart = `${field.getBoundingClientRect().top + scrollY - fieldStrips.offsetHeight}px` }
+  place()
+  addEventListener('resize', place)
+  addEventListener('load', place)
+  stripBand(fieldStrips, false, '--color-white')
+}

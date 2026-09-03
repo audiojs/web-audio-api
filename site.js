@@ -1,5 +1,5 @@
 import { byId } from './examples/catalog.js'
-import { highlight, mountExample, stripBand } from './examples/browser.js'
+import { highlight, mountExample } from './examples/browser.js'
 
 const dialog = document.getElementById('example-dialog')
 const title = document.getElementById('dialog-title')
@@ -204,20 +204,3 @@ let initialId = decodeURIComponent(location.hash.slice(1))
 if (byId.has(initialId)) openExample(initialId, false)
 
 
-// the white examples field opens where the code block ends, snapped to the
-// 16px dot grid; the stripe band dissolves the dots into it just above
-let examples = document.querySelector('.examples')
-let fieldStrips = document.querySelector('.field-strips')
-if (examples) {
-  let snap = () => {
-    let block = document.querySelector('.hero-code')
-    let edge = Math.round((block.getBoundingClientRect().bottom + scrollY) / 16) * 16
-    let top = examples.getBoundingClientRect().top + scrollY
-    examples.style.setProperty('--grid-stop', `${top - edge}px`)
-    if (fieldStrips) fieldStrips.style.insetBlockStart = `${edge - fieldStrips.offsetHeight}px`
-  }
-  snap()
-  addEventListener('resize', snap)
-  addEventListener('load', snap)
-}
-if (fieldStrips) stripBand(fieldStrips, false, '--color-white')
