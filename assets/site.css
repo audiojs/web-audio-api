@@ -365,6 +365,11 @@ h3 {
   white-space: nowrap;
 }
 
+.hero-stack img,
+.runtime-mark {
+  border-radius: var(--radius-xs);
+}
+
 .hero-stack img {
   width: 1.25rem;
   height: 1.25rem;
@@ -745,9 +750,6 @@ pre code { font: inherit; }
 
 /* questions */
 .faq { padding-block: 0 var(--space-4xl); }
-
-.faq-list {
-}
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
 .faq details:last-child { border-block-end: 0; }

@@ -124,7 +124,13 @@ if (marks.length) {
   }
   stack.classList.add('is-fitted')
   fit()
-  addEventListener('resize', fit)
+  // a scroll that slides a phone's address bar away fires resize without changing the row's width
+  let width = stack.getBoundingClientRect().width
+  new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width === width) return
+    width = entry.contentRect.width
+    fit()
+  }).observe(stack)
   document.fonts?.ready.then(fit)
 }
 

@@ -17,7 +17,7 @@
   <meta property="og:image:alt" content="Web Audio API without browser: the graph hero.js connects, rendered by web-audio-api in Node">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#f4f3f2">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Ccircle%20cx='24'%20cy='24'%20r='24'%20fill='%2316171b'/%3E%3Cg%20fill='none'%20stroke='%23f2f4f8'%20stroke-width='2.5'%3E%3Ccircle%20cx='24'%20cy='24'%20r='20.5'/%3E%3Cpath%20d='M3.73%2024.42C9.12%2024.42%209.99%2024.3%2012.74%2018.27C16.28%2010.49%2018.92%209.67%2022.82%2024.42C26.72%2039.16%2029.86%2037.13%2032.66%2028.37C36.73%2015.61%2037.8%2024.42%2042.57%2024.42C44.27%2024.42%2044.27%2024.42%2044.27%2024.42'/%3E%3Cpath%20d='M3.36%2024.36h41.29'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%22-1.75%20-1.75%2046%2046%22%3E%3Ccircle%20cx=%2221.25%22%20cy=%2221.25%22%20r=%2223%22%20fill=%22%2316171b%22/%3E%3Cg%20fill=%22none%22%20stroke=%22%23f2f4f8%22%20stroke-width=%222%22%3E%3Cpath%20d=%22M21.25%2041.75C32.5718%2041.75%2041.75%2032.5718%2041.75%2021.25C41.75%209.92816%2032.5718%200.75%2021.25%200.75C9.92816%200.75%200.75%209.92816%200.75%2021.25C0.75%2032.5718%209.92816%2041.75%2021.25%2041.75Z%22/%3E%3Cpath%20d=%22M2.16229%2021.2494C7.55139%2021.2494%208.42104%2021.1308%2011.1673%2015.1026C14.7113%207.32332%2017.3523%206.50429%2021.25%2021.2494%22/%3E%3Cpath%20d=%22M40.3377%2021.2506C34.9486%2021.2506%2034.079%2021.3692%2031.3327%2027.3974C27.7887%2035.1767%2025.1477%2035.9957%2021.25%2021.2506%22/%3E%3Cpath%20d=%22M0.774017%2021.25L41.726%2021.25%22/%3E%3C/g%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <link rel="preload" href="../../assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin="">
   <link rel="preload" href="../../assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin="">
@@ -31,10 +31,11 @@
     <canvas class="header-strips" aria-hidden="true"></canvas>
     <div class="header-inner">
     <a class="brand" href="../../" aria-label="Web Audio API home">
-      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
+      <svg viewBox="-1.75 -1.75 46 46" aria-hidden="true"><circle cx="21.25" cy="21.25" r="23" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><path d="M21.25 41.75C32.5718 41.75 41.75 32.5718 41.75 21.25C41.75 9.92816 32.5718 0.75 21.25 0.75C9.92816 0.75 0.75 9.92816 0.75 21.25C0.75 32.5718 9.92816 41.75 21.25 41.75Z" /><path d="M2.16229 21.2494C7.55139 21.2494 8.42104 21.1308 11.1673 15.1026C14.7113 7.32332 17.3523 6.50429 21.25 21.2494" /><path d="M40.3377 21.2506C34.9486 21.2506 34.079 21.3692 31.3327 27.3974C27.7887 35.1767 25.1477 35.9957 21.25 21.2506" /><path d="M0.774017 21.25L41.726 21.25" /></g></svg>
     </a>
     <nav aria-label="Primary">
       <a href="../../examples/">Examples</a>
+      <a href="../../#faq">FAQ</a>
     </nav>
     <div class="corner-links">
       <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.5</span></a>
@@ -94,6 +95,7 @@
     </div></section>
     <p class="detail-seo">This is a frequency sweep test you can run as a speaker test from 20 Hz to 20 kHz, with linear or exponential automation across the range. Start at a low volume in the browser, or render the same sweep from the Node CLI for measurement or analysis.</p>
   </main>
+  <canvas class="footer-strips" aria-hidden="true"></canvas>
   <footer class="site-footer">
     <div class="footer-inner">
       <p class="footer-left">

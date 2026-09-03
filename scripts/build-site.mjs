@@ -75,7 +75,7 @@ function chrome(rel) {
     icons: lines([fromHome('link[rel="icon"]'), fromHome('link[rel="apple-touch-icon"]')]),
     card: lines(allFromHome('meta[property^="og:image"], meta[name="twitter:card"], meta[name="theme-color"]')),
     header: relative(fromHome('header.corner-action').outerHTML),
-    footer: relative(fromHome('footer.site-footer').outerHTML),
+    footer: relative([fromHome('canvas.footer-strips'), fromHome('footer.site-footer')].map(node => node.outerHTML).join('\n  ')),
   }
 }
 
@@ -206,7 +206,7 @@ function updateCatalog() {
     .replace(/<link rel="preconnect" href="https:\/\/fonts\.[^>]*>|<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*>/g, '')
     .replace('<link rel="stylesheet" href="../assets/tokens.css">', `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>${fonts}<link rel="stylesheet" href="../assets/tokens.css">`)
     .replace(/<header class="corner-action">[\s\S]*?<\/header>/, header)
-    .replace(/<footer class="site-footer">[\s\S]*?<\/footer>/, footer)
+    .replace(/(?:<canvas class="footer-strips"[^>]*><\/canvas>\s*)?<footer class="site-footer">[\s\S]*?<\/footer>/, footer)
   writeFileSync(path, html)
 }
 

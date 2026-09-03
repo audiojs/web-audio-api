@@ -874,10 +874,14 @@ if (filters) {
 // horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
 export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = 8) {
   let context = canvas.getContext('2d')
+  let painted = ''
   let paint = () => {
     let ratio = Math.min(devicePixelRatio || 1, 2)
     let width = canvas.offsetWidth * ratio, height = canvas.offsetHeight * ratio
     if (height < 1) return
+    // a scroll that slides a phone's address bar away fires resize without changing the band
+    if (painted === `${width}x${height}`) return
+    painted = `${width}x${height}`
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height }
     let cells = Math.max(2, Math.round(canvas.offsetHeight / cellSize))
     let cell = Math.max(2, Math.round(height / cells))
