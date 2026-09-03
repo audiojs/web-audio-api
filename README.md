@@ -1,12 +1,16 @@
 # web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-Headless [Web Audio API](https://audiojs.dev/web-audio-api/) for any JS engine.
+[Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation.
 
-* **100% [WPT](https://web-platform-tests.org/) conformance**, no native bindings, no compile.
-* **Audio in CI** – `OfflineAudioContext` renders without speakers.
-* **CLI audio scripting** – pipe, process, synthesize from terminal.
-* **Server-side audio** – generate from APIs, bots, pipelines.
-* **Tone.js and web audio libs** work in Node as-is.
+Useful for:
+
+* **Agents and bots** – any writable stream, no audio device needed.
+* **Audio analysis** – `decodeAudioData` for 20+ formats, `AnalyserNode` as in browser.
+* **Server-side rendering** – `OfflineAudioContext` renders faster than realtime.
+* **Audio in CI** – any JS engine, node, deno, bun, llrt, quickjs, jz.
+* **Unit-testing** – real samples, no mocks, 100% [WPT](https://web-platform-tests.org/).
+* **Tone.js and web audio libs** – `import 'web-audio-api/polyfill'` installs the globals.
+* **CLI audio scripting** – PCM in and out through stdio, 46 runnable examples.
 
 ```
 npm install web-audio-api
@@ -29,7 +33,8 @@ osc.start()
 
 [`@audio/speaker`](https://github.com/audiojs/speaker) provides speaker output without extra setup.
 
-### Offline rendering
+<details>
+<summary><b>How do I render offline, without speakers?</b></summary>
 
 ```js
 import { OfflineAudioContext } from 'web-audio-api'
@@ -44,85 +49,27 @@ const buffer = await ctx.startRendering()
 // buffer.getChannelData(0) → Float32Array of 44100 samples
 ```
 
-## Examples
+Rendering runs faster than realtime and opens no audio device, so it also works under any test runner for asserting on samples. See [render-to-buffer.js](examples/render-to-buffer.js).
 
-`node examples/<name>.js` runs each example with its defaults. Each CLI is a thin adapter over a standalone `examples/graphs/<name>.js` module; the website imports that same graph into the browser’s native Web Audio context. Use `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation. Parametric examples accept positional args or `key=value` with prefix matching (`f=440`, `freq=440` both work). Note names (`A4`, `C#3`, `Eb5`), `k` for kHz (`20k`), and `s`/`m`/`h` for duration (`10m`) are supported.
+</details>
 
-| Example | |
-|---|---|
-| **Test Signals** | |
-| [tone.js](examples/tone.js) | Reference pitch – `sine A4 2s` |
-| [sweep.js](examples/sweep.js) | Hear the audible range – `20..20k exp 3s` |
-| [noise.js](examples/noise.js) | White, pink, brown, blue, violet – `pink 2s` |
-| [impulse.js](examples/impulse.js) | Dirac click – `5 0.5s` |
-| [dtmf.js](examples/dtmf.js) | Dial a phone number – `5551234` |
-| [stereo-test.js](examples/stereo-test.js) | Left, right, center – `1k 1s` |
-| [metronome.js](examples/metronome.js) | Programmable stick click – `80..240 10m X-x-x-x-` |
-| [tuner.js](examples/tuner.js) | Guitar tuner – mic pitch in cents – `440` (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
-| [latency-tester.js](examples/latency-tester.js) | Round-trip latency: speakers → mic, in ms (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
-| [level-meter.js](examples/level-meter.js) | Mic RMS and peak in dBFS, fast or slow ballistics (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
-| **Illusions** | |
-| [shepard.js](examples/shepard.js) | Pitch that rises forever – `up 15s` |
-| [risset-rhythm.js](examples/risset-rhythm.js) | Beat that accelerates forever – `up 120 20s` |
-| [binaural-beats.js](examples/binaural-beats.js) | Third tone from two (headphones!) – `200 10 10s` |
-| [missing-fundamental.js](examples/missing-fundamental.js) | Your brain fills in the note – `100 3s` |
-| [beating.js](examples/beating.js) | Two close frequencies dance – `440 3 5s` |
-| [octave-illusion.js](examples/octave-illusion.js) | One tone jumps register and side (headphones!) – `400 800 2 12s` |
-| [scale-illusion.js](examples/scale-illusion.js) | Two scales split between ears, regrouped by pitch (headphones!) – `200 261.63 8s` |
-| [tritone-paradox.js](examples/tritone-paradox.js) | Up or down? Tritone pairs that refuse to decide – `0 8 1.2` |
-| [continuity.js](examples/continuity.js) | A tone sounds unbroken through noise bursts – `440 0.6 on 15s` |
-| [streaming.js](examples/streaming.js) | Two tones fuse into one stream or split into two – `240 4 15s` |
-| [huggins-pitch.js](examples/huggins-pitch.js) | A pitch that exists in neither ear (headphones!) – `600 20s` |
-| [zwicker-tone.js](examples/zwicker-tone.js) | An after-tone lingers where the notch was – `2000 3 2 20s` |
-| **Synthesis** | |
-| [subtractive-synth.js](examples/subtractive-synth.js) | Sawtooth → filter sweep → ADSR |
-| [additive.js](examples/additive.js) | Waveforms from harmonics – `square 220 16 3s` |
-| [fm-synthesis.js](examples/fm-synthesis.js) | DX7 frequency modulation – `440 2 5 3s` |
-| [karplus-strong.js](examples/karplus-strong.js) | A string plucked from noise – `A4 4s` |
-| [wavetable.js](examples/wavetable.js) | Fourier wavetables, crossfaded – `organ 220 0.3 6s` |
-| [granular.js](examples/granular.js) | Grain cloud from a seeded buffer – `0.08 15 4 10s` |
-| **Generative** | |
-| [sequencer.js](examples/sequencer.js) | Step sequencer – precise timing |
-| [serial.js](examples/serial.js) | Twelve-tone rows (Webern) – `72 30s` |
-| [gamelan.js](examples/gamelan.js) | Balinese kotekan – two parts, one melody – `120 20s` |
-| [drone.js](examples/drone.js) | Tanpura shimmer – `C3 30s` |
-| [jazz.js](examples/jazz.js) | Modal jazz – new every time |
-| [euclidean.js](examples/euclidean.js) | Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s` |
-| **API** | |
-| [speaker.js](examples/speaker.js) | Hello world |
-| [lfo.js](examples/lfo.js) | Tremolo via LFO |
-| [spatial.js](examples/spatial.js) | Sound moving through space |
-| [worklet.js](examples/worklet.js) | Custom AudioWorkletProcessor |
-| [linked-params.js](examples/linked-params.js) | One source controlling many gains |
-| [fft.js](examples/fft.js) | Frequency spectrum |
-| [render-to-buffer.js](examples/render-to-buffer.js) | Offline render → buffer |
-| [process-file.js](examples/process-file.js) | Audio file → EQ + compress → render |
-| [pipe-stdout.js](examples/pipe-stdout.js) | PCM to stdout – pipe to `aplay`, `sox`, etc. |
-| [mic.js](examples/mic.js) | Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
-| [recorder.js](examples/recorder.js) | Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic)) |
-| [reverb.js](examples/reverb.js) | Convolver with a seeded impulse response – `2 0.35 3s` |
-
-## FAQ
-
-<dl>
-
-<dt>How do I close an AudioContext?</dt>
-<dd>
+<details>
+<summary><b>How do I close an AudioContext?</b></summary>
 
 ```js
 await ctx.close()
 ```
 Or with [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management): `using ctx = new AudioContext()`
-</dd>
 
-<dt>Why does it start suspended?</dt>
-<dd>
+</details>
+<details>
+<summary><b>Why does it start suspended?</b></summary>
 
 `AudioContext` starts suspended to match the [Web Audio lifecycle](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audiocontext). In Node, call `await ctx.resume()`. Browsers may require that call inside a user gesture. `OfflineAudioContext` doesn't need it.
-</dd>
 
-<dt>Does it work with Tone.js?</dt>
-<dd>
+</details>
+<details>
+<summary><b>Does it work with Tone.js?</b></summary>
 
 Yes. Tone.js uses `standardized-audio-context`, which needs globals such as `window.AudioParam` for `instanceof` checks. Load the polyfill before Tone.js:
 
@@ -142,19 +89,19 @@ node --import web-audio-api/polyfill app.js
 ```
 
 Then static `import * as Tone from 'tone'` works in `app.js`.
-</dd>
 
-<dt>How do I decode audio files?</dt>
-<dd>
+</details>
+<details>
+<summary><b>How do I decode audio files?</b></summary>
 
 ```js
 const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 ```
 `decodeAudioData()` uses [@audio/decode](https://github.com/audiojs/decode) for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, WebM, and other supported audio or video containers without FFmpeg or native bindings.
-</dd>
 
-<dt id="how-do-i-capture-audio-from-the-microphone">How do I capture audio from the microphone?</dt>
-<dd>
+</details>
+<details>
+<summary id="how-do-i-capture-audio-from-the-microphone"><b>How do I capture audio from the microphone?</b></summary>
 
 In Node, pair [`@audio/mic`](https://github.com/audiojs/mic) with `CustomMediaStreamTrack`:
 
@@ -194,10 +141,10 @@ pump()
 See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU meter. To record the graph to a buffer, use `OfflineAudioContext.startRendering()`. To capture live graph output as a stream, use `ctx.createMediaStreamDestination()`.
 
 If the default microphone backend cannot open the device, pass `backend: 'process'` to use `sox`/`ffmpeg` instead: `mic({ ..., backend: 'process' })`. All bundled examples accept `backend=process` on the command line.
-</dd>
 
-<dt>How do I use it as a polyfill?</dt>
-<dd>
+</details>
+<details>
+<summary><b>How do I use it as a polyfill?</b></summary>
 
 ```js
 import 'web-audio-api/polyfill'
@@ -220,21 +167,78 @@ stream.getAudioTracks()[0].stop()
 ```
 
 Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
-</dd>
 
-<dt>Can I unit-test audio code?</dt>
-<dd>
+</details>
 
-Use `OfflineAudioContext` with any test runner; it renders without speakers. See [render-to-buffer.js](examples/render-to-buffer.js).
-</dd>
+## Examples
 
-<dt>How fast is it?</dt>
-<dd>
+`node examples/<name>.js` runs each example with its defaults.
+`node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation.
 
-All benchmark scenarios render faster than real time. Pure JS matches Rust napi on simple graphs. Convolution and compression are 2–4× slower. The [JZ/WASM path](https://jz.js.org/) is experimental. Run `npm run bench:all` to measure.
-</dd>
+### Test signals
 
-</dl>
+* [tone.js](examples/tone.js): Reference pitch – `sine A4 2s`
+* [sweep.js](examples/sweep.js): Hear the audible range – `20..20k exp 3s`
+* [noise.js](examples/noise.js): White, pink, brown, blue, violet – `pink 2s`
+* [impulse.js](examples/impulse.js): Dirac click – `5 0.5s`
+* [dtmf.js](examples/dtmf.js): Dial a phone number – `5551234`
+* [stereo-test.js](examples/stereo-test.js): Left, right, center – `1k 1s`
+* [metronome.js](examples/metronome.js): Programmable stick click – `80..240 10m X-x-x-x-`
+* [tuner.js](examples/tuner.js): Guitar tuner – mic pitch in cents – `440` (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [latency-tester.js](examples/latency-tester.js): Round-trip latency: speakers → mic, in ms (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [level-meter.js](examples/level-meter.js): Mic RMS and peak in dBFS, fast or slow ballistics (requires [`@audio/mic`](https://github.com/audiojs/mic))
+
+### Illusions
+
+* [shepard.js](examples/shepard.js): Pitch that rises forever – `up 15s`
+* [risset-rhythm.js](examples/risset-rhythm.js): Beat that accelerates forever – `up 120 20s`
+* [binaural-beats.js](examples/binaural-beats.js): Third tone from two (headphones!) – `200 10 10s`
+* [missing-fundamental.js](examples/missing-fundamental.js): Your brain fills in the note – `100 3s`
+* [beating.js](examples/beating.js): Two close frequencies dance – `440 3 5s`
+* [octave-illusion.js](examples/octave-illusion.js): One tone jumps register and side (headphones!) – `400 800 2 12s`
+* [scale-illusion.js](examples/scale-illusion.js): Two scales split between ears, regrouped by pitch (headphones!) – `200 261.63 8s`
+* [tritone-paradox.js](examples/tritone-paradox.js): Up or down? Tritone pairs that refuse to decide – `0 8 1.2`
+* [continuity.js](examples/continuity.js): A tone sounds unbroken through noise bursts – `440 0.6 on 15s`
+* [streaming.js](examples/streaming.js): Two tones fuse into one stream or split into two – `240 4 15s`
+* [huggins-pitch.js](examples/huggins-pitch.js): A pitch that exists in neither ear (headphones!) – `600 20s`
+* [zwicker-tone.js](examples/zwicker-tone.js): An after-tone lingers where the notch was – `2000 3 2 20s`
+
+### Synthesis
+
+* [subtractive-synth.js](examples/subtractive-synth.js): Sawtooth → filter sweep → ADSR
+* [additive.js](examples/additive.js): Waveforms from harmonics – `square 220 16 3s`
+* [fm-synthesis.js](examples/fm-synthesis.js): DX7 frequency modulation – `440 2 5 3s`
+* [karplus-strong.js](examples/karplus-strong.js): A string plucked from noise – `A4 4s`
+* [wavetable.js](examples/wavetable.js): Fourier wavetables, crossfaded – `organ 220 0.3 6s`
+* [granular.js](examples/granular.js): Grain cloud from a seeded buffer – `0.08 15 4 10s`
+
+### Generative
+
+* [sequencer.js](examples/sequencer.js): Step sequencer – precise timing
+* [serial.js](examples/serial.js): Twelve-tone rows (Webern) – `72 30s`
+* [gamelan.js](examples/gamelan.js): Balinese kotekan – two parts, one melody – `120 20s`
+* [drone.js](examples/drone.js): Tanpura shimmer – `C3 30s`
+* [jazz.js](examples/jazz.js): Jazz in seven styles, modal first, lead on guitar, flute, harp, or piano – `style=ambient lead=harp`
+* [euclidean.js](examples/euclidean.js): Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s`
+
+### API
+
+* [speaker.js](examples/speaker.js): Hello world
+* [lfo.js](examples/lfo.js): Tremolo via LFO
+* [spatial.js](examples/spatial.js): Sound moving through space
+* [worklet.js](examples/worklet.js): Custom AudioWorkletProcessor
+* [linked-params.js](examples/linked-params.js): One source controlling many gains
+* [fft.js](examples/fft.js): Frequency spectrum
+* [render-to-buffer.js](examples/render-to-buffer.js): Offline render → buffer
+* [process-file.js](examples/process-file.js): Audio file → EQ + compress → render
+* [pipe-stdout.js](examples/pipe-stdout.js): PCM to stdout – pipe to `aplay`, `sox`, etc.
+* [mic.js](examples/mic.js): Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [recorder.js](examples/recorder.js): Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [reverb.js](examples/reverb.js): Convolver with a seeded impulse response – `2 0.35 3s`
+
+## Performance
+
+All benchmark scenarios render faster than real time. Pure JS matches Rust napi on simple graphs. Convolution and compression are 2–4× slower.
 
 ## Architecture
 

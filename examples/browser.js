@@ -133,6 +133,15 @@ function createControls(id, container) {
     label.append(control)
     container.append(label)
   }
+  // a control that follows another takes its value from that one's choice, until changed by hand
+  for (let spec of specs) {
+    if (!spec.follows) continue
+    let control = container.querySelector(`#control-${spec.key}`), leader = container.querySelector(`#control-${spec.follows}`)
+    if (!control || !leader) continue
+    let apply = () => { control.value = spec.valueFor(leader.value); control.dispatchEvent(new Event('input')) }
+    apply()
+    leader.addEventListener('change', apply)
+  }
 }
 
 function readOptions(id, container) {
@@ -442,6 +451,9 @@ async function showGraph(id, pane) {
   try {
     let { init } = await import(`./graphs/${id}.js`)
     let options = Object.fromEntries(controlsFor(id).map(control => [control.key, control.value]))
+    // an offline context schedules the whole run upfront, and the shape of a ten-minute session
+    // is the shape of its first seconds, so the recording is capped at three
+    options.duration = Math.min(3, Number(options.duration) || 3)
     let context = new OfflineAudioContext(2, 128, 44100)
     let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: AudioWorkletNode }))
     let resolved = resolveGraph(edges)
@@ -819,6 +831,45 @@ if (detailPage) {
   addEventListener('pagehide', cleanup)
 }
 highlight()
+
+// The catalogue filters itself by job tag, on the homepage's featured row and on the catalogue page
+let filters = document.getElementById('example-filters')
+if (filters) {
+  let tagOf = entry => entry.querySelector('.example-tag')?.textContent.trim() || ''
+  let counts = new Map()
+  for (let entry of document.querySelectorAll('.example-entry')) {
+    let tag = tagOf(entry)
+    if (tag) counts.set(tag, (counts.get(tag) || 0) + 1)
+  }
+  let apply = active => {
+    for (let button of filters.querySelectorAll('button'))
+      button.setAttribute('aria-pressed', String(button.dataset.tag === active))
+    for (let group of document.querySelectorAll('.example-group')) {
+      let visible = 0
+      for (let entry of group.querySelectorAll('.example-entry')) {
+        let match = !active || tagOf(entry) === active
+        entry.hidden = !match
+        visible += match
+      }
+      group.hidden = !visible
+    }
+  }
+  let makeButton = tag => {
+    let button = document.createElement('button')
+    button.type = 'button'
+    button.dataset.tag = tag
+    button.textContent = tag || 'All'
+    let count = document.createElement('span')
+    count.className = 'filter-count'
+    count.textContent = tag ? counts.get(tag) : document.querySelectorAll('.example-entry').length
+    button.append(count)
+    button.setAttribute('aria-pressed', String(tag === ''))
+    button.addEventListener('click', () => apply(tag))
+    return button
+  }
+  let tags = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a))
+  filters.append(makeButton(''), ...tags.map(makeButton))
+}
 
 // horizontal stripe band: equal integer cells whose bars grow linearly toward the solid edge
 export function stripBand(canvas, solidTop, colorToken = '--color-ink', cellSize = 8) {

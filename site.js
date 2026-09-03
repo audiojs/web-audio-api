@@ -111,6 +111,23 @@ for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedb
   mark.addEventListener('pointerenter', () => { wait = setTimeout(() => show(false), openTip || performance.now() < warmUntil ? 0 : TIP_DELAY) })
   mark.addEventListener('pointerleave', rest)
 }
+// The row of runtimes stays on one line whatever the width: while the last mark reaches past the
+// row's edge, labels drop one by one from the end. A dropped label still names its mark to a screen
+// reader and to its tip. Without this script the marks wrap instead.
+const stack = document.querySelector('.hero-stack')
+let marks = [...stack?.querySelectorAll('button') || []]
+if (marks.length) {
+  let overflows = () => marks.at(-1).getBoundingClientRect().right > stack.getBoundingClientRect().right + 0.5
+  let fit = () => {
+    for (let mark of marks) mark.classList.remove('is-compact')
+    for (let i = marks.length - 1; i >= 0 && overflows(); i--) marks[i].classList.add('is-compact')
+  }
+  stack.classList.add('is-fitted')
+  fit()
+  addEventListener('resize', fit)
+  document.fonts?.ready.then(fit)
+}
+
 addEventListener('pointerdown', event => { if (openTip && !event.target.closest('.hero-stack')) closeTip() })
 addEventListener('keydown', event => { if (event.key === 'Escape' && openTip) closeTip() })
 addEventListener('resize', placeTip)
@@ -179,44 +196,6 @@ addEventListener('pagehide', () => dispose?.())
 
 let initialId = decodeURIComponent(location.hash.slice(1))
 if (byId.has(initialId)) openExample(initialId, false)
-
-let filters = document.getElementById('example-filters')
-if (filters) {
-  let tagOf = entry => entry.querySelector('.example-tag')?.textContent.trim() || ''
-  let counts = new Map()
-  for (let entry of document.querySelectorAll('.example-entry')) {
-    let tag = tagOf(entry)
-    if (tag) counts.set(tag, (counts.get(tag) || 0) + 1)
-  }
-  let apply = active => {
-    for (let button of filters.querySelectorAll('button'))
-      button.setAttribute('aria-pressed', String(button.dataset.tag === active))
-    for (let group of document.querySelectorAll('.example-group')) {
-      let visible = 0
-      for (let entry of group.querySelectorAll('.example-entry')) {
-        let match = !active || tagOf(entry) === active
-        entry.hidden = !match
-        visible += match
-      }
-      group.hidden = !visible
-    }
-  }
-  let makeButton = tag => {
-    let button = document.createElement('button')
-    button.type = 'button'
-    button.dataset.tag = tag
-    button.textContent = tag || 'All'
-    let count = document.createElement('span')
-    count.className = 'filter-count'
-    count.textContent = tag ? counts.get(tag) : document.querySelectorAll('.example-entry').length
-    button.append(count)
-    button.setAttribute('aria-pressed', String(tag === ''))
-    button.addEventListener('click', () => apply(tag))
-    return button
-  }
-  let tags = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a))
-  filters.append(makeButton(''), ...tags.map(makeButton))
-}
 
 
 // the white examples field opens where the code block ends, snapped to the

@@ -61,6 +61,7 @@ function replaceGenerated(source, name, content) {
 
 // up to four same-category siblings, same job first
 const home = parseHTML(readFileSync(join(root, 'index.html'), 'utf8')).document
+const catalogue = parseHTML(readFileSync(join(root, 'examples/index.html'), 'utf8')).document
 
 // The homepage owns the chrome: other pages borrow its fonts, icons, social card, header, and footer with links made relative
 const fromHome = selector => home.querySelector(selector) ?? (() => { throw new Error(`index.html no longer has ${selector}, which every other page borrows`) })()
@@ -95,8 +96,11 @@ function relatedHTML(example) {
     .slice(0, 4)
   if (!siblings.length) return ''
   // the catalogue's own entries, thumbnails included, pointed at their pages
-  let entry = other => fromHome(`.example-entry[data-open-example="${other.id}"]`).outerHTML
-    .replace(`href="./examples/${other.id}/"`, `href="../${other.id}/"`).replace(` data-open-example="${other.id}"`, '')
+  let entry = other => {
+    let node = catalogue.querySelector(`.example-entry[href="./${other.id}/"]`)
+    if (!node) throw new Error(`examples/index.html has no entry for ${other.id}`)
+    return node.outerHTML.replace(`href="./${other.id}/"`, `href="../${other.id}/"`)
+  }
   let entries = siblings.map(other => '      ' + entry(other)).join('\n')
   return `    <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">\n${entries}\n    </div></section>\n`
 }
@@ -143,11 +147,11 @@ function examplePage(example) {
   <a class="skip-link" href="#demo-form">Skip to demo</a>
   ${header}
   <main class="example-detail">
-    <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../../#${example.category.toLowerCase().replace(/\s+/g, '-')}">${escapeHTML(example.category)}</a><span>/</span><a href="../../#examples">${escapeHTML(example.job)}</a></nav><h1>${escapeHTML(example.title)}</h1><p>${escapeHTML(example.description)}</p></header>
+    <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../">Examples</a><span>/</span><a href="../#${example.category.toLowerCase().replace(/\s+/g, '-')}">${escapeHTML(example.category)}</a></nav><h1>${escapeHTML(example.title)}</h1><p>${escapeHTML(example.description)}</p></header>
     <div class="detail-grid">
 ${demoHTML(example)}
     </div>
-${callout}    <dl class="detail-facts"><div><dt>Input</dt><dd>${escapeHTML(example.input)}</dd></div><div><dt>Output</dt><dd>${escapeHTML(example.output)}</dd></div></dl>
+${callout}
 ${relatedHTML(example)}${example.seo ? `    <p class="detail-seo">${escapeHTML(example.seo)}</p>\n` : ''}  </main>
   ${footer}
   <script type="module" src="../browser.js"></script>
@@ -186,7 +190,7 @@ function notFoundPage() {
 <body>
   ${header}
   <main class="example-detail not-found">
-    <header class="detail-head"><h1>Not found</h1><p>No page lives at this address. <a href="${sitePath}#examples">Browse the examples</a> or <a href="${sitePath}">start from the homepage</a>.</p></header>
+    <header class="detail-head"><h1>Not found</h1><p>No page lives at this address. <a href="${sitePath}examples/">Browse the examples</a> or <a href="${sitePath}">start from the homepage</a>.</p></header>
   </main>
   ${footer}
   <script type="module" src="${sitePath}examples/browser.js"></script>
@@ -196,9 +200,14 @@ function notFoundPage() {
 }
 
 function updateCatalog() {
-  writeFileSync(join(root, 'examples/index.html'), `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="0; url=../#examples"><link rel="canonical" href="${baseUrl}#examples"><title>Examples | web-audio-api</title></head><body><main><p><a href="../#examples">Open the examples</a></p></main><script>location.replace('../#examples')</script></body></html>
-`)
+  let { fonts, header, footer } = chrome('../')
+  let path = join(root, 'examples/index.html')
+  let html = readFileSync(path, 'utf8')
+    .replace(/<link rel="preconnect" href="https:\/\/fonts\.[^>]*>|<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*>/g, '')
+    .replace('<link rel="stylesheet" href="../assets/tokens.css">', `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>${fonts}<link rel="stylesheet" href="../assets/tokens.css">`)
+    .replace(/<header class="corner-action">[\s\S]*?<\/header>/, header)
+    .replace(/<footer class="site-footer">[\s\S]*?<\/footer>/, footer)
+  writeFileSync(path, html)
 }
 
 function generatePages() {
@@ -211,7 +220,7 @@ function generatePages() {
 
 function generateDiscovery() {
   writeFileSync(join(root, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}sitemap.xml\n`)
-  let urls = [baseUrl, ...examples.map(example => `${baseUrl}examples/${example.id}/`)]
+  let urls = [baseUrl, `${baseUrl}examples/`, ...examples.map(example => `${baseUrl}examples/${example.id}/`)]
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(url => `  <url><loc>${url}</loc></url>`).join('\n')}\n</urlset>\n`
   writeFileSync(join(root, 'sitemap.xml'), xml)
   writeFileSync(join(root, 'llms.txt'), llmsTxt())
@@ -232,6 +241,7 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 ## Docs
 
 - [Homepage](${baseUrl})
+- [All examples](${baseUrl}examples/)
 - [Repository](https://github.com/audiojs/web-audio-api)
 
 ${sections}

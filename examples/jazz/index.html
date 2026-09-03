@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Jazz | Web Audio API in browser and Node</title>
-  <meta name="description" content="Generate modal harmony, walking bass, plucked improvisation, and percussion. Run the same atomic graph source in the browser or from its Node CLI.">
+  <meta name="description" content="Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano. Run the same atomic graph source in the browser or from its Node CLI.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/jazz/">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://audiojs.dev/web-audio-api/examples/jazz/">
   <meta property="og:title" content="Jazz | web-audio-api">
-  <meta property="og:description" content="Generate modal harmony, walking bass, plucked improvisation, and percussion.">
+  <meta property="og:description" content="Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano.">
   <meta property="og:image" content="https://audiojs.dev/web-audio-api/assets/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -23,7 +23,7 @@
   <link rel="preload" href="../../assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin="">
   <link rel="stylesheet" href="../../assets/tokens.css">
   <link rel="stylesheet" href="../../assets/site.css">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Jazz: web-audio-api example","description":"Generate modal harmony, walking bass, plucked improvisation, and percussion.","url":"https://audiojs.dev/web-audio-api/examples/jazz/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/jazz.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"Jazz: web-audio-api example","description":"Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano.","url":"https://audiojs.dev/web-audio-api/examples/jazz/","codeRepository":"https://github.com/audiojs/web-audio-api/blob/master/examples/graphs/jazz.js","programmingLanguage":"JavaScript","runtimePlatform":"Browser, Node.js","license":"https://opensource.org/licenses/MIT"}</script>
 </head>
 <body data-example="jazz">
   <a class="skip-link" href="#demo-form">Skip to demo</a>
@@ -34,8 +34,7 @@
       <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="currentColor" /><g fill="none" stroke="var(--color-paper)" stroke-width="1.5"><circle cx="24" cy="24" r="20.5" /><path d="M3.72998 24.4174C9.11908 24.4174 9.98873 24.2988 12.735 18.2706C16.279 10.4913 18.92 9.67227 22.8177 24.4174C26.715 39.1609 29.8613 37.131 32.6572 28.3694C36.73 15.6062 37.803 24.4174 42.5662 24.4174C44.2699 24.4174 44.2699 24.4174 44.2699 24.4174" /><path d="M3.355 24.3584h41.29" /></g></svg>
     </a>
     <nav aria-label="Primary">
-      <a href="../../#examples">Examples</a>
-      <a href="../../#faq">Questions</a>
+      <a href="../../examples/">Examples</a>
     </nav>
     <div class="corner-links">
       <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.5</span></a>
@@ -46,7 +45,7 @@
     </div>
   </header>
   <main class="example-detail">
-    <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../../#generative">Generative</a><span>/</span><a href="../../#examples">Create</a></nav><h1>Jazz</h1><p>Generate modal harmony, walking bass, plucked improvisation, and percussion.</p></header>
+    <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../">Examples</a><span>/</span><a href="../#generative">Generative</a></nav><h1>Jazz</h1><p>Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano.</p></header>
     <div class="detail-grid">
 
         <section class="demo-panel" aria-label="Browser demo">
@@ -79,21 +78,21 @@
               </button>
               <pre><code class="language-shell" id="cli-command">npx web-audio-api jazz</code></pre>
             </div>
-            <dl class="cli-options" id="cli-options"><div><dt><code>bpm=&lt;number&gt;</code></dt><dd>performance tempo (default: random 76..92)</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 270s)</dd></div></dl>
+            <dl class="cli-options" id="cli-options"><div><dt><code>style=&lt;name&gt;</code></dt><dd>modal (default), ambient, nordic, ballad, bossa, swing, or blues</dd></div><div><dt><code>lead=&lt;name&gt;</code></dt><dd>guitar (default), flute, harp, or piano</dd></div><div><dt><code>bpm=&lt;number&gt;</code></dt><dd>performance tempo (default: the middle of the style's range)</dd></div><div><dt><code>-d, --duration &lt;time&gt;</code></dt><dd>run time (CLI accepts s/m/h suffixes; default: 270s)</dd></div></dl>
           </div>
           <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
           <div class="graph-pane dots" id="graph-pane" hidden></div>
         </section>
       
     </div>
-    <dl class="detail-facts"><div><dt>Input</dt><dd>Seeded choices</dd></div><div><dt>Output</dt><dd>Generative performance</dd></div></dl>
+
     <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
       <a class="example-entry" href="../sequencer/"><span class="example-number">29</span><span class="example-heading"><strong>Step sequencer</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a 16-step melody against the audio clock.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M14 30L16 30M20 6L22 6M44 90L46 90M62 54L64 54M68 30L70 30M86 54L88 54M92 30L94 30" /></svg></a>
       <a class="example-entry" href="../serial/"><span class="example-number">30</span><span class="example-heading"><strong>Twelve-tone</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 66L4 66M38 78L40 78M38 54L40 54M44 78L46 78M44 54L46 54M50 78L52 78M50 54L52 54M56 78L58 78M62 78L64 78M68 90L70 90M68 66L70 66M86 6L88 6M92 6L94 6" /></svg></a>
       <a class="example-entry" href="../gamelan/"><span class="example-number">31</span><span class="example-heading"><strong>Gamelan</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule interlocking slendro patterns with metalophone partials and gong structure.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-roll" viewBox="0 0 96 96" aria-hidden="true"><path d="M2 90L4 90M2 30L4 30M8 90L10 90M8 30L10 30M14 90L16 90M20 90L22 90M20 30L22 30M26 90L28 90M26 30L28 30M32 90L34 90M32 30L34 30M38 90L40 90M38 30L40 30M44 90L46 90M44 30L46 30M50 90L52 90M56 90L58 90M56 12L58 12M62 90L64 90M62 12L64 12M68 6L70 6M74 90L76 90M74 6L76 6M80 66L82 66M86 66L88 66M92 66L94 66" /></svg></a>
       <a class="example-entry" href="../euclidean/"><span class="example-number">33</span><span class="example-heading"><strong>Euclidean rhythms</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-raster" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6h.01M21 6h.01M33 6h.01M57 6h.01M75 6h.01M87 6h.01M3 12h.01M21 12h.01M33 12h.01M57 12h.01M75 12h.01M87 12h.01M3 18h.01M21 18h.01M33 18h.01M57 18h.01M75 18h.01M87 18h.01M3 24h.01M21 24h.01M33 24h.01M57 24h.01M75 24h.01M87 24h.01M3 30h.01M21 30h.01M33 30h.01M57 30h.01M75 30h.01M87 30h.01M3 36h.01M21 36h.01M33 36h.01M57 36h.01M75 36h.01M87 36h.01M3 42h.01M21 42h.01M33 42h.01M57 42h.01M75 42h.01M87 42h.01M3 48h.01M21 48h.01M33 48h.01M57 48h.01M75 48h.01M87 48h.01M3 54h.01M21 54h.01M33 54h.01M57 54h.01M75 54h.01M87 54h.01M3 60h.01M21 60h.01M33 60h.01M57 60h.01M75 60h.01M87 60h.01M3 66h.01M21 66h.01M33 66h.01M57 66h.01M75 66h.01M87 66h.01M3 72h.01M21 72h.01M33 72h.01M57 72h.01M75 72h.01M87 72h.01M3 78h.01M21 78h.01M33 78h.01M57 78h.01M75 78h.01M87 78h.01M3 84h.01M21 84h.01M33 84h.01M57 84h.01M75 84h.01M87 84h.01M3 90h.01M21 90h.01M33 90h.01M57 90h.01M75 90h.01M87 90h.01" /></svg></a>
     </div></section>
-    <p class="detail-seo">This is a generative jazz example: modal harmony, a walking bass line, plucked improvisation, and light percussion are all generated and scheduled together into a performance that is different every run. Listen in the browser, or render the same generative ensemble from the Node CLI.</p>
+    <p class="detail-seo">This is a generative jazz example with a style chooser: modal harmony of voice-led m11, sus, and lydian chords over a pedal bass, an ambient variant held long in a large room, a nordic cycle with brushes, a ballad in two, a bossa nova with its clave, swing over an AABA form with a walking bass, or a jazz blues with a shuffle. The lead, a jazz guitar, a flute, a harp, or a piano, improvises phrases that resolve to chord and colour tones on strong beats. Every run picks a new key and solo; listen in the browser, or render the same ensemble from the Node CLI.</p>
   </main>
   <footer class="site-footer">
     <div class="footer-inner">

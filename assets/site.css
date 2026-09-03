@@ -197,7 +197,7 @@ main {
 
 .hero-intro {
   grid-column: 1;
-  padding-inline-end: var(--space-md);
+  padding-inline-end: var(--space-xl);
 }
 
 /* the graph hero.js connects, over the dot grid */
@@ -330,7 +330,25 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2xs) var(--space-lg);
+  gap: var(--space-2xs) var(--space-md);
+}
+
+/* every runtime in the table wears its own mark */
+.runtime-mark {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-end: var(--space-xs);
+  vertical-align: -0.3em;
+  filter: grayscale(1);
+  mix-blend-mode: multiply;
+}
+
+/* fitted by script: one line, labels dropping from the end as the space narrows */
+.hero-stack.is-fitted { flex-wrap: nowrap; }
+
+.hero-stack .is-compact {
+  gap: 0;
+  font-size: 0;
 }
 
 .hero-stack > button {
@@ -381,31 +399,30 @@ h3 {
 
 /* the ones still in the works show their mark only, dimmed; the name stays in the markup for readers and the tip */
 .hero-stack .is-wip {
-  gap: 0;
-  font-size: 0;
   opacity: 0.4;
   transition: opacity var(--dur-short) var(--ease-out);
 }
 
 .install-row {
   grid-column: 1 / 3;
-  min-height: 3.5rem;
-  padding-inline: var(--space-lg);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: clamp(var(--space-md), 3vw, var(--space-2xl));
-  border-radius: var(--radius-lg);
-  background: var(--color-ink);
-  color: var(--color-paper);
+  gap: var(--space-sm) clamp(var(--space-md), 3vw, var(--space-xl));
   font-family: var(--font-code);
   font-size: var(--text-sm);
 }
 
 .install-command {
+  min-height: 3.5rem;
   margin: 0;
+  padding-inline: var(--space-lg);
   display: inline-flex;
   align-items: center;
   gap: var(--space-md);
+  border-radius: var(--radius-lg);
+  background: var(--color-ink);
+  color: var(--color-paper);
   white-space: nowrap;
 }
 
@@ -417,7 +434,7 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs) clamp(var(--space-md), 3vw, var(--space-2xl));
-  color: var(--color-muted-on-ink);
+  color: var(--color-muted);
   font-size: var(--text-xs);
   white-space: nowrap;
 }
@@ -427,14 +444,9 @@ h3 {
   text-decoration: none;
 }
 
-.hero-spec a:hover { color: var(--color-paper); }
+.hero-spec a:hover { color: var(--color-ink); }
 
 /* a soft rule parts the command from its figures; the spacing flexes with the viewport */
-.install-row .hero-spec {
-  margin-inline-start: auto;
-  padding-inline-start: clamp(var(--space-md), 2vw, var(--space-xl));
-  border-inline-start: var(--rule-hair) solid var(--color-rule-dark);
-}
 
 .hero-code {
   grid-column: 1 / 4;
@@ -577,12 +589,6 @@ pre code { font: inherit; }
   line-height: 1.1;
 }
 
-.section-heading p {
-  max-width: var(--copy-max);
-  margin: 0;
-  color: var(--color-muted);
-}
-
 .example-filters {
   margin-block-start: var(--space-sm);
   display: flex;
@@ -617,6 +623,33 @@ pre code { font: inherit; }
 }
 
 .example-filters button:active { transform: translateY(1px); }
+
+/* the heading carries the way to the rest of them, wrapping under the title when it must */
+.examples .section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-xs) var(--space-md);
+}
+
+.examples .section-heading h2 { overflow-wrap: normal; }
+
+.example-all {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* the featured few are a selection, not a numbered list: each entry opens with its title */
+.is-featured .example-entry { grid-template-columns: minmax(0, 1fr) 6rem; }
+.is-featured .example-heading { grid-area: 1 / 1; }
+.is-featured .example-description { grid-area: 2 / 1; }
+.is-featured .example-tag { grid-area: 3 / 1; }
+.is-featured .example-thumb { grid-area: 1 / 2 / 4 / 3; }
+
+/* the featured few close without a rule beneath the last row */
+.example-groups > .example-grid > :last-child { border-block-end: 0; }
 
 .example-groups {
   display: grid;
@@ -713,16 +746,8 @@ pre code { font: inherit; }
 /* questions */
 .faq { padding-block: var(--space-2xl) var(--space-4xl); }
 
-/* questions sit centered, title and list on one edge */
-.faq .section-heading {
-  max-width: 52rem;
-  margin-block: 0 var(--space-xl);
-  margin-inline: auto;
-}
 .faq-list {
   max-width: 52rem;
-  margin-inline: auto;
-  border-block-start: var(--rule-heavy) solid var(--color-ink);
 }
 
 .faq details { border-block-end: var(--rule-hair) solid var(--color-rule); }
@@ -1470,32 +1495,6 @@ tbody th { color: var(--color-ink); }
   color: var(--color-paper);
 }
 
-.detail-facts {
-  max-width: 54rem;
-  margin: var(--space-2xl) 0 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: var(--space-lg);
-  border-block-start: var(--rule-heavy) solid var(--color-ink);
-}
-
-.detail-facts > div {
-  padding-block: var(--space-sm);
-  border-block-end: var(--rule-hair) solid var(--color-rule);
-}
-
-.detail-facts dt {
-  color: var(--color-muted);
-  font-family: var(--font-code);
-  font-size: var(--text-xs);
-}
-
-.detail-facts dd {
-  margin: var(--space-2xs) 0 0;
-  color: var(--color-ink);
-  font-size: var(--text-sm);
-}
-
 .detail-related { margin-block-start: var(--space-2xl); }
 
 .detail-related h2 {
@@ -1546,6 +1545,7 @@ tbody th { color: var(--color-ink); }
 @media (min-width: 40rem) {
   .example-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .example-grid > :nth-child(odd) { padding-inline-end: var(--space-xl); }
+  .example-groups > .example-grid > :nth-last-child(-n+2) { border-block-end: 0; }
   .example-grid > :nth-child(even) {
     padding-inline-start: var(--space-xl);
     border-inline-start: var(--rule-hair) solid var(--color-rule);
@@ -1587,11 +1587,6 @@ tbody th { color: var(--color-ink); }
   .hero-code { order: 2; }
   .hero-wave,
   .hero-spectrum { max-height: 14rem; }
-  .install-row {
-    padding-block: var(--space-sm);
-    flex-wrap: wrap;
-    gap: var(--space-sm) var(--space-xl);
-  }
 }
 
 @media (40rem <= width <= 64rem) {
@@ -1607,14 +1602,7 @@ tbody th { color: var(--color-ink); }
 
 @media (max-width: 48rem) {
   .hero-code { grid-template-columns: minmax(0, 1fr); }
-  /* the figures take a line of their own, flush with the command */
   .install-command .prompt { display: none; }
-  .install-row .hero-spec {
-    flex-basis: 100%;
-    margin-inline-start: 0;
-    padding-inline-start: 0;
-    border-inline-start: 0;
-  }
   .hero-code pre,
   .code-output {
     padding: var(--space-md);
@@ -1636,8 +1624,9 @@ tbody th { color: var(--color-ink); }
   }
   .hero-art { padding: var(--space-sm); }
   .hero-intro ul { padding-inline-start: 0; }
+  /* a tighter row keeps more runtimes named before the labels start dropping */
+  .hero-stack { gap: var(--space-2xs) var(--space-md); }
   .example-detail { padding-block: var(--space-xl) var(--space-2xl); }
-  .detail-facts { grid-template-columns: minmax(0, 1fr); }
   .hero-wave,
   .hero-spectrum { aspect-ratio: 400 / 64; }
   .hero-spectrum { margin-block-start: var(--space-sm); }
@@ -1701,6 +1690,7 @@ tbody th { color: var(--color-ink); }
     grid-template-columns: 1.25rem minmax(0, 1fr) 4rem;
     column-gap: var(--space-xs);
   }
+  .is-featured .example-entry { grid-template-columns: minmax(0, 1fr) 4rem; }
   .example-thumb {
     width: 4rem;
     height: 4rem;

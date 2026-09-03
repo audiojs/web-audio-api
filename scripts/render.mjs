@@ -322,18 +322,29 @@ function artHTML(audio, seconds) {
   return [`<div class="art-row"><span class="art-end">${audio.numberOfChannels} ch, ${kHz(audio.sampleRate)}</span></div>`, wave, row('0 s', `${seconds} s`), spec, row('40 Hz', '16 kHz')].join('\n        ')
 }
 
-function entryHTML(example, thumbSVG) {
-  let number = String(examples.indexOf(example) + 1).padStart(2, '0')
-  return `<a class="example-entry" href="./examples/${escapeHTML(example.id)}/" data-open-example="${escapeHTML(example.id)}"><span class="example-number">${number}</span><span class="example-heading"><strong>${escapeHTML(example.title)}</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">${escapeHTML(example.description)}</span><small class="example-tag">${escapeHTML(example.job)}</small>${thumbSVG}</a>`
+// the six the homepage leads with, one per job the catalogue answers
+const FEATURED = ['metronome', 'sweep', 'dtmf', 'noise', 'binaural-beats', 'jazz', 'drone', 'recorder', 'tuner', 'subtractive-synth']
+
+function entryHTML(example, thumbSVG, { href, modal }) {
+  let number = modal ? '' : `<span class="example-number">${String(examples.indexOf(example) + 1).padStart(2, '0')}</span>`
+  return `<a class="example-entry" href="${escapeHTML(href)}"${modal ? ` data-open-example="${escapeHTML(example.id)}"` : ''}>${number}<span class="example-heading"><strong>${escapeHTML(example.title)}</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg><span class="example-description">${escapeHTML(example.description)}</span><small class="example-tag">${escapeHTML(example.job)}</small>${thumbSVG}</a>`
 }
 
-async function examplesHTML() {
+// the homepage shows the featured few, each opening in the modal; the catalogue page shows
+// every example in its category, each linking to its own page
+async function examplesHTML({ featured }) {
+  let shown = featured ? FEATURED.map(id => examples.find(example => example.id === id)) : examples
+  if (shown.some(example => !example)) throw new Error('A featured id is not in the catalogue')
   let thumbs = new Map()
-  for (let example of examples) thumbs.set(example.id, await thumb(example.id))
+  for (let example of shown) thumbs.set(example.id, await thumb(example.id))
+  let entry = example => entryHTML(example, thumbs.get(example.id), featured
+    ? { href: `./examples/${example.id}/`, modal: true }
+    : { href: `./${example.id}/`, modal: false })
+  if (featured) return `        <div class="example-grid is-featured">\n${shown.map(example => '          ' + entry(example)).join('\n')}\n        </div>`
   let categories = [...new Set(examples.map(example => example.category))]
   return categories.map(category => {
     let entries = examples.filter(example => example.category === category)
-      .map(example => '            ' + entryHTML(example, thumbs.get(example.id))).join('\n')
+      .map(example => '            ' + entry(example)).join('\n')
     return `        <section class="example-group" id="${category.toLowerCase().replace(/\s+/g, '-')}"><h3>${escapeHTML(category)}</h3><div class="example-grid">\n${entries}\n          </div></section>`
   }).join('\n')
 }
@@ -356,9 +367,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   let folded = collapseGraph(nodes, edges)
   html = replaceGenerated(html, 'hero-graph', '        ' + graphSVG(folded.nodes, folded.edges, 'The graph hero.js connects', folded.counts))
   html = replaceGenerated(html, 'hero-wave', '        ' + artHTML(audio, HERO_SECONDS))
-  html = replaceGenerated(html, 'home-examples', await examplesHTML())
+  html = replaceGenerated(html, 'home-examples', await examplesHTML({ featured: true }))
   writeFileSync(path, html)
-  process.stdout.write(`${HERO}: ${nodes.length} nodes, ${edges.length} connections; ${examples.length} example thumbnails; written to index.html\n`)
+  let cataloguePath = join(root, 'examples/index.html')
+  writeFileSync(cataloguePath, replaceGenerated(readFileSync(cataloguePath, 'utf8'), 'catalogue', await examplesHTML({ featured: false })))
+  process.stdout.write(`${HERO}: ${nodes.length} nodes, ${edges.length} connections; ${examples.length} example thumbnails; written to index.html and examples/index.html\n`)
   // some graphs leave a scheduling timer behind; the renders are done
   process.exit(0)
 }

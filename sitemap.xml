@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://audiojs.dev/web-audio-api/</loc></url>
+  <url><loc>https://audiojs.dev/web-audio-api/examples/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/metronome/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/tuner/</loc></url>
   <url><loc>https://audiojs.dev/web-audio-api/examples/latency-tester/</loc></url>

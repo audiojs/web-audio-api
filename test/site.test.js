@@ -66,8 +66,8 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(!document.querySelector('.site-footer .wpt-badge'), 'no badge in the footer')
   ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
   ok(!document.querySelector('.hero-spec img'), 'spec plate carries no badge image')
-  is(document.querySelectorAll('header a').length, 5, 'brand, section nav, version, and GitHub')
-  is([...document.querySelectorAll('header nav a')].map(node => `${node.textContent}=${node.getAttribute('href')}`).join('|'), 'Examples=#examples|Questions=#faq', 'sections ride the navigation')
+  is(document.querySelectorAll('header a').length, 4, 'brand, examples, version, and GitHub')
+  is([...document.querySelectorAll('header nav a')].map(node => `${node.textContent}=${node.getAttribute('href')}`).join('|'), 'Examples=./examples/', 'the navigation leads to the catalogue')
   ok(document.querySelector('header a.brand[href="./"] svg path[d^="M3.72998"]'), 'the site seal leads home')
   ok(document.querySelector('header a.version-link[href="https://www.npmjs.com/package/web-audio-api"] [data-version]'), 'the version links to npm')
   ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
@@ -84,27 +84,24 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(document.querySelector('.site-footer a[href="https://github.com/sponsors/audiojs"]'), 'footer invites support')
   ok(document.querySelector('.site-footer a[href="https://github.com/sebpiq"]') && document.querySelector('.site-footer a[href="https://github.com/dy"]'), 'authors are credited with links')
   ok(!document.querySelector('.hero-code [data-copy]'), 'the hero code has no copy button')
-  is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples|Questions')
-  ok(document.querySelector('.section-heading #example-filters[role="group"]'), 'examples are filterable by tag')
-  ok(read('site.js').includes("querySelector('.example-tag')"), 'the filter reads the tag element the entries actually render')
+  is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples', 'only the catalogue announces itself')
+  ok(read('examples/browser.js').includes("querySelector('.example-tag')"), 'the filter reads the tag element the entries actually render')
   ok(!document.querySelector('[data-example-count]'), 'no static graph count')
   ok(document.querySelector('.faq table.bench'), 'realtime answer carries measured numbers')
+  let runtimes = [...document.querySelectorAll('[aria-label="Runtime support"] tbody tr')]
+  ok(runtimes.length && runtimes.every(row => row.querySelector('th .runtime-mark')), 'every runtime in the table wears its mark')
   is(document.querySelector('.comparison tbody tr th').textContent, 'Engine', 'alternatives table lists aspects as rows, packages as columns')
-  ok(document.querySelector('.install-row .hero-spec'), 'the install command carries its spec plate')
-  let links = [...document.querySelectorAll('[data-open-example]')]
-  is(links.length, examples.length)
-  is([...document.querySelectorAll('.example-group h3')].map(node => node.textContent).join('|'), 'Utilities|Test signals|Illusions|Synthesis|Generative|API', 'groups run by search demand')
-  is(document.querySelector('.examples .section-heading p').textContent, 'Every example is one runnable file: play it here, run it in Node, drop it into CI.', 'the examples heading states the value')
-  for (let [index, example] of examples.entries()) {
-    let link = links[index]
-    is(link.dataset.openExample, example.id, `${example.id}: catalogue order`)
-    is(link.querySelector('.example-number').textContent, String(index + 1).padStart(2, '0'), `${example.id}: catalogue number`)
-    is(link.querySelector('.example-heading strong').textContent, example.title, `${example.id}: title`)
-    is(link.querySelector('.example-description + .example-tag').textContent, example.job, `${example.id}: job tag closes the entry`)
-    is(link.querySelector('.example-description').textContent, example.description, `${example.id}: description`)
-    is(link.getAttribute('href'), `./examples/${example.id}/`, `${example.id}: crawlable route`)
-    ok(link.querySelector('.example-arrow'), `${example.id}: open arrow`)
-  }
+  ok(document.querySelector('.install-row > .install-command + .hero-spec'), 'the figures follow the command, outside its plate')
+  let featured = [...document.querySelectorAll('[data-open-example]')]
+  is(featured.length, 10, 'the homepage leads with a few examples')
+  ok(featured.every(link => examples.some(example => example.id === link.dataset.openExample)), 'each featured example is in the catalogue')
+  ok(featured.every(link => link.getAttribute('href') === `./examples/${link.dataset.openExample}/` && link.querySelector('.example-thumb')), 'each featured entry is a crawlable link with its render')
+  ok(featured.every(link => !link.querySelector('.example-number')), 'a selection carries no catalogue numbers')
+  ok(!document.querySelector('.example-group'), 'the categories live on the catalogue page')
+  ok(!document.querySelector('.examples .section-heading p'), 'the catalogue speaks for itself')
+  let all = document.querySelector('.examples .section-heading .example-all')
+  is(all.textContent, `All ${examples.length} examples`, 'the heading offers every one of them')
+  is(all.getAttribute('href'), './examples/', 'pointing at the catalogue page')
   let dialog = document.querySelector('dialog#example-dialog')
   ok(dialog)
   ok(dialog.querySelector('.dialog-body > :first-child').classList.contains('demo-panel'), 'demo precedes source')
@@ -157,7 +154,9 @@ test('package, decoder, README, and homepage agree', () => {
   ok(read('README.md').includes(`](${pkg.homepage})`), 'README links to homepage')
   is(documentOf('index.html').querySelector('link[rel="canonical"]').href, pkg.homepage)
   let sitemap = read('sitemap.xml')
-  is((sitemap.match(/<url>/g) || []).length, examples.length + 1, 'homepage and every example are indexed')
+  is((sitemap.match(/<url>/g) || []).length, examples.length + 2, 'homepage, catalogue, and every example are indexed')
+  ok(sitemap.includes(`<loc>${pkg.homepage}examples/</loc>`), 'the catalogue page is indexed')
+  ok(read('llms.txt').includes(`- [All examples](${pkg.homepage}examples/)`), 'and named for machines reading llms.txt')
   for (let example of examples) ok(sitemap.includes(`${pkg.homepage}examples/${example.id}/`), `${example.id} sitemap URL`)
 })
 
@@ -193,11 +192,28 @@ test('every page carries a social card, theme colour, and touch icon; 404 wears 
   let notFound = documentOf('404.html')
   ok(notFound.querySelector('header.corner-action') && notFound.querySelector('footer.site-footer'), '404 borrows the chrome')
   is(notFound.querySelector('meta[name="robots"]')?.content, 'noindex', '404 is not indexed')
-  ok(notFound.querySelector(`a[href="${new URL(pkg.homepage).pathname}#examples"]`), '404 points at the examples')
+  ok(notFound.querySelector(`a[href="${new URL(pkg.homepage).pathname}examples/"]`), '404 points at the examples')
 })
 
 test('every example has a crawlable canonical detail page', () => {
-  is(documentOf('examples/index.html').querySelector('meta[http-equiv="refresh"]').content, '0; url=../#examples')
+  let catalogue = documentOf('examples/index.html')
+  ok(!catalogue.querySelector('meta[http-equiv="refresh"]'), 'the catalogue is a page of its own, not a redirect')
+  is(catalogue.querySelector('link[rel="canonical"]').href, `${pkg.homepage}examples/`)
+  ok(catalogue.querySelector('header.corner-action .header-strips') && catalogue.querySelector('.site-footer .footer-brand'), 'it wears the homepage chrome')
+  ok(catalogue.querySelector('.section-heading #example-filters[role="group"]'), 'examples are filterable by tag')
+  is([...catalogue.querySelectorAll('.example-group h3')].map(node => node.textContent).join('|'), 'Utilities|Test signals|Illusions|Synthesis|Generative|API', 'groups run by search demand')
+  let links = [...catalogue.querySelectorAll('.example-entry')]
+  is(links.length, examples.length, 'every example is listed')
+  for (let [index, example] of examples.entries()) {
+    let link = links[index]
+    is(link.getAttribute('href'), `./${example.id}/`, `${example.id}: catalogue order and route`)
+    is(link.querySelector('.example-number').textContent, String(index + 1).padStart(2, '0'), `${example.id}: catalogue number`)
+    is(link.querySelector('.example-heading strong').textContent, example.title, `${example.id}: title`)
+    is(link.querySelector('.example-description + .example-tag').textContent, example.job, `${example.id}: job tag closes the entry`)
+    is(link.querySelector('.example-description').textContent, example.description, `${example.id}: description`)
+    ok(link.querySelector('.example-arrow'), `${example.id}: open arrow`)
+    ok(!link.dataset.openExample, `${example.id}: the catalogue links, it does not open the modal`)
+  }
   for (let example of examples) {
     let path = `examples/${example.id}/index.html`
     let document = documentOf(path)
@@ -208,7 +224,8 @@ test('every example has a crawlable canonical detail page', () => {
     ok(document.querySelector('#demo-form'), `${example.id} browser adapter`)
     ok(document.querySelector('#example-code'), `${example.id} atomic source`)
     ok(document.querySelector('.detail-grid > :first-child').classList.contains('demo-panel'), `${example.id} demo precedes source`)
-    is(document.querySelectorAll('.detail-crumbs a').length, 2, `${example.id} breadcrumbs lead home`)
+    let crumbs = [...document.querySelectorAll('.detail-crumbs a')]
+    is(crumbs.map(link => link.getAttribute('href')).join(' '), `../ ../#${example.category.toLowerCase().replace(/\s+/g, '-')}`, `${example.id} breadcrumbs lead back into the catalogue`)
     is(document.querySelectorAll('.dialog-code-head, .dialog-links, .code-output [data-copy]').length, 0, `${example.id} code chrome removed`)
     is(document.querySelector('#cli-command').textContent, example.command, `${example.id} CLI command`)
     is(document.querySelectorAll('.cli-options dt').length, optionsFor(example.id).length, `${example.id} CLI options documented`)
@@ -217,12 +234,13 @@ test('every example has a crawlable canonical detail page', () => {
     ok(document.querySelector('.demo-runbar #demo-run .play-glyph'), `${example.id} separate run footer`)
     ok(document.querySelector('script[type="application/ld+json"]'), `${example.id} structured data`)
     ok(document.querySelector('.corner-action .brand[href="../../"]'), `${example.id} logo leads home`)
+    is(document.querySelector('.corner-action nav a').getAttribute('href'), '../../examples/', `${example.id} the nav leads to the catalogue, not the homepage anchor`)
     is(!!document.querySelector('.detail-seo'), !!example.seo, `${example.id} SEO text on its own page`)
     ok(document.querySelector('.code-tab[data-pane="graph"]') && document.querySelector('#graph-pane.dots'), `${example.id} graph tab, as in the modal`)
     ok(document.querySelector('.corner-action .header-strips') && document.querySelector('.site-footer .footer-brand'), `${example.id} borrows the homepage chrome`)
     ok(!document.querySelector('.detail-related') || document.querySelector('.detail-related .example-thumb'), `${example.id} related entries carry their renders`)
     ok(!document.querySelector('.detail-related h2') || document.querySelector('.detail-related h2').textContent === 'Other examples', `${example.id} related heading`)
-    is([...document.querySelectorAll('.detail-facts dt')].map(node => node.textContent).join(','), 'Input,Output', `${example.id} facts without the graph line`)
+    ok(!document.querySelector('.detail-facts'), `${example.id} carries no restated facts`)
     let callouts = document.querySelectorAll('.callout')
     is(callouts.length, example.warning || example.note ? 1 : 0, `${example.id} one callout at most`)
     if (callouts.length) ok(callouts[0].previousElementSibling.classList.contains('detail-grid') && callouts[0].querySelector('.callout-label').textContent === (example.warning ? 'Warning' : 'Note'), `${example.id} callout follows the stage`)
@@ -321,11 +339,12 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   ok(/\.dialog-code \{[^}]*contain: size/.test(read('assets/site.css')) && /\.dialog-code \.code-output,\n\.dialog-code \.cli-pane \{[^}]*overflow-y: auto/.test(read('assets/site.css')), 'the source column never sizes the modal; its panes scroll inside')
   ok(document.querySelector('#example-dialog #graph-pane.dots'), 'the graph pane carries the blueprint dots')
   ok(read('scripts/build-site.mjs').includes("cpSync(join(root, 'assets')") && read('.github/workflows/pages.yml').includes("'assets/**'"), 'the stylesheets ship from assets and changes there deploy')
-  let clicks = [...document.querySelector('[data-open-example="metronome"] .example-thumb path').getAttribute('d').matchAll(/M[\d.]+ [\d.]+(L|h\.01)/g)].map(match => match[1] === 'L' ? 'bar' : 'dot')
+  let clicks = [...documentOf('examples/index.html').querySelector('.example-entry[href="./metronome/"] .example-thumb path').getAttribute('d').matchAll(/M[\d.]+ [\d.]+(L|h\.01)/g)].map(match => match[1] === 'L' ? 'bar' : 'dot')
   is(clicks.join(' '), Array.from({ length: 16 }, (_, k) => k % 4 ? 'dot' : 'bar').join(' '), 'the metronome thumb is a bar every fourth column')
   ok(/@media \(40rem <= width <= 64rem\) \{[^@]*\.example-grid > :nth-child\(even\)/.test(read('assets/site.css')), 'the two-column catalogue tweaks stay inside their range, never on phones')
   let site = read('site.js'), shared = read('examples/browser.js')
-  for (let hook of ["'audiocontext'", 'data-run', 'getFloatTimeDomainData', 'new URL(`examples/${id}/`, homeURL)']) ok(site.includes(hook), `site.js carries ${hook}`)
+  for (let hook of ["'audiocontext'", 'data-run', 'getFloatTimeDomainData', 'new URL(`examples/${id}/`, homeURL)', "classList.add('is-compact')"]) ok(site.includes(hook), `site.js carries ${hook}`)
+  ok(read('assets/site.css').includes('.hero-stack.is-fitted { flex-wrap: nowrap; }'), 'the runtime row goes to one line only once the script fits it')
   for (let hook of ['graph-pane', 'recordConnections', 'collapseGraph', "'wheel'", 'highlightSyntax(', "highlights.set('method'", "querySelectorAll('.header-strips')", "querySelectorAll('.footer-strips')"]) ok(shared.includes(hook), `browser.js carries ${hook} for every page`)
   ok(read('assets/site.css').includes('.example-tag,\n.example-filters button {') && read('assets/site.css').includes('.code-tab[aria-pressed="true"] {\n  border-block-end-color'), 'tags and filters share one pill rule; tabs underline')
   ok(read('assets/site.css').includes('::highlight(method)') && read('assets/tokens.css').includes('--syntax-method'), 'methods have their own highlight and token')
@@ -368,7 +387,7 @@ test('thumbnail projections put a known signal where it belongs on the lattice',
   is(draw.pan(pans).map(([x]) => x === 2 ? 'L' : x === 92 ? 'R' : x === 50 ? 'C' : x).join(''), 'L'.repeat(5) + 'R'.repeat(5) + 'C'.repeat(5), 'left, right, centre, one dash per row, time running down')
   let clicks = buffer(t => Number.isInteger(t * 4) ? 0.5 : 0, 3)
   is(draw.raster(clicks).map(([x, y]) => `${x},${y}`).join(' '), Array.from({ length: 12 }, (_, n) => `${3 + (n * 20 % 16) * 6},${6 + Math.floor(n * 20 / 16) * 6}`).join(' '), 'a click every quarter second is a dot every twenty cells, scanning row by row')
-  let thumbs = [...documentOf('index.html').querySelectorAll('.example-thumb')]
+  let thumbs = [...documentOf('examples/index.html').querySelectorAll('.example-thumb')]
   is(thumbs.length, examples.length, 'every example has a thumbnail on the page')
   ok(thumbs.every(thumb => thumb.getAttribute('viewBox') === '0 0 96 96'), 'all square')
   ok(thumbs.every(thumb => [...thumb.querySelectorAll('path')].every(path => /^[MLh\d.\s-]+$/.test(path.getAttribute('d')))), 'straight strokes and dots only, no curves')
@@ -527,6 +546,45 @@ test('risset layers sit an octave apart and nest their beats', async () => {
     let seconds = Array.from({ length: 36 }, (_, s) => beats.filter(beat => beat.time >= s + 2 && beat.time < s + 3).reduce((sum, beat) => sum + beat.level, 0))
     ok(Math.max(...seconds) < Math.min(...seconds) * 2, `${direction}: windowed loudness stays level`)
   }
+})
+
+test('jazz styles and leads render distinct finite performances that repeat by seed', async () => {
+  let render = async options => {
+    let ctx = new OfflineAudioContext(2, 44100 * 2, 44100)
+    let graph = await buildGraph('jazz', ctx, { duration: 8, bpm: 120, when: 0, seed: 11, AudioWorkletNodeClass: AudioWorkletNode, ...options })
+    let data = (await ctx.startRendering()).getChannelData(0)
+    ok(data.every(Number.isFinite) && data.some(Boolean), `${JSON.stringify(options)}: finite, audible`)
+    ok(data.reduce((peak, sample) => Math.max(peak, Math.abs(sample)), 0) <= 1, `${JSON.stringify(options)}: safety ceiling`)
+    return { graph, data }
+  }
+  let styles = ['modal', 'ambient', 'nordic', 'ballad', 'bossa', 'swing', 'blues'], rendered = new Map()
+  for (let style of styles) rendered.set(style, await render({ style }))
+  for (let style of styles) {
+    let { graph } = rendered.get(style)
+    is(graph.data.style, style)
+    ok(graph.data.bassNotes.length > 0 && graph.data.leadNotes.length > 0, `${style}: bass and lead were written`)
+    ok(graph.data.leadNotes.every(note => note.position >= 0 && note.beats > 0), `${style}: lead notes are placed`)
+    for (let other of styles) if (other !== style) ok(rendered.get(style).data.some((sample, index) => sample !== rendered.get(other).data[index]), `${style} differs from ${other}`)
+  }
+  let repeat = await render({ style: 'swing' })
+  let composition = graph => JSON.stringify([graph.data.bpm, graph.data.key, graph.data.chordLog, graph.data.bassNotes, graph.data.leadNotes])
+  is(composition(repeat.graph), composition(rendered.get('swing').graph), 'the same seed repeats the composition; only the drum noise worklet is live')
+  for (let lead of ['flute', 'harp', 'piano']) {
+    let other = await render({ style: 'swing', lead })
+    is(other.graph.data.lead, lead)
+    ok(other.data.some((sample, index) => sample !== rendered.get('swing').data[index]), `the ${lead} lead sounds different`)
+  }
+  let walking = rendered.get('swing').graph.data.bassNotes
+  ok(walking.every(note => note.beats === 1), 'swing walks in quarter notes')
+  let ballad = rendered.get('ballad').graph.data.bassNotes
+  ok(ballad.some(note => note.beats === 2), 'the ballad bass plays in two')
+  let modal = rendered.get('modal').graph.data
+  let modalBass = modal.bassNotes.map(note => note.note)
+  ok(modalBass.every((note, i) => i === 0 || note !== modalBass[i - 1]), 'the modal bass never strikes the same note twice in a row')
+  ok(modal.bassNotes.filter(note => note.beats >= 2).length > modal.bassNotes.length / 2, 'and mostly holds')
+  ok(modal.bassNotes.every(note => note.note <= 40), 'the bass stays in its low octave')
+  ok(modal.chords.every(c => ['m11', 'm7', 'sus', 'maj7#11'].includes(c.quality)), 'modal harmony is extended')
+  ok(modal.chords.slice(1).every((c, i) => { let move = Math.abs(c.root - modal.chords[i].root) % 12; return move !== 1 && move !== 11 }), 'modal roots never move by a bare half step')
 })
 
 test('shepard bank sweeps beyond 12 kHz', async () => {

@@ -7,6 +7,7 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 ## Docs
 
 - [Homepage](https://audiojs.dev/web-audio-api/)
+- [All examples](https://audiojs.dev/web-audio-api/examples/)
 - [Repository](https://github.com/audiojs/web-audio-api)
 
 ## Utilities
@@ -54,7 +55,7 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 - [Step sequencer](https://audiojs.dev/web-audio-api/examples/sequencer/): Schedule a 16-step melody against the audio clock. CLI: `npx web-audio-api sequencer bpm=140 -d 10s`
 - [Twelve-tone](https://audiojs.dev/web-audio-api/examples/serial/): Generate pointillistic music from prime, retrograde, inverse, and retrograde-inverse rows. CLI: `npx web-audio-api serial 72 30s`
 - [Gamelan](https://audiojs.dev/web-audio-api/examples/gamelan/): Schedule interlocking slendro patterns with metalophone partials and gong structure. CLI: `npx web-audio-api gamelan 120 20s`
-- [Jazz](https://audiojs.dev/web-audio-api/examples/jazz/): Generate modal harmony, walking bass, plucked improvisation, and percussion. CLI: `npx web-audio-api jazz`
+- [Jazz](https://audiojs.dev/web-audio-api/examples/jazz/): Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano. CLI: `npx web-audio-api jazz`
 - [Euclidean rhythms](https://audiojs.dev/web-audio-api/examples/euclidean/): Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count. CLI: `npx web-audio-api euclidean 120 16 3,5,7 20s`
 - [Drone](https://audiojs.dev/web-audio-api/examples/drone/): Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks. CLI: `npx web-audio-api drone C3 30s`
 

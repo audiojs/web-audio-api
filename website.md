@@ -165,6 +165,48 @@ Recurring issue clusters:
 
 The issue history supports a site organized around runnable jobs and objections. It does not support a generic Web Audio tutorial.
 
+### Who depends on Web Audio outside the browser
+
+Snapshot taken on 2026-09-02 from the npm downloads API, GitHub's dependents pages, the issue trackers of the three Node implementations, Stack Overflow's search API, and GitHub issue search.
+
+Distribution:
+
+| Package | Downloads, last month | GitHub dependents |
+| --- | ---: | ---: |
+| `web-audio-api` | 26,554 | 970 repositories, 70 packages |
+| `node-web-audio-api` (Rust bindings) | 107,578 | 162 repositories, 58 packages |
+| `web-audio-engine` (archived 2019) | 9,360 | not counted |
+| `standardized-audio-context` (browser ponyfill, a Tone.js dependency) | 2,293,514 | 16,754 repositories |
+| Test mocks: `standardized-audio-context-mock`, `web-audio-test-api`, `web-audio-mock-api` | 55,908 combined | not counted |
+
+The ponyfill's count is browser traffic and says nothing about Node. The mocks do: about 56,000 installs a month go to packages that fake `AudioContext` for tests, which is the testing job satisfied cheaply. A real engine is the upgrade for the part of that population that wants to assert on samples.
+
+What the dependents build, from the descriptions of 97 repositories and packages that depend on either implementation, grouped by job and ordered by how often the job appears:
+
+1. Agents, bots, and voice pipelines. MCP servers that play or compose music for an agent (`dj-claude`, `ai-jam-sessions`, `mojulo`, `remotion-mcp`), an agent-hosted radio (`murmur`), audio feedback for a coding agent (`pi-audio-feedback`), Discord bots for synthesis, speech, and text-to-speech (`discobot`, `kana`, `discord-speech-mod`, `kimaki`), meeting and WebRTC backends, a proximity voice chat for a game, a speech-processing flow graph, a serverless transcriber, and TTS front ends (`Qlatt`, `Enspira`). This is the newest cluster and the largest in the sample; none of it existed in the 2019 issue history.
+2. Analysis and feature extraction. Beat and BPM detection, LUFS loudness, chord recognition, audio-to-MIDI (Spotify's `basic-pitch-ts`), waveform extraction for upload previews, sentence and silence detection, music recognition. These compete with FFmpeg, SoX, and Meyda; the reason to pick a Web Audio engine is one decoder and one graph for browser and server.
+3. Rendering and export pipelines. A 3,158-star video creation library (`FFCreator`), design export (`polotno-node`), MIDI to WAV, a SoundFont synthesizer, generative radio and infinite focus music, music DSLs and score tooling. Offline rendering of long durations, where memory and speed are the questions asked in the issues.
+4. Isomorphic instruments. Modular synths and DAWs that run on web, mobile, and Raspberry Pi from one codebase (`blibliki`, `supersynth`, `Synthia`, DJ decks, Web Audio Modules testbeds, `isomorphic-web-audio-api`). This is the job both competitors' READMEs lead with: run browser-oriented code and libraries unchanged.
+5. Broadcast and creative tools. A public broadcaster's playout client (`svt/bridge`), an agent-first creative workspace (`nodetool`), cue software, score editors, game engines.
+6. Devices. Raspberry Pi instruments, keyboard-sound and music-box projects, a CLI MP3 player. Small in the sample, large in the Rust implementation's issue tracker, where ALSA, PipeWire, Raspberry Pi, glibc, and device-selection failures are the single biggest issue cluster.
+7. Learning and education. Guitar and pitch tutors, language and maths games, data-over-sound experiments.
+
+What the implementations say they are for. `node-web-audio-api` leads with an efficient, spec-compliant engine and a polyfill for "browser oriented codebases or libraries that rely on globally available entities"; its examples are granular scrubbing, a Tone.js port, and amplitude modulation. `web-audio-engine` offered three contexts, one each for streaming PCM to a writable, rendering to a file or "test a web audio application", and bridging to a browser; that trio of streaming, export, and testing is still the shape of the demand. `standardized-audio-context` normalizes browsers and is not a Node engine.
+
+What people ask. Stack Overflow holds 59 questions for "web audio api node.js", 7 for Tone.js in Node, 7 for OfflineAudioContext in Node. GitHub issues mention "AudioContext is not defined" 90 times, 11 of them under Jest or Vitest; Tone.js's own tracker has 30 issues about Node. The old `audiojs/web-audio-api` tracker is dominated by speaker install failures, decode formats, "OfflineAudioContext for Tone.js offline", "Creating audio server", and "Capturing audio". The Rust tracker is dominated by devices and drivers, then decode formats, offline rendering memory and speed, worklets, and "How to end the node application?".
+
+Priority, weighted by this evidence:
+
+1. Agents, bots, and voice pipelines: synthesis, decoding, and playback on servers and in chat platforms, often with no audio device.
+2. Analysis and feature extraction from files, with the browser's own results.
+3. Rendering and export pipelines, long offline renders included.
+4. Testing in CI, the upgrade from a mock to a real engine.
+5. Isomorphic instruments and libraries run headless, Tone.js and Web Audio Modules first.
+6. Device playback and capture, where prebuilt adapters remove the pain the native competitor's users report.
+7. Education.
+
+The current hero list names jobs 2 to 5. Job 1 is the gap: an agent or bot that needs a voice, a jingle, or a rendered clip is the trigger moment the sample shows most often and the copy does not yet name.
+
 ## Decoding opportunity
 
 `audio-decode` is now an unscoped alias of `@audio/decode`. Depending directly on `@audio/decode` makes the capability explicit and follows the maintained package.
@@ -244,11 +286,11 @@ Rules:
 
 Current visible structure:
 
-1. Product title and one runnable code sample.
-2. Install command.
-3. Two-column example catalogue grouped by kind.
-4. Modal containing the browser preview and atomic graph source, with the CLI invocation kept in the source header comment; every link also has a canonical detail page.
-5. Compact objection-led FAQ, with the comparison table inside it.
+1. Product title, the jobs it answers, the runtimes it runs on, and the hero file with its recorded graph and live signal.
+2. Install command, with size and WPT beside it.
+3. Ten featured examples, with a link to the catalogue page at `examples/`, which lists all of them in two columns grouped by kind and filtered by job.
+4. Modal containing the browser preview, the recorded graph, and the atomic graph source; opening one sets the address to its own page, and every example also has that canonical detail page.
+5. Compact objection-led FAQ, with the comparison and runtime tables inside it.
 6. One-line licence footer.
 
 The website intentionally hides separate use-case, CI, Tone.js, compatibility, proof, and limitations sections. Their useful facts live in the FAQ. The catalogue is the product demonstration.
@@ -317,6 +359,14 @@ Primary project evidence:
 - Benchmarks in `benchmark/compare.js` and `benchmark/scenarios.js`.
 - npm download API: https://api.npmjs.org/downloads/point/last-year/web-audio-api
 - npm package metadata: https://www.npmjs.com/package/web-audio-api
+
+Dependents and demand, snapshot 2026-09-02:
+
+- GitHub dependents: https://github.com/audiojs/web-audio-api/network/dependents and https://github.com/ircam-ismm/node-web-audio-api/network/dependents
+- Issue trackers: https://github.com/ircam-ismm/node-web-audio-api/issues and https://github.com/audiojs/web-audio-api/issues
+- Competitor READMEs: https://github.com/ircam-ismm/node-web-audio-api and https://github.com/mohayonao/web-audio-engine
+- npm downloads API for each package named above: https://api.npmjs.org/downloads/point/last-month/<package>
+- Stack Overflow search API and GitHub issue search for the phrases quoted above.
 
 Decoding:
 
