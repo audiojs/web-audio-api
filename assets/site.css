@@ -1656,8 +1656,6 @@ tbody th { color: var(--color-ink); }
     padding: var(--space-md);
     grid-template-columns: minmax(0, 1fr);
   }
-  /* the play button takes the first row to itself */
-  .hero-code pre { padding-block-start: var(--space-2xl); }
   .hero-code .lines,
   .code-output .lines { display: none; }
   .hero-signal {
