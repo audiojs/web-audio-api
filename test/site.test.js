@@ -104,6 +104,14 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   let all = document.querySelector('.examples .section-heading .example-all')
   is(all.textContent, `All ${examples.length} examples`, 'the heading offers every one of them')
   is(all.getAttribute('href'), './examples/', 'pointing at the catalogue page')
+  // the examples sit on a white field the stripe band above them dissolves the paper into
+  for (let path of ['index.html', 'examples/index.html']) {
+    let page = documentOf(path)
+    let band = page.querySelector('canvas.field-strips')
+    ok(band && band.nextElementSibling.tagName === 'MAIN', `${path}: the band stands above the field, outside the page's measure`)
+  }
+  ok(read('examples/browser.js').includes("stripBand(fieldStrips, false, '--color-white')") && !read('site.js').includes('stripBand'), 'one module paints every band')
+  ok(/\.examples \{[^}]*background: var\(--color-white\)[^}]*clip-path: inset\(0 -100vmax 0\)/s.test(read('assets/site.css')), 'the field runs white to the edges and stops at its own bounds')
   let dialog = document.querySelector('dialog#example-dialog')
   ok(dialog)
   ok(dialog.querySelector('.dialog-body > :first-child').classList.contains('demo-panel'), 'demo precedes source')
