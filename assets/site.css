@@ -284,6 +284,9 @@ h3 {
 .hero h1 strong { font-weight: 700; }
 
 .hero h1 span {
+  /* the second phrase wraps rather than run off the column, and breaks evenly when it does */
+  white-space: normal;
+  text-wrap: balance;
   margin-block-start: var(--space-2xs);
   color: var(--color-muted);
   font-size: var(--text-display-sub);

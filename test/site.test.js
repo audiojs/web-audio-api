@@ -50,7 +50,9 @@ test('catalog covers every CLI and portable graph module exactly once', () => {
 test('homepage is only the hero, example catalogue, compact FAQ, and footer', () => {
   let document = documentOf('index.html')
   is(document.querySelector('#hero-title strong').textContent.replace(/\s/g, ' '), 'Web Audio API')
-  is(document.querySelector('#hero-title span').textContent, 'without browser')
+  // the phrase under the title is copy in flux; about 21 characters hold one line in the hero column
+  let subtitle = document.querySelector('#hero-title span').textContent
+  ok(subtitle.length > 4 && subtitle.length <= 26, `the title's second phrase stays short: ${subtitle}`)
   let lede = document.querySelector('.hero-intro').textContent
   let jobs = ['CI', 'server', 'Tone.js', 'CLI', 'batch', 'render', 'decode', 'test', 'headless', 'PCM', 'process'].filter(job => lede.toLowerCase().includes(job.toLowerCase()))
   ok(jobs.length >= 3, `lede states concrete jobs (${jobs.join(', ') || 'none'})`)
@@ -152,6 +154,7 @@ test('package, decoder, README, and homepage agree', () => {
   ok(read('src/AudioContext.js').includes("from '@audio/speaker'"))
   ok(read('polyfill.js').includes("import('@audio/mic')"))
   ok(read('README.md').includes(`](${pkg.homepage})`), 'README links to homepage')
+  ok(read('README.md').split('\n')[0].includes('assets/logo.svg') && existsSync(join(root, 'assets/logo.svg')), 'the seal leads the README title')
   is(documentOf('index.html').querySelector('link[rel="canonical"]').href, pkg.homepage)
   let sitemap = read('sitemap.xml')
   is((sitemap.match(/<url>/g) || []).length, examples.length + 2, 'homepage, catalogue, and every example are indexed')

@@ -1,11 +1,11 @@
-# web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
+# <img src="assets/logo.svg" width="28" valign="middle" alt=""> web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
 [Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation. Useful for:
 
 * **Agents and bots** – any writable stream, no audio device needed.
 * **Audio analysis** – `decodeAudioData` for 20+ formats, `AnalyserNode` as in browser.
 * **Server-side rendering** – `OfflineAudioContext` renders faster than realtime.
-* **Audio in CI** – any JS engine, node, deno, bun, llrt, quickjs, jz.
+* **Audio in CI** – any JS engine: node, deno, bun, llrt, quickjs, jz.
 * **Unit-testing** – real samples, no mocks, 100% [WPT](https://web-platform-tests.org/).
 * **Tone.js and web audio libs** – `import 'web-audio-api/polyfill'` installs the globals.
 * **CLI audio scripting** – PCM in and out through stdio, 46 runnable examples.
