@@ -232,10 +232,10 @@ export const examples = [
   },
   {
     id: 'jazz', title: 'Jazz', category: 'Generative', job: 'Create', mode: 'audio',
-    description: 'Generate modal harmony, walking bass, plucked improvisation, and percussion.',
-    graph: 'Theory generators → instrument chains → Destination', input: 'Seeded choices', output: 'Generative performance',
-    apis: ['AudioContext', 'AudioWorkletNode', 'BiquadFilterNode'], command: 'npx web-audio-api jazz',
-    seo: 'This is a generative jazz example: modal harmony, a walking bass line, plucked improvisation, and light percussion are all generated and scheduled together into a performance that is different every run. Listen in the browser, or render the same generative ensemble from the Node CLI.',
+    description: 'Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano.',
+    graph: 'Style: form, bass, comping, drums → phrase improviser → instrument chains → Destination', input: 'Style, lead, tempo', output: 'Generative performance',
+    apis: ['AudioContext', 'AudioWorkletNode', 'AudioBufferSourceNode', 'BiquadFilterNode', 'ConvolverNode'], command: 'npx web-audio-api jazz',
+    seo: 'This is a generative jazz example with a style chooser: modal harmony of voice-led m11, sus, and lydian chords over a pedal bass, an ambient variant held long in a large room, a nordic cycle with brushes, a ballad in two, a bossa nova with its clave, swing over an AABA form with a walking bass, or a jazz blues with a shuffle. The lead, a jazz guitar, a flute, a harp, or a piano, improvises phrases that resolve to chord and colour tones on strong beats. Every run picks a new key and solo; listen in the browser, or render the same ensemble from the Node CLI.',
   },
   {
     id: 'euclidean', title: 'Euclidean rhythms', category: 'Generative', job: 'Create', mode: 'audio',

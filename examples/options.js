@@ -16,6 +16,9 @@ const cliOnly = (syntax, description) => ({ syntax, description, browser: false 
 
 const clickSounds = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala']
 
+// the middle of each jazz style's tempo range; the browser's tempo slider follows the style
+const jazzTempos = { modal: 84, ambient: 56, nordic: 70, ballad: 62, bossa: 127, swing: 157, blues: 113 }
+
 const duration = (value, max = Math.max(10, value)) => range(
   'duration', '-d, --duration <time>', 'Duration', value, 0.5, max, value === 1.75 ? 0.25 : 0.5, 's',
   `run time (CLI accepts s/m/h suffixes; default: ${value}s)`,
@@ -215,7 +218,9 @@ export const exampleOptions = {
     { ...duration(300, 600), browser: false },
   ],
   jazz: [
-    range('bpm', 'bpm=<number>', 'Tempo', 84, 60, 140, 1, 'BPM', 'performance tempo (default: random 76..92)'),
+    select('style', 'style=<name>', 'Style', 'modal', ['modal', 'ambient', 'nordic', 'ballad', 'bossa', 'swing', 'blues'], 'modal (default), ambient, nordic, ballad, bossa, swing, or blues'),
+    select('lead', 'lead=<name>', 'Lead', 'guitar', ['guitar', 'flute', 'harp', 'piano'], 'guitar (default), flute, harp, or piano'),
+    { ...range('bpm', 'bpm=<number>', 'Tempo', 84, 40, 200, 1, 'BPM', 'performance tempo (default: the middle of the style\'s range)'), follows: 'style', valueFor: style => jazzTempos[style] ?? 84 },
     { ...duration(270, 600), min: 30, step: 10 },
   ],
   euclidean: [
