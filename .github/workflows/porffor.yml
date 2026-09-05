@@ -1,7 +1,10 @@
-# Tracking job: Porffor cannot run the engine yet. Unbundled it lacks
-# import-declaration codegen; fully bundled (all deps stubbed or inlined,
-# zero imports) its wasm codegen miscompiles ("expected 2 elements on the
-# stack for branch", verified on 0.61.13). Weekly, so progress is noticed.
+# Tracking job: Porffor alpha 4 compiles the bundled engine (the invalid-Wasm
+# bug of https://github.com/CanadaHonk/porffor/issues/380 is fixed there) and
+# stops at execution: EventTarget is not defined, then for..of over a class
+# with a [Symbol.iterator]() method. Reproductions and scope: test/COMPILERS.md.
+# Weekly, so progress is noticed. Porffor is installed from its release
+# (porffor.dev/install.sh), pinned by tag; npm's 0.61.x is the frozen
+# pre-rewrite engine.
 name: Porffor
 
 on:
@@ -12,6 +15,8 @@ on:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    env:
+      PORFFOR_RELEASE: alpha-4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,6 +24,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: curl -fsSL https://porffor.dev/install.sh | sh -s -- "$PORFFOR_RELEASE"
+      - run: ~/.local/bin/porf --version
       - run: printf 'export default null\nexport const from = null\n' > stub.js
-      - run: npx esbuild test/smoke.mjs --bundle --format=esm --outfile=smoke-porf.mjs --alias:@audio/decode=./stub.js --alias:@audio/decode-ape=./stub.js --alias:@audio/speaker=./stub.js --alias:@audio/mic=./stub.js
-      - run: npx -y porffor@latest --module smoke-porf.mjs
+      # module entries, as Node resolves them (the es5 bundle carries Babel helpers Porffor rejects)
+      - run: npx esbuild test/smoke.mjs --bundle --format=esm --main-fields=module,main --outfile=smoke-porf.mjs --alias:@audio/decode=./stub.js --alias:@audio/decode-ape=./stub.js --alias:@audio/speaker=./stub.js --alias:@audio/mic=./stub.js
+      - run: ~/.local/bin/porf --module test/porffor-repro.mjs
+      - run: ~/.local/bin/porf --module test/porffor-iter-repro.mjs
+      - run: ~/.local/bin/porf --module smoke-porf.mjs
