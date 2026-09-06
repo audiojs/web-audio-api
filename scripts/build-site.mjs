@@ -180,9 +180,28 @@ function updateHome() {
   let path = join(root, 'index.html')
   let html = readFileSync(path, 'utf8')
   html = html.replaceAll(/<span data-version(?:="")?>v[^<]+<\/span>/g, () => `<span data-version>v${escapeHTML(pkg.version)}</span>`)
-  let [{ size }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
-  if (!html.includes(' data-pack-size')) throw new Error('index.html no longer has the data-pack-size link')
-  html = html.replaceAll(/(<(a|span)[^>]* data-pack-size(?:="")?>)[^<]*(<\/\2>)/g, `$1${Math.round(size / 1000)} KB gzip$3`)
+  let [{ size, unpackedSize }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const bytes = value => value < 1e6 ? `${Math.round(value / 1000)} kB` : `${(value / 1e6).toFixed(1)} MB`
+  const sizeDetails = `${bytes(size)} gzip / ${bytes(unpackedSize)} unpacked\nExcludes dependencies.`
+  let updatedSizes = 0, updatedDetails = 0
+  // As with font links below, parse attributes without reserializing the page's SVGs.
+  html = html.replaceAll(/(<(a|span)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>)[^<]*(<\/\2\s*>)/gi, (match, open, tag, close) => {
+    if (!/data-(?:pack-size|package-details)/i.test(open)) return match
+    const label = parseHTML(open).document.querySelector('[data-pack-size], [data-package-details]')
+    if (!label) return match
+    if (label.hasAttribute('data-package-details')) {
+      updatedDetails++
+      return `${open}${escapeHTML(sizeDetails)}${close}`
+    }
+    const format = label.getAttribute('data-pack-size')
+    if (format !== '' && format !== 'compact') throw new Error('Unsupported data-pack-size format')
+    updatedSizes++
+    return `${open}${Math.round(size / 1000)}${format === 'compact' ? 'kB' : ' KB gzip'}${close}`
+  })
+  if (!updatedSizes || updatedSizes !== home.querySelectorAll('[data-pack-size]').length)
+    throw new Error('index.html requires text-only data-pack-size labels')
+  if (updatedDetails !== 1 || home.querySelectorAll('[data-package-details]').length !== 1)
+    throw new Error('index.html requires one text-only data-package-details tooltip')
   html = html.replaceAll(/(<span data-wpt-count(?:="")?>)[^<]*(<\/span>)/g, `$1${metrics.wptPass.toLocaleString('en-US')}$2`)
     .replaceAll(/(<span data-wpt-version(?:="")?>)[^<]*(<\/span>)/g, (_, open, close) => `${open}v${escapeHTML(metrics.version)}${close}`)
     .replaceAll(/(<time data-wpt-date(?:="")?>)[^<]*(<\/time>)/g, `$1${metrics.generatedAt.slice(0, 10)}$2`)

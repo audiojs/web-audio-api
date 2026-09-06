@@ -478,11 +478,11 @@ h3 {
 .hero-stack .is-compiler img { filter: none; }
 
 .install-row {
-  grid-column: 1 / -1;
+  grid-column: 1 / 3;
+  align-self: end;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-sm) clamp(var(--space-md), 3vw, var(--space-xl));
+  gap: clamp(var(--space-xs), 2vw, var(--space-xl));
   font-family: var(--font-code);
   font-size: var(--text-sm);
 }
@@ -490,7 +490,7 @@ h3 {
 .install-command {
   min-height: 3.5rem;
   margin: 0;
-  padding-inline: var(--space-lg);
+  padding-inline: clamp(var(--space-xs), 3vw, var(--space-lg));
   display: inline-flex;
   align-items: center;
   gap: var(--space-md);
@@ -506,10 +506,10 @@ h3 {
 .hero-spec {
   min-width: 0;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-xs) clamp(var(--space-md), 3vw, var(--space-2xl));
+  gap: clamp(var(--space-sm), 2vw, var(--space-lg));
   color: var(--color-muted);
+  font-family: var(--font-body);
   font-size: var(--text-xs);
   white-space: nowrap;
 }
@@ -522,18 +522,19 @@ h3 {
 .hero-spec a:hover { color: var(--color-ink); }
 
 /* A project test result, not a third-party certification mark. */
-.corner-action nav .wpt-seal {
+.hero-spec .wpt-seal {
   position: relative;
-  gap: 0.4em;
-  padding-inline: var(--space-xs);
-  border-radius: var(--radius-xs);
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font-family: var(--font-code);
-  font-size: var(--text-xs);
-  white-space: nowrap;
+  display: inline-flex;
+  gap: 0.25em;
+  padding: 0.35em 0.6em;
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-ink);
 }
-.wpt-tip {
+.wpt-seal strong { font-weight: 600; }
+.package-size { position: relative; }
+.wpt-tip,
+.size-tip {
   position: absolute;
   inset-block-start: 100%;
   inset-inline-end: 0;
@@ -544,14 +545,24 @@ h3 {
   background: var(--color-ink);
   color: var(--color-paper);
   line-height: 1.5;
+  text-align: start;
   white-space: normal;
   display: none;
 }
+.size-tip {
+  inset-block-start: auto;
+  inset-block-end: 100%;
+  width: min(15rem, 60vw);
+  white-space: pre-line;
+}
 .wpt-seal:hover .wpt-tip,
-.wpt-seal:focus .wpt-tip { display: block; }
+.wpt-seal:focus .wpt-tip,
+.package-size:hover .size-tip,
+.package-size:focus-within .size-tip { display: block; }
 
 .hero-code {
   grid-column: 1 / 4;
+  margin-block-start: calc(-1 * var(--space-xs));
   position: relative;
   z-index: 1;
   display: grid;
@@ -564,9 +575,13 @@ h3 {
 }
 
 .hero-demo-note {
-  margin: var(--space-sm) 0 0;
+  grid-column: 3;
+  align-self: end;
+  justify-self: end;
+  margin: 0;
+  margin-inline-end: var(--space-md);
   color: var(--color-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   max-width: 28rem;
   text-align: end;
 }
@@ -1762,7 +1777,7 @@ tbody th { color: var(--color-ink); }
   .example-filters button { transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
   .example-filters button:not([aria-pressed="true"]):hover { border-color: var(--color-ink); }
   .corner-action nav a { transition: color var(--dur-short) var(--ease-out); }
-  .corner-action nav a:not(.wpt-seal):hover { color: var(--color-ink); }
+  .corner-action nav a:hover { color: var(--color-ink); }
   .hero-spec a { transition: color var(--dur-short) var(--ease-out); }
   .code-tab { transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
   .code-tab:not([aria-pressed="true"]):hover { background: var(--color-ink-3); color: var(--color-paper); }
@@ -1826,6 +1841,8 @@ tbody th { color: var(--color-ink); }
   .hero-art { grid-column: 2; padding-inline: 0; justify-self: end; }
   .graph-scroll { width: 100%; max-width: none; }
   .hero-code, .install-row { grid-column: 1 / -1; }
+  .install-row { grid-row: 2; }
+  .hero-demo-note { grid-column: 2; grid-row: 2; max-width: 14rem; }
   .hero h1 { font-size: clamp(2rem, 4.7vw, var(--text-display)); }
 }
 
@@ -1858,11 +1875,12 @@ tbody th { color: var(--color-ink); }
   .hero-intro { padding-inline-end: 0; }
   .hero-art,
   .install-row,
+  .hero-demo-note,
   .hero-code { grid-column: 1; grid-row: auto; }
-  /* stacked: intro, install with size, graph with caption, code */
+  /* stacked: intro, install with status, graph, preview note, code */
   .hero-art { order: 1; }
-  .hero-demo-note { text-align: start; }
-  .hero-code { order: 2; }
+  .hero-demo-note { order: 2; }
+  .hero-code { order: 3; }
   /* the dots run to both edges and pass under the code, which is the graph's own */
   .hero-art {
     margin-inline: calc(-1 * var(--page-gutter));
@@ -1880,8 +1898,9 @@ tbody th { color: var(--color-ink); }
   .hero-art .graph { min-width: 25rem; }
   .hero-code { grid-template-columns: minmax(0, 1fr); }
   .install-command .prompt { display: none; }
-  .install-row { flex-wrap: nowrap; gap: var(--space-xs); }
-  .install-command { padding-inline: var(--space-xs); font-size: var(--text-xs); }
+  .install-row { gap: clamp(var(--space-2xs), calc(8vw - 1.35rem), var(--space-xs)); }
+  .install-command { font-size: clamp(0.625rem, calc(4vw - 0.175rem), var(--text-xs)); }
+  .hero-spec { font-size: clamp(0.6875rem, 3.2vw, var(--text-xs)); }
   .wpt-tip { width: 12rem; }
   .hero-code pre,
   .code-output {

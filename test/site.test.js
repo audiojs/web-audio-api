@@ -49,6 +49,16 @@ test('catalog covers every CLI and portable graph module exactly once', () => {
   }
 })
 
+test('WPT badge stays on the homepage and every generated header links to its FAQ', () => {
+  for (const path of [...htmlFiles, '404.html']) {
+    const document = documentOf(path)
+    is(document.querySelectorAll('.wpt-seal').length, path === 'index.html' ? 1 : 0, `${path}: no duplicated or stale badge in shared chrome`)
+    const faq = new URL(document.querySelector('header nav a[href$="#faq"]').getAttribute('href'), new URL(path, pkg.homepage))
+    faq.pathname = faq.pathname.replace(/\/index\.html$/, '/')
+    is(faq.href, new URL('#faq', pkg.homepage).href, `${path}: FAQ resolves to the homepage section, not the current route`)
+  }
+})
+
 test('homepage is only the hero, example catalogue, compact FAQ, and footer', () => {
   let document = documentOf('index.html')
   is(document.querySelector('#hero-title strong').textContent.replace(/\s/g, ' '), 'Web Audio API')
@@ -69,8 +79,8 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(!document.querySelector('.site-footer .wpt-badge'), 'no badge in the footer')
   ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
   ok(!document.querySelector('.hero-spec img'), 'spec plate carries no badge image')
-  is(document.querySelectorAll('header a').length, 5, 'brand, examples, WPT, version, and GitHub')
-  ok(document.querySelector('header nav a[href="./examples/"]') && document.querySelector('header nav .wpt-seal') && !document.querySelector('header nav a[href="#faq"]'), 'WPT replaces FAQ in navigation, not the FAQ section')
+  is(document.querySelectorAll('header a').length, 5, 'brand, examples, FAQ, version, and GitHub')
+  ok(document.querySelector('header nav a[href="./examples/"]') && document.querySelector('header nav a[href="#faq"]') && !document.querySelector('header .wpt-seal'), 'navigation links to sections; the WPT result belongs with the install status')
   ok(document.querySelector('header a.brand[href="./"] svg path[d^="M21.25 41.75"]'), 'the site seal leads home')
   ok(document.querySelector('header a.version-link[href="https://www.npmjs.com/package/web-audio-api"] [data-version]'), 'the version links to npm')
   ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
@@ -78,8 +88,10 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   is(document.querySelector('.install-command code').textContent.trim(), 'npm install web-audio-api')
   is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
   ok(!document.body.textContent.includes('Basic usage'))
-  ok(/^\d{2,3} KB gzip$/.test(document.querySelector('.hero-spec a[data-pack-size]').textContent), 'compressed size uses a short label')
-  ok(document.querySelector('.hero-spec a[data-pack-size]').title.includes('npm package archive; excludes dependencies'), 'the tooltip scopes the short size label')
+  ok(/^\d{2,3}kB$/.test(document.querySelector('.hero-spec a[data-pack-size]').textContent), 'compressed archive size uses compact byte units')
+  const sizeTip = document.getElementById(document.querySelector('.hero-spec a[data-pack-size]').getAttribute('aria-describedby'))
+  ok(sizeTip.textContent.includes('gzip /') && sizeTip.textContent.includes('unpacked') && sizeTip.textContent.includes('Excludes dependencies.'), 'the tooltip scopes the package sizes')
+  is(sizeTip.textContent.split('\n').length, 2, 'size tooltip is only two short lines')
   is(document.querySelector('.site-footer a[href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE"]').textContent, 'MIT', 'MIT leads to the license')
   ok(document.querySelector('.site-footer a[href="https://github.com/krishnized/license"]'), 'krishnized dedication rides the footer')
   ok(document.querySelector('.site-footer').textContent.includes('2013'), 'footer carries since 2013')
@@ -87,10 +99,10 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   let seal = document.querySelector('a.wpt-seal[href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml"]')
   is(seal.querySelector('strong').textContent, '100%', 'the pass rate is explicit')
   is([...seal.querySelectorAll('[data-wpt-count]')].map(node => node.textContent).join('/'), '4,317/4,317', 'the seal gives both the passing count and total')
-  is(seal.childNodes[1].textContent.trim(), 'WPT', 'the compact badge names the test suite')
+  is([...seal.children].filter(node => !node.classList.contains('wpt-tip')).map(node => node.textContent), ['WPT', '100%'], 'the inline status names the suite and result')
   const tip = document.getElementById(seal.getAttribute('aria-describedby'))
-  ok(tip.textContent.includes('Node runner') && tip.textContent.includes('Not W3C certification'), 'tooltip scopes the result and provides its numbers')
-  ok(document.querySelector('header nav .wpt-seal') && !document.querySelector('.hero-spec .wpt-seal'), 'the badge leaves installation space for the archive size')
+  ok(tip.textContent.includes('passing in Node.') && tip.textContent.includes('Not W3C certification') && tip.textContent.length < 80, 'WPT tooltip keeps the count and scope without a paragraph')
+  ok(document.querySelector('.hero-spec .package-size + .wpt-seal') && !document.querySelector('.hero-intro .wpt-seal'), 'WPT follows the compact size without taking space from the description')
   ok(!document.querySelector('.site-footer a[href="https://github.com/sponsors/audiojs"]'), 'sponsorship is hidden for now')
   ok(!document.querySelector('.footer-license a[href*="sponsors"]'), 'sponsorship is separate from the dedication')
   ok(document.querySelector('.site-footer a[href="https://github.com/sebpiq"]') && document.querySelector('.site-footer a[href="https://github.com/dy"]'), 'authors are credited with links')
@@ -379,9 +391,9 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   ok(licence.querySelector('a[href$="/LICENSE"] + a[href="https://github.com/krishnized/license"][aria-label="Omkara — personal dedication"]'), 'licence and dedication remain distinct accessible links')
   for (let file of ['assets/site.css', 'graph.js', 'site.js']) ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab)\(/i.test(read(file).replace(/url\(#[\w-]+\)/g, '')), `${file} takes every color from a token`)
   ok(document.querySelector('.hero-art .graph') && document.querySelector('.hero-signal .hero-spectrum'), 'the graph rides the hero, the render rides the code')
-  let caption = document.querySelector('.hero-art > .graph-scroll + .hero-demo-note')
-  ok(caption?.textContent.startsWith('A plucked string from a feedback loop.'), 'the caption belongs to the graph above the code')
-  ok(caption.textContent.includes('native browser audio') && caption.querySelector('code').textContent === 'node hero.js', 'caption preserves preview provenance and the package command')
+  let caption = document.querySelector('.hero > .install-row + .hero-demo-note')
+  ok(caption?.textContent.startsWith('A plucked string from a feedback loop.') && caption.nextElementSibling.classList.contains('hero-code'), 'the preview note belongs just above the code, not inside the graph')
+  is(caption.textContent, 'A plucked string from a feedback loop. Preview uses native browser audio.', 'caption keeps only the preview explanation')
   let hero = read('assets/site.css')
   ok(document.querySelector('.hero-art > .graph-scroll > .graph') && /\.graph-scroll \{[^}]*overflow: auto hidden/s.test(hero), 'the graph scrolls sideways in a pane of its own, never down, and never takes the dot field with it')
   ok(!hero.includes('mask-image:'), 'no useful text fades out beneath the graph')
@@ -855,13 +867,27 @@ if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) test('site build is re
     symlinkSync(join(root, 'node_modules'), join(dir, 'node_modules'), 'junction')
     const fixturePackage = { ...pkg, version: '9.8.7', files: ['package.json'] }
     writeFileSync(join(dir, 'package.json'), JSON.stringify(fixturePackage))
-    // Simulate a DOM serializer: boolean-looking data attributes acquire ="".
-    writeFileSync(join(dir, 'index.html'), parseHTML(load('index.html')).document.toString())
+    // A DOM serializer adds =""; both compact and expanded empty size labels must fill.
+    const serialized = parseHTML(load('index.html')).document
+    for (const label of serialized.querySelectorAll('[data-pack-size]')) label.textContent = ''
+    const sizeCases = `<div id="size-cases"><span data-pack-size></span><a data-pack-size=""></a><span data-pack-size='compact' title='a > b'></span><a title="a > b" data-pack-size=compact></a><span data-pack-size=compact data-tail=">">old</span><span title=" data-pack-size=compact ">keep</span></div>`
+    writeFileSync(join(dir, 'index.html'), serialized.toString().replace('</main>', `${sizeCases}</main>`))
     build()
     const a = load('index.html'), catalog = load('examples/index.html')
+    const [{ size, unpackedSize }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+    const kb = Math.round(size / 1000)
+    ok(parseHTML(a).document.querySelector('#size-tip').textContent.startsWith(`${kb} kB gzip / ${Math.round(unpackedSize / 1000)} kB unpacked`), 'size tooltip uses the actual archive and unpacked package measurements')
+    is([...parseHTML(a).document.querySelector('#size-cases').children].map(node => node.textContent), [`${kb} KB gzip`, `${kb} KB gzip`, `${kb}kB`, `${kb}kB`, `${kb}kB`, 'keep'], 'empty/minimal, quoted/unquoted, reordered size attributes produce exact bytes; lookalikes stay untouched')
+    ok(a.includes(`<span data-pack-size='compact' title='a > b'>${kb}kB</span>`), 'quoted > and original attribute spelling survive the update')
     build()
     is(load('index.html'), a, 'A → A is byte-identical')
     is(load('examples/index.html'), catalog, 'rebuilding cannot duplicate font preloads')
+    writeFileSync(join(dir, 'index.html'), a.replace("data-pack-size='compact' title='a > b'", "data-pack-size='' title='a > b'"))
+    build()
+    is(parseHTML(load('index.html')).document.querySelector('#size-cases').children[2].textContent, `${kb} KB gzip`, 'compact A → expanded B replaces the old suffix')
+    const expanded = load('index.html')
+    build()
+    is(load('index.html'), expanded, 'expanded B → B is byte-identical')
     is(parseHTML(a).document.querySelector('[data-version]').textContent, 'v9.8.7')
     const metrics = { version: '9.8.6', wptPass: 1, wptFail: 0, wptSkip: 0, generatedAt: '2020-01-02T00:00:00.000Z' }
     writeFileSync(join(dir, 'site-metrics.json'), JSON.stringify(metrics))
@@ -870,13 +896,45 @@ if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) test('site build is re
     for (const count of b.querySelectorAll('[data-wpt-count]')) is(count.textContent, '1', 'A → B refreshes every count')
     is(b.querySelector('[data-wpt-version]').textContent, 'v9.8.6', 'tested version is not silently relabeled as package version')
     is(b.querySelector('[data-wpt-date]').textContent, '2020-01-02')
-    is(b.querySelector('.hero-spec [data-pack-size]').textContent, b.querySelector('.faq [data-pack-size]').textContent)
+    is(b.querySelector('.hero-spec [data-pack-size]').textContent, b.querySelector('.faq [data-pack-size]').textContent.replace(' KB gzip', 'kB'))
     const published = () => ['index.html', 'examples/index.html', 'examples/tone/index.html', '404.html', 'llms.txt'].map(load)
     const reject = pattern => {
       const before = published()
       assert.throws(build, pattern)
       assert.deepEqual(published(), before, 'invalid evidence cannot partially rewrite published pages')
     }
+    const validHome = load('index.html')
+    for (const mutate of [
+      document => { for (const label of document.querySelectorAll('[data-pack-size]')) label.removeAttribute('data-pack-size') },
+      document => document.querySelector('[data-pack-size]').setAttribute('data-pack-size', 'null'),
+      document => { document.querySelector('[data-pack-size]').innerHTML = '<b>old</b>' },
+    ]) {
+      const document = parseHTML(validHome).document
+      mutate(document)
+      writeFileSync(join(dir, 'index.html'), document.toString())
+      reject(/data-pack-size/)
+    }
+    for (const mutate of [
+      document => document.querySelector('[data-package-details]').removeAttribute('data-package-details'),
+      document => { document.querySelector('[data-package-details]').innerHTML = '<b>old</b>' },
+      document => {
+        const duplicate = document.querySelector('[data-package-details]').cloneNode(true)
+        duplicate.innerHTML = '<b>old</b>'
+        document.body.append(duplicate)
+      },
+    ]) {
+      const document = parseHTML(validHome).document
+      mutate(document)
+      writeFileSync(join(dir, 'index.html'), document.toString())
+      reject(/data-package-details/)
+    }
+    const boundaryLabel = `<span data-pack-size=compact data-tail=">">${kb}kB</span>`
+    ok(validHome.includes(boundaryLabel), 'boundary fixture is the exact generated label')
+    for (const truncated of [boundaryLabel.replace('data-tail=">">', 'data-tail=">"'), boundaryLabel.slice(0, -1)]) {
+      writeFileSync(join(dir, 'index.html'), validHome.replace(boundaryLabel, truncated))
+      reject(/data-pack-size/)
+    }
+    writeFileSync(join(dir, 'index.html'), validHome)
     for (const invalid of [...[-1, 0, 0.5, Number.MAX_SAFE_INTEGER + 1, '1', null].map(wptPass => ({ ...metrics, wptPass })), null, {},
       { ...metrics, wptFail: 1 }, { ...metrics, wptSkip: 1 }, { ...metrics, version: null },
       { ...metrics, generatedAt: 'not-a-date' }, { ...metrics, generatedAt: '2020-02-30T00:00:00.000Z' }]) {
@@ -962,7 +1020,7 @@ test('homepage evidence uses one verified version, count, date, and archive size
   for (const count of document.querySelectorAll('[data-wpt-count]')) is(count.textContent, metrics.wptPass.toLocaleString('en-US'))
   is(document.querySelector('[data-wpt-version]').textContent, `v${metrics.version}`)
   is(document.querySelector('[data-wpt-date]').textContent, metrics.generatedAt.slice(0, 10))
-  is(document.querySelector('.hero-spec [data-pack-size]').textContent, document.querySelector('.faq [data-pack-size]').textContent)
+  is(document.querySelector('.hero-spec [data-pack-size]').textContent, document.querySelector('.faq [data-pack-size]').textContent.replace(' KB gzip', 'kB'))
   const report = JSON.parse(read('benchmark/results.json'))
   for (const scenario of report.scenarios) for (const result of scenario.results) {
     is(result.samples.length, report.method.repetitions)

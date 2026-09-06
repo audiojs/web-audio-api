@@ -51,7 +51,7 @@
     </a>
     <nav aria-label="Primary">
       <a href="./examples/">Examples</a>
-      <a class="wpt-seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml" aria-describedby="wpt-tip"><strong>100%</strong> WPT<span class="wpt-tip" id="wpt-tip" role="tooltip"><span data-wpt-count>4,317</span> / <span data-wpt-count>4,317</span> W3C tests passing in this project’s Node runner. Not W3C certification.</span></a>
+      <a href="#faq">FAQ</a>
     </nav>
     <div class="corner-links">
       <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version>v1.5.6</span></a>
@@ -68,7 +68,7 @@
         <h1 id="hero-title"><strong>Web Audio API</strong><span>without the browser</span></h1>
         <p class="hero-lede">Web Audio implementation in pure JavaScript. <br>
           <strong>No native bindings, no compile, no rewrite.</strong>
-          </p>
+        </p>
           <ul>
             <li>Render sound on the server</li>
             <li>Test audio in CI without speakers</li>
@@ -84,12 +84,16 @@
         <svg class="graph" width="401.6" height="344" viewBox="0 0 401.6 344" role="img" aria-label="The graph hero.js connects: AudioBufferSourceNode, DelayNode, BiquadFilterNode, GainNode, AudioDestinationNode"><defs><marker id="arrow-0" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z"/></marker><filter id="shade-0" x="-20%" y="-30%" width="140%" height="190%"><feMorphology in="SourceAlpha" operator="erode" radius="4" result="thinner"/><feGaussianBlur in="thinner" stdDeviation="9" result="soft"/><feOffset in="soft" dy="8" result="cast"/><feFlood class="shadow-far" result="tint"/><feComposite in="tint" in2="cast" operator="in" result="far"/><feDropShadow class="shadow-near" in="SourceGraphic" dx="0" dy="1.5" stdDeviation="1.5" result="near"/><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge></filter></defs><path class="edge" marker-end="url(#arrow-0)" d="M182.8 68V107"/><path class="edge" marker-end="url(#arrow-0)" d="M182.8 152V163.5q0 8 -8 8H98.8q-8 0 -8 8V191"/><path class="edge" marker-end="url(#arrow-0)" d="M90.8 236V247.5q0 8 8 8H174.8q8 0 8 8V275"/><path class="edge back" marker-end="url(#arrow-0)" d="M229.8 298H361.6q8 0 8 -8V138q0 -8 -8 -8H227.5"/><path class="edge" marker-end="url(#arrow-0)" d="M182.8 152V163.5q0 8 8 8H253.6q8 0 8 8V191"/><g class="node" transform="translate(99.5 24)"><rect class="card" width="166.6" height="44" rx="8" filter="url(#shade-0)"/><rect class="sheen" x="1" y="1" width="164.6" height="42" rx="7"/><text x="83.3" y="18">AudioBufferSourceNode</text><text class="sub" x="83.3" y="33">1 sample</text></g><g class="node" transform="translate(139.1 108)"><rect class="card" width="87.4" height="44" rx="8" filter="url(#shade-0)"/><rect class="sheen" x="1" y="1" width="85.4" height="42" rx="7"/><text x="43.7" y="18">DelayNode</text><text class="sub" x="43.7" y="33">4.5 ms</text></g><g class="node" transform="translate(24 192)"><rect class="card" width="133.6" height="44" rx="8" filter="url(#shade-0)"/><rect class="sheen" x="1" y="1" width="131.6" height="42" rx="7"/><text x="66.8" y="18">BiquadFilterNode</text><text class="sub" x="66.8" y="33">lowpass 4 kHz</text></g><g class="node" transform="translate(135.8 276)"><rect class="card" width="94" height="44" rx="8" filter="url(#shade-0)"/><rect class="sheen" x="1" y="1" width="92" height="42" rx="7"/><text x="47" y="18">GainNode</text><text class="sub" x="47" y="33">gain 0.995</text></g><g class="node" transform="translate(181.6 192)"><rect class="card" width="160" height="44" rx="8" filter="url(#shade-0)"/><rect class="sheen" x="1" y="1" width="158" height="42" rx="7"/><text x="80" y="18">AudioDestinationNode</text><text class="sub" x="80" y="33">2 ch, 44.1 kHz</text></g></svg>
 <!-- GENERATED:hero-graph:end -->
         </div>
-        <p class="hero-demo-note">A plucked string from a feedback loop. Preview uses native browser audio; <code>node hero.js</code> uses the package. <a href="https://github.com/audiojs/web-audio-api/blob/master/hero.js">Source</a></p>
       </div>
       <div class="install-row">
         <p class="install-command"><span class="prompt" aria-hidden="true">&gt;</span><code id="install-code">npm install web-audio-api</code></p>
-        <div class="hero-spec"><a href="https://www.npmjs.com/package/web-audio-api?activeTab=code" title="Gzipped npm package archive; excludes dependencies" data-pack-size>165 KB gzip</a></div>
+        <div class="hero-spec">
+          <span class="package-size"><a href="https://www.npmjs.com/package/web-audio-api?activeTab=code" aria-describedby="size-tip" data-pack-size="compact">165kB</a><span class="size-tip" id="size-tip" role="tooltip" data-package-details>165 kB gzip / 604 kB unpacked
+Excludes dependencies.</span></span>
+          <a class="wpt-seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml" aria-label="W3C WPT: 100% passing" aria-describedby="wpt-tip"><span>WPT</span><strong>100%</strong><span class="wpt-tip" id="wpt-tip" role="tooltip"><span data-wpt-count>4,317</span> / <span data-wpt-count>4,317</span> passing in Node.<br>Not W3C certification.</span></a>
+        </div>
       </div>
+      <p class="hero-demo-note">A plucked string from a feedback loop. Preview uses native browser audio.</p>
       <div class="hero-code code-stage">
         <div class="code-col">
           <!-- GENERATED:hero-code:start -->

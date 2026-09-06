@@ -33,9 +33,11 @@ try {
           filter: getComputedStyle(row.querySelector('.runtime-mark')).filter,
           background: getComputedStyle(row).backgroundColor,
         })))
-        const white = await hoverPage.evaluate(() => {
+        const { white, ink } = await hoverPage.evaluate(() => {
           const probe = document.createElement('span'); probe.style.color = 'var(--color-white)'; document.body.append(probe)
-          const value = getComputedStyle(probe).color; probe.remove(); return value
+          const white = getComputedStyle(probe).color
+          probe.style.color = 'var(--color-ink)'
+          const ink = getComputedStyle(probe).color; probe.remove(); return { white, ink }
         })
         const baseline = await snapshot()
         assert.ok(baseline.every(row => row.filter === 'grayscale(1)'))
@@ -48,16 +50,36 @@ try {
         assert.deepEqual(await snapshot(), baseline, 'leaving the runtime table restores its neutral rows')
         assert.notEqual(await hoverPage.locator('.bench tbody tr').first().evaluate(row => getComputedStyle(row).backgroundColor), white, 'the runtime highlight does not leak into benchmark tables')
         const badge = hoverPage.locator('.wpt-seal')
-        const badgeColor = await badge.evaluate(node => getComputedStyle(node).color)
-        await badge.hover()
-        assert.equal(await badge.evaluate(node => getComputedStyle(node).color), badgeColor, 'the black WPT badge retains its light text on hover')
+        assert.equal(await badge.evaluate(node => getComputedStyle(node).backgroundColor), white, 'WPT uses a white pill')
+        assert.equal(await badge.evaluate(node => getComputedStyle(node).borderRadius), '999px', 'WPT pill has rounded ends')
+        const tip = hoverPage.locator('#wpt-tip')
+        assert.equal(await tip.isVisible(), false, 'the WPT tooltip starts hidden')
+        for (let i = 0; i < 2; i++) {
+          await badge.hover()
+          await hoverPage.waitForFunction(ink => getComputedStyle(document.querySelector('.wpt-seal')).color === ink, ink)
+          assert.equal(await badge.evaluate(node => getComputedStyle(node).color), ink, 'the WPT status uses dark ink after its hover transition')
+          assert.ok(await tip.isVisible(), 'repeated badge hover keeps its tooltip visible')
+        }
+        await tip.hover()
+        assert.ok(await tip.isVisible(), 'the tooltip stays readable when the pointer enters it')
+        await hoverPage.locator('.brand').hover()
+        assert.equal(await tip.isVisible(), false, 'leaving the badge and tooltip hides the explanation')
+        const sizeTip = hoverPage.locator('#size-tip')
+        for (let i = 0; i < 2; i++) {
+          await hoverPage.locator('.package-size a').hover()
+          assert.ok(await sizeTip.isVisible(), 'size hover A → A keeps the breakdown visible')
+        }
+        await sizeTip.hover()
+        assert.ok(await sizeTip.isVisible(), 'the size breakdown remains readable under the pointer')
+        await hoverPage.locator('.brand').hover()
+        assert.equal(await sizeTip.isVisible(), false, 'leaving the size tooltip hides the breakdown')
       } finally { await hoverPage.close() }
       const page = await browser.newPage({ viewport: { width: 375, height: 812 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
       const errors = []
       page.on('pageerror', e => errors.push(e.message))
       await page.goto(url)
       await page.evaluate(() => document.fonts.ready)
-      for (const width of [320, 375, 414, 768, 900, 1440]) {
+      for (const width of [320, 375, 375, 414, 640, 768, 769, 900, 1024, 1025, 1440]) {
         await page.setViewportSize({ width, height: 900 })
         await page.evaluate(() => { for (const d of document.querySelectorAll('.faq details')) d.open = true })
         await page.waitForTimeout(250)
@@ -69,10 +91,20 @@ try {
             if (r.right > innerWidth + 1 || r.left < -1 || e.scrollWidth > e.clientWidth + 1) problems.push(e.textContent)
           }
           const bounds = selector => document.querySelector(selector).getBoundingClientRect()
-          const art = bounds('.hero-art'), note = bounds('.hero-demo-note'), code = bounds('.hero-code')
-          if (note.left < art.left || note.right > art.right || note.top < art.top || note.bottom > art.bottom || note.bottom > code.top) problems.push('caption detached from graph or overlapping code')
-          const install = bounds('.install-command'), seal = bounds('.wpt-seal'), size = bounds('.hero-spec')
-          if (innerWidth <= 640 && (size.left < install.right || size.top >= install.bottom || size.bottom <= install.top)) problems.push('archive size leaves the install line')
+          const graph = bounds('.graph-scroll'), note = bounds('.hero-demo-note'), code = bounds('.hero-code')
+          const install = bounds('.install-command'), seal = bounds('.wpt-seal'), size = bounds('.hero-spec'), archive = bounds('[data-pack-size="compact"]')
+          if (Math.abs(note.right + 16 - code.right) > 1 || note.bottom > code.top || code.top - note.bottom > 24.5 || getComputedStyle(document.querySelector('.hero-demo-note')).textAlign !== 'end') problems.push('preview note is not right-aligned immediately above the code')
+          if (innerWidth > 768 ? Math.abs(note.bottom - install.bottom) > 1 : note.top < Math.max(graph.bottom, install.bottom)) problems.push('preview note is not aligned with desktop install or below the stacked graph/install')
+          if (innerWidth > 768 && innerWidth <= 1024) {
+            const art = bounds('.hero-art'), gridBottom = art.bottom - parseFloat(getComputedStyle(document.querySelector('.hero-art'), '::before').bottom)
+            if (note.width > 224.5 || note.left < art.left || note.bottom > gridBottom || note.left < seal.right + 8) problems.push('tablet preview note leaves the dot grid or overlaps install status')
+          }
+          const badgeStyle = getComputedStyle(document.querySelector('.wpt-seal'))
+          if (badgeStyle.fontFamily !== getComputedStyle(document.body).fontFamily) problems.push('WPT status does not use the body font')
+          if (seal.left - archive.right < 11.9 || Math.abs((seal.top + seal.bottom) / 2 - (archive.top + archive.bottom) / 2) > 1 || seal.right > bounds('.install-row').right + 1) problems.push('WPT leaves the size line or its container')
+          if (size.left < install.right || size.top >= install.bottom || size.bottom <= install.top) problems.push('archive size leaves the install line')
+          const padding = parseFloat(getComputedStyle(document.querySelector('.install-command')).paddingLeft)
+          if (Math.abs(padding - Math.max(8, Math.min(innerWidth * .03, 24))) > .1) problems.push('install padding does not scale smoothly with viewport width')
           if (Math.min(install.right, seal.right) > Math.max(install.left, seal.left) && Math.min(install.bottom, seal.bottom) > Math.max(install.top, seal.top)) problems.push('seal overlaps install command')
           const icons = [...document.querySelectorAll('.hero-stack .is-secondary img')].map(e => e.getBoundingClientRect())
           if (icons.slice(1).some((icon, i) => icon.left - icons[i].right > 17)) problems.push('secondary runtime icons too far apart')
@@ -83,11 +115,30 @@ try {
           return problems
         })
         assert.deepEqual(issues, [], `${engine.name()} ${width}px`)
+        const tip = page.locator('#wpt-tip')
+        for (let i = 0; i < 2; i++) {
+          await page.locator('.wpt-seal').focus()
+          assert.ok(await tip.isVisible(), 'focus A → A keeps WPT numbers visible')
+        }
+        assert.ok((await tip.textContent()).includes('4,317 / 4,317'))
+        const box = await tip.boundingBox()
+        assert.ok(box.x >= 0 && box.x + box.width <= width, `${width}px: focused WPT tooltip stays within the viewport`)
+        // Focus directly: Safari's Tab traversal depends on the user's keyboard-navigation preference.
+        await page.locator('.hero-stack button').first().focus()
+        assert.ok(await page.locator('.hero-stack button').first().evaluate(node => node === document.activeElement), 'focus moves from the badge to the first runtime control')
+        assert.equal(await tip.isVisible(), false, 'focus A → B hides the WPT tooltip')
+        await page.locator('.hero-stack button').first().evaluate(node => node.blur())
+        const sizeTip = page.locator('#size-tip')
+        for (let i = 0; i < 2; i++) {
+          await page.locator('.package-size a').focus()
+          assert.ok(await sizeTip.isVisible(), 'size focus A → A shows the complete size breakdown')
+        }
+        const sizeBox = await sizeTip.boundingBox()
+        assert.ok(sizeBox.x >= 0 && sizeBox.x + sizeBox.width <= width, `${width}px: size tooltip fits horizontally`)
+        await page.locator('.wpt-seal').focus()
+        assert.equal(await sizeTip.isVisible(), false, 'size → WPT focus closes the size tooltip')
+        await page.locator('.wpt-seal').evaluate(node => node.blur())
       }
-      await page.locator('.wpt-seal').focus()
-      assert.ok(await page.locator('#wpt-tip').isVisible(), 'WPT numbers appear on keyboard focus')
-      assert.ok((await page.locator('#wpt-tip').textContent()).includes('4,317 / 4,317'))
-      await page.locator('.wpt-seal').evaluate(element => element.blur())
       for (const viewport of [{ width: 375, height: 812 }, { width: 812, height: 375 }]) {
         await page.setViewportSize(viewport)
         assert.equal(await page.locator('.hero-signal').isVisible(), false, 'phone plots are hidden in either orientation')
@@ -332,6 +383,8 @@ try {
         await setupRace.waitForFunction(() => typeof globalThis.__releaseCapture === 'function')
         await setupRace.setViewportSize({ width: 375, height: 812 })
         await setupRace.locator('.hero-signal').waitFor({ state: 'hidden' })
+        // WebKit can update CSS before the existing MediaQueryList reflects the resize.
+        await setupRace.waitForFunction(async () => !(await import('/assets/signal.js')).plotsVisible())
         await setupRace.evaluate(() => globalThis.__releaseCapture())
         await setupRace.waitForFunction(() => !document.querySelector('[data-run]').hasAttribute('aria-busy'))
         assert.equal(await setupRace.evaluate(async () => (await globalThis.__capture) === null), true, 'hiding during hero setup creates no capture node')

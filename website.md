@@ -253,7 +253,7 @@ Do not flatten this into “ours wins every column.” The native Rust implement
 The homepage has nine peer-level questions, without buried subheadings:
 
 1. Will my existing code work? Include Tone.js setup and library compatibility.
-2. How does it differ from browser Web Audio? Put conformance scope and browser differences together. The header’s black 100% WPT badge links to the project’s Node-runner results, not a certification.
+2. How does it differ from browser Web Audio? Put conformance scope and browser differences together. A white WPT 100% pill follows the compact archive size beside the install command, with a wider gap between the two. It uses the body font and links to the project’s Node-runner results, not a certification. Counts and scope appear on hover or focus; the header links to FAQ.
 3. How do I render and test in CI? Show a device-free sample assertion.
 4. Where does it run? Separate CI coverage from experimental compiler targets; include browser and worker imports.
 5. Is it fast enough for realtime? Show reproducible offline data, not latency promises.
@@ -282,7 +282,7 @@ Rules:
 - Graph modules accept a context and options. They do not own process arguments, the DOM, device permission UI, or terminal controls.
 - CLI files are thin adapters and remain directly runnable.
 - The browser adapter imports the same graph module and supplies native Web Audio constructors where needed.
-- Signal plots are hidden on phone layouts, including touch-phone landscape; playback and controls remain available. Capture setup is skipped there, with visibility rechecked after asynchronous module loading. Desktop scrolling bins integer sample positions and paints equal-width pixel cells, rather than stretching cells to divide the canvas evenly. The grid fills the plot region. The hero carries the single preview-provenance note; example source panes do not repeat it. Empty parameter forms collapse, and rendered audio has an inline download icon.
+- Signal plots are hidden on phone layouts, including touch-phone landscape; playback and controls remain available. Capture setup is skipped there, with visibility rechecked after asynchronous module loading. Desktop scrolling bins integer sample positions and paints equal-width pixel cells, rather than stretching cells to divide the canvas evenly. The grid fills the plot region. The hero carries the single preview-provenance note immediately above the code, right-aligned with a 1rem inset on all layouts and bottom-aligned with the install block on desktop and tablet. On tablets it is capped at 14rem over the right-hand dot grid; example source panes do not repeat it. Empty parameter forms collapse, and rendered audio has an inline download icon.
 - Microphones, files, recorders, and writable streams remain explicit runtime boundaries.
 - Recording and run ownership survive audio-context closure. Late callbacks cannot replace a newer result, reset its controls, or restart it. Zero-data recordings keep the last playable result; disposal releases it.
 - Every example keeps an indexable canonical page. Homepage links open the modal on an ordinary click; modified clicks, no-JavaScript visits, and direct URLs open the full page.
@@ -292,7 +292,7 @@ Rules:
 Current visible structure:
 
 1. Product title, the jobs it answers, the runtimes it runs on, and the hero file with its recorded graph and live signal.
-2. Install command with archive size on the same line, including phones; WPT moves to the header in place of its FAQ link.
+2. Install command, compact archive size (for example, 165kB), and WPT 100% on one line, including phones. The size tooltip has only two lines: gzipped/unpacked package sizes from `npm pack`, and “Excludes dependencies.” kB means 1,000 bytes; the FAQ retains the expanded archive label. Command padding scales with viewport width rather than dropping abruptly on tablets.
 3. Ten featured examples, with a link to the catalogue page at `examples/`, which lists all of them in two columns grouped by kind and filtered by job.
 4. Modal containing the browser preview, the recorded graph, and the atomic graph source; opening one sets the address to its own page, and every example also has that canonical detail page.
 5. Compact objection-led FAQ, with the comparison and runtime tables inside it.
