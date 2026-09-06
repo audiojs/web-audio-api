@@ -482,7 +482,7 @@ h3 {
   align-self: end;
   display: flex;
   align-items: center;
-  gap: clamp(var(--space-xs), 2vw, var(--space-xl));
+  gap: clamp(var(--space-xs), 2vw, var(--space-lg));
   font-family: var(--font-code);
   font-size: var(--text-sm);
 }
@@ -1898,8 +1898,8 @@ tbody th { color: var(--color-ink); }
   .hero-art .graph { min-width: 25rem; }
   .hero-code { grid-template-columns: minmax(0, 1fr); }
   .install-command .prompt { display: none; }
-  .install-row { gap: clamp(var(--space-2xs), calc(8vw - 1.35rem), var(--space-xs)); }
-  .install-command { font-size: clamp(0.625rem, calc(4vw - 0.175rem), var(--text-xs)); }
+  .install-row { gap: var(--space-xs); }
+  .install-command { font-size: clamp(0.625rem, calc(4vw - 0.175rem), var(--text-xs)); min-height: 2.5rem; }
   .hero-spec { font-size: clamp(0.6875rem, 3.2vw, var(--text-xs)); }
   .wpt-tip { width: 12rem; }
   .hero-code pre,
@@ -1932,7 +1932,6 @@ tbody th { color: var(--color-ink); }
   .hero-spectrum { aspect-ratio: 400 / 64; }
   .hero-spectrum { margin-block-start: var(--space-sm); }
   .examples { padding-block: var(--space-sm) var(--space-xl); }
-  .faq { padding-block: 5rem var(--space-2xl); }
   .section-heading { margin-block-end: var(--space-md); }
   .example-groups { gap: var(--space-xl); }
   /* one row of tags, bleeding to the edge and scrolling past it; the counts wait for a wider screen */

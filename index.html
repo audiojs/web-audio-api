@@ -93,7 +93,7 @@ Excludes dependencies.</span></span>
           <a class="wpt-seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml" aria-label="W3C WPT: 100% passing" aria-describedby="wpt-tip"><span>WPT</span><strong>100%</strong><span class="wpt-tip" id="wpt-tip" role="tooltip"><span data-wpt-count>4,317</span> / <span data-wpt-count>4,317</span> passing in Node.<br>Not W3C certification.</span></a>
         </div>
       </div>
-      <p class="hero-demo-note">A plucked string from a feedback loop. Preview uses native browser audio.</p>
+      <p class="hero-demo-note">A plucked string from a feedback loop.<br> Preview uses native browser audio.</p>
       <div class="hero-code code-stage">
         <div class="code-col">
           <!-- GENERATED:hero-code:start -->
@@ -119,6 +119,7 @@ Excludes dependencies.</span></span>
 20</span><code class="language-javascript" id="hero-code">import { AudioContext } from 'web-audio-api'
 
 const ctx = new AudioContext()
+await ctx.resume()
 await ctx.resume()
 
 const pluck = ctx.createBufferSource()
