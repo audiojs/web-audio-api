@@ -1,8 +1,8 @@
 // Tiny event emitter — extends EventTarget for instanceof conformance,
 // but overrides addEventListener/removeEventListener/dispatchEvent with own tracking.
-// No Node.js maxListeners warnings, no duplicate tracking, no platform dependency.
+// Listener storage is local; EventTarget identity comes from the host.
 
-export default () => class Emitter extends EventTarget {
+export default class Emitter extends EventTarget {
   #events = new Map()
 
   addEventListener(type, fn) {
@@ -13,7 +13,8 @@ export default () => class Emitter extends EventTarget {
   }
 
   removeEventListener(type, fn) {
-    this.#events.get(type)?.delete(fn)
+    const listeners = this.#events.get(type)
+    if (listeners) listeners.delete(fn)
   }
 
   dispatchEvent(event) {

@@ -28,6 +28,7 @@ class AudioParam extends DspObject {
   #paramVersion = 0   // incremented on every automation mutation
   #cachedVersion = -1 // version when cache was set
   #cachedValue = 0    // cached fill value (valid when version matches)
+  #staticBufferReady = false
   #tickTime = -1      // context time of the last _tick (params can sleep during silence)
 
   get defaultValue() { return this.#defaultValue }
@@ -185,10 +186,13 @@ class AudioParam extends DspObject {
     // Fast path: truly static param (no events, no input) — skip getValue entirely
     if (!hasInput && this.#cachedVersion === this.#paramVersion
         && !this.#automationEventList._automationEvents.length) {
-      array.fill(this.#cachedValue)
+      // _tick reuses the same buffer. Standalone _dsp callers still receive a fill.
+      if (array !== this._outBuf || !this.#staticBufferReady) array.fill(this.#cachedValue)
+      this.#staticBufferReady = array === this._outBuf
       this.#intrinsicValue = this.#cachedValue
       return
     }
+    this.#staticBufferReady = false
 
     let sr = this.context.sampleRate
     let f0 = this.context._frame ?? Math.round(this.context.currentTime * sr)
@@ -229,6 +233,7 @@ class AudioParam extends DspObject {
     }
 
     this.#intrinsicValue = array[BLOCK_SIZE - 1]
+    this.#staticBufferReady = array === this._outBuf && !hasInput && this.#cachedVersion === this.#paramVersion
   }
 
   cancelScheduledValues(startTime) {

@@ -1,6 +1,31 @@
 import test from 'tst'
 import { is, ok, throws } from 'tst'
 import DspObject from '../src/DspObject.js'
+import Emitter from '../src/Emitter.js'
+
+test('Emitter > listener state is per instance; absent and repeated removals are no-ops', () => {
+  const a = new Emitter(), b = new DspObject({ currentTime: 0 })
+  let calls = 0
+  const listener = function () { is(this, a); calls++ }
+  ok(a instanceof EventTarget && b instanceof EventTarget)
+  a.removeEventListener('absent', listener)
+  a.addEventListener('change', null)
+  is(a.listenerCount('change'), 0)
+  a.addEventListener('change', listener)
+  a.addEventListener('change', listener)
+  is(a.listenerCount('change'), 1, 'duplicate registration stays singular')
+  b.emit('change')
+  is(calls, 0, 'the shared class does not share listeners')
+  a.emit('change')
+  is(calls, 1)
+  a.removeEventListener('change', () => {})
+  is(a.listenerCount('change'), 1, 'unknown listener does not remove an existing listener')
+  a.removeEventListener('change', listener)
+  a.removeEventListener('change', listener)
+  a.emit('change')
+  is(calls, 1)
+  is(a.listenerCount('change'), 0)
+})
 
 // --- migrated from DspObject-test.js ---
 

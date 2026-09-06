@@ -2,11 +2,11 @@
 
 [Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation. Useful for:
 
-* **Agents and bots** – any writable stream, no audio device needed.
+* **Server-side rendering** – reuse Web Audio graphs with `OfflineAudioContext`.
+* **Audio in CI** – render and assert on samples in Node, Deno, and Bun.
 * **Audio analysis** – `decodeAudioData` for 20+ formats, `AnalyserNode` as in browser.
-* **Server-side rendering** – `OfflineAudioContext` renders faster than realtime.
-* **Audio in CI** – any JS engine: node, deno, bun, llrt, quickjs, jz.
-* **Unit-testing** – real samples, no mocks, 100% [WPT](https://web-platform-tests.org/).
+* **Agents and bots** – write PCM to streams, no audio device needed.
+* **Compatibility testing** – a fully passing checked-in [WPT corpus under our Node runner](test/WPT.md).
 * **Tone.js and web audio libs** – `import 'web-audio-api/polyfill'` installs the globals.
 * **CLI audio scripting** – PCM in and out through stdio, 46 runnable examples.
 
@@ -29,7 +29,7 @@ osc.start()
 // → A440 through your speakers
 ```
 
-[`@audio/speaker`](https://github.com/audiojs/speaker) provides speaker output without extra setup.
+[`@audio/speaker`](https://github.com/audiojs/speaker) provides device output through platform-specific backends, including native dependencies. The DSP engine itself is JavaScript.
 
 <details>
 <summary><b>How do I render offline, without speakers?</b></summary>
@@ -47,7 +47,7 @@ const buffer = await ctx.startRendering()
 // buffer.getChannelData(0) → Float32Array of 44100 samples
 ```
 
-Rendering runs faster than realtime and opens no audio device, so it also works under any test runner for asserting on samples. See [render-to-buffer.js](examples/render-to-buffer.js).
+Rendering runs as fast as the graph and host allow and opens no audio device, so it can run in a test runner for asserting on samples. See [render-to-buffer.js](examples/render-to-buffer.js).
 
 </details>
 
@@ -212,10 +212,12 @@ Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` co
 
 ### Generative
 
+[Musical models, styles, and offline listening fixtures](examples/MUSIC.md).
+
 * [sequencer.js](examples/sequencer.js): Step sequencer – precise timing
 * [serial.js](examples/serial.js): Twelve-tone rows (Webern) – `72 30s`
 * [gamelan.js](examples/gamelan.js): Balinese kotekan – two parts, one melody – `120 20s`
-* [drone.js](examples/drone.js): Tanpura shimmer – `C3 30s`
+* [drone.js](examples/drone.js): Tanpura, pads, or cinematic strings – `voice=strings melody=pentatonic freq=D3 -d 30s`
 * [jazz.js](examples/jazz.js): Jazz in seven styles, modal first, lead on guitar, flute, harp, or piano – `style=ambient lead=harp`
 * [euclidean.js](examples/euclidean.js): Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s`
 
@@ -236,7 +238,9 @@ Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` co
 
 ## Performance
 
-All benchmark scenarios render faster than real time. Pure JS matches Rust napi on simple graphs. Convolution and compression are 2–4× slower.
+Run `npm run bench:compare` for an offline-render comparison with `node-web-audio-api`. The runner alternates engines after warmup and reports median and p95 times over 50 renders. [Saved results](benchmark/results.json) include raw samples, hardware, and versions.
+
+These are short offline graphs, not audio-device latency measurements or realtime guarantees. Measure your own graph and deployment host.
 
 ## Architecture
 
@@ -259,7 +263,7 @@ Beyond the spec, for Node.js. Not portable to browsers.
 
 ## Alternatives
 
-- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** – Rust napi bindings. Faster heavy DSP, but node-only with compilation step and partial spec.
+- **[node-web-audio-api](https://github.com/ircam-ismm/node-web-audio-api)** – Rust DSP with Node bindings and native prebuilds; its browser export uses native Web Audio. Compare on your graph, especially when realtime performance matters.
 - **[standardized-audio-context](https://github.com/chrisguttandin/standardized-audio-context)** – Browser-only. Normalizes cross-browser quirks.
 - **[web-audio-api-rs](https://github.com/orottier/web-audio-api-rs)** – Pure Rust / WASM.
 - **[web-audio-engine](https://github.com/mohayonao/web-audio-engine)** – Archived. Partial spec coverage.

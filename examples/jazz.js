@@ -3,7 +3,7 @@
 // Run: node examples/jazz.js style=ambient lead=flute -d 3m
 // Keys: space pause · q quit
 
-import { AudioContext, AudioWorkletNode } from 'web-audio-api'
+import { AudioContext } from 'web-audio-api'
 import { init } from './graphs/jazz.js'
 import { args, sec, keys, clearLine, help } from './utils.js'
 
@@ -29,7 +29,7 @@ let dur = sec($('dur', '270'))
 
 let ctx = new AudioContext()
 await ctx.resume()
-let demo = await init(ctx, { style, lead, bpm, seed, duration: dur, AudioWorkletNodeClass: AudioWorkletNode })
+let demo = await init(ctx, { style, lead, bpm, seed, duration: dur })
 
 keys({}, () => { clearLine(); ctx.close() }, ctx)
 console.log(`♪ ${demo.data.style} in ${demo.data.key}, ${demo.data.lead} lead, ${demo.data.bpm} BPM, ${(demo.duration / 60).toFixed(1)} min — space pause · q quit\n` + demo.data.chordLog.join(' '))

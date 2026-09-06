@@ -1,5 +1,13 @@
 # Changelog
 
+#### 1.5.6
+
+- Fix AudioWorklet URL loading: shared pending/failure results, UTF-8 base64 decoding, absolute filesystem paths, and strict evaluation without rewriting processor source.
+- Reuse unchanged internal AudioParam buffers; standalone DSP buffers still receive fresh values.
+- Simplify emitter inheritance and listener removal for compiler compatibility while preserving EventTarget identity.
+- Improve musical examples, browser playback lifecycle, signal plots, and mobile layouts. Jazz uses native nodes without requiring AudioWorklet and reports the current chord.
+- Refresh website positioning, runtime feedback, and measured benchmark/conformance reporting. Project Node-runner WPT: 4,317 passing, zero failures or skips.
+
 #### 1.1.0
 
 - Built-in audio output via `audio-speaker` — no optional `speaker` package needed

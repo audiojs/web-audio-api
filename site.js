@@ -1,4 +1,5 @@
 import { byId } from './examples/catalog.js'
+import { plotsVisible } from './assets/signal.js'
 import { highlight, mountExample, remember } from './examples/browser.js'
 
 const dialog = document.getElementById('example-dialog')
@@ -26,7 +27,17 @@ for (let button of document.querySelectorAll('[data-run]')) {
     if (playing) return playing.close().catch(() => {})
     starting = true
     button.dataset.state = 'running'
-    try { await import(`${button.dataset.run}?${Date.now()}`) } catch { delete button.dataset.state } finally { starting = false }
+    const status = document.querySelector('.hero-play-status')
+    status.textContent = ''
+    button.setAttribute('aria-busy', 'true')
+    try {
+      await import(`${button.dataset.run}?${Date.now()}`)
+      button.setAttribute('aria-label', 'Stop preview')
+    } catch {
+      await playing?.close().catch(() => {})
+      delete button.dataset.state
+      status.textContent = 'Audio could not start. Tap play to try again.'
+    } finally { starting = false; button.removeAttribute('aria-busy') }
   })
   addEventListener('audiocontext', ({ detail: context }) => {
     if (!starting) return
@@ -38,6 +49,7 @@ for (let button of document.querySelectorAll('[data-run]')) {
     context.addEventListener('statechange', () => {
       if (context.state !== 'closed' || playing !== context) return
       playing = null
+      button.setAttribute('aria-label', 'Play preview')
       delete button.dataset.state
     })
   })
@@ -49,42 +61,48 @@ for (let button of document.querySelectorAll('[data-run]')) {
 // When the context closes the panel keeps its last frame.
 const signal = document.querySelector('.hero-signal')
 let followed = null
-function follow(context) {
-  let tap = context.tap
-  if (!signal || !tap) return
+async function follow(context) {
+  if (!signal || !plotsVisible()) return
   followed = context
-  let peakPath = signal.querySelector('.wave-peak'), rmsPath = signal.querySelector('.wave-rms')
-  let spectrumPath = signal.querySelector('.hero-spectrum path')
-  let samples = new Float32Array(tap.fftSize), decibels = new Float32Array(tap.frequencyBinCount)
-  let peaks = new Float32Array(100), levels = new Float32Array(100), bins = new Float32Array(100)
-  let bar = (i, half) => `M${2 + i * 4} ${(110 - half).toFixed(1)}V${(110 + half).toFixed(1)}`
-  let binOf = f => Math.floor(Math.log(f / 40) / Math.log(16000 / 40) * bins.length)
-  // 48 dB of level under full scale, as the catalogue draws it; 80 dB of spectrum under -10 dBFS
-  let level = amplitude => amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
-  let strength = dB => Math.min(1, Math.max(0, (dB + 90) / 80))
-  // the envelope spans three seconds whatever the frame rate: one bin per 30 ms of clock
-  let step = 3000 / peaks.length, last = performance.now()
-  let frame = now => {
-    if (followed !== context || context.state === 'closed') return
-    tap.getFloatTimeDomainData(samples)
-    let peak = 0, energy = 0
-    for (let value of samples) { peak = Math.max(peak, Math.abs(value)); energy += value * value }
-    for (; now - last >= step; last += step) {
-      peaks.copyWithin(0, 1); levels.copyWithin(0, 1)
-      peaks[peaks.length - 1] = peak; levels[levels.length - 1] = Math.sqrt(energy / samples.length)
-    }
-    peakPath.setAttribute('d', Array.from(peaks, (v, i) => bar(i, Math.max(0.5, level(v) * 106))).join(''))
-    rmsPath.setAttribute('d', Array.from(levels, (v, i) => bar(i, Math.max(0.5, level(v) * 106))).join(''))
-    tap.getFloatFrequencyData(decibels)
-    bins.fill(-Infinity)
-    for (let bin = 1; bin < decibels.length; bin++) {
-      let k = binOf(bin * context.sampleRate / tap.fftSize)
-      if (k >= 0 && k < bins.length) bins[k] = Math.max(bins[k], decibels[bin])
-    }
-    spectrumPath.setAttribute('d', Array.from(bins, (dB, i) => `M${2 + i * 4} 220V${(220 - Math.max(1, strength(dB) * 106)).toFixed(1)}`).join(''))
-    requestAnimationFrame(frame)
+  const capture = await context.capture
+  if (followed !== context || context.state === 'closed' || !plotsVisible()) return
+  if (!capture) {
+    document.querySelector('.hero-play-status').textContent = 'Live visualization unavailable in this browser.'
+    return
   }
-  requestAnimationFrame(frame)
+  const peakPath = signal.querySelector('.wave-peak'), rmsPath = signal.querySelector('.wave-rms')
+  const spectrumPath = signal.querySelector('.hero-spectrum path')
+  const bins = new Float32Array(100)
+  const bar = (i, amplitude) => {
+    const level = amplitude > 0 ? Math.max(0, 1 + 20 * Math.log10(amplitude) / 48) : 0
+    const half = Math.max(0.5, level * 106)
+    return `M${2 + i * 4} ${(110 - half).toFixed(1)}V${(110 + half).toFixed(1)}`
+  }
+  const axis = signal.querySelectorAll('.art-row')[1]
+  axis.firstElementChild.textContent = '−3 s'
+  axis.lastElementChild.textContent = 'now'
+  let version = -1
+  const frame = () => {
+    if (followed !== context || context.state === 'closed') return
+    if (!plotsVisible()) { setTimeout(frame, 160); return }
+    const history = capture.history
+    if (version !== history.version) {
+      version = history.version
+      const columns = history.columns(100, 3)
+      peakPath.setAttribute('d', columns.map((v, i) => v ? bar(i, v.peak) : '').join(''))
+      rmsPath.setAttribute('d', columns.map((v, i) => v ? bar(i, v.rms) : '').join(''))
+      const latest = history.frames.at(-1)
+      bins.fill(0)
+      if (latest) for (let bin = 1; bin < latest.spectrum.length; bin++) {
+        const frequency = bin * context.sampleRate / (latest.spectrum.length * 2)
+        const k = Math.floor(Math.log(frequency / 40) / Math.log(16000 / 40) * bins.length)
+        if (k >= 0 && k < bins.length) bins[k] = Math.max(bins[k], latest.spectrum[bin] / 255)
+      }
+      spectrumPath.setAttribute('d', Array.from(bins, (v, i) => `M${2 + i * 4} 220V${(220 - Math.max(1, v * 106)).toFixed(1)}`).join(''))
+    }
+    setTimeout(frame, matchMedia('(prefers-reduced-motion: reduce)').matches ? 160 : 1000 / 30)
+  }
+  frame()
 }
 
 // Each runtime mark explains itself: its tip opens above the mark, or below when the top of the
@@ -101,7 +119,7 @@ const placeTip = () => {
   tip.style.top = `${scrollY + (above >= 8 ? above : rect.bottom + 8)}px`
 }
 const closeTip = () => { openTip?.tip.hidePopover(); openTip = null; warmUntil = performance.now() + TIP_DELAY }
-for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedby]')) {
+for (let mark of document.querySelectorAll('.hero-stack button[aria-describedby]')) {
   let tip = document.getElementById(mark.getAttribute('aria-describedby'))
   if (!tip?.showPopover) continue
   let wait = 0
@@ -120,35 +138,12 @@ for (let mark of document.querySelectorAll('.hero-stack > button[aria-describedb
   mark.addEventListener('pointerleave', rest)
 }
 // wider than the phone it is read on: the graph opens centred, not against its left edge
-const art = document.querySelector('.hero-art')
+const art = document.querySelector('.hero-art .graph-scroll')
 if (art) {
   let centre = () => { art.scrollLeft = (art.scrollWidth - art.clientWidth) / 2 }
   centre()
   addEventListener('resize', centre)
   addEventListener('load', centre)
-}
-
-// The row of runtimes stays on one line whatever the width: while the last mark reaches past the
-// row's edge, labels drop one by one from the end. A dropped label still names its mark to a screen
-// reader and to its tip. Without this script the marks wrap instead.
-const stack = document.querySelector('.hero-stack')
-let marks = [...stack?.querySelectorAll('button') || []]
-if (marks.length) {
-  let overflows = () => marks.at(-1).getBoundingClientRect().right > stack.getBoundingClientRect().right + 0.5
-  let fit = () => {
-    for (let mark of marks) mark.classList.remove('is-compact')
-    for (let i = marks.length - 1; i >= 0 && overflows(); i--) marks[i].classList.add('is-compact')
-  }
-  stack.classList.add('is-fitted')
-  fit()
-  // a scroll that slides a phone's address bar away fires resize without changing the row's width
-  let width = stack.getBoundingClientRect().width
-  new ResizeObserver(([entry]) => {
-    if (entry.contentRect.width === width) return
-    width = entry.contentRect.width
-    fit()
-  }).observe(stack)
-  document.fonts?.ready.then(fit)
 }
 
 addEventListener('pointerdown', event => { if (openTip && !event.target.closest('.hero-stack')) closeTip() })
@@ -162,10 +157,11 @@ highlight()
 const exampleCode = document.getElementById('example-code')
 if (exampleCode) new MutationObserver(() => highlight()).observe(exampleCode, { childList: true, characterData: true, subtree: true })
 
-async function openExample(id, updateHistory = true) {
+function openExample(id, updateHistory = true) {
   let example = byId.get(id)
   if (!example) return
-  if (dispose) await dispose()
+  // Disposal relinquishes DOM ownership synchronously; device close may finish later.
+  dispose?.()
   activeId = id
   title.textContent = example.title
   description.textContent = example.description
@@ -200,9 +196,10 @@ addEventListener('keydown', event => {
   event.preventDefault()
   closeDialog()
 }, { capture: true })
-dialog.addEventListener('close', async () => {
+dialog.addEventListener('close', () => {
+  if (dialog.open) return // a queued close event from before an immediate reopen
   unlockPage()
-  if (dispose) await dispose()
+  dispose?.()
   dispose = null
   activeId = null
   if (location.href !== homeURL.href) history.replaceState(null, '', homeURL)

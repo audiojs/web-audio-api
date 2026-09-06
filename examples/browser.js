@@ -1,4 +1,5 @@
 import { byId } from './catalog.js'
+import { observeSignal, plotsVisible } from '../assets/signal.js'
 import { controlsFor, optionsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
 import { collapseGraph, graphSVG, recordConnections, resolveGraph } from '../graph.js'
@@ -159,29 +160,17 @@ function readOptions(id, container) {
   return options
 }
 
-// a phone paints its own pixels: at four or nine for each, these panels drop frames, and a dropped
-// frame is sound they never see. Its short side names it, whichever way it is held.
+// Compact surfaces use fewer backing pixels; phone signal plots are hidden entirely.
 const phone = () => Math.min(innerWidth, innerHeight) < 500
+const canvasRatio = () => Math.min(devicePixelRatio || 1, phone() ? 1 : 2)
 
 function sizeCanvas(canvas) {
-  let rect = canvas.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, phone() ? 1 : 2)
-  let width = Math.max(1, Math.round(rect.width * ratio)), height = Math.max(1, Math.round(rect.height * ratio))
+  // CSS transforms animate presentation, not the canvas's backing-store size.
+  let ratio = canvasRatio()
+  let width = Math.max(1, Math.round(canvas.clientWidth * ratio)), height = Math.max(1, Math.round(canvas.clientHeight * ratio))
   let changed = canvas.width !== width || canvas.height !== height
   if (changed) { canvas.width = width; canvas.height = height }
   return changed
-}
-
-// one column per animation frame, two or three device pixels; the spectrogram and the envelope share it
-const SWEEP = 4000
-let sweptAt = 0
-// how far the panels advance for this frame: the width they cross in SWEEP milliseconds, whatever
-// the frame rate. A phone that paints ten times a second moves ten wide columns, not ten thin ones.
-function startSweep() { sweptAt = 0 }
-function columnStep(width = 0) {
-  let now = performance.now()
-  let elapsed = sweptAt ? Math.min(500, now - sweptAt) : 16
-  sweptAt = now
-  return Math.max(2, Math.round(width * elapsed / SWEEP))
 }
 
 // the level scale of the homepage panel: 48 dB under full scale
@@ -210,6 +199,7 @@ const inkOf = () => ({ axis: css('--color-rule-dark'), accent: css('--color-acce
 
 // the whole of a buffer as bars across the width; before anything plays there is only the axis
 function drawWave(canvas, data = null) {
+  if (!plotsVisible()) return
   sizeCanvas(canvas)
   let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height, step = Math.max(2, Math.round(width / 200)), ink = inkOf()
   ctx.clearRect(0, 0, width, height)
@@ -220,17 +210,6 @@ function drawWave(canvas, data = null) {
   for (let k = 0; k < columns; k++) {
     drawEnvelopeColumn(ctx, k * step, step, height, peakOf(data, Math.floor(k / columns * data.length), Math.floor((k + 1) / columns * data.length)), ink)
   }
-}
-
-// live, in step with the spectrogram: the history slides left and the newest frame lands at the right edge
-function drawWaveColumn(canvas, samples, step) {
-  if (sizeCanvas(canvas)) drawWave(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
-  if (width <= step) return drawWave(canvas)
-  ctx.globalCompositeOperation = 'copy'
-  ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
-  ctx.globalCompositeOperation = 'source-over'
-  drawEnvelopeColumn(ctx, width - step, step, height, peakOf(samples, 0, samples.length, 4), inkOf())
 }
 
 function frequencyAt(row, rows, sampleRate, scale) {
@@ -246,7 +225,7 @@ function frequencyAt(row, rows, sampleRate, scale) {
 }
 
 function resetSpectrogram(canvas) {
-  startSweep()
+  if (!plotsVisible()) return
   sizeCanvas(canvas)
   let ctx = canvas.getContext('2d')
   ctx.globalAlpha = 1
@@ -266,49 +245,59 @@ function rowsFor(height, bins, sampleRate, scale) {
   return binRows.rows
 }
 
-// the newest column is a single pixel wide, painted once and stretched to the step the sweep asks
-// for: a phone writes one pixel per row of it, whatever the column's width on screen
-let columnPixels = { key: '', canvas: null, context: null, image: null, rgb: [0, 0, 0] }
-function spectrogramColumn(height, data, sampleRate, scale) {
-  let tint = css('--color-accent')
-  let key = `${height}/${tint}`
-  if (columnPixels.key !== key) {
-    let column = document.createElement('canvas')
-    column.width = 1
-    column.height = height
-    let probe = document.createElement('canvas').getContext('2d')
-    probe.fillStyle = tint
-    probe.fillRect(0, 0, 1, 1)
-    let context = column.getContext('2d')
-    columnPixels = { key, canvas: column, context, image: context.createImageData(1, height), rgb: [...probe.getImageData(0, 0, 1, 1).data].slice(0, 3) }
+// One low-resolution image upload per paint; no canvas copies per audio block.
+let raster = null
+function signalRaster(columns, height, sampleRate, scale) {
+  const width = columns.length
+  if (!raster || raster.image.width !== width || raster.image.height !== height) {
+    const canvas = document.createElement('canvas')
+    canvas.width = width; canvas.height = height
+    const context = canvas.getContext('2d')
+    context.fillStyle = css('--color-accent')
+    context.fillRect(0, 0, 1, 1)
+    raster = { canvas, context, image: context.createImageData(width, height), rgb: context.getImageData(0, 0, 1, 1).data.slice(0, 3) }
   }
-  let { canvas, context, image, rgb } = columnPixels
-  let rows = rowsFor(height, data.length, sampleRate, scale)
-  // the analyser hands back bytes over its decibel window, so the level needs no logarithm here
-  for (let y = 0; y < height; y++) {
-    let amount = data[rows[y]] / 255
-    let index = y * 4
-    image.data[index] = rgb[0]
-    image.data[index + 1] = rgb[1]
-    image.data[index + 2] = rgb[2]
-    image.data[index + 3] = amount * amount * 255
+  const { canvas, context, image, rgb } = raster
+  image.data.fill(0)
+  const rows = rowsFor(height, 1024, sampleRate, scale)
+  for (let x = 0; x < width; x++) {
+    if (!columns[x]) continue
+    const data = columns[x].spectrum
+    for (let y = 0; y < height; y++) {
+      const amount = data[rows[y]] / 255, index = (y * width + x) * 4
+      image.data[index] = rgb[0]; image.data[index + 1] = rgb[1]; image.data[index + 2] = rgb[2]
+      image.data[index + 3] = amount * amount * 255
+    }
   }
   context.putImageData(image, 0, 0)
   return canvas
 }
 
-function drawSpectrogramColumn(canvas, data, sampleRate, scale, step) {
-  if (sizeCanvas(canvas)) resetSpectrogram(canvas)
-  let ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height
-  if (width <= step) { resetSpectrogram(canvas); return }
-  // 'copy' scrolls the transparent history left without alpha accumulation
-  ctx.globalCompositeOperation = 'copy'
-  ctx.drawImage(canvas, step, 0, width - step, height, 0, 0, width - step, height)
-  ctx.globalCompositeOperation = 'source-over'
-  ctx.drawImage(spectrogramColumn(height, data, sampleRate, scale), width - step, 0, step, height)
+function drawLiveSignal(canvas, spectrogram, history, scale) {
+  if (!plotsVisible()) return
+  sizeCanvas(canvas)
+  sizeCanvas(spectrogram)
+  // Every time cell has the same integer pixel width. Dividing the canvas into
+  // 160 unequal rounded cells made a transient expand/contract as it moved left.
+  const step = Math.max(1, Math.ceil(Math.ceil(canvas.clientWidth / 160) * canvasRatio()))
+  const count = Math.ceil(canvas.width / step), offset = canvas.width - count * step
+  const columns = history.columns(count)
+  const wave = canvas.getContext('2d'), spectrum = spectrogram.getContext('2d')
+  const ink = inkOf()
+  wave.clearRect(0, 0, canvas.width, canvas.height)
+  spectrum.clearRect(0, 0, spectrogram.width, spectrogram.height)
+  // Missing capture data stays blank, rather than being presented as measured silence.
+  for (let i = 0; i < count; i++) {
+    const frame = columns[i]
+    if (!frame) continue
+    drawEnvelopeColumn(wave, offset + i * step, step, canvas.height, frame.peak, ink)
+  }
+  spectrum.imageSmoothingEnabled = false
+  spectrum.drawImage(signalRaster(columns, Math.min(112, spectrogram.height), history.sampleRate, scale), offset, 0, count * step, spectrogram.height)
 }
 
 function drawBufferSpectrogram(canvas, data, sampleRate, scale) {
+  if (!plotsVisible()) return
   resetSpectrogram(canvas)
   if (!data.length) return
   let width = canvas.width, height = canvas.height
@@ -361,19 +350,27 @@ function audioBufferToWav(buffer) {
   return new Blob([array], { type: 'audio/wav' })
 }
 
-function setRenderedAudio(container, buffer, name) {
+function clearAudioResult(container) {
+  const audio = container.querySelector('audio')
+  if (audio) { audio.pause(); URL.revokeObjectURL(audio.src) }
   container.replaceChildren()
-  let url = URL.createObjectURL(audioBufferToWav(buffer))
+}
+
+function setAudioResult(container, blob, filename, label) {
+  clearAudioResult(container)
+  let url = URL.createObjectURL(blob)
   let audio = document.createElement('audio')
   audio.controls = true
   audio.preload = 'metadata'
   audio.src = url
-  audio.setAttribute('aria-label', `Rendered ${name} audio`)
+  audio.setAttribute('aria-label', label)
   let download = document.createElement('a')
-  download.className = 'demo-action'
+  download.className = 'demo-download'
   download.href = url
-  download.download = `${name}.wav`
-  download.textContent = 'Download WAV'
+  download.download = filename
+  download.title = `Download ${filename}`
+  download.setAttribute('aria-label', download.title)
+  download.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg>'
   container.append(audio, download)
 }
 
@@ -468,16 +465,18 @@ function splitMethods() {
 }
 export const highlight = root => highlightSyntax(root).then(splitMethods).catch(() => {})
 
-async function loadCode(example, root = document) {
-  let code = root.querySelector('#example-code')
+async function loadCode(example, root, isCurrent) {
+  let code = root.querySelector('#example-code'), source
   if (!code) return
   try {
     let response = await fetch(new URL(`./graphs/${example.id}.js`, import.meta.url))
     if (!response.ok) throw new Error(`Graph source returned ${response.status}`)
-    code.textContent = await response.text()
+    source = await response.text()
   } catch {
-    code.textContent = `// Source could not be loaded.\n// Open examples/graphs/${example.id}.js in the repository.`
+    source = `// Source could not be loaded.\n// Open examples/graphs/${example.id}.js in the repository.`
   }
+  if (!isCurrent()) return
+  code.textContent = source
   // numbered like the hero's code
   let pane = code.closest('.code-output')
   if (pane) {
@@ -497,7 +496,7 @@ function zoomGraph(pane, factor) {
   if (graph) graph.style.width = `${graph.getAttribute('width') * pane.dataset.zoom}px`
 }
 
-async function showGraph(id, pane) {
+async function showGraph(id, pane, isCurrent) {
   if (!pane.dataset.zoom) {
     pane.dataset.zoom = '1'
     pane.addEventListener('wheel', event => {
@@ -509,18 +508,21 @@ async function showGraph(id, pane) {
   pane.innerHTML = '<p class="graph-note">Recording the graph…</p>'
   try {
     let { init } = await import(`./graphs/${id}.js`)
+    if (!isCurrent()) return
     let options = Object.fromEntries(controlsFor(id).map(control => [control.key, control.value]))
     // an offline context schedules the whole run upfront, and the shape of a ten-minute session
     // is the shape of its first seconds, so the recording is capped at three
     options.duration = Math.min(3, Number(options.duration) || 3)
     let context = new OfflineAudioContext(2, 128, 44100)
     let edges = await recordConnections(AudioNode.prototype, () => init(context, { ...options, AudioWorkletNodeClass: globalThis.AudioWorkletNode }))
+    if (!isCurrent()) return
     let resolved = resolveGraph(edges)
     if (!resolved.nodes.length) { pane.innerHTML = '<p class="graph-note">This example connects nothing until it runs.</p>'; return }
     let { nodes, edges: merged, counts } = collapseGraph(resolved.nodes, resolved.edges)
     pane.innerHTML = graphSVG(nodes, merged, `The graph ${id} connects`, counts)
     zoomGraph(pane, 1)
   } catch (error) {
+    if (!isCurrent()) return
     let missing = /AudioWorkletNode|is not a constructor|undefined/i.test(error.message) && !globalThis.AudioWorkletNode
     pane.innerHTML = missing
       ? '<p class="graph-note">This graph is built from an AudioWorklet, which this browser does not expose here.</p>'
@@ -545,13 +547,11 @@ export function mountExample(root, id) {
   let resultContainer = find('#demo-result')
   let meter = find('#demo-meter-fill')
   let meterValue = find('#demo-meter-value')
-  let freshRun = run.cloneNode(true)
-  run.replaceWith(freshRun)
-  run = freshRun
+  run.removeAttribute('aria-busy')
   run.classList.toggle('is-iconic', example.mode !== 'node')
   if (example.mode !== 'node') run.setAttribute('aria-label', 'Run demo')
   fields.replaceChildren()
-  resultContainer.replaceChildren()
+  clearAudioResult(resultContainer)
   actions.querySelector('.file-label')?.remove()
   createControls(id, fields)
   drawWave(canvas)
@@ -576,7 +576,8 @@ export function mountExample(root, id) {
   }
 
   // The graph opens first, recorded on the spot; the code loads lazily
-  let codeLoaded = false
+  let codeLoaded = false, disposed = false, runVersion = 0
+  const isCurrent = () => !disposed
   let panes = { cli: find('#cli-pane'), code: find('#code-pane'), graph: find('#graph-pane') }
   let tabs = [...root.querySelectorAll('.code-tab')]
   let activatePane = name => {
@@ -584,9 +585,9 @@ export function mountExample(root, id) {
     for (let key of Object.keys(panes)) if (panes[key]) panes[key].hidden = key !== name
     if (name === 'code' && !codeLoaded) {
       codeLoaded = true
-      loadCode(example, root)
+      loadCode(example, root, isCurrent)
     }
-    if (name === 'graph' && panes.graph) showGraph(id, panes.graph)
+    if (name === 'graph' && panes.graph) showGraph(id, panes.graph, isCurrent)
   }
   for (let tab of tabs) tab.onclick = () => activatePane(tab.dataset.pane)
   activatePane('graph')
@@ -597,10 +598,17 @@ export function mountExample(root, id) {
   let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0, reloadTimer = 0
   let outputGain = null
   let volumeGain = () => Number(volume?.value ?? 25) / 100
-  let connectOutput = () => {
+  let capture = null, lastHistory = null, lastPaint = -1, paintScale = '', paintSize = ''
+  let captureSignal = async () => {
+    const observed = await observeSignal(context, analyser)
+    if (disposed) observed?.dispose()
+    else capture = observed
+  }
+  let connectOutput = async () => {
     outputGain = context.createGain()
     outputGain.gain.value = volumeGain()
     analyser.connect(outputGain).connect(context.destination)
+    await captureSignal()
   }
   let paintVolume = () => volume?.style.setProperty('--fill', `${volume.value}%`)
   let onVolume = () => {
@@ -609,10 +617,14 @@ export function mountExample(root, id) {
   }
   paintVolume()
   volume?.addEventListener('input', onVolume)
-  let samples = new Float32Array(2048), spectrum = new Uint8Array(1024), recorder = null, chunks = []
-  let lastBuffer = null, live = false, busy = false, disposed = false
+  let samples = new Float32Array(2048), recorder = null
+  let lastBuffer = null, live = false, busy = false
   let levelMeter = null, latencyTracker = null
   let observer = new ResizeObserver(() => {
+    if (capture || lastHistory) {
+      drawLiveSignal(canvas, spectrogram, capture?.history || lastHistory, frequencyScale.value)
+      return
+    }
     drawWave(canvas, lastBuffer?.getChannelData(0))
     if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
     else resetSpectrogram(spectrogram)
@@ -631,13 +643,15 @@ export function mountExample(root, id) {
   function animate() {
     if (!analyser) return
     if (samples.length !== analyser.fftSize) samples = new Float32Array(analyser.fftSize)
-    if (spectrum.length !== analyser.frequencyBinCount) spectrum = new Uint8Array(analyser.frequencyBinCount)
     analyser.getFloatTimeDomainData(samples)
-    analyser.getByteFrequencyData(spectrum)
-    // one step for both panels, so their columns stay side by side
-    let step = columnStep(canvas.width)
-    drawWaveColumn(canvas, samples, step)
-    drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value, step)
+    if (capture) {
+      const history = capture.history, scale = frequencyScale.value
+      const size = `${canvas.clientWidth}/${canvas.clientHeight}/${spectrogram.clientHeight}`
+      if (lastPaint !== history.version || paintScale !== scale || paintSize !== size) {
+        drawLiveSignal(canvas, spectrogram, history, scale)
+        lastPaint = history.version; paintScale = scale; paintSize = size
+      }
+    }
     let level = rms(samples)
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
     meterValue.textContent = dbLabel(level)
@@ -649,31 +663,42 @@ export function mountExample(root, id) {
       : id === 'latency-tester' && latencyTracker
       ? latencyTracker(samples)
       : demo?.readout?.(context.currentTime) ?? ''
-    if (reading && !run.classList.contains('is-error')) status.textContent = reading
-    if (reducedMotion.matches) frame = setTimeout(animate, 160)
-    else frame = requestAnimationFrame(animate)
+    if (!run.classList.contains('is-error')) {
+      if (reading) status.textContent = reading
+      else if (!capture && plotsVisible()) status.textContent = 'Live visualization unavailable in this browser.'
+    }
+    frame = setTimeout(animate, reducedMotion.matches ? 160 : 1000 / 30)
   }
 
   function cancelVisual() {
-    if (reducedMotion.matches) clearTimeout(frame)
-    else cancelAnimationFrame(frame)
+    clearTimeout(frame)
     frame = 0
   }
 
   async function stop(message = '') {
+    // Only the latest start/stop may update controls or continue a parameter reload.
+    const version = ++runVersion
     clearTimeout(timer)
     cancelVisual()
+    lastHistory = capture?.history || lastHistory
+    capture?.dispose()
+    capture = null
+    lastPaint = -1
+    // Retain the latest recorder's identity after stop: onstop may arrive after
+    // both this recording and its replacement have closed their audio contexts.
     if (recorder?.state === 'recording') recorder.stop()
-    recorder = null
+    if (disposed) recorder = null
     if (context) stopGraph(demo, context.currentTime)
     for (let track of stream?.getTracks?.() || []) track.stop()
     let closing = context
     context = null; demo = null; analyser = null; stream = null; outputGain = null
     levelMeter = null; latencyTracker = null
     if (closing && closing.state !== 'closed') await closing.close().catch(() => {})
+    if (disposed || version !== runVersion) return false
     setButtonLabel(run, example.mode === 'node' ? 'Copy command' : 'Run demo')
     setStatus(message)
     meter.style.transform = 'scaleX(0)'
+    return true
   }
 
   async function runPortable() {
@@ -682,8 +707,10 @@ export function mountExample(root, id) {
     resetSpectrogram(spectrogram)
     context = new AudioContext()
     await context.resume()
+    if (disposed) return
     analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
-    connectOutput()
+    await connectOutput()
+    if (disposed) return
     let options = readOptions(id, form)
     options.destination = analyser
     // Duration is a browser control only where it shapes the music (a tempo ramp, a performance
@@ -694,19 +721,22 @@ export function mountExample(root, id) {
       continuity: 15, 'octave-illusion': 12, 'scale-illusion': 8, streaming: 15, 'zwicker-tone': 20,
     }
     if (!('duration' in options)) options.duration = scaledDurationDefaults[id] ?? 600
-    if (['shepard', 'karplus-strong', 'jazz'].includes(id)) options.AudioWorkletNodeClass = globalThis.AudioWorkletNode
+    if (['shepard', 'karplus-strong'].includes(id)) options.AudioWorkletNodeClass = globalThis.AudioWorkletNode
     // The metronome's instrument collection plays the beats of other rhythm graphs on request;
     // building it here keeps every graph module atomic
     if (id === 'risset-rhythm' && options.sound !== 'click') {
       let { createInstrument } = await import('./graphs/metronome.js')
+      if (disposed) return
       options.hit = createInstrument(context, { sound: options.sound, destination: analyser }).hit
     }
     let { init } = await import(`./graphs/${id}.js`)
+    if (disposed) return
     demo = await init(context, options)
+    if (disposed) return
     setButtonLabel(run, 'Stop demo')
-    setStatus(`Running with the browser’s native AudioContext: ${demo.graph}`, 'running')
+    setStatus(!capture && plotsVisible() ? 'Live visualization unavailable in this browser.' : '', 'running')
     animate()
-    timer = setTimeout(() => stop('Complete. The graph stopped and the AudioContext closed.'), demo.duration * 1000 + 150)
+    timer = setTimeout(() => stop('Finished.'), demo.duration * 1000 + 150)
   }
 
   async function runOffline() {
@@ -716,11 +746,14 @@ export function mountExample(root, id) {
     let offline = new OfflineAudioContext(2, Math.ceil(rate * duration), rate)
     options.when = 0; options.duration = duration
     let { init } = await import(`./graphs/${id}.js`)
-    let offlineDemo = await init(offline, options)
+    if (disposed) return
+    await init(offline, options)
+    if (disposed) return
     setButtonLabel(run, 'Rendering')
     run.setAttribute('aria-busy', 'true')
     setStatus('Rendering the graph in memory. No output device is open.', 'running')
     let buffer = await offline.startRendering()
+    if (disposed) return
     let data = buffer.getChannelData(0)
     lastBuffer = buffer
     drawWave(canvas, data)
@@ -729,27 +762,30 @@ export function mountExample(root, id) {
     for (let value of data) peak = Math.max(peak, Math.abs(value))
     meter.style.transform = `scaleX(${Math.min(1, peak)})`
     meterValue.textContent = dbLabel(peak)
-    setRenderedAudio(resultContainer, buffer, example.id)
+    setAudioResult(resultContainer, audioBufferToWav(buffer), `${example.id}.wav`, `Rendered ${example.id} audio`)
     setButtonLabel(run, 'Render again')
     run.removeAttribute('aria-busy')
-    setStatus(`Rendered ${buffer.length.toLocaleString()} frames at ${buffer.sampleRate.toLocaleString()} Hz: ${offlineDemo.graph}`)
+    setStatus(`Rendered ${buffer.length.toLocaleString()} frames at ${buffer.sampleRate.toLocaleString()} Hz.`)
   }
 
   async function runFile(file) {
     if (!file) throw new Error('Choose an audio file before running the graph')
     let decode = new AudioContext()
-    let source = await decode.decodeAudioData(await file.arrayBuffer())
-    await decode.close()
+    let source
+    try { source = await decode.decodeAudioData(await file.arrayBuffer()) }
+    finally { await decode.close() }
+    if (disposed) return
     let offline = new OfflineAudioContext(source.numberOfChannels, source.length, source.sampleRate)
     buildProcessedBuffer(offline, source, { when: 0, ...readOptions(id, form) })
     setButtonLabel(run, 'Processing')
     run.setAttribute('aria-busy', 'true')
     setStatus(`Processing ${file.name} in memory…`, 'running')
     let output = await offline.startRendering()
+    if (disposed) return
     lastBuffer = output
     drawWave(canvas, output.getChannelData(0))
     drawBufferSpectrogram(spectrogram, output.getChannelData(0), output.sampleRate, frequencyScale.value)
-    setRenderedAudio(resultContainer, output, `${file.name.replace(/\.[^.]+$/, '')}-processed`)
+    setAudioResult(resultContainer, audioBufferToWav(output), `${file.name.replace(/\.[^.]+$/, '')}-processed.wav`, 'Processed audio')
     setButtonLabel(run, 'Process again')
     run.removeAttribute('aria-busy')
     setStatus(`Processed ${output.duration.toFixed(2)} s: high-shelf EQ → compressor → AudioBuffer`)
@@ -759,11 +795,14 @@ export function mountExample(root, id) {
     lastBuffer = null
     resetSpectrogram(spectrogram)
     context = new AudioContext(); await context.resume()
+    if (disposed) return
     analyser = context.createAnalyser(); analyser.fftSize = 2048; analyser.minDecibels = -100; analyser.maxDecibels = -20
-    connectOutput()
+    await connectOutput()
+    if (disposed) return
     demo = await buildWorklet(context, { ...readOptions(id, form), destination: analyser, AudioWorkletNodeClass: globalThis.AudioWorkletNode })
+    if (disposed) return
     setButtonLabel(run, 'Stop demo'); setStatus('', 'running')
-    animate(); timer = setTimeout(() => stop('Complete. The worklet node and context are closed.'), 1100)
+    animate(); timer = setTimeout(() => stop('Finished.'), 1100)
   }
 
   async function runMic() {
@@ -771,26 +810,33 @@ export function mountExample(root, id) {
     resetSpectrogram(spectrogram)
     let options = readOptions(id, form)
     stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    if (disposed) {
+      for (const track of stream.getTracks()) track.stop()
+      stream = null
+      return
+    }
     context = new AudioContext(); await context.resume()
+    if (disposed) return
     let { init } = await import(`./graphs/${id}.js`)
+    if (disposed) return
     demo = init(context, { stream, gain: Number(options.gain ?? 1), monitor: false })
     analyser = demo.nodes[2]; analyser.fftSize = 4096; analyser.minDecibels = -100; analyser.maxDecibels = -20
+    await captureSignal()
+    if (disposed) return
     levelMeter = id === 'level-meter' ? createLevelMeter(options.ballistics === 'fast') : null
     latencyTracker = id === 'latency-tester' ? createLatencyTracker(context, demo.data.click, Number(options.interval || 1.5)) : null
     if (id === 'recorder') {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not available in this browser')
-      chunks = []; recorder = new MediaRecorder(stream)
+      const chunks = []
+      const recording = recorder = new MediaRecorder(stream)
       recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data) }
       let mimeType = recorder.mimeType || 'audio/webm'
       let filename = String(options.filename || 'recording').trim().replace(/[^a-z0-9._-]+/gi, '-') || 'recording'
       recorder.onstop = () => {
+        if (disposed || recorder !== recording || !chunks.length) return
         let blob = new Blob(chunks, { type: mimeType })
-        let url = URL.createObjectURL(blob)
-        resultContainer.replaceChildren()
-        let audio = document.createElement('audio'); audio.controls = true; audio.src = url; audio.setAttribute('aria-label', 'Recorded microphone audio')
         let extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'm4a' : 'webm'
-        let download = document.createElement('a'); download.className = 'demo-action'; download.href = url; download.download = `${filename.replace(/\.[^.]+$/, '')}.${extension}`; download.textContent = 'Download recording'
-        resultContainer.append(audio, download)
+        setAudioResult(resultContainer, blob, `${filename.replace(/\.[^.]+$/, '')}.${extension}`, 'Recorded microphone audio')
       }
       recorder.start()
     }
@@ -811,18 +857,20 @@ export function mountExample(root, id) {
     input.addEventListener('change', () => { label.firstChild.textContent = input.files[0]?.name || 'Choose audio file' })
   }
 
-  controls.hidden = fields.childElementCount === 0 && actions.childElementCount === 0
+  form.hidden = controls.hidden = fields.childElementCount === 0 && actions.childElementCount === 0
 
   if (example.mode === 'node') {
     setButtonLabel(run, 'Copy command')
-    setStatus('This adapter is intentionally Node-only: a browser has no process.stdout Writable.')
+    setStatus('Run this command in Node to stream PCM to another process.')
   } else {
     setStatus('')
   }
 
   let startDemo = async () => {
     if (busy || disposed) return
+    runVersion++
     busy = true
+    lastHistory = null
     run.setAttribute('aria-busy', 'true')
     setButtonLabel(run, 'Starting')
     try {
@@ -831,16 +879,19 @@ export function mountExample(root, id) {
       else if (example.mode === 'worklet') await runWorklet()
       else if (example.mode === 'mic') await runMic()
       else await runPortable()
+      if (disposed) return
       live = true
     } catch (error) {
+      if (disposed) return
       live = false
       let message = `${error.message}. Check permissions or input, then try again.`
       if (context) await stop(message)
+      if (disposed) return
       setButtonLabel(run, 'Try again')
       setStatus(message, 'error')
     } finally {
       busy = false
-      run.removeAttribute('aria-busy')
+      if (!disposed) run.removeAttribute('aria-busy')
     }
   }
 
@@ -856,7 +907,7 @@ export function mountExample(root, id) {
 
   let reloadDemo = async () => {
     if (!live || busy || disposed) return
-    if (context) await stop('Applying updated controls.')
+    if (context && !(await stop('Applying updated controls.'))) return
     await startDemo()
   }
 
@@ -871,7 +922,8 @@ export function mountExample(root, id) {
   }
 
   let onScaleChange = () => {
-    if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
+    if (capture || lastHistory) drawLiveSignal(canvas, spectrogram, capture?.history || lastHistory, frequencyScale.value)
+    else if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
     else resetSpectrogram(spectrogram)
   }
 
@@ -885,10 +937,12 @@ export function mountExample(root, id) {
     live = false
     clearTimeout(reloadTimer)
     observer.disconnect()
+    run.removeEventListener('click', onRun)
     volume?.removeEventListener('input', onVolume)
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)
     frequencyScale.removeEventListener('change', onScaleChange)
+    clearAudioResult(resultContainer)
     await stop('')
   }
 }

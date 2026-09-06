@@ -18,13 +18,13 @@ function seeded(seed) {
 // eighths swing at a medium tempo. The modal family comes first: slow harmonic rhythm,
 // extended chords voice-led from one to the next, a bass that pedals, and space.
 export const styles = {
-  modal: { bpm: [76, 92], swing: 0.62, form: 'modal', bass: 'modal', comp: 'pad', drums: 'light', phrase: 'modal' },
+  modal: { bpm: [76, 92], swing: 0.62, form: 'modal', bass: 'modal', comp: 'swell', drums: 'light', phrase: 'modal' },
   ambient: { bpm: [50, 62], swing: 0.5, form: 'ambient', bass: 'pedal', comp: 'pad', drums: 'swell', phrase: 'ambient' },
-  nordic: { bpm: [62, 78], swing: 0.56, form: 'nordic', bass: 'two', comp: 'sustain', drums: 'brushes', phrase: 'lyrical' },
+  nordic: { bpm: [62, 78], swing: 0.56, form: 'nordic', bass: 'open', comp: 'sustain', drums: 'nordic', phrase: 'lyrical' },
   ballad: { bpm: [56, 68], swing: 0.58, form: 'ballad', bass: 'two', comp: 'sustain', drums: 'brushes', phrase: 'ballad' },
   bossa: { bpm: [118, 136], swing: 0.5, form: 'bossa', bass: 'bossa', comp: 'bossa', drums: 'bossa', phrase: 'bossa' },
   swing: { bpm: [138, 176], swing: 0.66, form: 'aaba', bass: 'walk', comp: 'stabs', drums: 'swing', phrase: 'bebop' },
-  blues: { bpm: [100, 126], swing: 0.66, form: 'blues', bass: 'walk', comp: 'stabs', drums: 'shuffle', phrase: 'blues' },
+  blues: { bpm: [100, 126], swing: 0.66, form: 'blues', bass: 'shuffle', comp: 'stabs', drums: 'shuffle', phrase: 'blues' },
 }
 export const leads = ['guitar', 'flute', 'harp', 'piano']
 
@@ -34,6 +34,7 @@ const qualities = {
   maj7: { scale: [0, 2, 4, 5, 7, 9, 11], tones: [0, 4, 7, 11], colors: [4, 11, 14], voicing: [4, 7, 11, 14] },
   'maj7#11': { scale: [0, 2, 4, 6, 7, 9, 11], tones: [0, 4, 7, 11], colors: [6, 11, 14, 4], voicing: [4, 11, 14, 18] },
   m7: { scale: [0, 2, 3, 5, 7, 9, 10], tones: [0, 3, 7, 10], colors: [3, 10, 14], voicing: [3, 7, 10, 14] },
+  m9: { scale: [0, 2, 3, 5, 7, 8, 10], tones: [0, 3, 7, 10], colors: [3, 7, 10, 14], voicing: [3, 7, 10, 14] },
   m11: { scale: [0, 2, 3, 5, 7, 9, 10], tones: [0, 3, 7, 10], colors: [5, 14, 3, 10], voicing: [3, 10, 14, 17] },
   sus: { scale: [0, 2, 4, 5, 7, 9, 10], tones: [0, 5, 7, 10], colors: [5, 14, 10], voicing: [5, 10, 14, 19] },
   7: { scale: [0, 2, 4, 5, 7, 9, 10], tones: [0, 4, 7, 10], colors: [4, 10, 14], voicing: [4, 10, 14, 19] },
@@ -41,29 +42,34 @@ const qualities = {
   dim7: { scale: [0, 2, 3, 5, 6, 8, 9, 11], tones: [0, 3, 6, 9], colors: [3, 6, 9], voicing: [3, 6, 9, 14] },
 }
 const quartal = [[0, 5, 10, 15, 19], [0, 5, 10, 14, 19], [0, 3, 10, 14, 17], [0, 5, 7, 10, 14], [0, 7, 10, 14, 19]]
+// Root and fifth below the colour tones: weight without a dense low-register cluster.
+const grounded = { m9: [0, 7, 15, 22, 26], maj7: [0, 7, 16, 23, 26], sus: [0, 7, 17, 22, 26] }
 const styleNames = Object.keys(styles)
 
 export async function init(ctx, {
   style = 'modal', lead = 'guitar', bpm = null, duration = 270, seed = null,
-  when = ctx.currentTime, destination = ctx.destination, AudioWorkletNodeClass = null,
+  when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
-  if (!AudioWorkletNodeClass) throw new TypeError('AudioWorkletNode is not available')
+  if (!(duration > 0) || !Number.isFinite(duration)) throw new RangeError('Positive finite duration required')
   let random = seed == null ? Math.random : seeded(seed)
   let pick = list => list[random() * list.length | 0]
   let chance = p => random() < p
-  let plan = styles[style] || styles.modal
-  if (!leads.includes(lead)) lead = 'guitar'
   if (!styleNames.includes(style)) style = 'modal'
-  bpm = Number(bpm) || Math.round((plan.bpm[0] + plan.bpm[1]) / 2)
+  let plan = styles[style]
+  const padComp = ['pad', 'swell'].includes(plan.comp)
+  if (!leads.includes(lead)) lead = 'guitar'
+  bpm = bpm == null ? Math.round((plan.bpm[0] + plan.bpm[1]) / 2) : Number(bpm)
+  if (!(bpm > 0) || !Number.isFinite(bpm)) throw new RangeError('Positive finite tempo required')
   let beat = 60 / bpm
   let swing = Math.max(0.5, plan.swing - Math.max(0, bpm - 120) / 600) // eighths straighten as the tempo climbs
-  let totalBeats = Math.max(4, Math.ceil(duration / beat))
+  let totalBeats = duration / beat
   let t0 = when
   let midi = note => 440 * 2 ** ((note - 69) / 12)
   // absolute beat position to time: the second half of a beat swings
   let at = position => {
     let whole = Math.floor(position), part = position - whole
-    let offset = part === 0.5 ? swing : part < 0.5 ? part * 2 * swing : swing + (part - 0.5) * 2 * (1 - swing)
+    let offset = Math.abs(part - 1 / 3) < 1e-8 || Math.abs(part - 2 / 3) < 1e-8 ? part
+      : part === 0.5 ? swing : part < 0.5 ? part * 2 * swing : swing + (part - 0.5) * 2 * (1 - swing)
     return t0 + (whole + offset) * beat
   }
   let energy = position => { let p = position / totalBeats; return (p < 0.7 ? p / 0.7 : (1 - p) / 0.3) ** 0.7 }
@@ -81,24 +87,17 @@ export async function init(ctx, {
     blues: () => [[0, 7, 4], [5, 7, 4], [0, 7, 4], [0, 7, 4], [5, 7, 4], [6, 'dim7', 4], [0, 7, 4], [9, 7, 4], [2, 'm7', 4], [7, 7, 4], [0, 7, 2], [9, 7, 2], [2, 'm7', 2], [7, 7, 2]],
     ballad: () => [[0, 'maj7', 8], [5, 'm7', 4], [10, 7, 4], [0, 'maj7', 8], [4, 'm7', 4], [9, 7, 4], [2, 'm7', 8], [7, 7, 8], [0, 'maj7', 8], [2, 'm7', 4], [7, 7, 4]],
     bossa: () => [[0, 'maj7', 8], [2, 7, 8], [2, 'm7', 8], [1, 7, 8], [0, 'maj7', 8], [2, 7, 8], [2, 'm7', 4], [7, 7, 4], [0, 'maj7', 8]],
-    // modal: slow changes moving by whole step, minor third, or fourth, never a bare half step,
-    // between dorian m11 chords with the odd sus and one lydian colour
-    modal: () => {
-      let moves = [2, -2, 3, -3, 5, -5, 5, 7, -7], root = 0, out = []
-      for (let i = 0; i < 8; i++) {
-        let quality = pick(['m11', 'm11', 'm11', 'm7', 'sus', 'maj7#11'])
-        out.push([((root % 12) + 12) % 12, quality, pick([16, 16, 8])])
-        root += pick(moves)
-      }
-      return out
-    },
+    // Aeolian home, a major lift, then a suspended fifth resolving back to minor.
+    // Four-bar plateaus breathe twice; the return is heard, not just another colour.
+    modal: () => [[0, 'm9', 16], [8, 'maj7', 16], [3, 'maj7', 16], [10, 'sus', 16],
+      [0, 'm9', 16], [5, 'm9', 16], [7, 'sus', 16], [0, 'm9', 16]],
     // ambient: two or three lydian and m11 colours a fourth or a whole step apart, held long
     ambient: () => {
-      let a = pick([0, 5, 10]), b = pick([2, 7, 9])
-      return [[a, 'maj7#11', 32], [b, 'm11', 16], [a, 'maj7#11', 16], [pick([5, 7, 10]), 'sus', 16]]
+      return [[0, 'maj7#11', 32], [9, 'm11', 16], [5, 'maj7#11', 16],
+        [0, 'maj7#11', 32], [7, 'sus', 16], [0, 'maj7#11', 16]]
     },
     // nordic: an aeolian cycle with lydian and sus colour, eight beats each
-    nordic: () => [[0, 'm11', 8], [10, 'maj7#11', 8], [8, 'maj7#11', 8], [7, 'sus', 8], [0, 'm11', 8], [3, 'maj7#11', 8], [5, 'm11', 8], [7, 'sus', 8]],
+    nordic: () => [[0, 'm9', 8], [10, 'maj7', 8], [8, 'maj7#11', 8], [7, 'sus', 8], [0, 'm9', 8], [3, 'maj7', 8], [5, 'm9', 8], [7, 'sus', 8]],
   }
   let chorus = forms[plan.form]().map(([degree, quality, beats]) => chord(degree, quality, beats))
   let chords = [], position = 0
@@ -135,11 +134,11 @@ export async function init(ctx, {
         for (let b = 0; b < c.beats; b++) {
           let position = c.start + b, inBar = b % 4, note
           if (b === c.beats - 1) note = approach(last, next)
-          else if (inBar === 0) note = chance(0.8) || b === 0 ? clampBass(c.root) : toneNear(c, last, [4, 3, 7])
+          else if (inBar === 0) note = chance(0.8) || b === 0 ? clampBass(c.root) : toneNear(c, last, tones.tones.slice(1))
           else if (inBar === 2) note = toneNear(c, last + (chance(0.5) ? 3 : -3), tones.tones.slice(1))
           else note = toneNear(c, last + (chance(0.6) ? 2 : -2), tones.scale)
           note = clampBass(note)
-          if (note === last) note = clampBass(toneNear(c, last + (chance(0.5) ? 2 : -2), tones.scale))
+          if (note === last && inBar % 2) note = clampBass(toneNear(c, last + (chance(0.5) ? 2 : -2), tones.scale))
           bassNotes.push({ position, beats: 1, note, velocity: inBar === 0 ? 0.9 : 0.72 + random() * 0.15 })
           last = note
         }
@@ -151,9 +150,9 @@ export async function init(ctx, {
         for (let b = 0; b < c.beats; b += 2) {
           let position = c.start + b, lastHalf = b >= c.beats - 2
           if (lastHalf && chance(0.6)) {
-            bassNotes.push({ position, beats: 1, note: toneNear(c, root, [7, 4, 3]), velocity: 0.7 })
+            bassNotes.push({ position, beats: 1, note: clampBass(toneNear(c, root, qualities[c.quality].tones.slice(1))), velocity: 0.7 })
             bassNotes.push({ position: position + 1, beats: 1, note: approach(root, next), velocity: 0.65 })
-          } else bassNotes.push({ position, beats: 2, note: b % 4 === 0 ? root : clampBass(toneNear(c, root + 5, [7, 3, 4])), velocity: b % 4 === 0 ? 0.85 : 0.7 })
+          } else bassNotes.push({ position, beats: 2, note: b % 4 === 0 ? root : clampBass(toneNear(c, root + 5, qualities[c.quality].tones.slice(1))), velocity: b % 4 === 0 ? 0.85 : 0.7 })
         }
       }
     },
@@ -164,23 +163,6 @@ export async function init(ctx, {
           let position = c.start + b, note = b % 4 === 0 ? root : fifth
           bassNotes.push({ position, beats: 1.5, note, velocity: 0.85 })
           bassNotes.push({ position: position + 1.5, beats: 0.5, note: b % 4 === 0 ? fifth : root, velocity: 0.6 })
-        }
-      }
-    },
-    modal: () => {
-      let scalePosition = 0, last = clampBass(chords[0].root)
-      for (let c of chords) {
-        let next = clampBass(chordAfter(c).root), scale = qualities[c.quality].scale
-        for (let b = 0; b < c.beats;) {
-          let length = pick([1, 1, 1, 1.5, 2, 0.5])
-          if (b + length > c.beats) length = c.beats - b
-          if (b > 0.5 && chance(0.12)) { b += length; continue }
-          let note
-          if (b === 0) { note = clampBass(c.root); scalePosition = 0 }
-          else if (b >= c.beats - 1.5) note = approach(last, next)
-          else { scalePosition = Math.max(0, Math.min(scale.length * 2 - 1, scalePosition + pick([-1, 1, 1, 0]))); note = clampBass(c.root + 12 * Math.floor(scalePosition / scale.length) + scale[scalePosition % scale.length]) }
-          bassNotes.push({ position: c.start + b, beats: length, note: clampBass(note), velocity: b === 0 ? 0.9 : 0.75 })
-          last = note; b += length
         }
       }
     },
@@ -203,13 +185,13 @@ export async function init(ctx, {
       }
     }
   }
-  // modal: the root is home, in whole and half notes, but no note is struck twice in a row:
-  // the fifth, the octave, or the seventh answers it. The last bar walks into the change.
+  // Modal: each plateau begins on its root; chord tones answer in whole/half notes.
+  // The last bar walks into the change.
   bassLines.modal = () => {
     let last = null
     for (let c of chords) {
       let next = clampBass(chordAfter(c).root), root = clampBass(c.root)
-      let answers = [7, 12, 10, 5].map(interval => clampBass(root + interval)).filter(note => note !== root)
+      let answers = [...qualities[c.quality].tones.filter(interval => interval !== 0), 12].map(interval => clampBass(root + interval)).filter(note => note !== root)
       for (let b = 0; b < c.beats;) {
         let remaining = c.beats - b
         if (remaining <= 4 && remaining > 2 && chordAfter(c).root !== c.root) {
@@ -224,11 +206,28 @@ export async function init(ctx, {
           break
         }
         let length = remaining >= 4 && chance(0.6) ? 4 : Math.min(2, remaining)
-        let note = last !== root && (b === 0 || chance(0.6)) ? root : pick(answers)
-        if (note === last) note = note === root ? answers[0] : root
+        let note = b === 0 || (last !== root && chance(0.6)) ? root : pick(answers)
+        if (b !== 0 && note === last) note = note === root ? answers[0] : root
         bassNotes.push({ position: c.start + b, beats: length, note, velocity: b === 0 ? 0.85 : 0.65 })
         last = note; b += length
       }
+    }
+  }
+  bassLines.open = () => {
+    for (const c of chords) {
+      const root = clampBass(c.root)
+      for (const [offset, interval, length] of [[0, 0, 3.5], [4.5, 7, 2], [7, 2, 0.75]]) {
+        if (offset >= c.beats) continue
+        bassNotes.push({ position: c.start + offset, beats: Math.min(length, c.beats - offset), note: clampBass(root + interval), velocity: offset === 0 ? 0.74 : 0.53 })
+      }
+    }
+  }
+  bassLines.shuffle = () => {
+    for (const c of chords) for (let b = 0; b < c.beats; b++) {
+      const tones = qualities[c.quality].tones
+      const intervals = c.quality === 7 ? [0, 4, 7, 9, 10, 9, 7, 4] : [0, tones[1], tones[2], tones[3], tones[2], tones[1], tones[2], 0]
+      const note = b === 0 ? clampBass(c.root) : b === c.beats - 1 ? clampBass(chordAfter(c).root - 1) : clampBass(c.root + intervals[(c.start + b) % 8])
+      bassNotes.push({ position: c.start + b, beats: 1, note, velocity: b % 2 ? 0.72 : 0.87 })
     }
   }
   bassLines[plan.bass]()
@@ -239,13 +238,15 @@ export async function init(ctx, {
   // from the previous chord's notes, so changes glide instead of jumping
   let previousVoicing = null
   let voicingOf = c => {
-    let offsets = plan.comp === 'pad' && c.quality === 'm7' ? pick(quartal) : qualities[c.quality].voicing
+    let offsets = plan.comp === 'swell' ? grounded[c.quality]
+      : plan.comp === 'pad' && ['m7', 'm11'].includes(c.quality) ? pick(quartal) : qualities[c.quality].voicing
+    const floor = plan.comp === 'swell' ? 43 : 50
     let candidates = []
     for (let octave = 36; octave <= 72; octave += 12) {
       let notes = offsets.map(offset => c.root % 12 + octave + offset)
-      if (notes[0] < 50 || notes[notes.length - 1] > 82) continue
+      if (notes[0] < floor || notes[notes.length - 1] > 82) continue
       candidates.push(notes)
-      if (previousVoicing) candidates.push(notes.map(note => { // each note may drop an octave toward the previous chord
+      if (previousVoicing && plan.comp !== 'swell') candidates.push(notes.map(note => { // each note may drop an octave toward the previous chord
         let nearest = previousVoicing.reduce((best, p) => Math.abs(p - note) < Math.abs(best - note) ? p : best, previousVoicing[0])
         return note - 12 >= 50 && Math.abs(note - 12 - nearest) < Math.abs(note - nearest) ? note - 12 : note
       }).sort((a, b) => a - b).filter((note, i, all) => note !== all[i - 1]))
@@ -258,11 +259,18 @@ export async function init(ctx, {
     return previousVoicing
   }
   let compPatterns = {
+    swell: () => {
+      for (let c of chords) {
+        const notes = voicingOf(c)
+        for (let b = 0; b < c.beats; b += 8) compHits.push({ position: c.start + b, beats: Math.min(8, c.beats - b), chord: c,
+          velocity: (b ? 0.68 : 0.82) + 0.12 * energy(c.start + b), notes })
+      }
+    },
     pad: () => { for (let c of chords) compHits.push({ position: c.start, beats: c.beats, chord: c, velocity: 0.8, notes: voicingOf(c) }) },
     sustain: () => {
       for (let c of chords) {
         compHits.push({ position: c.start, beats: Math.min(c.beats, 4), chord: c, velocity: 0.7, notes: voicingOf(c), rolled: true })
-        if (c.beats > 4) compHits.push({ position: c.start + 4, beats: c.beats - 4, chord: c, velocity: 0.55, notes: voicingOf(c).map(n => n + (chance(0.5) ? 0 : -12)), rolled: true })
+        if (c.beats > 4) compHits.push({ position: c.start + 4, beats: c.beats - 4, chord: c, velocity: 0.55, notes: voicingOf(c), rolled: true })
       }
     },
     stabs: () => {
@@ -300,7 +308,7 @@ export async function init(ctx, {
         let start = bar * 4, e = energy(start), phraseEnd = bar % 4 === 3
         for (let b of [0, 1, 1.5, 2, 3, 3.5]) hit(start + b, 'ride', (b % 1 ? 0.5 : b % 2 ? 0.9 : 0.7) * (0.5 + e * 0.5))
         hit(start + 1, 'hat', 0.7); hit(start + 3, 'hat', 0.7)
-        for (let b = 0; b < 4; b++) if (chance(0.25 * e)) hit(start + b + pick([0.5, 0.33, 0.66]), 'ghost', 0.4 + e * 0.4)
+        for (let b = 0; b < 4; b++) if (chance(0.25 * e)) hit(start + b + pick([0.5, 1 / 3, 2 / 3]), 'ghost', 0.4 + e * 0.4)
         if (e > 0.2) { hit(start, 'kick', 0.35); if (chance(e * 0.5)) hit(start + 2, 'kick', 0.3) }
         if (phraseEnd && chance(0.3 + e * 0.5)) { hit(start + 3.5, 'snare', 0.7); if (chance(0.5)) hit(start + 3, 'snare', 0.5) }
       }
@@ -312,6 +320,14 @@ export async function init(ctx, {
         hit(start + 1, 'snare', 0.75 + e * 0.2); hit(start + 3, 'snare', 0.8 + e * 0.2)
         hit(start, 'kick', 0.8); hit(start + 2, 'kick', 0.7); if (chance(0.3)) hit(start + 3.5, 'kick', 0.5)
         if (bar % 4 === 3 && chance(0.5)) hit(start + 3.5, 'snare', 0.5)
+      }
+    },
+    nordic: () => {
+      for (let bar = 0; bar < bars; bar++) {
+        const start = bar * 4
+        if (bar % 2 === 0) hit(start, 'ride', 0.3)
+        if (bar % 4 === 3) hit(start + 2.5, 'rim', 0.35)
+        if (bar % 8 === 0) hit(start, 'kick', 0.18)
       }
     },
     brushes: () => {
@@ -340,7 +356,7 @@ export async function init(ctx, {
       }
     },
     bossa: () => {
-      let clave = [[0, 1.5, 3], [0.5, 2]]
+      let clave = [[0, 1.5, 3], [1, 2.5]]
       for (let bar = 0; bar < bars; bar++) {
         let start = bar * 4
         for (let b = 0; b < 4; b += 0.5) hit(start + b, 'hat', b % 1 ? 0.35 : 0.55)
@@ -392,48 +408,81 @@ export async function init(ctx, {
   let slow = ['ballad', 'ambient', 'lyrical'].includes(plan.phrase)
   let colourful = ['modal', 'ambient', 'lyrical'].includes(plan.phrase) // land on 9ths, 11ths, and #11s
   let eighth = slow ? 1 : 0.5 // the unit of an approach line
-  let cursor = pick([2, 4, 6]), lastTarget = null, motif = null
+  let cursor = pick([1, 2, 3]), lastTarget = null, motif = null, motifDevice = null, phrase = 0
+  const foldLead = note => {
+    while (note < leadRange[0]) note += 12
+    while (note > leadRange[1]) note -= 12
+    return note
+  }
   while (cursor < totalBeats - 2) {
     let e = energy(cursor)
     let rest = pick(e > 0.6 ? [0, 0.5, 1, 1.5] : e > 0.3 ? [1, 1.5, 2, 3] : [2, 3, 4, 6])
     if (slow) rest += plan.phrase === 'ambient' ? 4 : 2
     if (plan.phrase === 'modal') rest += 1
-    let reuse = motif && chance(0.3)
+    let reuse = motif && chance(phrase % 2 ? 0.72 : 0.2)
     let approachLength = reuse ? motif.length - 1 : pick([2, 3, 4, 5])
     let target = Math.ceil((cursor + rest + approachLength * eighth) / 2) * 2 // a strong beat: one or three
     if (chance(0.3) && !slow) target -= 0.5 // anticipated by an eighth
     if (target >= totalBeats - 1) break
-    let c = chordAt(target)
+    let c = chordAt(target + (target % 1 === 0.5 ? 0.5 : 0))
     let tones = qualities[c.quality].tones
     let preferred = colourful && chance(0.6) ? qualities[c.quality].colors : chance(0.65) ? [tones[1], tones[3]] : tones
     let T = toneNear(c, centre(target) + (random() - 0.5) * 8, preferred)
     if (T === lastTarget) T = toneNear(c, T + (chance(0.5) ? 5 : -5), tones)
-    T = Math.max(leadRange[0], Math.min(leadRange[1], T))
-    let pitches = reuse ? motif.map(interval => T + interval) : devices[pick(vocabulary)](c, T)
-    pitches = pitches.map(n => Math.max(leadRange[0], Math.min(leadRange[1], n)))
+    T = foldLead(T)
+    const device = reuse ? motifDevice : pick(vocabulary)
+    const chromatic = ['enclosure', 'bebop', 'blues'].includes(device)
+    let pitches = reuse ? motif.map(interval => chromatic ? T + interval : scaleNote(c, T + interval, 0)) : devices[device](c, T)
+    pitches = pitches.map(foldLead)
     let count = pitches.length
-    let start = target - (count - 1) * eighth
+    const step = plan.phrase === 'bebop' && chance(0.22) ? 1 / 3 : eighth
+    let start = target - (count - 1) * step
+    if (device === 'scoop' && start >= 0.125) leadNotes.push({
+      position: start - 0.125, beats: 0.11, note: foldLead(pitches[0] - 1), velocity: 0.32 + e * 0.1,
+      phrase, device: 'grace', target: false, articulation: 'light', scoop: false,
+    })
     let targetLength = pick(slow ? (plan.phrase === 'ambient' ? [4, 6, 8] : [2, 3, 4]) : plan.phrase === 'modal' ? [1.5, 2, 3, 1] : [1, 1.5, 2, 0.5])
     for (let i = 0; i < count; i++) {
       let last = i === count - 1
-      let position = start + i * eighth
-      let beats = last ? targetLength : eighth
-      leadNotes.push({ position, beats: beats * (lead === 'flute' ? 0.95 : 0.85), note: pitches[i], velocity: (0.5 + 0.45 * i / Math.max(1, count - 1)) * (0.6 + 0.4 * e), scoop: slow || (last && chance(0.3)) })
+      let position = start + i * step
+      let beats = last ? targetLength : step
+      // A motif keeps its contour, but its non-chromatic notes follow the local chord.
+      const local = chordAt(position)
+      const note = foldLead(!last && !chromatic ? scaleNote(local, pitches[i], 0) : pitches[i])
+      leadNotes.push({ position, beats: Math.min(beats * (lead === 'flute' ? 0.95 : 0.85), totalBeats - position), note,
+        velocity: (0.5 + 0.45 * i / Math.max(1, count - 1)) * (0.6 + 0.4 * e),
+        scoop: last && (device === 'scoop' || plan.phrase === 'blues'),
+        phrase, device, tuplet: step === 1 / 3, target: last, anticipated: last && target < c.start, articulation: last ? 'tenuto' : i % 2 ? 'light' : 'legato' })
     }
     let tail = chance(0.4 + e * 0.3) ? pick([1, 2]) : 0 // a turn after the target
     let note = T, position = target + targetLength
     for (let i = 0; i < tail; i++) {
-      note = scaleNote(c, note, pick([-1, 1, -2]))
-      leadNotes.push({ position, beats: eighth * 0.85, note, velocity: 0.5 * (0.6 + 0.4 * e), scoop: false })
+      if (position >= totalBeats) break
+      note = foldLead(scaleNote(chordAt(position), note, pick([-1, 1, -2])))
+      leadNotes.push({ position, beats: Math.min(eighth * 0.85, totalBeats - position), note, velocity: 0.5 * (0.6 + 0.4 * e), scoop: false, phrase, device: 'turn', target: false, articulation: 'light' })
       position += eighth
     }
     motif = pitches.map(n => n - T)
+    motifDevice = device
+    phrase++
     lastTarget = T
     cursor = position + (tail ? eighth : 0)
   }
 
+  for (const line of [bassNotes, compHits, leadNotes, drumHits]) {
+    for (let i = line.length - 1; i >= 0; i--) {
+      if (line[i].position >= totalBeats) line.splice(i, 1)
+      else if (line[i].beats) line[i].beats = Math.min(line[i].beats, totalBeats - line[i].position)
+    }
+  }
+
   // ---------- Instruments ----------
   let sources = [], nodes = []
+  const master = ctx.createGain()
+  master.gain.value = 0
+  master.connect(destination)
+  destination = master
+  nodes.push(master)
   let place = (position, target) => {
     let panner = ctx.createStereoPanner()
     panner.pan.value = position
@@ -455,7 +504,7 @@ export async function init(ctx, {
     }
     room.buffer = ir
   }
-  roomOut.gain.value = { brushes: 0.3, swell: 0.42, light: 0.26 }[plan.drums] ?? 0.2
+  roomOut.gain.value = { brushes: 0.3, nordic: 0.38, swell: 0.42, light: 0.26 }[plan.drums] ?? 0.2
   roomIn.connect(room).connect(roomOut).connect(destination)
   nodes.push(room, roomIn, roomOut)
   let noiseBuffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 2), ctx.sampleRate)
@@ -470,7 +519,7 @@ export async function init(ctx, {
     return gain
   }
 
-  // Bass: a triangle with a plucked thump and a little finger noise, under a low-pass
+  // Bass: a triangle with a plucked thump under a low-pass
   let bassLp = ctx.createBiquadFilter()
   bassLp.type = 'lowpass'; bassLp.frequency.value = 380
   let bassOut = ctx.createGain(); bassOut.gain.value = 0.32
@@ -490,20 +539,25 @@ export async function init(ctx, {
     sources.push(osc, thump); nodes.push(osc, thump)
   }
 
-  // Comping: a sustained sawtooth pad for the modal style, an electric-piano tone otherwise
+  // Comping: a soft harmonic pad for modal styles, a decaying electric-piano tone otherwise
   let compFilter = ctx.createBiquadFilter()
-  compFilter.type = 'lowpass'; compFilter.Q.value = 0.5; compFilter.frequency.value = plan.comp === 'pad' ? 900 : 5000
-  let compOut = ctx.createGain(); compOut.gain.value = plan.comp === 'pad' ? 0.06 : 0.11
+  compFilter.type = 'lowpass'; compFilter.Q.value = 0.5; compFilter.frequency.value = padComp ? 900 : 5000
+  let compOut = ctx.createGain(); compOut.gain.value = plan.comp === 'swell' ? 0.095 : padComp ? 0.06 : 0.11
   compFilter.connect(compOut).connect(place(0.15, roomIn))
   nodes.push(compFilter, compOut)
+  const padWave = ctx.createPeriodicWave(new Float32Array(9), new Float32Array([0, 1, 0.35, 0.17, 0.1, 0.05, 0.02, 0.01, 0.005]))
   let playComp = ({ position, beats, velocity, notes, rolled }) => {
     let time = at(position), length = beats * beat
-    if (plan.comp === 'pad') compFilter.frequency.setValueAtTime(700 + energy(position) * 500, time)
+    if (padComp) compFilter.frequency.setValueAtTime((plan.comp === 'swell' ? 1300 : 700) + energy(position) * 500, time)
     notes.forEach((note, i) => {
       let start = time + (rolled ? i * 0.025 : 0)
-      if (plan.comp === 'pad') {
-        let osc = ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = midi(note); osc.detune.value = [-5, 3, -2, 4, -3][i % 5]
-        let amp = envelope(start, velocity, beat, Math.max(0, length - beat * 2), beat, compFilter)
+      if (padComp) {
+        let osc = ctx.createOscillator(); osc.setPeriodicWave(padWave); osc.frequency.value = midi(note)
+        osc.detune.setValueAtTime([-5, 3, -2, 4, -3][i % 5], start)
+        osc.detune.linearRampToValueAtTime([-2, 5, -4, 1, -1][i % 5], start + length)
+        const attack = plan.comp === 'swell' ? Math.min(0.12, length / 4) : Math.min(beat, length / 2)
+        const release = Math.min(beat, length - attack)
+        let amp = envelope(start, velocity, attack, Math.max(0, length - attack - release), release, compFilter)
         osc.connect(amp); osc.start(start); osc.stop(start + length + 0.05)
         osc.onended = () => amp.disconnect()
         sources.push(osc); nodes.push(osc)
@@ -513,7 +567,7 @@ export async function init(ctx, {
       amp.gain.setValueAtTime(0, start)
       amp.gain.linearRampToValueAtTime(velocity, start + 0.004)
       amp.gain.setTargetAtTime(velocity * 0.3, start + 0.004, 0.35) // tine decays into a softer sustain
-      amp.gain.setValueAtTime(amp.gain.value, start + length)
+      amp.gain.setValueAtTime(velocity * (0.3 + 0.7 * Math.exp(-Math.max(0, length - 0.004) / 0.35)), start + length)
       amp.gain.exponentialRampToValueAtTime(0.0005, start + length + (rolled ? 0.4 : 0.06))
       amp.connect(compFilter); nodes.push(amp)
       let last
@@ -529,12 +583,19 @@ export async function init(ctx, {
     })
   }
 
-  // Drums: one noise worklet feeds ride, hat, snare, and brushes through filters gated by gain
-  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(`
-  class N extends AudioWorkletProcessor {
-    process(_, o) { for (let i = 0, d = o[0][0]; i < d.length; i++) d[i] = Math.random() * 2 - 1; return true }
-  }; registerProcessor('noise', N)`))
-  let noise = new AudioWorkletNodeClass(ctx, 'noise')
+  // Drums share the existing two-second seeded noise buffer with breath/excitation.
+  // No custom processor is needed, including on browsers without AudioWorklet.
+  // Planning must not consume the first attack on a live context.
+  if (typeof ctx.startRendering !== 'function') t0 = Math.max(t0, ctx.currentTime + 0.03)
+  const end = t0 + duration
+  master.gain.setValueAtTime(0, t0)
+  master.gain.linearRampToValueAtTime(0.62, t0 + Math.min(0.02, duration / 4))
+  master.gain.setValueAtTime(0.62, end - Math.min(0.6, duration / 4))
+  master.gain.linearRampToValueAtTime(0, end)
+  let noise = ctx.createBufferSource()
+  noise.buffer = noiseBuffer; noise.loop = true
+  noise.start(t0); noise.stop(end + 1)
+  sources.push(noise); nodes.push(noise)
   let kitPan = place(-0.3, roomIn)
   let kitVoice = (filters, gainValue = 0) => {
     let head = noise
@@ -557,10 +618,10 @@ export async function init(ctx, {
   ping.connect(pingG).connect(kitPan)
   ping.start(t0); ping.stop(t0 + duration + 1)
   sources.push(ping); nodes.push(ping, pingG)
-  if (plan.drums === 'brushes' || plan.drums === 'swell' || plan.drums === 'light') {
+  if (['brushes', 'nordic', 'swell', 'light'].includes(plan.drums)) {
     let level = plan.drums === 'light' ? 0.006 : 0.012
     let brushG = kitVoice([['highpass', 5000]], level)
-    let swoosh = ctx.createOscillator(); swoosh.type = 'sine'; swoosh.frequency.value = plan.drums === 'swell' ? bpm / 480 : bpm / 120
+    let swoosh = ctx.createOscillator(); swoosh.type = 'sine'; swoosh.frequency.value = ['swell', 'nordic'].includes(plan.drums) ? bpm / 480 : bpm / 120
     let swooshG = ctx.createGain(); swooshG.gain.value = level * 0.85
     swoosh.connect(swooshG).connect(brushG.gain)
     swoosh.start(t0); swoosh.stop(t0 + duration + 1)
@@ -588,7 +649,7 @@ export async function init(ctx, {
   // Lead: a jazz guitar (an extended Karplus-Strong string rendered per note), a flute, a
   // harp (additive pluck that rings on), or a piano (inharmonic partials with a hammer)
   let leadChain = {
-    guitar: { cutoff: 3200, body: [220, 3], level: 0.24 },
+    guitar: { cutoff: 4200, body: [195, 3], level: 0.28 },
     flute: { cutoff: 7000, body: [1800, 2], level: 0.2 },
     harp: { cutoff: 6500, body: [900, 1.5], level: 0.26 },
     piano: { cutoff: 7500, body: [500, 1.5], level: 0.22 },
@@ -601,7 +662,7 @@ export async function init(ctx, {
   let leadPan = place(0.35, roomIn)
   if (lead === 'guitar') {
     // a small tube combo: gentle saturation, the neck pickup's mid hump, then the tone control
-    let amp = ctx.createWaveShaper(), curve = new Float32Array(2048), drive = 2.2
+    let amp = ctx.createWaveShaper(), curve = new Float32Array(2048), drive = 1.35
     for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(drive * (i / (curve.length - 1) * 2 - 1)) / Math.tanh(drive)
     amp.curve = curve
     try { amp.oversample = '2x' } catch { /* optional */ }
@@ -613,9 +674,9 @@ export async function init(ctx, {
   nodes.push(leadFilter, leadBody, leadOut)
   // Extended Karplus-Strong string, rendered per note. The string starts from a plectrum
   // displacement at the pick point plus a little noise (more with a harder pick), runs
-  // through a loop whose one-pole damping lets the highs ring longer on hard picks, and
+  // through a loop whose two-tap damping lets the highs ring longer on hard picks, and
   // decays over a T60 that shortens with pitch. The loop is an integer number of samples;
-  // the playback rate corrects the pitch to the cent.
+  // the playback rate compensates for its fractional period.
   let pluck = (frequency, seconds, velocity) => {
     let sampleRate = ctx.sampleRate, period = sampleRate / frequency, n = Math.round(period)
     let length = Math.ceil(sampleRate * seconds)
@@ -630,25 +691,38 @@ export async function init(ctx, {
     let mean = ring.reduce((sum, value) => sum + value, 0) / n
     for (let i = 0; i < n; i++) ring[i] -= mean // the loop would hold any offset forever
     let t60 = Math.max(1.8, 3.4 - frequency / 600), rho = 10 ** (-3 * n / (t60 * sampleRate))
-    let damping = 0.32 - 0.2 * velocity // one-pole blend: lower keeps the highs; reading the next slot shortens the loop by `damping` samples
+    let damping = 0.32 - 0.2 * velocity // lower keeps the highs; reading the next slot shortens the loop by `damping` samples
     let p = 0
     for (let i = 0; i < length; i++) {
       let next = (p + 1) % n
-      data[i] = ring[p]
+      // A neck pickup senses a finite region, not a single point on the string.
+      data[i] = ring[p] - 0.16 * ring[(p + Math.round(n * 0.23)) % n]
       ring[p] = rho * ((1 - damping) * ring[p] + damping * ring[next])
       p = next
     }
     return { buffer, rate: (n - damping) / period }
   }
-  let playLead = ({ position, beats, note, velocity, scoop }) => {
+  let playLead = ({ position, beats, note, velocity, scoop, articulation }) => {
     let time = at(position), length = beats * beat, frequency = midi(note)
     if (lead === 'guitar') {
       let source = ctx.createBufferSource()
       let string = pluck(frequency, length + 0.4, velocity)
       source.buffer = string.buffer; source.playbackRate.value = string.rate
       let amp = ctx.createGain()
-      amp.gain.setValueAtTime(0.25 + 0.75 * velocity, time)
+      amp.gain.setValueAtTime(0, time)
+      amp.gain.linearRampToValueAtTime(0.25 + 0.75 * velocity, time + Math.min(length / 3, articulation === 'legato' ? 0.001 : 0.0025))
       amp.gain.setValueAtTime(0.25 + 0.75 * velocity, time + length)
+      source.detune.setValueAtTime(scoop ? -65 : 5 * velocity, time)
+      source.detune.linearRampToValueAtTime(0, time + Math.min(length / 2, scoop ? 0.09 : 0.025))
+      if (length > 0.45) {
+        const vibrato = ctx.createOscillator(), depth = ctx.createGain()
+        vibrato.frequency.value = 4.5 + random()
+        depth.gain.setValueAtTime(0, time)
+        depth.gain.linearRampToValueAtTime(scoop ? 12 : 5, time + 0.35)
+        vibrato.connect(depth).connect(source.detune)
+        vibrato.start(time); vibrato.stop(time + length + 0.16)
+        sources.push(vibrato); nodes.push(vibrato, depth)
+      }
       amp.gain.exponentialRampToValueAtTime(0.0005, time + length + 0.14) // the player lifts off
       amp.connect(leadFilter); nodes.push(amp)
       source.connect(amp)
@@ -661,7 +735,7 @@ export async function init(ctx, {
       // additive partials, each with its own decay: the highs die first, the string rings on
       // past the written length (a harpist does not damp; a pianist lifts a little later)
       let piano = lead === 'piano'
-      let ring = piano ? Math.max(length + 0.4, 1.2) : Math.max(length + 0.8, 2.2)
+      let ring = piano ? Math.max(length + 0.4, 1.2) : Math.max(length + 1.2, 4.2 - frequency / 650)
       let body = ctx.createGain()
       body.gain.setValueAtTime(0, time)
       body.gain.linearRampToValueAtTime(0.3 + 0.7 * velocity, time + 0.002)
@@ -669,8 +743,10 @@ export async function init(ctx, {
       body.gain.exponentialRampToValueAtTime(0.0005, time + (piano ? length + 0.25 : ring))
       body.connect(leadFilter); nodes.push(body)
       let stiffness = piano ? 0.0004 : 0.00008, last
-      let partials = piano ? [[1, 1], [2, 0.5], [3, 0.3], [4, 0.18], [5, 0.1], [6, 0.06]] : [[1, 1], [2, 0.45], [3, 0.22], [4, 0.1], [5, 0.05]]
+      let partials = piano ? [[1, 1], [2, 0.5], [3, 0.3], [4, 0.18], [5, 0.1], [6, 0.06], [7, 0.035], [8, 0.02]]
+        : [[1.0008, 0.16], ...Array.from({ length: 12 }, (_, i) => [i + 1, Math.abs(Math.sin(Math.PI * (i + 1) * 0.21)) / (0.613 * (i + 1) ** 1.25)])]
       for (let [h, amount] of partials) {
+        if (frequency * h * Math.sqrt(1 + stiffness * h * h) >= ctx.sampleRate * 0.45) continue
         let osc = last = ctx.createOscillator(), partial = ctx.createGain()
         osc.frequency.value = frequency * h * Math.sqrt(1 + stiffness * h * h)
         if (piano && h === 1) osc.detune.value = 1.5 // a second, slightly sharp string in the unison
@@ -705,12 +781,16 @@ export async function init(ctx, {
     let attack = Math.min(0.045, length / 3), release = 0.06
     let amp = envelope(time, 0.35 + 0.65 * velocity, attack, Math.max(0, length - attack), release, leadFilter)
     let vibrato = ctx.createOscillator(), vibratoDepth = ctx.createGain()
-    vibrato.frequency.value = 5 + random() * 0.6
+    vibrato.frequency.setValueAtTime(4.7 + random() * 0.6, time)
+    vibrato.frequency.linearRampToValueAtTime(5.2 + random() * 0.4, time + length)
     vibratoDepth.gain.setValueAtTime(0, time)
-    vibratoDepth.gain.linearRampToValueAtTime(length > 0.4 ? 9 : 3, time + Math.min(0.3, length * 0.6))
+    vibratoDepth.gain.setValueAtTime(0, time + Math.min(0.12, length / 3))
+    vibratoDepth.gain.linearRampToValueAtTime(length > 0.4 ? 12 + velocity * 6 : 2, time + Math.min(0.4, length * 0.7))
     vibrato.connect(vibratoDepth)
     let last
-    for (let [ratio, amount] of [[1, 0.7], [2, 0.12 + 0.2 * velocity], [3, 0.05]]) {
+    const register = Math.max(0, Math.min(1, (frequency - 450) / 900))
+    for (let [ratio, amount] of [[1, 0.82 - register * 0.2], [2, 0.08 + 0.16 * velocity + register * 0.12], [3, 0.025 + register * 0.055], [4, 0.012]]) {
+      if (frequency * ratio >= ctx.sampleRate * 0.45) continue
       let osc = last = ctx.createOscillator(), partial = ctx.createGain()
       osc.frequency.value = frequency * ratio
       if (scoop) { osc.detune.setValueAtTime(-45, time); osc.detune.linearRampToValueAtTime(0, time + Math.min(0.08, length / 2)) }
@@ -725,12 +805,12 @@ export async function init(ctx, {
     last.onended = () => amp.disconnect()
     // breath: band-passed noise, strongest at the onset
     let breath = ctx.createBufferSource(), band = ctx.createBiquadFilter(), breathAmp = ctx.createGain()
-    breath.buffer = noiseBuffer
-    band.type = 'bandpass'; band.frequency.value = frequency * 2; band.Q.value = 4
+    breath.buffer = noiseBuffer; breath.loop = true
+    band.type = 'bandpass'; band.frequency.value = Math.min(ctx.sampleRate * 0.4, 1800 + frequency * 1.2); band.Q.value = 0.8
     breathAmp.gain.setValueAtTime(0, time)
-    breathAmp.gain.linearRampToValueAtTime(0.09 * velocity, time + attack)
-    breathAmp.gain.exponentialRampToValueAtTime(0.03 * velocity, time + attack + 0.15)
-    breathAmp.gain.setValueAtTime(0.03 * velocity, time + length)
+    breathAmp.gain.linearRampToValueAtTime(0.055 * velocity, time + attack)
+    breathAmp.gain.exponentialRampToValueAtTime(0.018 * velocity, time + Math.min(attack + 0.15, length))
+    breathAmp.gain.setValueAtTime(0.018 * velocity, time + length)
     breathAmp.gain.exponentialRampToValueAtTime(0.0005, time + length + release)
     breath.connect(band).connect(breathAmp).connect(amp)
     breath.start(time, random() * 1.5); breath.stop(time + length + release + 0.02)
@@ -746,20 +826,40 @@ export async function init(ctx, {
     ...leadNotes.map(n => ({ position: n.position, play: () => playLead(n) })),
   ].filter(event => event.position < totalBeats).sort((a, b) => a.position - b.position)
   let scheduled = 0
-  let scheduleUntil = horizonBeats => { while (scheduled < events.length && events[scheduled].position < horizonBeats) events[scheduled++].play() }
+  let scheduleUntil = horizonBeats => {
+    while (scheduled < events.length && events[scheduled].position < horizonBeats) {
+      const n = nodes.length, s = sources.length
+      events[scheduled++].play()
+      if (typeof ctx.startRendering === 'function') continue
+      const owned = nodes.slice(n), voices = sources.slice(s)
+      let pending = voices.length
+      for (const source of voices) source.addEventListener('ended', () => {
+        if (--pending) return
+        for (const node of owned) { node.disconnect(); nodes.splice(nodes.indexOf(node), 1) }
+        for (const voice of voices) sources.splice(sources.indexOf(voice), 1)
+      }, { once: true })
+    }
+  }
   if (typeof ctx.startRendering === 'function') scheduleUntil(Infinity)
   else {
     let lookahead = 6 // beats
     scheduleUntil((ctx.currentTime - t0) / beat + lookahead)
     let timer = setInterval(() => {
-      if (ctx.state !== 'running' || scheduled >= events.length) return clearInterval(timer)
+      if (ctx.state === 'closed' || scheduled >= events.length) return clearInterval(timer)
+      if (ctx.state !== 'running') return
       scheduleUntil((ctx.currentTime - t0) / beat + lookahead)
     }, 250)
   }
 
   return {
     sources, nodes, duration: totalBeats * beat,
+    readout(time) {
+      if (time < t0 || time >= end) return ''
+      const c = chordAt((time - t0) / beat)
+      return chordNames[c.root % 12] + c.quality
+    },
     graph: 'Style: form, bass, comping, drums → phrase improviser → instrument chains → Destination',
-    data: { bpm, style, lead, key: chordNames[key % 12], chordLog, chords, leadNotes, bassNotes },
+    data: { bpm, style, lead, key: chordNames[key % 12], chordLog, chords, leadNotes, bassNotes, compHits, drumHits, master,
+      stems: { bass: bassOut, comp: compOut, lead: leadOut, drums: [kitPan, kickPan] } },
   }
 }

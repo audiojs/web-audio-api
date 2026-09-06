@@ -46,21 +46,36 @@ if (args.has('--verify')) {
   writeFileSync(metricsPath, JSON.stringify(metrics, null, 2) + '\n')
 }
 
-metrics.version = pkg.version
-metrics.examples = examples.length
-if (!metrics.wptPass) metrics.wptPass = 4317
-if (metrics.wptFail == null) metrics.wptFail = 0
+const text = value => typeof value === 'string' && value.trim().length > 0
+const timestamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value
+if (!Number.isSafeInteger(metrics?.wptPass) || metrics.wptPass <= 0 || metrics.wptFail !== 0 || metrics.wptSkip !== 0 || !text(metrics.version) || !timestamp(metrics.generatedAt))
+  throw new Error('Verified WPT results required: run npm run site:verify')
 
-function replaceGenerated(source, name, content) {
-  let start = `<!-- GENERATED:${name}:start -->`
-  let end = `<!-- GENERATED:${name}:end -->`
-  let pattern = new RegExp(`${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
-  if (!pattern.test(source)) throw new Error(`Missing generated markers for ${name}`)
-  return source.replace(pattern, `${start}\n${content}\n        ${end}`)
+// Validate both evidence sources before changing any published files. A report
+// must contain measurements, and its advertised statistics must agree with them.
+const report = JSON.parse(readFileSync(join(root, 'benchmark/results.json'), 'utf8'))
+const requireBenchmark = condition => {
+  if (!condition) throw new Error('Verified benchmark results required: run npm run bench:compare -- --save')
+}
+const method = report?.method
+requireBenchmark(timestamp(report?.measuredAt) && ['cpu', 'platform', 'arch', 'node'].every(key => text(report.system?.[key])))
+requireBenchmark(Number.isSafeInteger(method?.repetitions) && method.repetitions > 0 && Number.isSafeInteger(method.warmup) && method.warmup >= 0
+  && [method.duration, method.sampleRate].every(value => Number.isFinite(value) && value > 0))
+requireBenchmark(Array.isArray(report.implementations) && report.implementations.length > 0 && report.implementations.every(i => text(i?.name) && text(i?.version))
+  && Array.isArray(report.scenarios) && report.scenarios.length > 0)
+for (const scenario of report.scenarios) {
+  requireBenchmark(text(scenario?.name) && Number.isSafeInteger(scenario.channels) && scenario.channels > 0
+    && Array.isArray(scenario.results) && scenario.results.length === report.implementations.length)
+  for (const result of scenario.results) {
+    requireBenchmark(Array.isArray(result?.samples) && result.samples.length === method.repetitions && result.samples.every(value => Number.isFinite(value) && value >= 0))
+    const sorted = [...result.samples].sort((a, b) => a - b), middle = Math.floor(sorted.length / 2)
+    const median = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
+    requireBenchmark(result.ms === median && result.p95 === sorted[Math.ceil(sorted.length * 0.95) - 1] && result.realtime === median / 1000 / method.duration)
+  }
 }
 
 // up to four same-category siblings, same job first
-const home = parseHTML(readFileSync(join(root, 'index.html'), 'utf8')).document
+let home = parseHTML(readFileSync(join(root, 'index.html'), 'utf8')).document
 const catalogue = parseHTML(readFileSync(join(root, 'examples/index.html'), 'utf8')).document
 
 // The homepage owns the chrome: other pages borrow its fonts, icons, social card, header, and footer with links made relative
@@ -68,7 +83,7 @@ const fromHome = selector => home.querySelector(selector) ?? (() => { throw new 
 const allFromHome = selector => { let found = [...home.querySelectorAll(selector)]; if (!found.length) throw new Error(`index.html no longer has ${selector}, which every other page borrows`); return found }
 
 function chrome(rel) {
-  let relative = html => html.replaceAll('href="./', `href="${rel}`).replaceAll('href="#', `href="${rel}#`)
+  let relative = html => html.replaceAll('href="./', () => `href="${rel}`).replaceAll('href="#', () => `href="${rel}#`)
   let lines = nodes => nodes.map(node => relative(node.outerHTML)).join('\n  ')
   return {
     fonts: lines(allFromHome('link[rel="preload"][as="font"]')),
@@ -84,8 +99,8 @@ function demoHTML(example) {
   let options = optionsFor(example.id).map(option => `<div><dt><code>${escapeHTML(option.syntax)}</code></dt><dd>${escapeHTML(option.description || '')}</dd></div>`).join('')
   let body = fromHome('#example-dialog .dialog-body').innerHTML
   let filled = body
-    .replace('<code class="language-shell" id="cli-command"></code>', `<code class="language-shell" id="cli-command">${escapeHTML(example.command)}</code>`)
-    .replace('<dl class="cli-options" id="cli-options"></dl>', `<dl class="cli-options" id="cli-options">${options}</dl>`)
+    .replace('<code class="language-shell" id="cli-command"></code>', () => `<code class="language-shell" id="cli-command">${escapeHTML(example.command)}</code>`)
+    .replace('<dl class="cli-options" id="cli-options"></dl>', () => `<dl class="cli-options" id="cli-options">${options}</dl>`)
   if (filled === body) throw new Error('The modal markup changed: the CLI placeholders were not found')
   return filled
 }
@@ -129,7 +144,7 @@ function examplePage(example) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>${escapeHTML(example.title)} | Web Audio API in browser and Node</title>
-  <meta name="description" content="${escapeAttr(example.description)} Run the same atomic graph source in the browser or from its Node CLI.">
+  <meta name="description" content="${escapeAttr(example.description)} Preview with native browser Web Audio or run the graph with web-audio-api in Node.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="${baseUrl}examples/${example.id}/">
   <meta property="og:type" content="article">
@@ -164,10 +179,18 @@ ${relatedHTML(example)}${example.seo ? `    <div class="detail-seo"><p>${escapeH
 function updateHome() {
   let path = join(root, 'index.html')
   let html = readFileSync(path, 'utf8')
-  html = html.replaceAll(/<span data-version>v[^<]+<\/span>/g, `<span data-version>v${pkg.version}</span>`)
+  html = html.replaceAll(/<span data-version(?:="")?>v[^<]+<\/span>/g, () => `<span data-version>v${escapeHTML(pkg.version)}</span>`)
   let [{ size }] = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
-  if (!html.includes(' data-pack-size>')) throw new Error('index.html no longer has the data-pack-size link')
-  html = html.replaceAll(/(<(a|span)[^>]* data-pack-size>)[^<]*(<\/\2>)/g, `$1${Math.round(size / 1000)} KB gzipped$3`)
+  if (!html.includes(' data-pack-size')) throw new Error('index.html no longer has the data-pack-size link')
+  html = html.replaceAll(/(<(a|span)[^>]* data-pack-size(?:="")?>)[^<]*(<\/\2>)/g, `$1${Math.round(size / 1000)} KB gzip$3`)
+  html = html.replaceAll(/(<span data-wpt-count(?:="")?>)[^<]*(<\/span>)/g, `$1${metrics.wptPass.toLocaleString('en-US')}$2`)
+    .replaceAll(/(<span data-wpt-version(?:="")?>)[^<]*(<\/span>)/g, (_, open, close) => `${open}v${escapeHTML(metrics.version)}${close}`)
+    .replaceAll(/(<time data-wpt-date(?:="")?>)[^<]*(<\/time>)/g, `$1${metrics.generatedAt.slice(0, 10)}$2`)
+  const heading = report.implementations.map(i => `<th scope="col">${escapeHTML(i.name)} v${escapeHTML(i.version)}<br>median / p95</th>`).join('')
+  const rows = report.scenarios.map(s => `<tr><th scope="row">${escapeHTML(s.name)}</th>${s.results.map(r => `<td>${r.ms.toFixed(2)} / ${r.p95.toFixed(2)} ms</td>`).join('')}</tr>`).join('\n')
+  const { system, method } = report
+  const caption = `${method.duration} s of audio at ${method.sampleRate} Hz. ${escapeHTML(system.cpu)}, ${escapeHTML(system.platform)} ${escapeHTML(system.arch)}, Node ${escapeHTML(system.node)}. ${method.warmup} warm-ups, ${method.repetitions} measurements; graph construction excluded. ${report.measuredAt.slice(0, 10)}. <a href="https://github.com/audiojs/web-audio-api/blob/master/benchmark/results.json">Raw results</a>; reproduce with <code>npm run bench:compare</code>.`
+  html = html.replace(/<table class="bench">[\s\S]*?<\/table>/, () => `<table class="bench"><caption>${caption}</caption><thead><tr><th scope="col">Scenario</th>${heading}</tr></thead><tbody>${rows}</tbody></table>`)
   writeFileSync(path, html)
 }
 
@@ -203,10 +226,18 @@ function updateCatalog() {
   let { fonts, header, footer } = chrome('../')
   let path = join(root, 'examples/index.html')
   let html = readFileSync(path, 'utf8')
-    .replace(/<link rel="preconnect" href="https:\/\/fonts\.[^>]*>|<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^>]*>/g, '')
-    .replace('<link rel="stylesheet" href="../assets/tokens.css">', `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>${fonts}<link rel="stylesheet" href="../assets/tokens.css">`)
-    .replace(/<header class="corner-action">[\s\S]*?<\/header>/, header)
-    .replace(/(?:<canvas class="footer-strips"[^>]*><\/canvas>\s*)?<footer class="site-footer">[\s\S]*?<\/footer>/, footer)
+    // A quoted > is attribute text, not the end of a link tag. Parse attributes
+    // without serializing the whole catalogue and rewriting its SVGs.
+    .replace(/<link\b(?:[^"'<>]|"[^"]*"|'[^']*')*>\s*/gi, tag => {
+      const link = parseHTML(tag).document.querySelector('link')
+      const rel = link.getAttribute('rel'), href = link.getAttribute('href') || ''
+      return (rel === 'preload' && link.getAttribute('as') === 'font')
+        || (rel === 'preconnect' && href.startsWith('https://fonts.'))
+        || (rel === 'stylesheet' && href.startsWith('https://fonts.googleapis.com')) ? '' : tag
+    })
+    .replace('<link rel="stylesheet" href="../assets/tokens.css">', () => `${fonts}\n  <link rel="stylesheet" href="../assets/tokens.css">`)
+    .replace(/<header class="corner-action">[\s\S]*?<\/header>/, () => header)
+    .replace(/(?:<canvas class="footer-strips"[^>]*><\/canvas>\s*)?<footer class="site-footer">[\s\S]*?<\/footer>/, () => footer)
   writeFileSync(path, html)
 }
 
@@ -234,7 +265,7 @@ function llmsTxt() {
     .join('\n')).join('\n\n')
   return `# Web Audio API without the browser
 
-> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. It passes ${metrics.wptPass}/${metrics.wptPass + metrics.wptFail} Web Platform Tests. Audio-device I/O uses adapters. Install: \`npm install web-audio-api\`. Run any example with \`npx web-audio-api <name>\`.
+> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. The Node runner recorded ${metrics.wptPass} passing Web Platform Tests for v${metrics.version} on ${metrics.generatedAt.slice(0, 10)}; this is not W3C certification. Audio-device I/O uses adapters. Install: \`npm install web-audio-api\`. Run any example with \`npx web-audio-api <name>\`.
 
 Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through \`import 'web-audio-api/polyfill'\`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
 
@@ -266,6 +297,8 @@ function stage() {
 }
 
 updateHome()
+// Refresh shared chrome after generated metrics/version updates.
+home = parseHTML(readFileSync(join(root, 'index.html'), 'utf8')).document
 updateCatalog()
 generatePages()
 notFoundPage()

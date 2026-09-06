@@ -14,7 +14,7 @@ const text = (key, syntax, label, value, description, pattern) => ({
 
 const cliOnly = (syntax, description) => ({ syntax, description, browser: false })
 
-const clickSounds = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala']
+const clickSounds = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala', 'pendulum', 'quartz', 'clave']
 
 // the middle of each jazz style's tempo range; the browser's tempo slider follows the style
 const jazzTempos = { modal: 84, ambient: 56, nordic: 70, ballad: 62, bossa: 127, swing: 157, blues: 113 }
@@ -72,7 +72,7 @@ export const exampleOptions = {
     },
     { ...duration(600, 600), min: 5, step: 5 },
     text('pattern', 'pat=<pattern>', 'Pattern', 'X-x-x-x-', 'X accent, x hit, - or . rest', '[Xx.-]+'),
-    select('sound', 'sound=<preset>', 'Sound', 'classic', clickSounds, 'classic, wood, bell, beep, signal, or karatala'),
+    select('sound', 'sound=<preset>', 'Sound', 'classic', clickSounds, 'compact classic, wooden pendulum, quartz, woodblock, clave, bell, beep, signal, or karatala'),
     range('hi', 'hi=<hz>', 'Accent resonance', 1900, 200, 4000, 10, 'Hz', 'classic stick accent resonance'),
     range('lo', 'lo=<hz>', 'Regular resonance', 1250, 200, 4000, 10, 'Hz', 'classic stick regular resonance'),
     cliOnly('sample=<file>', 'audio file to use as the click sound instead of a preset'),
@@ -109,7 +109,7 @@ export const exampleOptions = {
     select('direction', 'dir=<up|down>', 'Direction', 'up', ['up', 'down'], 'movement direction'),
     range('bpm', 'bpm=<number>', 'Center tempo', 120, 40, 240, 1, 'BPM', 'center tempo'),
     { ...duration(20, 120), browser: false },
-    select('sound', 'sound=<preset>', 'Sound', 'click', ['click', ...clickSounds], 'click (default) or a metronome preset: classic, wood, bell, beep, signal, karatala'),
+    select('sound', 'sound=<preset>', 'Sound', 'click', ['click', ...clickSounds], 'click (default) or a metronome preset: classic, pendulum, quartz, wood, clave, bell, beep, signal, karatala'),
     cliOnly('sample=<file>', 'use an audio file as the click sound instead of a preset'),
   ],
   'binaural-beats': [
@@ -213,7 +213,8 @@ export const exampleOptions = {
     { ...duration(20, 120), browser: false },
   ],
   drone: [
-    select('voice', 'voice=<type>', 'Voice', 'tanpura', ['tanpura', 'pad', 'shruti', 'harmonic'], 'tanpura, pad, shruti, or harmonic'),
+    select('voice', 'voice=<type>', 'Voice', 'tanpura', ['tanpura', 'pad', 'shruti', 'harmonic', 'strings'], 'tanpura, pad, shruti, harmonic, or cinematic strings'),
+    select('melody', 'melody=<mode>', 'Melody', 'off', ['off', 'pentatonic', 'dorian'], 'optional slow pentatonic or Dorian phrases; off keeps a pure drone'),
     frequency(130.81, 'Sa', 40, 500),
     { ...duration(300, 600), browser: false },
   ],

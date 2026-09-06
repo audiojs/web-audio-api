@@ -1,5 +1,7 @@
 # Compiler targets
 
+The maintainer reports that current development builds of both compilers now compile and run bundled offline graphs. The site reflects that update; no new compiler revision or execution report was supplied with it. The pinned-release results below are historical reproductions, not a claim that all current builds remain blocked.
+
 Compilation, successful execution, and conformance are separate milestones. Neither JZ nor Porffor has a full WPT result here. Node, Deno, Bun, and LLRT have separate CI jobs; see `.github/workflows/platforms.yml`.
 
 ## JZ
@@ -52,7 +54,7 @@ TypeError: Tried for..of on non-iterable type (in _assertNotInCurve)
 
 `AudioParam#_assertNotInCurve` iterates an automation-events list, a class whose `[Symbol.iterator]()` delegates to an array's iterator; `test/porffor-iter-repro.mjs` reduces it (Node prints `6`). `porf native` on the same bundle stops at compile time with `Uncaught Error: missing #closure_env_local in onaudioprocess` (ScriptProcessorNode's setter installs a closure as `this._tick`); a small version of that shape compiles, so it has no reduction yet. All three are reported on [#380](https://github.com/CanadaHonk/porffor/issues/380#issuecomment-5554854562).
 
-To reproduce the full bundle, use the commands in `.github/workflows/porffor.yml`: esbuild with `--main-fields=module,main` (the default browser fields pick automation-events' es5 bundle, whose Babel `_typeof` helper reassigns a function declaration, which Porffor rejects as a constant) and explicit null stubs for the optional codec/device packages, engine retained. The weekly job tracks runtime progress; it is not a successful render or conformance test today.
+To reproduce the full bundle, use the commands in `.github/workflows/porffor.yml`: esbuild with `--main-fields=module,main` (the default browser fields pick automation-events' es5 bundle, whose Babel `_typeof` helper reassigns a function declaration, which Porffor rejects as a constant) and explicit null stubs for the optional codec/device packages, engine retained. The weekly job tracks the pinned alpha-4 release; the recorded failure is not a result for newer development builds.
 
 ## Engine boundaries
 

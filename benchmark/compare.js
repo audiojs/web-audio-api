@@ -1,63 +1,71 @@
-// Node.js comparison benchmark: web-audio-api vs node-web-audio-api
+// Repeated offline-render throughput measurements; not a playback-latency test.
+import { readFileSync, writeFileSync } from 'node:fs'
+import { cpus, platform, arch } from 'node:os'
 import { OfflineAudioContext } from '../index.js'
 import { scenarios, SR, LENGTH } from './scenarios.js'
 
-// Try to load node-web-audio-api (Rust-backed)
 let RustOAC
-try {
-  const m = await import('node-web-audio-api')
-  RustOAC = m.OfflineAudioContext
-} catch {}
-
+try { RustOAC = (await import('node-web-audio-api')).OfflineAudioContext } catch {}
+const packageVersion = name => {
+  try { return JSON.parse(readFileSync(new URL(name, import.meta.url))).version } catch { return null }
+}
 const impls = [
-  { name: 'web-audio-api (JS)', OAC: OfflineAudioContext },
-  RustOAC ? { name: 'node-web-audio-api (Rust)', OAC: RustOAC } : null,
+  { name: 'web-audio-api (JS)', version: packageVersion('../package.json'), OAC: OfflineAudioContext },
+  RustOAC ? { name: 'node-web-audio-api (Rust)', version: packageVersion('../node_modules/node-web-audio-api/package.json'), OAC: RustOAC } : null,
 ].filter(Boolean)
 
-/**
- * @param {typeof OfflineAudioContext} OAC
- * @param {{ name: string, channels: number, setup: Function }} scenario
- * @returns {{ ms: number, blocksPerSec: number, realtime: number }}
- */
-async function bench(OAC, { channels, setup }) {
-  const ctx = new OAC(channels, LENGTH, SR)
-  setup(ctx)
+const warmup = 10, repetitions = 50
+async function bench(OAC, scenario) {
+  const ctx = new OAC(scenario.channels, LENGTH, SR)
+  scenario.setup(ctx)
   const start = performance.now()
-  await ctx.startRendering()
+  const buffer = await ctx.startRendering()
   const ms = performance.now() - start
-  return { ms, blocksPerSec: (LENGTH / 128) / (ms / 1000), realtime: ms / 1000 / (LENGTH / SR) }
+  // Validation is outside the timed region. Do not publish timings for broken output.
+  if (buffer.length !== LENGTH || buffer.numberOfChannels !== scenario.channels || buffer.sampleRate !== SR)
+    throw Error(`${scenario.name}: unexpected output shape`)
+  let peak = 0
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    for (let value of buffer.getChannelData(ch)) {
+      if (!Number.isFinite(value)) throw Error(`${scenario.name}: non-finite output`)
+      peak = Math.max(peak, Math.abs(value))
+    }
+  }
+  if (scenario.name !== 'silence (baseline)' && peak === 0) throw Error(`${scenario.name}: silent output`)
+  return ms
 }
 
-// Warm up all scenarios (JIT needs to see each code path)
-for (const scenario of scenarios)
-  for (const { OAC } of impls) await bench(OAC, scenario)
-
-// Collect results: results[scenarioIdx][implIdx]
 const results = []
 for (const scenario of scenarios) {
-  const row = []
-  for (const { OAC } of impls) row.push(await bench(OAC, scenario))
-  results.push(row)
-}
-
-// Print table
-const COL = 16
-const header = 'Scenario'.padEnd(32) + impls.map(i => i.name.padStart(COL)).join('')
-console.log(header)
-console.log('─'.repeat(header.length))
-for (let i = 0; i < scenarios.length; i++) {
-  let line = scenarios[i].name.padEnd(32)
-  for (let j = 0; j < impls.length; j++) {
-    const { ms, realtime } = results[i][j]
-    const tag = realtime < 1 ? `${ms.toFixed(1)}ms ✓` : `${ms.toFixed(1)}ms ✗`
-    line += tag.padStart(COL)
+  const times = impls.map(() => [])
+  for (let run = -warmup; run < repetitions; run++) {
+    // Alternate order to reduce systematic first/second-run bias.
+    for (let j = 0; j < impls.length; j++) {
+      const i = (j + Math.abs(run)) % impls.length
+      const ms = await bench(impls[i].OAC, scenario)
+      if (run >= 0) times[i].push(ms)
+    }
   }
-  console.log(line)
+  results.push(times.map(samples => {
+    const sorted = [...samples].sort((a, b) => a - b)
+    const ms = (sorted[24] + sorted[25]) / 2
+    return { ms, p95: sorted[Math.ceil(repetitions * 0.95) - 1], samples, realtime: ms / 1000 / (LENGTH / SR) }
+  }))
 }
 
-if (!RustOAC) {
-  console.log('\n  node-web-audio-api not installed — run: npm install node-web-audio-api')
+const report = {
+  measuredAt: new Date().toISOString(),
+  system: { cpu: cpus()[0]?.model, platform: platform(), arch: arch(), node: process.version },
+  method: { warmup, repetitions, duration: LENGTH / SR, sampleRate: SR, timing: 'startRendering only; graph construction and validation excluded' },
+  implementations: impls.map(({ name, version }) => ({ name, version })),
+  scenarios: scenarios.map((scenario, i) => ({ name: scenario.name, channels: scenario.channels, results: results[i] })),
 }
-
-// Export for run-all.js
+if (process.argv.includes('--save')) writeFileSync(new URL('./results.json', import.meta.url), JSON.stringify(report, null, 2) + '\n')
+if (process.argv.includes('--json')) console.log(JSON.stringify(report, null, 2))
+else {
+  console.log(`${report.system.cpu}, ${platform()} ${arch()}, Node ${process.version}`)
+  console.log(`${warmup} warm-ups, ${repetitions} measured renders; median / p95 in ms. Graph setup excluded.\n`)
+  console.log('Scenario'.padEnd(32) + impls.map(i => `${i.name} v${i.version}`.padStart(34)).join(''))
+  for (let i = 0; i < scenarios.length; i++) console.log(scenarios[i].name.padEnd(32) + results[i].map(r => `${r.ms.toFixed(2)} / ${r.p95.toFixed(2)}`.padStart(34)).join(''))
+}
 export { results, impls, scenarios }

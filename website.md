@@ -114,7 +114,7 @@ The real alternatives depend on the job:
 
 1. Keep the graph in a headless browser.
 2. Rewrite the graph around a Node-specific DSP library.
-3. Use `node-web-audio-api` and accept a native binary.
+3. Use `node-web-audio-api`, which also supports graph reuse and ships native prebuilds.
 4. Use `web-audio-engine` and accept a smaller, older API surface.
 5. For browser consistency only, use `standardized-audio-context`.
 6. Do nothing and leave audio code untested.
@@ -136,17 +136,21 @@ The real alternatives depend on the job:
 - **Deploy without a native audio engine.** Pure JavaScript is easier to inspect and deploy across JavaScript runtimes.
 - **Decode more inputs.** The Node implementation can support a broader deterministic codec set than a single browser installation.
 
-### Onliness statement
+### Positioning statement
 
 For JavaScript developers who already have Web Audio code, `web-audio-api` is the pure-JavaScript implementation that runs the browser API shape in headless runtimes while keeping device, file, and stream adapters explicit.
 
-This statement is deliberately narrower than “Web Audio everywhere.” The package is not the best answer for every low-latency native application.
+The homepage leads with “Web Audio API without the browser” once, then explains server rendering, processing, and tests. Pure-JavaScript DSP is the differentiator; graph reuse alone is shared with IRCAM. Node, Deno, and Bun are the primary runtime labels. Secondary targets use accessible icons and qualified support notes.
+
+The package is not the best answer for every low-latency native application. Device adapters can contain native dependencies; the short hero introduction describes the DSP engine, not the entire installation.
 
 ## Evidence
 
 ### Strong evidence
 
-- Full local WPT result: 4,317 passed, 0 failed.
+- Full local WPT result: 4,317 passed, 0 failed. The website takes version/date/count from `site-metrics.json`; [harness scope and adaptations](test/WPT.md) accompany the result.
+- Offline comparisons use 10 warmups, 50 alternating measurements, median/p95, output validation, and raw samples in `benchmark/results.json`. These do not establish device latency.
+- Browser previews use native Web Audio, not this package’s DSP; this distinction is visible beside the hero and examples.
 - Unit and integration coverage includes graph rendering, automation, cycles, worklets, media streams, decoding, and generated site structure.
 - Every example has a Node CLI and a browser-safe graph module.
 - The npm downloads API reported 243,377 downloads from 2025-08-30 through 2026-08-29 and 26,554 downloads from 2026-07-31 through 2026-08-29.
@@ -195,17 +199,17 @@ What the implementations say they are for. `node-web-audio-api` leads with an ef
 
 What people ask. Stack Overflow holds 59 questions for "web audio api node.js", 7 for Tone.js in Node, 7 for OfflineAudioContext in Node. GitHub issues mention "AudioContext is not defined" 90 times, 11 of them under Jest or Vitest; Tone.js's own tracker has 30 issues about Node. The old `audiojs/web-audio-api` tracker is dominated by speaker install failures, decode formats, "OfflineAudioContext for Tone.js offline", "Creating audio server", and "Capturing audio". The Rust tracker is dominated by devices and drivers, then decode formats, offline rendering memory and speed, worklets, and "How to end the node application?".
 
-Priority, weighted by this evidence:
+Historical audience ranking from that sample (not a conversion or market-size estimate):
 
 1. Agents, bots, and voice pipelines: synthesis, decoding, and playback on servers and in chat platforms, often with no audio device.
 2. Analysis and feature extraction from files, with the browser's own results.
 3. Rendering and export pipelines, long offline renders included.
 4. Testing in CI, the upgrade from a mock to a real engine.
 5. Isomorphic instruments and libraries run headless, Tone.js and Web Audio Modules first.
-6. Device playback and capture, where prebuilt adapters remove the pain the native competitor's users report.
+6. Device playback and capture, where both projects still depend on host device/driver support.
 7. Education.
 
-The current hero list names jobs 2 to 5. Job 1 is the gap: an agent or bot that needs a voice, a jingle, or a rendered clip is the trigger moment the sample shows most often and the copy does not yet name.
+The current acquisition priority is narrower: developers with an existing Web Audio graph moving it into a server or test runner. They have a concrete compatibility question and can evaluate the package with an offline render. Agents and bots remain useful applications, but the repository sample does not establish them as the strongest landing-page audience. Featured examples now start with rendering, graph parameters, file processing, and PCM output before musical demos.
 
 ## Decoding opportunity
 
@@ -232,7 +236,7 @@ Boundary:
 
 ## Alternatives
 
-Snapshot sources were reviewed on 2026-08-29. Package sizes are npm unpacked package sizes, not complete installed dependency trees.
+Historical snapshot reviewed on 2026-08-29. These sizes are npm unpacked package sizes, not complete installed dependency trees or current release measurements. The homepage no longer compares them: a core JS archive, a dependency tree, and a package carrying native binaries are different quantities.
 
 | Alternative | Engine | Runtime and requirements | Decode support | Size snapshot | Best fit |
 | --- | --- | --- | --- | ---: | --- |
@@ -246,18 +250,17 @@ Do not flatten this into “ours wins every column.” The native Rust implement
 
 ## FAQ objection ledger
 
-The homepage FAQ should answer these first, in this order:
+The homepage has nine peer-level questions, without buried subheadings:
 
-1. Is it fast enough for realtime audio?
-2. How do speakers and mics work in Node?
-3. Which formats can `decodeAudioData()` read?
-4. Does it run Tone.js and browser-oriented libraries?
-5. How do I test audio in CI?
-6. Can it run without speakers?
-7. Does it support AudioWorklets?
-8. What differs from native browser Web Audio?
-9. Where does it run?
-10. How does it compare with alternatives?
+1. Will my existing code work? Include Tone.js setup and library compatibility.
+2. How does it differ from browser Web Audio? Put conformance scope and browser differences together. The header’s black 100% WPT badge links to the project’s Node-runner results, not a certification.
+3. How do I render and test in CI? Show a device-free sample assertion.
+4. Where does it run? Separate CI coverage from experimental compiler targets; include browser and worker imports.
+5. Is it fast enough for realtime? Show reproducible offline data, not latency promises.
+6. Do AudioWorklets work? Show registration and disclose synchronous execution.
+7. How do I use speakers and microphones? Explain adapters and native backends.
+8. Which audio formats can I decode? Cover formats, memory, dependency footprint, and codec licences.
+9. When should I use another engine? Present tradeoffs rather than an unqualified winner.
 
 Implementation trivia belongs in source documentation, not the homepage FAQ.
 
@@ -279,7 +282,9 @@ Rules:
 - Graph modules accept a context and options. They do not own process arguments, the DOM, device permission UI, or terminal controls.
 - CLI files are thin adapters and remain directly runnable.
 - The browser adapter imports the same graph module and supplies native Web Audio constructors where needed.
+- Signal plots are hidden on phone layouts, including touch-phone landscape; playback and controls remain available. Capture setup is skipped there, with visibility rechecked after asynchronous module loading. Desktop scrolling bins integer sample positions and paints equal-width pixel cells, rather than stretching cells to divide the canvas evenly. The grid fills the plot region. The hero carries the single preview-provenance note; example source panes do not repeat it. Empty parameter forms collapse, and rendered audio has an inline download icon.
 - Microphones, files, recorders, and writable streams remain explicit runtime boundaries.
+- Recording and run ownership survive audio-context closure. Late callbacks cannot replace a newer result, reset its controls, or restart it. Zero-data recordings keep the last playable result; disposal releases it.
 - Every example keeps an indexable canonical page. Homepage links open the modal on an ordinary click; modified clicks, no-JavaScript visits, and direct URLs open the full page.
 
 ## Website structure
@@ -287,7 +292,7 @@ Rules:
 Current visible structure:
 
 1. Product title, the jobs it answers, the runtimes it runs on, and the hero file with its recorded graph and live signal.
-2. Install command, with size and WPT beside it.
+2. Install command with archive size on the same line, including phones; WPT moves to the header in place of its FAQ link.
 3. Ten featured examples, with a link to the catalogue page at `examples/`, which lists all of them in two columns grouped by kind and filtered by job.
 4. Modal containing the browser preview, the recorded graph, and the atomic graph source; opening one sets the address to its own page, and every example also has that canonical detail page.
 5. Compact objection-led FAQ, with the comparison and runtime tables inside it.

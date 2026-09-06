@@ -48,6 +48,8 @@ import './spec-compliance.test.js'
 // Integration
 import './integration.test.js'
 import './site.test.js'
+import './signal.test.js'
+import './music.test.js'
 
 // W3C Web Platform Tests
 import './wpt.test.js'

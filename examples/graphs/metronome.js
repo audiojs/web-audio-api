@@ -13,7 +13,7 @@ function seeded(seed = 0x4d455452) {
   }
 }
 
-export const soundNames = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala']
+export const soundNames = ['classic', 'wood', 'bell', 'beep', 'signal', 'karatala', 'pendulum', 'quartz', 'clave']
 
 // Every preset is a small physical sketch: a struck body is a few decaying modes (sines at
 // fixed ratios, the higher ones dying first) plus the broadband transient of the contact
@@ -39,6 +39,7 @@ export function createInstrument(ctx, {
   let releaseOnEnd = (source, tail) => { source.onended = () => tail.disconnect() }
   let ceiling = ctx.sampleRate * 0.45
   let velocity = 1 // per-hit scale set by hit(); layered rhythms window their hits through it
+  let tick = 0
 
   // Contact transient: a filtered noise burst, a fraction of a millisecond of onset so the
   // burst itself never steps
@@ -73,7 +74,8 @@ export function createInstrument(ctx, {
     for (let [ratio, amount, share = 1, cents = 0] of modes) {
       let osc = ctx.createOscillator()
       let partial = ctx.createGain()
-      let target = Math.min(ceiling, frequency * ratio * 2 ** (cents / 1200))
+      let target = frequency * ratio * 2 ** (cents / 1200)
+      if (target >= ceiling) continue // omit inaudible modes rather than piling them onto one frequency
       if (knock) {
         osc.frequency.setValueAtTime(target * (1 + knock), when)
         osc.frequency.exponentialRampToValueAtTime(target, when + 0.012)
@@ -92,9 +94,27 @@ export function createInstrument(ctx, {
   // Mechanical metronome: the pendulum arm strikes the wooden case. A sharp contact tick,
   // a short case resonance at hi/lo, and a low knock from the box.
   let classic = (when, strong, frequency) => {
-    noiseHit(when, 3200, 0.004, strong ? 0.22 : 0.14, 'highpass', 0.8)
-    modalHit(when, frequency, strong ? 0.034 : 0.026, strong ? 0.3 : 0.2, [[1, 1], [1.58, 0.35, 0.7], [2.41, 0.12, 0.5]], { attack: 0.0005 })
+    noiseHit(when, tick % 2 ? 3000 : 3600, 0.003, strong ? 0.17 : 0.11, 'highpass', 0.8)
+    modalHit(when, frequency, strong ? 0.027 : 0.021, strong ? 0.3 : 0.2, [[1, 1], [1.58, 0.28, 0.55], [2.41, 0.1, 0.3]], { attack: 0.0005, knock: 0.018 })
     modalHit(when, frequency * 0.21, 0.02, strong ? 0.12 : 0.08, [[1, 1]], { attack: 0.0006, knock: 0.15 })
+  }
+
+  // Wooden pendulum case: alternating escapement contacts, a hollow case, and a
+  // small bar bell only on the accent. Quartz is the dry vintage piezo alternative.
+  let pendulum = (when, strong) => {
+    noiseHit(when, tick % 2 ? 2300 : 2900, 0.0035, strong ? 0.12 : 0.085, 'bandpass', 0.9)
+    modalHit(when + 0.001, tick % 2 ? 340 : 365, 0.055, strong ? 0.34 : 0.24,
+      [[1, 1], [2.73, 0.46, 0.4], [5.41, 0.13, 0.2]], { attack: 0.0004, knock: 0.04 })
+    if (strong) modalHit(when, 2100, 0.16, 0.055, [[1, 1], [2.76, 0.24, 0.5]], { attack: 0.0007 })
+  }
+  let quartz = (when, strong, frequency) => {
+    modalHit(when, frequency, 0.022, strong ? 0.35 : 0.23,
+      [[1, 1], [3, 0.19, 0.6], [5, 0.06, 0.3]], { attack: 0.0002 })
+  }
+  let clave = (when, strong, frequency) => {
+    modalHit(when, frequency, 0.075, strong ? 0.33 : 0.22,
+      [[1, 1], [2.76, 0.33, 0.45], [5.4, 0.075, 0.2]], { attack: 0.0005, knock: 0.025 })
+    noiseHit(when, 3000, 0.003, strong ? 0.06 : 0.04, 'lowpass', 0.6)
   }
 
   // Woodblock: a slotted hardwood bar, modes in the classic 1 : 1.6 : 2.4 spread, the mallet
@@ -168,8 +188,8 @@ export function createInstrument(ctx, {
     let level = ctx.createGain()
     source.buffer = sample
     brightness.type = 'highshelf'; brightness.frequency.value = 3000; brightness.gain.value = strong ? 3 : 0
-    level.gain.setValueAtTime(0, when)
-    level.gain.linearRampToValueAtTime((strong ? 1 : 0.65) * velocity, when + 0.001)
+    // The supplied sample owns its attack, including a valid one-frame impulse.
+    level.gain.setValueAtTime((strong ? 1 : 0.65) * velocity, when)
     source.connect(brightness).connect(level).connect(master)
     releaseOnEnd(source, level)
     source.start(when)
@@ -177,10 +197,12 @@ export function createInstrument(ctx, {
   }
 
   // hit(when, mark, level): X accent, x regular click, - or . rest; level scales the whole hit
-  let hit = (when, mark, level = 1) => {
+  let strike = (when, mark, level = 1) => {
     if (mark === '-' || mark === '.') return
     let strong = mark === 'X'
-    velocity = level
+    velocity = Math.max(0, Number(level) || 0)
+    if (!velocity) return
+    tick++
     if (sample) return sampleHit(when, strong)
     let name = soundNames[soundIndex]
     let frequencies = {
@@ -190,8 +212,24 @@ export function createInstrument(ctx, {
       beep: strong ? 1320 : 880,
       signal: 1000,
       karatala: 3200,
+      pendulum: 350,
+      quartz: strong ? 2048 : 1536,
+      clave: strong ? 1850 : 1350,
     }
-    ;({ classic, wood, bell, beep, signal, karatala })[name](when, strong, frequencies[name])
+    ;({ classic, wood, bell, beep, signal, karatala, pendulum, quartz, clave })[name](when, strong, frequencies[name])
+  }
+
+  let hit = (...args) => {
+    const n = nodes.length, s = sources.length
+    strike(...args)
+    if (!track || typeof ctx.startRendering === 'function') return
+    const owned = nodes.slice(n), voices = sources.slice(s)
+    let pending = voices.length
+    for (const source of voices) source.addEventListener('ended', () => {
+      if (--pending) return
+      for (const node of owned) { node.disconnect(); nodes.splice(nodes.indexOf(node), 1) }
+      for (const voice of voices) sources.splice(sources.indexOf(voice), 1)
+    }, { once: true })
   }
 
   return {
@@ -208,10 +246,11 @@ export function init(ctx, {
   hi = 1900, lo = 1250, seed = 0x4d455452, sample = null,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
+  if (!Number.isFinite(duration) || duration < 0) throw new RangeError('Finite non-negative duration required')
   // the ramp is bpm=start..end in the CLI, or a separate `to` from the browser's second field
   let [startBpm, endBpm] = String(bpm).split('..').map(Number)
   if (!Number.isFinite(startBpm) || startBpm <= 0) startBpm = 80
-  if (!(endBpm > 0)) endBpm = to > 0 ? Number(to) : startBpm
+  if (!(endBpm > 0) || !Number.isFinite(endBpm)) endBpm = to > 0 && Number.isFinite(Number(to)) ? Number(to) : startBpm
   if (!pattern) pattern = 'X-x-x-x-'
   let instrument = createInstrument(ctx, { sound, hi, lo, seed, sample, destination, track: true })
   let elapsed = 0, step = 0
@@ -233,7 +272,8 @@ export function init(ctx, {
     scheduleUntil(ctx.currentTime - when + lookahead)
     if (elapsed < duration) {
       let timer = setInterval(() => {
-        if (ctx.state !== 'running' || elapsed >= duration) return clearInterval(timer)
+        if (ctx.state === 'closed' || elapsed >= duration) return clearInterval(timer)
+        if (ctx.state !== 'running') return
         scheduleUntil(ctx.currentTime - when + lookahead)
       }, 1000)
     }

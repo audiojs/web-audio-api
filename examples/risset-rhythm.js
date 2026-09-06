@@ -18,7 +18,7 @@ help({
     ['dir=<up|down>', 'movement direction (default: up)'],
     ['bpm=<number>', 'center tempo (default: 120)'],
     ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 20s)'],
-    ['sound=<preset>', 'click (default) or a metronome preset: classic, wood, bell, beep, signal, karatala'],
+    ['sound=<preset>', 'click (default) or a metronome preset: classic, pendulum, quartz, wood, clave, bell, beep, signal, karatala'],
     ['sample=<file>', 'use an audio file as the click sound instead of a preset'],
   ],
   controls: [['Space', 'pause/resume'], ['Q / Esc', 'quit']],

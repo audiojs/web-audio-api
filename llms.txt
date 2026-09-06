@@ -1,6 +1,6 @@
 # Web Audio API without the browser
 
-> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. It passes 4317/4317 Web Platform Tests. Audio-device I/O uses adapters. Install: `npm install web-audio-api`. Run any example with `npx web-audio-api <name>`.
+> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. The Node runner recorded 4317 passing Web Platform Tests for v1.5.6 on 2026-09-06; this is not W3C certification. Audio-device I/O uses adapters. Install: `npm install web-audio-api`. Run any example with `npx web-audio-api <name>`.
 
 Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through `import 'web-audio-api/polyfill'`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
 
@@ -57,7 +57,7 @@ Key facts: OfflineAudioContext renders audio in CI without an audio device. Audi
 - [Gamelan](https://audiojs.dev/web-audio-api/examples/gamelan/): Schedule interlocking slendro patterns with metalophone partials and gong structure. CLI: `npx web-audio-api gamelan 120 20s`
 - [Jazz](https://audiojs.dev/web-audio-api/examples/jazz/): Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano. CLI: `npx web-audio-api jazz`
 - [Euclidean rhythms](https://audiojs.dev/web-audio-api/examples/euclidean/): Drive 2-3 percussion voices from Bjorklund Euclidean rhythms, each with its own step and pulse count. CLI: `npx web-audio-api euclidean 120 16 3,5,7 20s`
-- [Drone](https://audiojs.dev/web-audio-api/examples/drone/): Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks. CLI: `npx web-audio-api drone C3 30s`
+- [Drone](https://audiojs.dev/web-audio-api/examples/drone/): Play a tanpura, pad, shruti, harmonic drone, or cinematic strings, with an optional slow melody. CLI: `npx web-audio-api drone C3 30s`
 
 ## API
 

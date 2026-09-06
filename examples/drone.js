@@ -1,4 +1,4 @@
-// Drone — sustained tanpura, pad, shruti, or harmonic drone voice.
+// Drone — tanpura, pad, shruti, harmonic, or cinematic strings; optional slow melody.
 // Tanpura strings: Pa, Sa, Sa (detuned), SA (low octave).
 // Run: node examples/drone.js 130.81 30s
 // Run: node examples/drone.js freq=C3 -d 2m
@@ -10,10 +10,11 @@ import { init } from './graphs/drone.js'
 import { args, num, sec, keys, status, clearLine, noteName, pausedTag, help } from './utils.js'
 
 help({
-  description: 'play a sustained tanpura, pad, shruti, or harmonic drone voice',
+  description: 'play a sustained drone or cinematic string ensemble with optional melody',
   usage: ['', '[frequency] [duration]', 'freq=C3 dur=2m', 'voice=pad freq=D3 -d 1m'],
   options: [
-    ['voice=<type>', 'tanpura (default), pad, shruti, or harmonic'],
+    ['voice=<type>', 'tanpura (default), pad, shruti, harmonic, or strings'],
+    ['melody=<mode>', 'off (default), pentatonic, or dorian'],
     ['freq=<hz|note>', 'Sa frequency or note name (default: 130.81 / C3)'],
     ['-d, --duration <time>', 'run time with optional s/m/h suffix (default: 5m)'],
   ],
@@ -32,7 +33,7 @@ let dur = sec(pos.find(t => /\d[smh]$/.test(t)) || $('dur', '300'))
 let ctx = new AudioContext()
 await ctx.resume()
 
-let demo = init(ctx, { frequency: f, duration: dur, voice, seed: Math.random() * 0xffffffff })
+let demo = init(ctx, { frequency: f, duration: dur, voice, melody: String($('melody', 'off')).toLowerCase(), seed: Math.random() * 0xffffffff })
 let master = demo.data.master
 let retune = frequency => { f = frequency; demo.data.retune(frequency) }
 

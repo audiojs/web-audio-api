@@ -19,7 +19,7 @@ help({
     ['bpm=<bpm|start..end>', 'fixed tempo or linear tempo ramp (default: 80..240)'],
     ['-d, --duration <time>', 'session length with optional s/m/h suffix (default: 10m)'],
     ['pat=<pattern>', 'X accent, x regular click, - or . rest; each character is an eighth note (default: X-x-x-x-)'],
-    ['sound=<preset>', 'classic stick (default), wood, bell, beep, signal, or karatala'],
+    ['sound=<preset>', 'classic (default), pendulum, quartz, wood, clave, bell, beep, signal, or karatala'],
     ['hi=<hz>', 'classic stick accent resonance (default: 1900)'],
     ['lo=<hz>', 'classic stick regular resonance (default: 1250)'],
     ['sample=<file>', 'audio file to use as the click sound instead of a preset'],

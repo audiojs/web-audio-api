@@ -626,9 +626,9 @@ async function runTest(filePath) {
     vm.runInContext(`
       if (typeof assert_array_equal_within_eps === 'undefined') {
         function assert_array_equal_within_eps(a, b, eps, msg) {
-          for (var i = 0; i < Math.min(a.length, b.length); i++)
-            if (Math.abs(a[i] - b[i]) > eps)
-              throw new Error((msg || '') + ' at index ' + i + ': ' + a[i] + ' vs ' + b[i]);
+          assert_equals(a.length, b.length, (msg || '') + ' length');
+          for (var i = 0; i < a.length; i++)
+            assert_approx_equals(a[i], b[i], eps, (msg || '') + ' at index ' + i);
         }
       }
     `, ctx)

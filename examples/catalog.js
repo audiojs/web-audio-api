@@ -235,7 +235,7 @@ export const examples = [
     description: 'Generate a jazz performance in a chosen style, modal to bossa, with bass, comping, drums, and an improvised lead on guitar, flute, harp, or piano.',
     graph: 'Style: form, bass, comping, drums → phrase improviser → instrument chains → Destination', input: 'Style, lead, tempo', output: 'Generative performance',
     apis: ['AudioContext', 'AudioWorkletNode', 'AudioBufferSourceNode', 'BiquadFilterNode', 'ConvolverNode'], command: 'npx web-audio-api jazz',
-    seo: 'This is a generative jazz example with a style chooser: modal harmony of voice-led m11, sus, and lydian chords over a pedal bass, an ambient variant held long in a large room, a nordic cycle with brushes, a ballad in two, a bossa nova with its clave, swing over an AABA form with a walking bass, or a jazz blues with a shuffle. The lead, a jazz guitar, a flute, a harp, or a piano, improvises phrases that resolve to chord and colour tones on strong beats. Every run picks a new key and solo; listen in the browser, or render the same ensemble from the Node CLI.',
+    seo: 'This is a generative jazz example with a style chooser: modal minor-nine harmony with major lifts, suspended returns, and grounded chord swells over a pedal bass, an ambient variant held long in a large room, a nordic cycle with brushes, a ballad in two, a bossa nova with its clave, swing over an AABA form with a walking bass, or a jazz blues with a shuffle. The lead, a jazz guitar, a flute, a harp, or a piano, improvises phrases that resolve to chord and colour tones on strong beats. Every run picks a new key and solo; listen in the browser, or render the same ensemble from the Node CLI.',
   },
   {
     id: 'euclidean', title: 'Euclidean rhythms', category: 'Generative', job: 'Create', mode: 'audio',
@@ -246,10 +246,10 @@ export const examples = [
   },
   {
     id: 'drone', title: 'Drone', category: 'Generative', job: 'Create', mode: 'audio',
-    description: 'Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.',
-    graph: 'Seeded voice bank (tanpura/pad/shruti/harmonic) → Master Gain → Destination', input: 'Voice, base pitch', output: 'Continuous drone',
+    description: 'Play a tanpura, pad, shruti, harmonic drone, or cinematic strings, with an optional slow melody.',
+    graph: 'Seeded voice bank and optional melody → Stereo room → Master Gain → Destination', input: 'Voice, base pitch, melody mode', output: 'Continuous drone',
     apis: ['AudioContext', 'OscillatorNode', 'GainNode', 'StereoPannerNode', 'ConvolverNode'], command: 'npx web-audio-api drone C3 30s',
-    seo: 'This plays a tanpura drone in the browser: choose the tanpura, pad, shruti, or harmonic voice for a sustained meditation drone tone built from seeded, slowly drifting oscillator banks with no steps or clicks. The Node CLI renders the same drone for practice, backing a raga, or looping in the background while you work.',
+    seo: 'Choose a tanpura, soft pad, shruti box, harmonic bank, or cinematic string ensemble. Add slow pentatonic or Dorian phrases, or leave melody off for a pure drone. The same seeded graph runs in the browser and Node, with continuous pitch changes and a stereo room.',
   },
 
   {

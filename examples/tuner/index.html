@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Chromatic tuner | Web Audio API in browser and Node</title>
-  <meta name="description" content="Estimate microphone pitch, nearest note, and tuning error in cents. Run the same atomic graph source in the browser or from its Node CLI.">
+  <meta name="description" content="Estimate microphone pitch, nearest note, and tuning error in cents. Preview with native browser Web Audio or run the graph with web-audio-api in Node.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://audiojs.dev/web-audio-api/examples/tuner/">
   <meta property="og:type" content="article">
@@ -35,10 +35,10 @@
     </a>
     <nav aria-label="Primary">
       <a href="../../examples/">Examples</a>
-      <a href="../../#faq">FAQ</a>
+      <a class="wpt-seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml" aria-describedby="wpt-tip"><strong>100%</strong> WPT<span class="wpt-tip" id="wpt-tip" role="tooltip"><span data-wpt-count="">4,317</span> / <span data-wpt-count="">4,317</span> W3C tests passing in this project’s Node runner. Not W3C certification.</span></a>
     </nav>
     <div class="corner-links">
-      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.5</span></a>
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.6</span></a>
       <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
       </a>
@@ -93,7 +93,7 @@
     <section class="detail-related" aria-label="Related examples"><h2>Other examples</h2><div class="example-grid">
       <a class="example-entry" href="../latency-tester/"><span class="example-number">03</span><span class="example-heading"><strong>Latency tester</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Play short clicks through the speakers and time their return through the microphone to measure round-trip latency.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M48 48h.01M60 48h.01M58.4 54h.01M54 58.4h.01M48 60h.01M42 58.4h.01M37.6 54h.01M36 48h.01M37.6 42h.01M42 37.6h.01M48 36h.01M54 37.6h.01M58.4 42h.01M72 48h.01M68.8 60h.01M60 68.8h.01M48 72h.01M36 68.8h.01M27.2 60h.01M24 48h.01M27.2 36h.01M36 27.2h.01M48 24h.01M60 27.2h.01M68.8 36h.01M84 48h.01M79.2 66h.01M66 79.2h.01M48 84h.01M30 79.2h.01M16.8 66h.01M12 48h.01M16.8 30h.01M30 16.8h.01M48 12h.01M66 16.8h.01M79.2 30h.01M93 48h.01M87 70.5h.01M70.5 87h.01M48 93h.01M25.5 87h.01M9 70.5h.01M3 48h.01M9 25.5h.01M25.5 9h.01M48 3h.01M70.5 9h.01M87 25.5h.01" /></svg></a>
       <a class="example-entry" href="../level-meter/"><span class="example-number">04</span><span class="example-heading"><strong>Level meter</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Show live microphone RMS and peak level in dBFS, uncalibrated, with fast or slow meter ballistics.</span><small class="example-tag">Measure</small><svg class="example-thumb thumb-input" viewBox="0 0 96 96" aria-hidden="true"><path d="M21 6L45 6M51 6L75 6M21 12L45 12M51 12L75 12M21 18L45 18M51 18L75 18M21 24L45 24M51 24L75 24M21 30L45 30M51 30L75 30M21 36L45 36M51 36L75 36M21 42L45 42M51 42L75 42M21 48L45 48M51 48L75 48M21 54L45 54M51 54L75 54M21 60L45 60M51 60L75 60M21 66L45 66M51 66L75 66M21 72L45 72M51 72L75 72M21 78L45 78M51 78L75 78M21 84L45 84M51 84L75 84M21 90L45 90M51 90L75 90" /></svg></a>
-      <a class="example-entry" href="../metronome/"><span class="example-number">01</span><span class="example-heading"><strong>Metronome</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-wave" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6L3 90M9 48h.01M15 48h.01M21 48h.01M27 12L27 84M33 48h.01M39 48h.01M45 48h.01M51 12L51 84M57 48h.01M63 48h.01M69 48h.01M75 12L75 84M81 48h.01M87 48h.01M93 48h.01" /></svg></a>
+      <a class="example-entry" href="../metronome/"><span class="example-number">01</span><span class="example-heading"><strong>Metronome</strong></span><svg class="example-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg><span class="example-description">Schedule a click pattern with accents, rests, tempo control, and instrument presets.</span><small class="example-tag">Create</small><svg class="example-thumb thumb-wave" viewBox="0 0 96 96" aria-hidden="true"><path d="M3 6L3 90M9 48h.01M15 48h.01M21 48h.01M27 12L27 84M33 48h.01M39 48h.01M45 48h.01M51 18L51 78M57 48h.01M63 48h.01M69 48h.01M75 18L75 78M81 48h.01M87 48h.01M93 48h.01" /></svg></a>
     </div></section>
     <div class="detail-seo"><p>It works as an online chromatic tuner and pitch detector: play a note into the microphone and it reports the frequency, the nearest note, and how many cents you are off. The browser demo listens live, and the Node CLI runs the identical YIN-based pitch detector against @audio/mic for tuning a guitar or any monophonic instrument from a terminal.</p></div>
   </main>
@@ -105,7 +105,7 @@
       </p>
       <p class="footer-specs">
         <span>since 2013 by <a href="https://github.com/sebpiq">sebpiq</a>, <a href="https://github.com/dy">dy</a></span>
-        <span><a href="https://github.com/sponsors/audiojs">Sponsor</a>&#160;&#160;&#160;<a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a>, <a href="https://github.com/krishnized/license" aria-label="Krishnized license">ॐ</a></span>
+        <span class="footer-license"><a href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE">MIT</a><a href="https://github.com/krishnized/license" aria-label="Omkara — personal dedication">ॐ</a></span>
       </p>
     </div>
   </footer>

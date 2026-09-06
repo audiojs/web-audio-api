@@ -6,6 +6,11 @@ import AudioBuffer from 'audio-buffer'
 import { fill } from 'audio-buffer/util'
 import AudioNode from '../src/AudioNode.js'
 import { BLOCK_SIZE } from '../src/constants.js'
+import assert from 'node:assert/strict'
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import readWorkletModule from '../src/worklet-module.js'
 
 let mkCtx = async () => {
   let ctx = new AudioContext()
@@ -160,6 +165,52 @@ test('AudioWorklet > addModule with base64 data URI', async () => {
   ok(node, 'base64 data URI works')
 })
 
+test('AudioWorklet > UTF-8 base64 decoding preserves names and output across A → A → B', async () => {
+  for (const body of ['', 'Ow', 'Ow%3D%3D'])
+    is(await readWorkletModule('data:text/javascript;base64,' + body), body ? ';' : '', 'empty and one-byte programs, with omitted or escaped final padding')
+  is(await readWorkletModule('data:text/javascript;note=base64,;'), ';', 'a metadata value is not the base64 flag')
+  await assert.rejects(readWorkletModule('data:;base64,Ow='), 'incomplete final padding is invalid')
+  const ctx = await mkCtx()
+  await ctx.audioWorklet.addModule('data:;base64,')
+  for (const [name, value] of [['é音😀', 0.25], ['é音😀', 0.25], ['別', -0.5]]) {
+    const code = `registerProcessor('${name}', class extends AudioWorkletProcessor { process(_, outputs) { outputs[0][0].fill(${value}); return true } })//終`
+    const encoded = btoa(String.fromCharCode(...new TextEncoder().encode(code)))
+    await ctx.audioWorklet.addModule('data:text/javascript;base64,' + encodeURIComponent(encoded))
+    const node = new AudioWorkletNode(ctx, name)
+    ok(node._tick().getChannelData(0).every(v => v === value), 'decoded Unicode registration executes the correct program in every sample')
+    ctx._frame += BLOCK_SIZE
+  }
+})
+
+test('AudioWorklet > evaluation preserves nested strict functions, literal text, and final comments', async () => {
+  const ctx = await mkCtx()
+  for (const code of ['', ';', '//', '//終', '/*x*/']) {
+    const url = 'data:text/javascript,' + encodeURIComponent(code)
+    await ctx.audioWorklet.addModule(url); await ctx.audioWorklet.addModule(url)
+  }
+  const code = `"use strict";
+    const text = \`prefix\n"use strict";\nsuffix\`;
+    const moduleThis = this;
+    function inheritedStrictThis() { return this; }
+    function strictThis() {
+"use strict";
+      return this;
+    }
+    registerProcessor('preserved', class extends AudioWorkletProcessor {
+      process(_, outputs) {
+        outputs[0][0].fill(strictThis() === undefined ? 0.25 : -1);
+        outputs[0][0][0] = text === 'prefix\\n"use strict";\\nsuffix' ? 0.5 : -1;
+        if (moduleThis !== undefined) outputs[0][0][2] = -1;
+        if (inheritedStrictThis() !== undefined) outputs[0][0][3] = -1;
+        return true;
+      }
+    }); // final comment without a newline`
+  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(code))
+  const output = new AudioWorkletNode(ctx, 'preserved')._tick().getChannelData(0)
+  is(output[0], 0.5, 'template contents are not rewritten')
+  ok(output.subarray(1).every(v => v === 0.25), 'module this, inherited strictness, and nested strict semantics survive evaluation')
+})
+
 test('AudioWorklet > addModule with blob URI', async () => {
   let ctx = await mkCtx()
   let code = `class P extends AudioWorkletProcessor {
@@ -174,6 +225,78 @@ test('AudioWorklet > addModule with blob URI', async () => {
   } finally {
     URL.revokeObjectURL(url)
   }
+})
+
+test('AudioWorklet > empty, malformed, repeated and concurrent URL loads share their outcome', async () => {
+  const ctx = await mkCtx()
+  await ctx.audioWorklet.addModule('data:,')
+  await ctx.audioWorklet.addModule('data:,') // zero-work A → A
+  for (const input of [null, undefined, 0, {}, 'data:', 'data:,%', 'data:;base64,!', 'data:,class%20{']) {
+    await assert.rejects(ctx.audioWorklet.addModule(input))
+    await assert.rejects(ctx.audioWorklet.addModule(input), 'repeated failure cannot become success')
+  }
+  let finish, reads = 0, completed = false
+  ctx._readModule = () => { reads++; return new Promise(resolve => { finish = resolve }) }
+  const a = ctx.audioWorklet.addModule('pending.js')
+  const b = ctx.audioWorklet.addModule('pending.js').then(() => { completed = true })
+  await Promise.resolve(); await Promise.resolve()
+  is(reads, 1, 'concurrent A → A performs one read')
+  is(completed, false, 'second caller must wait for evaluation')
+  finish(`registerProcessor('pending', class extends AudioWorkletProcessor { process() { return true } })`)
+  await Promise.all([a, b])
+  ok(new AudioWorkletNode(ctx, 'pending'))
+  ctx._readModule = () => { reads++; return `registerProcessor('different', class extends AudioWorkletProcessor { process() { return true } })` }
+  await ctx.audioWorklet.addModule('different.js')
+  ok(new AudioWorkletNode(ctx, 'different'), 'A → B evaluates a different module')
+  is(reads, 2)
+  await assert.rejects(ctx.audioWorklet.addModule(() => { throw Error('setup failed') }), /setup failed/)
+})
+
+test('AudioWorklet > URL scope clocks remain live through consecutive quanta', async () => {
+  const ctx = await mkCtx()
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'currentFrame')
+  const code = `'use strict';
+    registerProcessor('clock', class extends AudioWorkletProcessor {
+      process(_, outputs) {
+        const out = outputs[0][0]
+        out.fill(currentFrame)
+        out[0] = currentTime
+        out[1] = sampleRate
+        out[2] = Object.getPrototypeOf(_s) === null ? 1 : -1
+        const d = Object.getOwnPropertyDescriptor(_s, 'currentTime')
+        out[3] = d.enumerable && d.configurable && typeof d.get === 'function' && !d.set ? 1 : -1
+        return true
+      }
+    })`
+  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(code))
+  const node = new AudioWorkletNode(ctx, 'clock')
+  for (const frame of [0, 128, 256]) {
+    ctx._frame = frame
+    const samples = node._tick().getChannelData(0)
+    almost(samples[0], frame / ctx.sampleRate, 1e-7)
+    is(samples[1], ctx.sampleRate)
+    is(samples[2], 1, 'scope has no inherited names')
+    is(samples[3], 1, 'clock descriptor semantics are unchanged')
+    ok(samples.subarray(4).every(v => v === frame), 'clock changes affect every subsequent quantum')
+  }
+  assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, 'currentFrame'), before, 'no host-global pollution')
+})
+
+test('worklet host loader preserves relative and absolute paths and propagates read failures', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'waa-worklet-test-'))
+  try {
+    const file = join(dir, 'empty.js')
+    writeFileSync(file, '')
+    is(await readWorkletModule('empty.js', dir), '', 'smallest valid file is zero work')
+    is(await readWorkletModule(file, '/nonexistent-base'), '', 'absolute path is not rebased')
+    writeFileSync(file, '/* second contents */')
+    is(await readWorkletModule(file, dir), '/* second contents */', 'reader itself does not cache stale contents')
+    await assert.rejects(readWorkletModule('missing.js', dir), { code: 'ENOENT' })
+    const ctx = await mkCtx()
+    ctx._basePath = dir
+    await ctx.audioWorklet.addModule('empty.js')
+    await ctx.audioWorklet.addModule(file)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 
 test('AudioWorklet > message ports are entangled', async () => {

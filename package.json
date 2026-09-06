@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Pure JavaScript Web Audio API for Node, CI, and servers",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
@@ -49,8 +49,10 @@
   "devDependencies": {
     "@audio/assert": "^0.2.0",
     "@audio/pitch-yin": "^1.0.4",
+    "esbuild": "^0.28.2",
     "linkedom": "^0.18.12",
     "node-web-audio-api": "^1.0.8",
+    "playwright": "1.58.2",
     "tone": "^15.1.22",
     "tst": "^9.4.0"
   },
@@ -77,7 +79,9 @@
     "site:stage": "node scripts/build-site.mjs --stage",
     "site:verify": "node scripts/build-site.mjs --verify --stage",
     "site:serve": "python3 -m http.server 8080 --directory build/site",
-    "test:site": "node test/site.test.js",
+    "test:site": "node test/site.test.js && node test/signal.test.js",
+    "test:site:browser": "node test/site-browser.mjs",
+    "test:music": "node test/music.test.js",
     "prepublishOnly": "npm test"
   },
   "funding": "https://github.com/sponsors/audiojs",

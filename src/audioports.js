@@ -4,7 +4,7 @@ import { BLOCK_SIZE } from './constants.js'
 import ChannelMixing from './ChannelMixing.js'
 
 
-class AudioPort extends Emitter() {
+class AudioPort extends Emitter {
 
   constructor(context, node, id) {
     super()

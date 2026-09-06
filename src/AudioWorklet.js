@@ -2,6 +2,7 @@ import AudioNode from './AudioNode.js'
 import AudioParam from './AudioParam.js'
 import AudioBuffer from 'audio-buffer'
 import { BLOCK_SIZE } from './constants.js'
+import readWorkletModule, { evaluateWorkletModule } from './worklet-module.js'
 
 
 // Pending port for processor construction — set before instantiation, consumed by super()
@@ -299,7 +300,7 @@ class AudioWorkletNode extends AudioNode {
 class AudioWorklet {
   #scope
   #context
-  #loadedModules = new Set()
+  #loadedModules = new Map()
 
   #port // main-thread side port for global scope messaging
 
@@ -329,72 +330,31 @@ class AudioWorklet {
     if (typeof moduleOrSetup !== 'string')
       throw new TypeError('addModule requires a URL string or setup function')
 
-    // Per spec: same module URL loaded only once
-    if (this.#loadedModules.has(moduleOrSetup)) return
-    this.#loadedModules.add(moduleOrSetup)
-
-    let code = await this.#readModule(moduleOrSetup)
-    let scope = this.#scope
-    let regFn = (name, cls) => scope.registerProcessor(name, cls)
-
-    // Run processor code with AudioWorkletGlobalScope globals.
-    // Per spec, currentTime/currentFrame must be live values. We pass a context
-    // ref and define them as local getters using Object.defineProperties on a
-    // scope object. The code is wrapped to read from this scope.
-    let ctx = this.#context
-    let args = {
-      registerProcessor: regFn,
-      AudioWorkletProcessor,
-      sampleRate: ctx.sampleRate,
-      currentTime: 0,
-      currentFrame: 0,
-      port: scope.port,
-      _ctx: ctx,
-    }
-    // `with` is required here: the spec mandates that currentTime/currentFrame are live
-    // values in the AudioWorkletGlobalScope, accessible as bare identifiers in processor
-    // code. Only `with` + getter-backed scope object achieves this without polluting
-    // globalThis. We strip 'use strict' because `with` is forbidden in strict mode.
-    // This is safe: processor code runs in an isolated Function scope, not the module scope.
-    let cleanCode = code.replace(/^(['"])use strict\1;?\s*/gm, '')
-    let names = Object.keys(args)
-    // Wrap with a scope proxy so currentTime/currentFrame are live
-    let scopeObj = Object.create(null)
-    Object.defineProperty(scopeObj, 'currentTime', { get() { return ctx.currentTime }, enumerable: true, configurable: true })
-    Object.defineProperty(scopeObj, 'currentFrame', { get() { return ctx._frame }, enumerable: true, configurable: true })
-    for (let k of names) {
-      if (k === 'currentTime' || k === 'currentFrame' || k === '_ctx') continue
-      scopeObj[k] = args[k]
-    }
-    new Function('_s', 'with(_s){' + cleanCode + '}')(scopeObj)
+    // Repeated URLs share completion, including in-flight loads and failures.
+    if (this.#loadedModules.has(moduleOrSetup)) return this.#loadedModules.get(moduleOrSetup)
+    const loading = Promise.resolve().then(() => this.#readModule(moduleOrSetup)).then(code => {
+      const ctx = this.#context, scope = this.#scope
+      // Fixed properties and live clock getters, with no inherited scope names.
+      const scopeObj = {
+        __proto__: null,
+        get currentTime() { return ctx.currentTime },
+        get currentFrame() { return ctx._frame },
+        registerProcessor: (name, cls) => scope.registerProcessor(name, cls),
+        AudioWorkletProcessor,
+        sampleRate: ctx.sampleRate,
+        port: scope.port,
+      }
+      evaluateWorkletModule(code, scopeObj)
+    })
+    this.#loadedModules.set(moduleOrSetup, loading)
+    return loading
   }
 
-  async #readModule(url) {
+  #readModule(url) {
     // Allow custom reader (e.g. for test runners with vm sandboxes or blob URLs)
     if (this.#context._readModule) return this.#context._readModule(url)
 
-    // data: URI — inline module code
-    if (url.startsWith('data:')) {
-      let comma = url.indexOf(',')
-      if (comma < 0) throw new Error('Invalid data URI')
-      let meta = url.slice(5, comma).toLowerCase()
-      let body = url.slice(comma + 1)
-      return meta.includes('base64') ? atob(body) : decodeURIComponent(body)
-    }
-
-    if (url.startsWith('blob:')) {
-      return await fetch(url).then(res => res.text())
-    }
-
-    // Dynamic import fs/path — works in Node.js, throws in browser
-    let fs, path
-    try { fs = await import('fs'); path = await import('path') } catch {
-      throw new Error('addModule(url) with string requires Node.js; use addModule(fn) in browser')
-    }
-
-    let rel = url.startsWith('/') ? url.slice(1) : url
-    let base = this.#context._basePath || process.cwd()
-    return fs.readFileSync(path.resolve(base, rel), 'utf8')
+    return readWorkletModule(url, this.#context._basePath)
   }
 
   get _scope() { return this.#scope }

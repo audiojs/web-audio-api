@@ -193,6 +193,55 @@ test.mute('AudioParam > cancelScheduledValues removes future events', () => {
   is(block[BLOCK_SIZE - 1], 1, 'value stays at 1 after cancelling t>=2')
 })
 
+test('AudioParam > static quanta reuse a filled buffer, standalone DSP still fills', () => {
+  const ctx = mkCtx(), p = new AudioParam(ctx, 0.25, 'a')
+  const block = p._tick()
+  let fills = 0
+  block.fill = function (value) { fills++; return Float64Array.prototype.fill.call(this, value) }
+  for (let i = 0; i < 10; i++) { ctx.currentTime += BLOCK_SIZE / SR; p._tick() }
+  is(fills, 0, 'unchanged internal buffer needs no writes')
+  const other = new Float64Array(BLOCK_SIZE)
+  p._dsp(other)
+  allEqual(other, 0.25)
+  p.setValueAtTime(0.5, ctx.currentTime)
+  allEqual(p._tick(), 0.5)
+  ok(fills > 0, 'a changed timeline invalidates reuse')
+})
+
+test('AudioParam > both rates preserve precision and refill independent DSP buffers', () => {
+  for (const rate of ['a', 'k']) for (const value of [0, -0, 1e-50, 0.25]) {
+    const ctx = mkCtx(), p = new AudioParam(ctx, value, rate)
+    const own = p._tick()
+    is(p._tick(), own, 'A → A reuses the internal array')
+    for (const output of [new Float64Array(BLOCK_SIZE), new Float64Array(BLOCK_SIZE)]) {
+      output.fill(NaN)
+      p._dsp(output)
+      ok(output.every(v => Object.is(v, value)), 'different output buffer is filled, including signed zero and sub-float32 values')
+      output.fill(NaN)
+      p._dsp(output)
+      ok(output.every(v => Object.is(v, value)), 'same standalone buffer is refilled')
+    }
+    ok(p._tick().every(v => Object.is(v, value)), 'external DSP calls do not corrupt internal reuse')
+    p.setValueAtTime(0.5, ctx.currentTime)
+    ok(p._tick().every(v => v === 0.5), 'automation mutation invalidates either rate')
+    p.automationRate = rate === 'a' ? 'k-rate' : 'a-rate'
+    ok(p._tick().every(v => v === 0.5), 'switching rates does not expose stale samples')
+  }
+})
+
+for (const rate of ['a', 'k']) test(`AudioParam > modulation invalidates static buffer reuse (${rate})`, () => {
+  const ctx = mkCtx(), p = new AudioParam(ctx, 0.25, rate)
+  p._tick()
+  const pull = p._input._tick
+  p._input.sources.push({})
+  p._input._tick = () => ({ getChannelData: () => new Float32Array(BLOCK_SIZE).fill(0.5) })
+  allEqual(p._tick(), 0.75)
+  p._input.sources.length = 0
+  p._input._tick = pull
+  allEqual(p._tick(), 0.25, 'disconnect restores intrinsic value, not stale modulation')
+  allEqual(p._tick(), 0.25)
+})
+
 test('AudioParam > cancelAndHoldAtTime holds value', () => {
   let ctx = mkCtx()
   let p = new AudioParam(ctx, 0, 'a')

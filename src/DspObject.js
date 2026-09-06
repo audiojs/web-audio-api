@@ -1,6 +1,6 @@
 import Emitter from './Emitter.js'
 
-class DspObject extends Emitter() {
+class DspObject extends Emitter {
   #context
   get context() { return this.#context }
 

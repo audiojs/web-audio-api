@@ -5,7 +5,7 @@
 //   hero-wave      the hero file's rendered output: envelopes and spectrum
 //   home-examples  the catalogue: sounding examples drawn from their own offline
 //                  render, input and API examples wearing a designed grille
-// Everything is produced by web-audio-api in Node; the grilles are the only hand-drawn marks.
+// Audio is rendered by web-audio-api in Node; grilles and the sweep direction are designed symbols.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -133,8 +133,8 @@ function waveformCycles(audio, points, cycles = 3) {
 const bar = (x, mid, half) => `M${x} ${r(mid - half)}V${r(mid + half)}`
 // Thumbnails: one square, one lattice, one stroke. Every example is bars,
 // dashes, and dots on the same grid; no curves. Sounding examples are drawn from
-// their own render with level in dB so tails keep their mass; API and input
-// examples wear a grille. Sixteen columns, fifteen rows, the axis on the middle row.
+// their own render with level in dB so tails keep their mass; API, input, and
+// sweep-direction symbols are designed. Sixteen columns, fifteen rows, the axis on the middle row.
 const BOX = 96, PITCH = 6, ROWS = 15
 const col = k => PITCH / 2 + k * PITCH
 const row = j => PITCH + j * PITCH
@@ -155,7 +155,7 @@ const lattice = keep => {
 }
 const disc = (x, y) => Math.hypot(x, y) <= 45
 
-// Braun grilles: the examples about input, output, and the API
+// Braun-like grilles and task symbols for input, output, the API, and sweep direction
 const grilles = {
   // a needle over a scale of ticks
   tuner: () => [[48, row(1), 48, row(10)], ...Array.from({ length: BINS }, (_, i) => [col(i), row(12), col(i), row(i % 4 ? 13 : 14)])],
@@ -179,10 +179,20 @@ const grilles = {
   'linked-params': () => [[col(3), row(1), col(3), row(13)], ...[3, 7, 11].map(j => [col(5), row(j), col(13), row(j)])],
   // a comb of bars stepping down, dots along the floor
   fft: () => [...Array.from({ length: BINS }, (_, i) => dot(col(i), row(ROWS - 1))), ...[1, 4, 7, 10, 13].map((i, n) => [col(i), row(2 * n), col(i), row(ROWS - 1)])],
-  // horizontal lines inside a rounded rectangle: a buffer
-  'render-to-buffer': () => Array.from({ length: 13 }, (_, n) => { let j = n + 1, inset = j === 1 || j === 13 ? 30 : 24; return [inset, row(j), 96 - inset, row(j)] }),
-  // lines of a document, the last one short
-  'process-file': () => [2, 4, 6, 8, 10, 12].map(j => [24, row(j), j === 12 ? 54 : 72, row(j)]),
+  // The same close-set waveform bars and full-size arrow as processing, pointing into the tray.
+  'render-to-buffer': () => [
+    ...[6, 12, 18, 12, 6, 12, 18, 12, 6].map((half, i) => [col(4 + i), 24 - half, col(4 + i), 24 + half]),
+    [51, 51, 51, 69], [57, 63, 51, 69], [51, 69, 45, 63],
+    [9, 72, 9, 90], [9, 90, 93, 90], [93, 90, 93, 72],
+  ],
+  // Before → after: an irregular signal becomes a smoother, quieter one.
+  'process-file': () => [
+    ...[12, 30, 18, 36, 24, 30].map((half, i) => [col(i), 48 - half, col(i), 48 + half]),
+    ...[6, 12, 18, 18, 12, 6].map((half, i) => [col(i + 10), 48 - half, col(i + 10), 48 + half]),
+    [39, 48, 57, 48], [51, 42, 57, 48], [57, 48, 51, 54],
+  ],
+  // Exponential frequency on a log axis: a straight rising diagonal.
+  sweep: () => Array.from({ length: ROWS }, (_, j) => dot(row(j), row(ROWS - 1 - j))),
   // staggered dashes: a stream
   'pipe-stdout': () => Array.from({ length: 8 }, (_, n) => n * 2).flatMap(j => Array.from({ length: 4 }, (_, c) => c * 4 + (j / 2 % 2) * 2).filter(c => c + 2 < BINS).map(c => [col(c), row(j), col(c + 2), row(j)])),
   // horizontal lines shortening row by row: a tail
@@ -193,7 +203,7 @@ const grilles = {
 const looks = {
   tone: 'shape', additive: 'shape', 'fm-synthesis': 'shape', wavetable: 'shape', 'missing-fundamental': 'shape', 'binaural-beats': 'shape', beating: 'shape',
   noise: 'spectrum', 'huggins-pitch': 'spectrum', 'zwicker-tone': 'spectrum',
-  sweep: 'roll', shepard: 'roll', 'tritone-paradox': 'roll', 'scale-illusion': 'roll', streaming: 'roll', sequencer: 'roll', serial: 'roll', dtmf: 'roll', jazz: 'roll', gamelan: 'roll', drone: 'roll',
+  shepard: 'roll', 'tritone-paradox': 'roll', 'scale-illusion': 'roll', streaming: 'roll', sequencer: 'roll', serial: 'roll', dtmf: 'roll', jazz: 'roll', gamelan: 'roll', drone: 'roll',
   'octave-illusion': 'ears',
   'stereo-test': 'pan',
   'risset-rhythm': 'raster', euclidean: 'raster',
@@ -323,8 +333,8 @@ function artHTML(audio, seconds) {
   return [`<div class="art-row"><span class="art-end">${audio.numberOfChannels} ch, ${kHz(audio.sampleRate)}</span></div>`, wave, row('0 s', `${seconds} s`), spec, row('40 Hz', '16 kHz')].join('\n        ')
 }
 
-// the six the homepage leads with, one per job the catalogue answers
-const FEATURED = ['metronome', 'sweep', 'dtmf', 'noise', 'binaural-beats', 'jazz', 'drone', 'recorder', 'tuner', 'subtractive-synth']
+// The homepage selection leads with server rendering and processing.
+const FEATURED = ['render-to-buffer', 'linked-params', 'process-file', 'pipe-stdout', 'metronome', 'sweep', 'noise', 'jazz', 'recorder', 'subtractive-synth']
 
 function entryHTML(example, thumbSVG, { href, modal }) {
   let number = modal ? '' : `<span class="example-number">${String(examples.indexOf(example) + 1).padStart(2, '0')}</span>`

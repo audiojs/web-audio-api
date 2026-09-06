@@ -1,6 +1,8 @@
 import test, { is, ok, throws } from 'tst'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, cpSync, writeFileSync, symlinkSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import assert from 'node:assert/strict'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseHTML } from 'linkedom'
@@ -58,18 +60,17 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(jobs.length >= 3, `lede states concrete jobs (${jobs.join(', ') || 'none'})`)
   ok(document.querySelectorAll('.faq a[href="https://github.com/audiojs/speaker"]').length >= 2, 'the FAQ discloses the speaker adapter the claims lean on')
   is(document.querySelectorAll('.hero-stack').length, 1, 'one engine row')
-  let marks = [...document.querySelectorAll('.hero-stack > button')]
+  let marks = [...document.querySelectorAll('.hero-stack button')]
   let tipOf = mark => document.getElementById(mark.getAttribute('aria-describedby'))
-  is(marks.filter(mark => !mark.classList.contains('is-wip')).map(mark => mark.textContent.trim()).join('|'), 'Node|Deno|Bun|LLRT', 'passing engines ride the intro')
-  let coming = marks.filter(mark => mark.classList.contains('is-wip'))
-  is(coming.map(mark => mark.textContent.trim()).join('|'), 'Porffor|JZ', 'runtimes in the works ride along, dimmed and named')
+  is(marks.filter(mark => !mark.classList.contains('is-wip')).map(mark => mark.textContent.trim()).join('|'), 'Node|Deno|Bun|LLRT|Porffor|JZ', 'supported and compiling targets ride the intro')
+  is(marks.filter(mark => mark.classList.contains('is-compiler')).map(mark => mark.textContent.trim()).join('|'), 'Porffor|JZ', 'both compiler marks are enabled in colour')
   ok(marks.every(mark => mark.getAttribute('type') === 'button' && tipOf(mark)?.getAttribute('popover') === 'manual' && tipOf(mark).getAttribute('role') === 'tooltip' && tipOf(mark).textContent.length > 20 && mark.querySelector('img').alt === ''), 'every runtime carries a popover tip saying what is verified there; its mark is decorative')
-  ok(coming.every(mark => /work in progress/i.test(tipOf(mark).textContent)) && read('.github/workflows/porffor.yml').includes('Porffor cannot run the engine yet'), 'each says so in its tip, and Porffor stays tracking-only in CI')
+  ok(marks.filter(mark => mark.classList.contains('is-compiler')).every(mark => /compiles and runs/i.test(tipOf(mark).textContent) && /conformance.*not verified/i.test(tipOf(mark).textContent)), 'compiler execution is not presented as full conformance')
   ok(!document.querySelector('.site-footer .wpt-badge'), 'no badge in the footer')
   ok(read('.github/workflows/wpt.yml').includes('name: W3C WPT'), 'the dedicated WPT workflow names the badge')
   ok(!document.querySelector('.hero-spec img'), 'spec plate carries no badge image')
-  is(document.querySelectorAll('header a').length, 5, 'brand, examples, FAQ, version, and GitHub')
-  is([...document.querySelectorAll('header nav a')].map(node => `${node.textContent}=${node.getAttribute('href')}`).join('|'), 'Examples=./examples/|FAQ=#faq', 'the navigation leads to the catalogue and the questions')
+  is(document.querySelectorAll('header a').length, 5, 'brand, examples, WPT, version, and GitHub')
+  ok(document.querySelector('header nav a[href="./examples/"]') && document.querySelector('header nav .wpt-seal') && !document.querySelector('header nav a[href="#faq"]'), 'WPT replaces FAQ in navigation, not the FAQ section')
   ok(document.querySelector('header a.brand[href="./"] svg path[d^="M21.25 41.75"]'), 'the site seal leads home')
   ok(document.querySelector('header a.version-link[href="https://www.npmjs.com/package/web-audio-api"] [data-version]'), 'the version links to npm')
   ok(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]'))
@@ -77,13 +78,21 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   is(document.querySelector('.install-command code').textContent.trim(), 'npm install web-audio-api')
   is(document.querySelectorAll('.install-command button').length, 0, 'install command has no copy button')
   ok(!document.body.textContent.includes('Basic usage'))
-  ok(/^\d{2,3} KB gzipped$/.test(document.querySelector('.hero-spec a[href="https://packagephobia.com/result?p=web-audio-api"][data-pack-size]').textContent), 'packed size leads to packagephobia')
+  ok(/^\d{2,3} KB gzip$/.test(document.querySelector('.hero-spec a[data-pack-size]').textContent), 'compressed size uses a short label')
+  ok(document.querySelector('.hero-spec a[data-pack-size]').title.includes('npm package archive; excludes dependencies'), 'the tooltip scopes the short size label')
   is(document.querySelector('.site-footer a[href="https://github.com/audiojs/web-audio-api/blob/master/LICENSE"]').textContent, 'MIT', 'MIT leads to the license')
   ok(document.querySelector('.site-footer a[href="https://github.com/krishnized/license"]'), 'krishnized dedication rides the footer')
   ok(document.querySelector('.site-footer').textContent.includes('2013'), 'footer carries since 2013')
   ok(document.querySelector('.site-footer .footer-brand[href="https://audiojs.dev/"] svg path[d^="M28.6572"]'), 'footer carries the audiojs org mark')
-  is(document.querySelector('.hero-spec a[href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml"]').textContent, 'W3C WPT 100%', 'the WPT claim rides the spec plate as plain text')
-  ok(document.querySelector('.site-footer a[href="https://github.com/sponsors/audiojs"]'), 'footer invites support')
+  let seal = document.querySelector('a.wpt-seal[href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml"]')
+  is(seal.querySelector('strong').textContent, '100%', 'the pass rate is explicit')
+  is([...seal.querySelectorAll('[data-wpt-count]')].map(node => node.textContent).join('/'), '4,317/4,317', 'the seal gives both the passing count and total')
+  is(seal.childNodes[1].textContent.trim(), 'WPT', 'the compact badge names the test suite')
+  const tip = document.getElementById(seal.getAttribute('aria-describedby'))
+  ok(tip.textContent.includes('Node runner') && tip.textContent.includes('Not W3C certification'), 'tooltip scopes the result and provides its numbers')
+  ok(document.querySelector('header nav .wpt-seal') && !document.querySelector('.hero-spec .wpt-seal'), 'the badge leaves installation space for the archive size')
+  ok(!document.querySelector('.site-footer a[href="https://github.com/sponsors/audiojs"]'), 'sponsorship is hidden for now')
+  ok(!document.querySelector('.footer-license a[href*="sponsors"]'), 'sponsorship is separate from the dedication')
   ok(document.querySelector('.site-footer a[href="https://github.com/sebpiq"]') && document.querySelector('.site-footer a[href="https://github.com/dy"]'), 'authors are credited with links')
   ok(!document.querySelector('.hero-code [data-copy]'), 'the hero code has no copy button')
   is([...document.querySelectorAll('main > section > .section-heading h2')].map(node => node.textContent).join('|'), 'Examples|FAQ', 'both sections announce themselves')
@@ -110,7 +119,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(bands[0].nextElementSibling.classList.contains('examples') && bands[1].nextElementSibling.classList.contains('faq'), 'each band stands in the flow before the section it hands the page to')
   ok(!read('examples/browser.js').includes('insetBlockStart') && /\.field-strips \{[^}]*height: 6rem/s.test(read('assets/site.css')), 'the bands are placed by the sheet, not by script')
   let sheetCss = read('assets/site.css')
-  let ruled = /\.hero-signal,\n\.demo-stage \{[^}]*var\(--color-plot-grid\)[^}]*var\(--space-md\)/s.test(sheetCss)
+  let ruled = /\.hero-signal,\n\.demo-panel \{[^}]*var\(--color-plot-grid\)[^}]*var\(--space-md\)/s.test(sheetCss)
   ok(ruled && read('assets/tokens.css').includes('--color-plot-grid'), 'the panel is ruled in the cell the graph\'s dots keep, from the corner its plots start at')
   ok(document.querySelector('.hero-code .code-col > .demo-runbar [data-run]') && /\.code-col \.demo-runbar \{[^}]*margin-block-start: auto/s.test(sheetCss), 'the hero plays from the foot of the code it plays, the signal panel beside it left whole')
   // the band leaves before the hero does, so the stripes surface from under the code panel
@@ -137,6 +146,7 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(dialog.querySelector('.code-tab[data-pane="graph"][aria-pressed="true"]'), 'the graph is the default view')
   ok(dialog.querySelector('.cli-command [data-copy="#cli-command"]'), 'CLI command is copyable')
   ok(dialog.querySelector('.code-output[hidden]'), 'code stays hidden until requested')
+  ok(!dialog.querySelector('.demo-provenance') && document.querySelector('.hero-demo-note').textContent.includes('Preview uses native browser audio'), 'one hero provenance note, no repeated note below example sources')
   ok(dialog.querySelector('#demo-spectrogram'), 'demo includes a spectrogram')
   ok(dialog.querySelector('.demo-spectrogram-wrap #demo-frequency-scale'), 'scale selector overlays the spectrogram')
   is(dialog.querySelectorAll('#demo-frequency-scale option').length, 3, 'linear, mel, and log scales are available')
@@ -160,7 +170,13 @@ test('homepage is only the hero, example catalogue, compact FAQ, and footer', ()
   ok(!dialog.querySelector('.detail-seo'), 'SEO text never rides the modal')
   is(document.querySelectorAll('[role="tab"]').length, 0)
   let questions = [...document.querySelectorAll('.faq summary')].map(node => node.textContent.trim())
-  for (let expected of ['Is it fast enough for realtime?', 'How do speakers and mics work?', 'Which formats can it decode?', 'How heavy is it?', 'Do Tone.js and other libraries work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?', 'Where does it run?', 'What differs from a browser?', 'How does it compare to alternatives?']) ok(questions.includes(expected), expected)
+  is(questions.join('|'), ['Will my existing code work?', 'How does it differ from browser Web Audio?', 'How do I render and test in CI?', 'Where does it run?', 'Is it fast enough for realtime?', 'Do AudioWorklets work?', 'How do I use speakers and microphones?', 'Which audio formats can I decode?', 'When should I use another engine?'].join('|'), 'nine peer-level adoption questions')
+  is(document.querySelectorAll('.faq details details, .faq h3').length, 0, 'no buried subquestions')
+  let answers = new Map([...document.querySelectorAll('.faq details')].map(node => [node.querySelector('summary').textContent, node]))
+  ok(answers.get('How does it differ from browser Web Audio?').textContent.includes('not W3C certification'), 'conformance limitations accompany the browser comparison')
+  ok(answers.get('Where does it run?').textContent.includes('https://esm.sh/web-audio-api'), 'the browser import belongs with runtime support')
+  ok(answers.get('Do AudioWorklets work?').querySelector('pre').textContent.includes('AudioWorkletNode'), 'worklets have their own discoverable answer')
+  ok(answers.get('Which audio formats can I decode?').querySelector('.format-list'), 'formats have their own discoverable answer')
 })
 
 test('every CLI option schema matches its source and --help output', () => {
@@ -358,13 +374,17 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   ok(play?.querySelector('.play-glyph') && play.querySelector('.pause-glyph'), 'one play button with both glyphs')
   ok(!document.querySelector('.hero-code [data-copy]'), 'no copy control on the hero code')
   ok(document.querySelector('.install-row > .install-command + .hero-spec') && !document.querySelector('.install-row [data-copy]'), 'the install row is the command and its figures, nothing to press')
-  is([...document.querySelectorAll('.site-footer .footer-specs > *')].map(node => node.textContent.trim().split(/[\s,]/)[0].toLowerCase()).join(','), 'since,sponsor', 'the right column runs since, then sponsor and licence')
-  ok(document.querySelector('.site-footer .footer-specs span:last-child > a[href="https://github.com/sponsors/audiojs"] + a[href$="/LICENSE"]'), 'sponsor leads the licence line at the right')
+  let licence = document.querySelector('.site-footer .footer-license')
+  is([...licence.querySelectorAll('a')].map(node => node.textContent).join(' '), 'MIT ॐ', 'the footer keeps only MIT and Omkara on this line')
+  ok(licence.querySelector('a[href$="/LICENSE"] + a[href="https://github.com/krishnized/license"][aria-label="Omkara — personal dedication"]'), 'licence and dedication remain distinct accessible links')
   for (let file of ['assets/site.css', 'graph.js', 'site.js']) ok(!/#[0-9a-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab)\(/i.test(read(file).replace(/url\(#[\w-]+\)/g, '')), `${file} takes every color from a token`)
   ok(document.querySelector('.hero-art .graph') && document.querySelector('.hero-signal .hero-spectrum'), 'the graph rides the hero, the render rides the code')
+  let caption = document.querySelector('.hero-art > .graph-scroll + .hero-demo-note')
+  ok(caption?.textContent.startsWith('A plucked string from a feedback loop.'), 'the caption belongs to the graph above the code')
+  ok(caption.textContent.includes('native browser audio') && caption.querySelector('code').textContent === 'node hero.js', 'caption preserves preview provenance and the package command')
   let hero = read('assets/site.css')
   ok(document.querySelector('.hero-art > .graph-scroll > .graph') && /\.graph-scroll \{[^}]*overflow: auto hidden/s.test(hero), 'the graph scrolls sideways in a pane of its own, never down, and never takes the dot field with it')
-  ok(/@media \(48rem < width <= 64rem\) \{[^@]*mask-image: linear-gradient\(to right/s.test(hero), 'the row holds to the phone, the text fading out under the graph that crosses it')
+  ok(!hero.includes('mask-image:'), 'no useful text fades out beneath the graph')
   ok(/@media \(max-width: 48rem\) \{[^@]*\.hero-art \{ order: 1; \}/s.test(hero), 'only a phone folds the row into a stack')
   let wave = document.querySelector('.hero-signal .hero-wave'), spectrum = document.querySelector('.hero-signal .hero-spectrum')
   let grid = path => [...path.getAttribute('d').matchAll(/M([\d.]+) /g)].map(match => match[1]).join()
@@ -375,12 +395,12 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   let zero = path => Math.min(...[...path.getAttribute('d').matchAll(/ ([\d.]+)V([\d.]+)/g)].map(m => Math.abs(m[2] - m[1])))
   is(zero(spectrum.querySelector('path')), 1, 'a silent bin is a one-unit dot')
   ok(zero(wave.querySelector('.wave-peak')) >= 1, 'no wave bin is drawn thinner than that dot')
-  ok(read('site.js').includes('} 220V${(220 - Math.max(1, ') && read('site.js').includes('Math.max(0.5, level(v) * 106)'), 'the live panel keeps the same box and dot')
-  ok(read('site.js').includes('new Float32Array(100), levels = new Float32Array(100), bins = new Float32Array(100)') && read('site.js').includes('M${2 + i * 4} '), 'the live panel draws on the same grid')
+  ok(read('site.js').includes('Math.max(0.5, level * 106)'), 'the live panel keeps the same box and dot')
+  ok(read('site.js').includes('history.columns(100, 3)') && read('site.js').includes('M${2 + i * 4} '), 'the live panel draws captured history on the same grid')
   let map = JSON.parse(document.querySelector('script[type="importmap"]').textContent)
-  let shim = decodeURIComponent(map.imports['web-audio-api'])
-  ok(map.imports['web-audio-api'].startsWith('data:text/javascript,') && shim.includes('extends globalThis.AudioContext') && shim.includes('AnalyserNode'), 'the package name resolves to the page\'s own context, tapped for the live panel')
-  ok(shim.includes('AudioNode.prototype.connect') && shim.includes('nodes ??= new Set()'), 'whatever connects stays alive with its context: Chrome collects unreferenced nodes mid-sound')
+  let shim = read(map.imports['web-audio-api'])
+  ok(shim.includes('extends globalThis.AudioContext') && shim.includes('observeSignal'), 'the package name resolves to the browser context, with audio-thread capture')
+  ok(shim.includes('this.context instanceof AudioContext') && shim.includes('this.nodes.clear()'), 'feedback retention belongs only to hero contexts and ends on close')
   ok(document.querySelector('#example-dialog .code-tab[data-pane="graph"]') && document.querySelector('#example-dialog #graph-pane[hidden]'), 'the modal offers a graph tab, hidden until chosen')
   ok(document.querySelector('#example-dialog .demo-column > .demo-panel + .dialog-foot .demo-runbar #demo-run'), 'the one action the modal is for closes the demo column, the source beside it left whole')
   ok(/\.demo-column > \.dialog-foot \{[^}]*margin-block-start: auto;[^}]*position: sticky;[^}]*inset-block-end: 0/s.test(read('assets/site.css')), 'the playback rides the foot of its column while the page scrolls past it')
@@ -392,28 +412,51 @@ test('the homepage wires the hero play, the graph tab, and the page-side Web Aud
   is(clicks.join(' '), Array.from({ length: 16 }, (_, k) => k % 4 ? 'dot' : 'bar').join(' '), 'the metronome thumb is a bar every fourth column')
   ok(/@media \(40rem <= width <= 64rem\) \{[^@]*\.example-grid > :nth-child\(even\)/.test(read('assets/site.css')), 'the two-column catalogue tweaks stay inside their range, never on phones')
   let site = read('site.js'), shared = read('examples/browser.js')
-  for (let hook of ["'audiocontext'", 'data-run', 'getFloatTimeDomainData', 'new URL(`examples/${id}/`, homeURL)', "classList.add('is-compact')", 'new ResizeObserver']) ok(site.includes(hook), `site.js carries ${hook}`)
-  ok(read('assets/site.css').includes('.hero-stack.is-fitted { flex-wrap: nowrap; }'), 'the runtime row goes to one line only once the script fits it')
+  for (let hook of ["'audiocontext'", 'data-run', 'history.columns', 'new URL(`examples/${id}/`, homeURL)']) ok(site.includes(hook), `site.js carries ${hook}`)
+  ok(!read('assets/site.css').includes('.is-fitted') && read('assets/site.css').includes('.hero-stack .is-secondary'), 'runtimes wrap naturally; secondary targets keep named accessible icons')
   for (let hook of ['graph-pane', 'recordConnections', 'collapseGraph', "'wheel'", 'highlightSyntax(', "highlights.set('method'", "querySelectorAll('.header-strips')", "querySelectorAll('.footer-strips')"]) ok(shared.includes(hook), `browser.js carries ${hook} for every page`)
   ok(read('assets/site.css').includes('.example-tag,\n.example-filters button {') && read('assets/site.css').includes('.code-tab[aria-pressed="true"] {\n  border-block-end-color'), 'tags and filters share one pill rule; tabs underline')
   ok(read('assets/site.css').includes('::highlight(method)') && read('assets/tokens.css').includes('--syntax-method'), 'methods have their own highlight and token')
   let browser = read('examples/browser.js')
   for (let hook of ["remember(frequencyScale, 'demo-frequency-scale')", "remember(volume, 'demo-volume')", 'if (!data) return']) ok(browser.includes(hook), `the demo ${hook.startsWith('remember') ? 'remembers ' + hook.slice(9, -1) : 'draws only the axis before it plays'}`)
-  ok(browser.includes("if (reading && !run.classList.contains('is-error')) status.textContent = reading") && browser.includes("async function stop(message = '') {"),
+  ok(browser.includes("if (reading) status.textContent = reading") && browser.includes("async function stop(message = '') {"),
     'the example\'s own reading owns the status line, and stopping says nothing')
   ok(read('assets/site.css').includes('@media (width < 60rem), (height < 44rem)'), 'a modal too short for its parts scrolls as one sheet')
-  ok(browser.includes('drawWaveColumn(canvas, samples, step)') && browser.includes('drawSpectrogramColumn(spectrogram, spectrum, context.sampleRate, frequencyScale.value, step)') && /columnStep\(width = 0\)[^}]*width \* elapsed \/ SWEEP/s.test(browser), 'both panels advance together, by the width their sweep covers in the time since the last frame')
-  // the panels cost a phone as little as they can: one pixel written per row of the newest column
-  // whatever its width, its own pixels rather than the screen's, bytes from the analyser, colours
-  // read once, one bar per column, and every sample not needed for its peak skipped
-  is((browser.match(/putImageData/g) || []).length, 1, 'the newest column is written in one blit')
-  ok(/createImageData\(1, height\)/.test(browser) && /drawImage\(spectrogramColumn\(height, data, sampleRate, scale\), width - step, 0, step, height\)/.test(browser), 'a column is painted one pixel wide and stretched to the step the sweep asks for')
+  ok(browser.includes('history.columns(count)') && browser.includes('drawLiveSignal'), 'both panels draw the same audio-clock history')
+  is((browser.match(/putImageData/g) || []).length, 1, 'the complete spectrogram is uploaded in one blit')
+  ok(browser.includes('Math.min(112, spectrogram.height)') && browser.includes('Math.ceil(canvas.clientWidth / 160) * canvasRatio()'), 'raster work is bounded independently of device pixel ratio')
   ok(/const phone = \(\) => Math\.min\(innerWidth, innerHeight\) < 500/.test(browser) && browser.includes('phone() ? 1 : 2'), 'a phone paints its own pixels, not four or nine for each, whichever way it is held')
   ok(/function drawEnvelopeColumn\(ctx, x, step, height, peak, ink\) \{[^}]*fillRect\(x, mid - half, step, half \* 2\)/s.test(browser) && !browser.includes('globalAlpha = alpha'), 'a column of the wave is one bar, not a pair of them under two alphas')
-  ok(browser.includes('analyser.getByteFrequencyData(spectrum)') && browser.includes('new Uint8Array(analyser.frequencyBinCount)'), 'the spectrogram reads bytes over the analyser window')
-  ok(browser.includes('peakOf(samples, 0, samples.length, 4)'), 'the envelope strides its samples')
+  ok(read('assets/signal.js').includes('fft(this.windowed, this.magnitudes)'), 'spectra use captured samples, not intermittent analyser snapshots')
+  ok(!browser.includes('peakOf(samples, 0, samples.length, 4)'), 'brief impulses cannot fall between strided samples')
   ok(/const css = name => \{[^}]*colours\.set/s.test(browser) && !/getComputedStyle\(document\.documentElement\)\.getPropertyValue/.test(browser.replace(/if \(!colours[^\n]*\n/, '')), 'a colour is read from the sheet once')
-  ok(browser.includes('function startSweep()') && browser.includes('    drawWave(canvas)\n    resetSpectrogram(spectrogram)'), 'a run opens on empty panels with its own clock')
+  ok(browser.includes('await observeSignal(context, analyser)') && browser.includes('capture?.history || lastHistory'), 'capture starts before scheduling and history survives resize and stop')
+})
+
+test('task thumbnails depict storage, processing, and a straight sweep', () => {
+  const document = documentOf('examples/index.html')
+  const path = id => document.querySelector(`.example-entry[href="./${id}/"] .example-thumb path`).getAttribute('d')
+  const sweep = [...path('sweep').matchAll(/M([\d.]+) ([\d.]+)h\.01/g)].map(m => [+m[1], +m[2]])
+  is(sweep, Array.from({ length: 15 }, (_, i) => [6 + 6 * i, 90 - 6 * i]), 'every dot advances equally on both axes, with no middle kink')
+  const storage = path('render-to-buffer')
+  ok(storage.includes('M51 51L51 69') && storage.includes('M9 90L93 90'), 'the full-length arrow points into the storage tray')
+  ok(!storage.includes('h.01'), 'the tray contains no dots')
+  const process = [...path('process-file').matchAll(/M([\d.]+) ([\d.]+)L([\d.]+) ([\d.]+)/g)].map(m => m.slice(1).map(Number))
+  const heights = segments => segments.map(([, from, , to]) => to - from)
+  is(heights(process.slice(0, 6)), [24, 60, 36, 72, 48, 60], 'irregular input waveform')
+  is(heights(process.slice(6, 12)), [12, 24, 36, 36, 24, 12], 'smoother, quieter output waveform')
+  is(process[12], [39, 48, 57, 48], 'conversion reads left to right')
+  const rendered = [...storage.matchAll(/M([\d.]+) ([\d.]+)L([\d.]+) ([\d.]+)/g)].map(m => m.slice(1).map(Number))
+  is(rendered.slice(0, 9), [6, 12, 18, 12, 6, 12, 18, 12, 6].map((half, i) => [27 + 6 * i, 24 - half, 27 + 6 * i, 24 + half]), 'exact waveform positions: close-set bars stay above the arrow')
+  is(rendered.slice(12), [[9, 72, 9, 90], [9, 90, 93, 90], [93, 90, 93, 72]], 'the complete empty tray has exactly three sides')
+  const relativeArrow = (segments, x, y) => segments.map(([x1, y1, x2, y2]) => [x1 - x, y1 - y, x2 - x, y2 - y])
+  const turned = relativeArrow(process.slice(12, 15), 57, 48).map(([x1, y1, x2, y2]) => [0 - y1, x1, 0 - y2, x2])
+  is(relativeArrow(rendered.slice(9, 12), 51, 69), turned, 'the complete processing arrow is rotated downward at identical size')
+  const home = documentOf('index.html')
+  for (const id of ['render-to-buffer', 'process-file', 'sweep']) {
+    is(home.querySelector(`[data-open-example="${id}"] .example-thumb`).outerHTML,
+      document.querySelector(`.example-entry[href="./${id}/"] .example-thumb`).outerHTML, `${id}: homepage and catalogue publish the same complete SVG`)
+  }
 })
 
 test('thumbnail projections put a known signal where it belongs on the lattice', async () => {
@@ -535,7 +578,7 @@ test('metronome presets share deterministic, distinct instrument models', async 
     await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.12, sound, seed: 17, when: 0 })
     return Array.from((await ctx.startRendering()).getChannelData(0))
   }
-  let expectedVoices = { classic: 5, wood: 5, bell: 7, beep: 2, signal: 1, karatala: 9 }
+  let expectedVoices = { classic: 5, wood: 5, bell: 7, beep: 2, signal: 1, karatala: 9, pendulum: 6, quartz: 3, clave: 4 }
   for (let [sound, voices] of Object.entries(expectedVoices)) {
     let ctx = new OfflineAudioContext(1, 512, 44100)
     let graph = await buildGraph('metronome', ctx, { bpm: 600, pattern: 'X', duration: 0.01, sound, seed: 17, when: 0 })
@@ -550,7 +593,7 @@ test('metronome presets share deterministic, distinct instrument models', async 
     rendered.set(sound, samples)
   }
   is(rendered.get('classic').join(','), (await render('classic')).join(','), 'seeded classic is repeatable')
-  for (let sound of ['wood', 'bell', 'beep', 'signal', 'karatala']) ok(rendered.get(sound).some((sample, index) => sample !== rendered.get('classic')[index]), `${sound}: distinct from classic`)
+  for (let sound of Object.keys(expectedVoices).filter(name => name !== 'classic')) ok(rendered.get(sound).some((sample, index) => sample !== rendered.get('classic')[index]), `${sound}: distinct from classic`)
 })
 
 test('metronome schedules upfront offline but in a bounded window on live contexts', async () => {
@@ -613,7 +656,7 @@ test('risset layers sit an octave apart and nest their beats', async () => {
 
 test('jazz styles and leads render distinct finite performances that repeat by seed', async () => {
   let render = async options => {
-    let ctx = new OfflineAudioContext(2, 44100 * 2, 44100)
+    let ctx = new OfflineAudioContext(2, 44100 * 8, 44100)
     let graph = await buildGraph('jazz', ctx, { duration: 8, bpm: 120, when: 0, seed: 11, AudioWorkletNodeClass: AudioWorkletNode, ...options })
     let data = (await ctx.startRendering()).getChannelData(0)
     ok(data.every(Number.isFinite) && data.some(Boolean), `${JSON.stringify(options)}: finite, audible`)
@@ -631,7 +674,8 @@ test('jazz styles and leads render distinct finite performances that repeat by s
   }
   let repeat = await render({ style: 'swing' })
   let composition = graph => JSON.stringify([graph.data.bpm, graph.data.key, graph.data.chordLog, graph.data.bassNotes, graph.data.leadNotes])
-  is(composition(repeat.graph), composition(rendered.get('swing').graph), 'the same seed repeats the composition; only the drum noise worklet is live')
+  is(composition(repeat.graph), composition(rendered.get('swing').graph), 'the same seed repeats the composition')
+  ok(repeat.data.every((v, i) => v === rendered.get('swing').data[i]), 'the seed also repeats the rendered drums and instruments')
   for (let lead of ['flute', 'harp', 'piano']) {
     let other = await render({ style: 'swing', lead })
     is(other.graph.data.lead, lead)
@@ -646,7 +690,7 @@ test('jazz styles and leads render distinct finite performances that repeat by s
   ok(modalBass.every((note, i) => i === 0 || note !== modalBass[i - 1]), 'the modal bass never strikes the same note twice in a row')
   ok(modal.bassNotes.filter(note => note.beats >= 2).length > modal.bassNotes.length / 2, 'and mostly holds')
   ok(modal.bassNotes.every(note => note.note <= 40), 'the bass stays in its low octave')
-  ok(modal.chords.every(c => ['m11', 'm7', 'sus', 'maj7#11'].includes(c.quality)), 'modal harmony is extended')
+  ok(modal.chords.every(c => ['m9', 'maj7', 'sus'].includes(c.quality)), 'modal harmony is extended')
   ok(modal.chords.slice(1).every((c, i) => { let move = Math.abs(c.root - modal.chords[i].root) % 12; return move !== 1 && move !== 11 }), 'modal roots never move by a bare half step')
 })
 
@@ -801,12 +845,140 @@ test('research and product decisions are documented', () => {
   for (let heading of ['## Users', '## Jobs and trigger moments', '## Positioning', '## Evidence', '## Alternatives', '## Open questions', '## Sources']) ok(research.includes(heading), heading)
 })
 
+if (!/(?:^|[/\\])deno(?:\.exe)?$/.test(process.execPath)) test('site build is repeatable, updates serialized attributes, and rejects invalid evidence before writing pages', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'waa-site-test-'))
+  const build = () => execFileSync(process.execPath, ['scripts/build-site.mjs'], { cwd: dir, encoding: 'utf8', stdio: 'pipe' })
+  const load = path => readFileSync(join(dir, path), 'utf8')
+  try {
+    mkdirSync(join(dir, 'scripts')); mkdirSync(join(dir, 'benchmark'))
+    for (const path of ['index.html', 'examples', 'scripts/build-site.mjs', 'benchmark/results.json', 'site-metrics.json']) cpSync(join(root, path), join(dir, path), { recursive: true })
+    symlinkSync(join(root, 'node_modules'), join(dir, 'node_modules'), 'junction')
+    const fixturePackage = { ...pkg, version: '9.8.7', files: ['package.json'] }
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(fixturePackage))
+    // Simulate a DOM serializer: boolean-looking data attributes acquire ="".
+    writeFileSync(join(dir, 'index.html'), parseHTML(load('index.html')).document.toString())
+    build()
+    const a = load('index.html'), catalog = load('examples/index.html')
+    build()
+    is(load('index.html'), a, 'A → A is byte-identical')
+    is(load('examples/index.html'), catalog, 'rebuilding cannot duplicate font preloads')
+    is(parseHTML(a).document.querySelector('[data-version]').textContent, 'v9.8.7')
+    const metrics = { version: '9.8.6', wptPass: 1, wptFail: 0, wptSkip: 0, generatedAt: '2020-01-02T00:00:00.000Z' }
+    writeFileSync(join(dir, 'site-metrics.json'), JSON.stringify(metrics))
+    build()
+    const b = parseHTML(load('index.html')).document
+    for (const count of b.querySelectorAll('[data-wpt-count]')) is(count.textContent, '1', 'A → B refreshes every count')
+    is(b.querySelector('[data-wpt-version]').textContent, 'v9.8.6', 'tested version is not silently relabeled as package version')
+    is(b.querySelector('[data-wpt-date]').textContent, '2020-01-02')
+    is(b.querySelector('.hero-spec [data-pack-size]').textContent, b.querySelector('.faq [data-pack-size]').textContent)
+    const published = () => ['index.html', 'examples/index.html', 'examples/tone/index.html', '404.html', 'llms.txt'].map(load)
+    const reject = pattern => {
+      const before = published()
+      assert.throws(build, pattern)
+      assert.deepEqual(published(), before, 'invalid evidence cannot partially rewrite published pages')
+    }
+    for (const invalid of [...[-1, 0, 0.5, Number.MAX_SAFE_INTEGER + 1, '1', null].map(wptPass => ({ ...metrics, wptPass })), null, {},
+      { ...metrics, wptFail: 1 }, { ...metrics, wptSkip: 1 }, { ...metrics, version: null },
+      { ...metrics, generatedAt: 'not-a-date' }, { ...metrics, generatedAt: '2020-02-30T00:00:00.000Z' }]) {
+      writeFileSync(join(dir, 'site-metrics.json'), JSON.stringify(invalid))
+      reject(/Verified WPT results required/)
+    }
+    rmSync(join(dir, 'site-metrics.json'))
+    assert.throws(build, /Verified WPT results required/)
+    writeFileSync(join(dir, 'site-metrics.json'), JSON.stringify(metrics))
+    const report = JSON.parse(load('benchmark/results.json'))
+    const minimal = { ...report, method: { ...report.method, warmup: 0, repetitions: 1 }, implementations: report.implementations.slice(0, 1),
+      scenarios: [{ name: 'silence (baseline)', channels: 1, results: [{ samples: [0], ms: 0, p95: 0, realtime: 0 }] }] }
+    writeFileSync(join(dir, 'benchmark/results.json'), JSON.stringify(minimal))
+    build()
+    const minimalHTML = load('index.html'), table = parseHTML(minimalHTML).document.querySelector('.bench')
+    is(table.querySelectorAll('tbody tr').length, 1, 'A → B replaces the old scenarios')
+    is(table.querySelector('td').textContent, '0.00 / 0.00 ms', 'one zero-valued measurement is valid, not missing evidence')
+    build()
+    is(load('index.html'), minimalHTML, 'minimal B → B is byte-identical')
+    for (const input of ['', JSON.stringify(minimal).slice(0, -1)]) {
+      writeFileSync(join(dir, 'benchmark/results.json'), input)
+      reject(/SyntaxError/)
+    }
+    for (const mutate of [
+      () => null, () => ({}), r => ({ ...r, scenarios: [] }), r => ({ ...r, implementations: [] }),
+      r => ({ ...r, measuredAt: 'not-a-date' }), r => ({ ...r, method: { ...r.method, duration: 0 } }),
+      r => ({ ...r, method: { ...r.method, repetitions: 0 } }), r => ({ ...r, method: { ...r.method, warmup: -1 } }),
+      r => ({ ...r, system: null }), r => { r.implementations[0].version = null; return r },
+      r => { r.scenarios[0].channels = 0; return r }, r => { r.scenarios[0].results = []; return r },
+      ...[[], [null], [-1], ['0'], [0, 0]].map(samples => r => { r.scenarios[0].results[0].samples = samples; return r }),
+      ...['ms', 'p95', 'realtime'].map(key => r => { r.scenarios[0].results[0][key] = 1; return r }),
+    ]) {
+      writeFileSync(join(dir, 'benchmark/results.json'), JSON.stringify(mutate(structuredClone(minimal))))
+      reject(/Verified benchmark results required/)
+    }
+    // A different, odd-sized report verifies the median and nearest-rank p95 rule.
+    minimal.method.repetitions = 3
+    minimal.scenarios[0].results[0] = { samples: [3, 1, 2], ms: 2, p95: 3, realtime: 2 / 1000 / minimal.method.duration }
+    writeFileSync(join(dir, 'benchmark/results.json'), JSON.stringify(minimal))
+    build()
+    is(parseHTML(load('index.html')).document.querySelector('.bench td').textContent, '2.00 / 3.00 ms')
+    // Replacement metacharacters are content, not instructions to String.replace.
+    const catalogSource = load('examples/catalog.js'), optionsSource = load('examples/options.js')
+    let previous
+    for (const label of ["$& $$ $` $' <&>", "$& $$ $` $' <&>", 'plain B']) {
+      minimal.system.cpu = minimal.implementations[0].name = minimal.scenarios[0].name = label
+      writeFileSync(join(dir, 'benchmark/results.json'), JSON.stringify(minimal))
+      metrics.version = `9.8.6 (${label})`
+      writeFileSync(join(dir, 'site-metrics.json'), JSON.stringify(metrics))
+      const home = parseHTML(load('index.html')).document
+      home.querySelector('.site-footer a[href="https://github.com/sebpiq"]').textContent = label
+      home.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]').textContent = label
+      home.querySelector('link[rel="preload"][as="font"]').setAttribute('data-literal', label)
+      writeFileSync(join(dir, 'index.html'), home.toString())
+      writeFileSync(join(dir, 'examples/catalog.js'), catalogSource + `\nexamples.find(e => e.id === 'tone').command = ${JSON.stringify(label)}\n`)
+      writeFileSync(join(dir, 'examples/options.js'), optionsSource + `\nexampleOptions.tone[0].description = ${JSON.stringify(label)}\n`)
+      build()
+      const page = parseHTML(load('index.html')).document
+      is(page.querySelectorAll('.bench').length, 1, 'literal $& cannot splice the previous table into the new one')
+      is(page.querySelector('.bench tbody th').textContent, label)
+      is(page.querySelector('[data-wpt-version]').textContent, `v${metrics.version}`, 'tested-version text is escaped and preserved')
+      is(page.querySelector('.bench thead th:nth-child(2)').textContent, `${label} v${minimal.implementations[0].version}median / p95`)
+      ok(page.querySelector('.bench caption').textContent.includes(label), 'CPU metadata survives escaping and replacement')
+      for (const path of ['index.html', 'examples/index.html', 'examples/tone/index.html', '404.html']) {
+        const document = parseHTML(load(path)).document
+        is(document.querySelector('.site-footer a[href="https://github.com/sebpiq"]').textContent, label, `${path}: borrowed footer preserves literal text`)
+        is(document.querySelector('header a[href="https://github.com/audiojs/web-audio-api"]').textContent, label, `${path}: borrowed header preserves literal text`)
+        is(document.querySelector('link[rel="preload"][as="font"]').getAttribute('data-literal'), label, `${path}: borrowed font attributes preserve literal text`)
+      }
+      const tone = parseHTML(load('examples/tone/index.html')).document
+      is(tone.querySelector('#cli-command').textContent, label, 'CLI text is not replacement syntax or HTML')
+      is(tone.querySelector('#cli-options dd').textContent, label, 'option descriptions preserve literal text too')
+      if (previous?.label === label) assert.deepEqual(published(), previous.pages, 'literal A → A is byte-identical')
+      previous = { label, pages: published() }
+    }
+    rmSync(join(dir, 'benchmark/results.json'))
+    assert.throws(build, /ENOENT/, 'missing raw results cannot leave a stale benchmark table')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('homepage evidence uses one verified version, count, date, and archive size', () => {
+  const document = documentOf('index.html'), metrics = JSON.parse(read('site-metrics.json'))
+  for (const count of document.querySelectorAll('[data-wpt-count]')) is(count.textContent, metrics.wptPass.toLocaleString('en-US'))
+  is(document.querySelector('[data-wpt-version]').textContent, `v${metrics.version}`)
+  is(document.querySelector('[data-wpt-date]').textContent, metrics.generatedAt.slice(0, 10))
+  is(document.querySelector('.hero-spec [data-pack-size]').textContent, document.querySelector('.faq [data-pack-size]').textContent)
+  const report = JSON.parse(read('benchmark/results.json'))
+  for (const scenario of report.scenarios) for (const result of scenario.results) {
+    is(result.samples.length, report.method.repetitions)
+    ok(result.samples.every(Number.isFinite))
+    const sorted = [...result.samples].sort((a, b) => a - b)
+    is(result.ms, (sorted[24] + sorted[25]) / 2)
+    is(result.p95, sorted[Math.ceil(sorted.length * 0.95) - 1])
+  }
+})
+
 test('FAQ uses scoped adapter links, practical code, and broader decoder context', () => {
   let document = documentOf('index.html')
   ok(document.querySelector('a[href="https://github.com/audiojs/speaker"] code').textContent.includes('@audio/speaker'))
   ok(document.querySelector('a[href="https://github.com/audiojs/mic"] code').textContent.includes('@audio/mic'))
-  ok(document.body.textContent.includes('does not vary by browser or operating system'))
-  for (let question of ['Do Tone.js and other libraries work?', 'How do I test audio in CI?', 'Can it run without speakers?', 'Does it support AudioWorklets?']) {
+  ok(document.body.textContent.includes('independently of the browser’s built-in codecs'))
+  for (let question of ['Will my existing code work?', 'How do I render and test in CI?', 'Do AudioWorklets work?']) {
     let details = [...document.querySelectorAll('.faq details')].find(item => item.querySelector('summary').textContent === question)
     ok(details.querySelector('pre > code.language-javascript'), `${question} code`)
   }

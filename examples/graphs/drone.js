@@ -1,4 +1,4 @@
-// Drone: Play a sustained tanpura, pad, shruti, or harmonic drone voice from seeded, continuously ramped oscillator banks.
+// Drone: Play a tanpura, pad, shruti, harmonic drone, or cinematic strings, with an optional slow melody.
 // CLI: npx web-audio-api drone C3 30s
 // Pass any compatible Web Audio context; the browser or CLI wrapper owns I/O and lifecycle.
 
@@ -75,6 +75,7 @@ function buildTanpura(ctx, { frequency, duration, when, random, bus, sources, no
   let panners = strings.map(string => { let panner = pan(ctx, string.pan); panner.connect(body); nodes.push(panner); return panner })
   let stretch = strings.map(() => 0.00004 + random() * 0.00006) // slight inharmonicity, per string
   let currentFrequency = frequency
+  const active = new Map()
   let cycle = 4.8 + random() * 0.8 // seconds per Pa Sa Sa SA round
   let ring = cycle * 1.35
   let points = 96
@@ -89,7 +90,7 @@ function buildTanpura(ctx, { frequency, duration, when, random, bus, sources, no
     for (let h = 1; h <= harmonics; h++) {
       let osc = ctx.createOscillator(), level = ctx.createGain()
       osc.frequency.value = base * h * Math.sqrt(1 + stretch[index] * h * h)
-      let plucked = Math.abs(Math.sin(Math.PI * h * position)) / h ** 1.1 * (0.85 + random() * 0.3)
+      let plucked = Math.abs(Math.sin(Math.PI * h * position)) / h ** 1.18 * (0.9 + random() * 0.2)
       let tau = ring / 2.6 / (1 + 0.08 * h ** 1.3) // higher partials of the pluck die first
       let curve = new Float32Array(points)
       for (let i = 0; i < points; i++) {
@@ -98,16 +99,30 @@ function buildTanpura(ctx, { frequency, duration, when, random, bus, sources, no
         let centre = 2.5 + 12 * (1 - Math.exp(-t / sweepRate))
         let formant = Math.exp(-((Math.log(h) - Math.log(centre)) ** 2) / (2 * 0.5 ** 2))
         let buzz = jvari * formant * Math.exp(-t / 2.8) / h ** 0.35 * Math.min(1, t / 0.15)
-        curve[i] = plucked * Math.exp(-t / tau) + buzz
+        // The bridge contribution breathes; it is not a static organ partial.
+        curve[i] = (plucked * Math.exp(-t / tau) + buzz * (0.9 + 0.1 * Math.sin(t * (3.1 + index * 0.19) + h))) * Math.sign(Math.sin(Math.PI * h * position))
       }
       curve[points - 1] = 0
-      if (Math.max(...curve) < 0.002) continue
+      if (!curve.some(value => Math.abs(value) >= 0.002)) continue
+      // A four-cent settle needs only control-rate updates; stop its inaudible tail.
+      // Amplitude envelopes and interactive frequency glides remain audio-rate.
+      osc.detune.automationRate = 'k-rate'
+      osc.detune.setValueAtTime(4 * strength, time)
+      osc.detune.setTargetAtTime(0, time + attack, 0.12)
+      osc.detune.setValueAtTime(0, time + attack + 0.96)
+      active.set(osc, osc.frequency.value / currentFrequency)
       level.gain.setValueAtTime(0, time)
       level.gain.linearRampToValueAtTime(curve[0] * strength, time + attack)
       level.gain.setValueCurveAtTime(curve.map(value => value * strength), time + attack, ring)
       osc.connect(level).connect(panners[index])
       osc.start(time); safeStop(osc, time + attack + ring + 0.02)
-      osc.onended = () => level.disconnect()
+      osc.onended = () => {
+        level.disconnect(); active.delete(osc)
+        if (typeof ctx.startRendering !== 'function') {
+          sources.splice(sources.indexOf(osc), 1)
+          nodes.splice(nodes.indexOf(osc), 1); nodes.splice(nodes.indexOf(level), 1)
+        }
+      }
       sources.push(osc); nodes.push(osc, level)
     }
   }
@@ -130,12 +145,16 @@ function buildTanpura(ctx, { frequency, duration, when, random, bus, sources, no
     let lookahead = 6
     scheduleUntil(ctx.currentTime - when + lookahead)
     let timer = setInterval(() => {
-      if (ctx.state !== 'running' || next >= duration) return clearInterval(timer)
+      if (ctx.state === 'closed' || next >= duration) return clearInterval(timer)
+      if (ctx.state !== 'running') return
       scheduleUntil(ctx.currentTime - when + lookahead)
     }, 1000)
   }
 
-  let retune = target => { currentFrequency = target } // takes effect from the next pluck on, like a real retune
+  let retune = (target, time = ctx.currentTime) => {
+    currentFrequency = target
+    for (const [osc, ratio] of active) osc.frequency.setTargetAtTime(target * ratio, time, 0.3)
+  }
   return { retune, targetGain: 0.19, wet: 0.28 }
 }
 
@@ -145,16 +164,20 @@ function buildTanpura(ctx, { frequency, duration, when, random, bus, sources, no
 function buildPad(ctx, { frequency, duration, when, random, bus, sources, nodes }) {
   let breathe = ctx.createGain(); breathe.gain.value = 0.86
   let filter = ctx.createBiquadFilter()
-  filter.type = 'lowpass'; filter.Q.value = 1.4; filter.frequency.value = frequency * 5.5
+  filter.type = 'lowpass'; filter.Q.value = 0.65; filter.frequency.value = frequency * 5.5
   let sum = ctx.createGain()
   sum.connect(filter)
   breathe.connect(bus)
   nodes.push(breathe, filter, sum)
 
   let oscillators = []
+  const wave = ctx.createPeriodicWave(new Float32Array(17), Float32Array.from({ length: 17 }, (_, h) => h ? 1 / h ** 1.55 : 0))
   let voice = (ratio, cents, type, level, position) => {
     let osc = ctx.createOscillator(), gain = ctx.createGain(), panner = pan(ctx, position)
-    osc.type = type; osc.frequency.value = frequency * ratio; osc.detune.value = cents
+    if (type === 'sawtooth') osc.setPeriodicWave(wave)
+    else osc.type = type
+    osc.frequency.value = frequency * ratio; osc.detune.value = cents
+    lfo(ctx, { rate: 0.04 + random() * 0.08, depth: 2.2, when, duration, target: osc.detune, sources, nodes })
     gain.gain.value = level
     osc.connect(gain).connect(panner).connect(sum)
     osc.start(when); safeStop(osc, when + duration + 0.05)
@@ -162,7 +185,7 @@ function buildPad(ctx, { frequency, duration, when, random, bus, sources, nodes 
     oscillators.push({ osc, ratio })
   }
   for (let [i, cents] of [-14, -8, -3, 3, 8, 14].entries()) voice(1, cents + (random() - 0.5) * 2, 'sawtooth', 0.17, (i % 2 ? 1 : -1) * (0.25 + Math.abs(cents) / 40))
-  voice(0.5, 0, 'sine', 0.42, 0)
+  voice(0.5, 0, 'sine', 0.27, 0)
   voice(2, -5, 'triangle', 0.07, -0.5)
   voice(2, 5, 'triangle', 0.07, 0.5)
 
@@ -182,7 +205,10 @@ function buildPad(ctx, { frequency, duration, when, random, bus, sources, nodes 
   lfo(ctx, { rate: 0.012 + random() * 0.012, depth: frequency * 2.2, when, duration, target: filter.frequency, sources, nodes })
   lfo(ctx, { rate: 0.02 + random() * 0.02, depth: 0.12, when, duration, target: breathe.gain, sources, nodes })
 
-  let retune = target => { for (let { osc, ratio } of oscillators) osc.frequency.setTargetAtTime(target * ratio, ctx.currentTime, 0.4) }
+  let retune = (target, time = ctx.currentTime) => {
+    for (let { osc, ratio } of oscillators) osc.frequency.setTargetAtTime(target * ratio, time, 0.4)
+    filter.frequency.setTargetAtTime(target * 5.5, time, 0.4)
+  }
   return { retune, targetGain: 0.15, wet: 0.35 }
 }
 
@@ -230,7 +256,7 @@ function buildShruti(ctx, { frequency, duration, when, random, bus, sources, nod
   for (let { osc } of oscillators) sag.connect(osc.detune)
   nodes.push(sag)
 
-  let retune = target => { for (let { osc, ratio } of oscillators) osc.frequency.setTargetAtTime(target * ratio, ctx.currentTime, 0.3) }
+  let retune = (target, time = ctx.currentTime) => { for (let { osc, ratio } of oscillators) osc.frequency.setTargetAtTime(target * ratio, time, 0.3) }
   return { retune, targetGain: 0.24, wet: 0.22 }
 }
 
@@ -255,16 +281,122 @@ function buildHarmonic(ctx, { frequency, duration, when, random, bus, sources, n
       voices.push({ osc, ratio, harmonic, jitter })
     }
   }
-  let retune = target => { for (let voice of voices) voice.osc.frequency.setTargetAtTime(target * voice.ratio * voice.harmonic * voice.jitter, ctx.currentTime, 0.08) }
+  let retune = (target, time = ctx.currentTime) => { for (let voice of voices) voice.osc.frequency.setTargetAtTime(target * voice.ratio * voice.harmonic * voice.jitter, time, 0.3) }
   return { retune, targetGain: 0.055, wet: 0.3 }
 }
 
-const voices = { tanpura: buildTanpura, pad: buildPad, shruti: buildShruti, harmonic: buildHarmonic }
+// Bowed ensemble: independently phased players, body-shaped harmonics, separate
+// bow-pressure and vibrato motion. Open fifths leave room for the optional melody.
+function buildStrings(ctx, { frequency, duration, when, random, bus, sources, nodes }) {
+  const players = []
+  for (const [ratio, count, position] of [[0.5, 3, -0.45], [1, 4, -0.15], [1.5, 3, 0.25], [2, 3, 0.55]]) {
+    for (let player = 0; player < count; player++) {
+      const osc = ctx.createOscillator(), bow = ctx.createGain(), panner = pan(ctx, position + (random() - 0.5) * 0.2), pressure = ctx.createGain()
+      pressure.gain.value = 0.9
+      const real = new Float32Array(33), imag = new Float32Array(33), phase = random() * Math.PI * 2
+      for (let h = 1; h < imag.length && frequency * ratio * h < ctx.sampleRate * 0.42; h++) {
+        const hz = frequency * ratio * h
+        const body = 0.6 + 0.8 * Math.exp(-((Math.log(hz / 500)) ** 2) / 0.6) + 0.45 * Math.exp(-((Math.log(hz / 2200)) ** 2) / 0.25)
+        const amplitude = body / h ** 1.15
+        real[h] = amplitude * Math.sin(h * phase); imag[h] = amplitude * Math.cos(h * phase)
+      }
+      osc.setPeriodicWave(ctx.createPeriodicWave(real, imag))
+      osc.frequency.value = frequency * ratio
+      osc.detune.value = (player - (count - 1) / 2) * 4 + (random() - 0.5) * 3
+      const attack = Math.min(0.45 + random() * 0.3, duration / 3)
+      bow.gain.setValueAtTime(0, when)
+      bow.gain.linearRampToValueAtTime(0.1, when + attack)
+      osc.connect(bow).connect(panner).connect(pressure).connect(bus)
+      lfo(ctx, { rate: 4.6 + random(), depth: 5 + random() * 3, when, duration, target: osc.detune, sources, nodes })
+      lfo(ctx, { rate: 0.035 + random() * 0.055, depth: 2.5, when, duration, target: osc.detune, sources, nodes })
+      // Multiplicative bow pressure, so the modulation cannot leak through the attack.
+      lfo(ctx, { rate: 0.08 + random() * 0.08, depth: 0.1, when, duration, target: pressure.gain, sources, nodes })
+      osc.start(when); safeStop(osc, when + duration + 0.05)
+      sources.push(osc); nodes.push(osc, bow, panner, pressure)
+      players.push({ osc, ratio })
+    }
+  }
+  const friction = ctx.createBufferSource(), band = ctx.createBiquadFilter(), air = ctx.createGain()
+  const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 1.7), ctx.sampleRate), samples = buffer.getChannelData(0)
+  for (let i = 0; i < samples.length; i++) samples[i] = (random() * 2 - 1) * Math.min(1, i / 96, (samples.length - 1 - i) / 96)
+  friction.buffer = buffer; friction.loop = true
+  band.type = 'bandpass'; band.frequency.value = 1900; band.Q.value = 0.55
+  air.gain.value = 0.015
+  friction.connect(band).connect(air).connect(bus)
+  friction.start(when); safeStop(friction, when + duration + 0.05)
+  sources.push(friction); nodes.push(friction, band, air)
+  return {
+    retune: (target, time = ctx.currentTime) => { for (const { osc, ratio } of players) osc.frequency.setTargetAtTime(target * ratio, time, 0.6) },
+    targetGain: 0.28, wet: 0.45,
+  }
+}
+
+function buildMelody(ctx, { frequency, duration, when, random, bus, sources, nodes, mode }) {
+  const scale = mode === 'dorian' ? [0, 2, 3, 5, 7, 9, 10] : [0, 2, 4, 7, 9]
+  const motif = [0, 2, 1, 3, 2, 1, 3, 0], notes = [], active = new Map()
+  let base = frequency, next = 2, index = 0
+  const scheduleUntil = horizon => {
+    while (next < horizon && next < duration - 0.5) {
+      const degree = motif[index % motif.length] + (Math.floor(index / motif.length) % 2 ? 1 : 0)
+      const interval = scale[degree % scale.length], ratio = 2 * 2 ** (interval / 12)
+      const length = Math.min(index % 4 === 3 ? 4 : 2.2, duration - next)
+      const time = when + next, out = ctx.createGain(), panner = pan(ctx, 0.08)
+      out.gain.setValueAtTime(0, time)
+      out.gain.linearRampToValueAtTime(0.3, time + Math.min(0.22, length / 3))
+      out.gain.setValueAtTime(0.3, time + length * 0.65)
+      out.gain.linearRampToValueAtTime(0, time + length)
+      out.connect(panner).connect(bus)
+      nodes.push(out, panner)
+      let remaining = 3
+      for (const [h, amount] of [[1, 0.8], [2, 0.14], [3, 0.035]]) {
+        const osc = ctx.createOscillator(), level = ctx.createGain()
+        osc.frequency.value = base * ratio * h
+        osc.detune.setValueAtTime(-14, time); osc.detune.setTargetAtTime(0, time + 0.04, 0.12)
+        level.gain.value = amount
+        osc.connect(level).connect(out)
+        osc.start(time); safeStop(osc, time + length + 0.02)
+        active.set(osc, ratio * h)
+        osc.onended = () => {
+          active.delete(osc); level.disconnect()
+          if (typeof ctx.startRendering !== 'function') {
+            sources.splice(sources.indexOf(osc), 1)
+            nodes.splice(nodes.indexOf(osc), 1); nodes.splice(nodes.indexOf(level), 1)
+          }
+          if (!--remaining) {
+            out.disconnect(); panner.disconnect()
+            if (typeof ctx.startRendering !== 'function') {
+              nodes.splice(nodes.indexOf(out), 1); nodes.splice(nodes.indexOf(panner), 1)
+            }
+          }
+        }
+        sources.push(osc); nodes.push(osc, level)
+      }
+      notes.push({ time, length, interval })
+      next += length + (index % 4 === 3 ? 2 : 0.2 + random() * 0.2)
+      index++
+    }
+  }
+  if (typeof ctx.startRendering === 'function') scheduleUntil(duration)
+  else {
+    scheduleUntil(ctx.currentTime - when + 6)
+    const timer = setInterval(() => {
+      if (ctx.state === 'closed' || next >= duration - 0.5) return clearInterval(timer)
+      if (ctx.state === 'running') scheduleUntil(ctx.currentTime - when + 6)
+    }, 500)
+  }
+  return { notes, retune: (target, time = ctx.currentTime) => {
+    base = target
+    for (const [osc, ratio] of active) osc.frequency.setTargetAtTime(target * ratio, time, 0.4)
+  } }
+}
+
+const voices = { tanpura: buildTanpura, pad: buildPad, shruti: buildShruti, harmonic: buildHarmonic, strings: buildStrings }
 
 export function init(ctx, {
-  frequency = 130.81, duration = 5, seed = 0x44524f4e, voice = 'tanpura', when = ctx.currentTime,
+  frequency = 130.81, duration = 5, seed = 0x44524f4e, voice = 'tanpura', melody = 'off', when = ctx.currentTime,
   destination = ctx.destination,
 } = {}) {
+  if (!(frequency > 0) || !Number.isFinite(frequency) || !(duration > 0) || !Number.isFinite(duration)) throw new RangeError('Positive finite frequency and duration required')
   let random = seeded(seed)
   let sources = [], nodes = []
   let master = ctx.createGain(); master.gain.value = 0.0001
@@ -276,9 +408,11 @@ export function init(ctx, {
   bus.connect(room).connect(wet).connect(master)
   nodes.push(master, bus, dry, room, wet)
 
-  let build = voices[voice] || buildTanpura
+  if (!Object.hasOwn(voices, voice)) voice = 'tanpura'
+  let build = voices[voice]
   let { retune, targetGain, wet: wetLevel } = build(ctx, { frequency, duration, when, random, bus, sources, nodes })
   wet.gain.value = wetLevel
+  const line = melody === 'off' ? null : buildMelody(ctx, { frequency, duration, when, random, bus, sources, nodes, mode: melody })
 
   // Every level change is ramped: no sample-to-sample steps at fade-in, fade-out, or start
   let fadeIn = Math.min(2.5, duration / 3)
@@ -287,11 +421,15 @@ export function init(ctx, {
   master.gain.exponentialRampToValueAtTime(targetGain, when + fadeIn)
   let end = when + duration, fadeStart = Math.max(when + fadeIn, end - fadeOutTime)
   master.gain.setValueAtTime(targetGain, fadeStart)
-  master.gain.exponentialRampToValueAtTime(0.0001, end)
+  master.gain.exponentialRampToValueAtTime(0.0001, end - Math.min(0.01, fadeOutTime / 2))
+  master.gain.linearRampToValueAtTime(0, end)
 
   return {
     sources, nodes, duration,
-    graph: 'Seeded voice bank (tanpura/pad/shruti/harmonic) → Master Gain → Destination',
-    data: { master, retune: (next, time = ctx.currentTime) => retune(next, time), voice },
+    graph: 'Seeded voice bank and optional melody → Stereo room → Master Gain → Destination',
+    data: { master, melody: line?.notes || [], voice, retune: (next, time = ctx.currentTime) => {
+      if (!(next > 0) || !Number.isFinite(next)) throw new RangeError('Positive finite frequency required')
+      retune(next, time); line?.retune(next, time)
+    } },
   }
 }
