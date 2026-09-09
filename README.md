@@ -1,38 +1,12 @@
 # <img src="assets/logo.svg" width="28" valign="middle" alt=""> web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-[Web Audio API](https://audiojs.dev/web-audio-api/) pure JavaScript implementation. Useful for:
-
-* **Server-side rendering** – reuse Web Audio graphs with `OfflineAudioContext`.
-* **Audio in CI** – render and assert on samples in Node, Deno, and Bun.
-* **Audio analysis** – `decodeAudioData` for 20+ formats, `AnalyserNode` as in browser.
-* **Agents and bots** – write PCM to streams, no audio device needed.
-* **Compatibility testing** – a fully passing checked-in [WPT corpus under our Node runner](test/WPT.md).
-* **Tone.js and web audio libs** – `import 'web-audio-api/polyfill'` installs the globals.
-* **CLI audio scripting** – PCM in and out through stdio, 46 runnable examples.
+A pure JavaScript implementation of the [Web Audio API](https://audiojs.dev/web-audio-api/) for Node.js. Render existing audio graphs on the server, test audio processing in CI, or play sound through your speakers.
 
 ```
 npm install web-audio-api
 ```
 
 ## Use
-
-```js
-import { AudioContext } from 'web-audio-api'
-
-const ctx = new AudioContext()
-await ctx.resume()
-
-const osc = ctx.createOscillator()
-osc.frequency.value = 440
-osc.connect(ctx.destination)
-osc.start()
-// → A440 through your speakers
-```
-
-[`@audio/speaker`](https://github.com/audiojs/speaker) provides device output through platform-specific backends, including native dependencies. The DSP engine itself is JavaScript.
-
-<details>
-<summary><b>How do I render offline, without speakers?</b></summary>
 
 ```js
 import { OfflineAudioContext } from 'web-audio-api'
@@ -47,25 +21,42 @@ const buffer = await ctx.startRendering()
 // buffer.getChannelData(0) → Float32Array of 44100 samples
 ```
 
-Rendering runs as fast as the graph and host allow and opens no audio device, so it can run in a test runner for asserting on samples. See [render-to-buffer.js](examples/render-to-buffer.js).
+This renders one second of a 440 Hz tone into memory without opening an audio device. Use the samples in a test or save them to a file. See [render-to-buffer.js](examples/render-to-buffer.js).
+
+<details>
+<summary><b>Where does it run?</b></summary>
+
+Node.js has the broadest test coverage, including the fully passing checked-in [WPT corpus under our Node runner](test/WPT.md). Deno and Bun run offline rendering checks in CI. See the [runtime support details](https://audiojs.dev/web-audio-api/#faq) for device access and other targets.
 
 </details>
 
 <details>
-<summary><b>How do I close an AudioContext?</b></summary>
+<summary><b>How to use it as a polyfill?</b></summary>
 
 ```js
-await ctx.close()
+import 'web-audio-api/polyfill'
+// AudioContext, GainNode, etc. are now global
 ```
-Or with [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management): `using ctx = new AudioContext()`
+
+The polyfill also installs `navigator.mediaDevices.getUserMedia({ audio: true })`, backed by the optional [`@audio/mic`](https://github.com/audiojs/mic) peer dependency. This lets browser mic-capture code run verbatim in Node:
+
+```js
+import 'web-audio-api/polyfill'
+// npm install @audio/mic
+
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+const ctx = new AudioContext()
+const src = ctx.createMediaStreamSource(stream)
+src.connect(ctx.destination)
+
+// stop capture
+stream.getAudioTracks()[0].stop()
+```
+
+Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
 
 </details>
-<details>
-<summary><b>Why does it start suspended?</b></summary>
 
-`AudioContext` starts suspended to match the [Web Audio lifecycle](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audiocontext). In Node, call `await ctx.resume()`. Browsers may require that call inside a user gesture. `OfflineAudioContext` doesn't need it.
-
-</details>
 <details>
 <summary><b>Does it work with Tone.js?</b></summary>
 
@@ -89,8 +80,9 @@ node --import web-audio-api/polyfill app.js
 Then static `import * as Tone from 'tone'` works in `app.js`.
 
 </details>
+
 <details>
-<summary><b>How do I decode audio files?</b></summary>
+<summary><b>How to decode audio files?</b></summary>
 
 ```js
 const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
@@ -98,8 +90,30 @@ const buffer = await ctx.decodeAudioData(readFileSync('track.mp3'))
 `decodeAudioData()` uses [@audio/decode](https://github.com/audiojs/decode) for MP3, WAV, Ogg Vorbis, Opus, FLAC, AAC, ALAC, AIFF, CAF, WebM, and other supported audio or video containers without FFmpeg or native bindings.
 
 </details>
+
 <details>
-<summary id="how-do-i-capture-audio-from-the-microphone"><b>How do I capture audio from the microphone?</b></summary>
+<summary><b>How to play sound through speakers?</b></summary>
+
+```js
+import { AudioContext } from 'web-audio-api'
+
+const ctx = new AudioContext()
+await ctx.resume()
+
+const osc = ctx.createOscillator()
+osc.frequency.value = 440
+osc.connect(ctx.destination)
+osc.onended = () => ctx.close()
+osc.start()
+osc.stop(ctx.currentTime + 1) // play for one second, then close the device
+```
+
+[`@audio/speaker`](https://github.com/audiojs/speaker) provides device output through platform-specific backends, including native dependencies. The DSP engine itself is JavaScript.
+
+</details>
+
+<details>
+<summary id="how-do-i-capture-audio-from-the-microphone"><b>How to capture audio from the microphone?</b></summary>
 
 In Node, pair [`@audio/mic`](https://github.com/audiojs/mic) with `CustomMediaStreamTrack`:
 
@@ -141,39 +155,51 @@ See [examples/mic.js](examples/mic.js) for a runnable demo with gain and VU mete
 If the default microphone backend cannot open the device, pass `backend: 'process'` to use `sox`/`ffmpeg` instead: `mic({ ..., backend: 'process' })`. All bundled examples accept `backend=process` on the command line.
 
 </details>
+
 <details>
-<summary><b>How do I use it as a polyfill?</b></summary>
+<summary><b>Why does it start suspended?</b></summary>
+
+`AudioContext` starts suspended to match the [Web Audio lifecycle](https://webaudio.github.io/web-audio-api/#dom-audiocontext-audiocontext). In Node, call `await ctx.resume()`. Browsers may require that call inside a user gesture. `OfflineAudioContext` doesn't need it.
+
+</details>
+
+<details>
+<summary><b>How to close an AudioContext?</b></summary>
 
 ```js
-import 'web-audio-api/polyfill'
-// AudioContext, GainNode, etc. are now global
+await ctx.close()
 ```
-
-The polyfill also installs `navigator.mediaDevices.getUserMedia({ audio: true })`, backed by the optional [`@audio/mic`](https://github.com/audiojs/mic) peer dependency. This lets browser mic-capture code run verbatim in Node:
-
-```js
-import 'web-audio-api/polyfill'
-// npm install @audio/mic
-
-const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-const ctx = new AudioContext()
-const src = ctx.createMediaStreamSource(stream)
-src.connect(ctx.destination)
-
-// stop capture
-stream.getAudioTracks()[0].stop()
-```
-
-Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
+Or with [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management): `using ctx = new AudioContext()`
 
 </details>
 
 ## Examples
 
+46 runnable examples cover rendering, analysis, synthesis, and PCM streaming.
+
 `node examples/<name>.js` runs each example with its defaults.
 `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation.
 
-### Test signals
+<details>
+<summary id="api"><b>API</b></summary>
+
+* [speaker.js](examples/speaker.js): Hello world
+* [lfo.js](examples/lfo.js): Tremolo via LFO
+* [spatial.js](examples/spatial.js): Sound moving through space
+* [worklet.js](examples/worklet.js): Custom AudioWorkletProcessor
+* [linked-params.js](examples/linked-params.js): One source controlling many gains
+* [fft.js](examples/fft.js): Frequency spectrum
+* [render-to-buffer.js](examples/render-to-buffer.js): Offline render → buffer
+* [process-file.js](examples/process-file.js): Audio file → EQ + compress → render
+* [pipe-stdout.js](examples/pipe-stdout.js): PCM to stdout – pipe to `aplay`, `sox`, etc.
+* [mic.js](examples/mic.js): Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [recorder.js](examples/recorder.js): Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
+* [reverb.js](examples/reverb.js): Convolver with a seeded impulse response – `2 0.35 3s`
+
+</details>
+
+<details>
+<summary id="test-signals"><b>Test signals</b></summary>
 
 * [tone.js](examples/tone.js): Reference pitch – `sine A4 2s`
 * [sweep.js](examples/sweep.js): Hear the audible range – `20..20k exp 3s`
@@ -186,7 +212,36 @@ Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` co
 * [latency-tester.js](examples/latency-tester.js): Round-trip latency: speakers → mic, in ms (requires [`@audio/mic`](https://github.com/audiojs/mic))
 * [level-meter.js](examples/level-meter.js): Mic RMS and peak in dBFS, fast or slow ballistics (requires [`@audio/mic`](https://github.com/audiojs/mic))
 
-### Illusions
+</details>
+
+<details>
+<summary id="synthesis"><b>Synthesis</b></summary>
+
+* [subtractive-synth.js](examples/subtractive-synth.js): Sawtooth → filter sweep → ADSR
+* [additive.js](examples/additive.js): Waveforms from harmonics – `square 220 16 3s`
+* [fm-synthesis.js](examples/fm-synthesis.js): DX7 frequency modulation – `440 2 5 3s`
+* [karplus-strong.js](examples/karplus-strong.js): A string plucked from noise – `A4 4s`
+* [wavetable.js](examples/wavetable.js): Fourier wavetables, crossfaded – `organ 220 0.3 6s`
+* [granular.js](examples/granular.js): Grain cloud from a seeded buffer – `0.08 15 4 10s`
+
+</details>
+
+<details>
+<summary id="generative"><b>Generative</b></summary>
+
+[Musical models, styles, and offline listening fixtures](examples/MUSIC.md).
+
+* [sequencer.js](examples/sequencer.js): Step sequencer – precise timing
+* [serial.js](examples/serial.js): Twelve-tone rows (Webern) – `72 30s`
+* [gamelan.js](examples/gamelan.js): Balinese kotekan – two parts, one melody – `120 20s`
+* [drone.js](examples/drone.js): Tanpura, pads, or cinematic strings – `voice=strings melody=pentatonic freq=D3 -d 30s`
+* [jazz.js](examples/jazz.js): Jazz in seven styles, modal first, lead on guitar, flute, harp, or piano – `style=ambient lead=harp`
+* [euclidean.js](examples/euclidean.js): Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s`
+
+</details>
+
+<details>
+<summary id="illusions"><b>Illusions</b></summary>
 
 * [shepard.js](examples/shepard.js): Pitch that rises forever – `up 15s`
 * [risset-rhythm.js](examples/risset-rhythm.js): Beat that accelerates forever – `up 120 20s`
@@ -201,40 +256,7 @@ Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` co
 * [huggins-pitch.js](examples/huggins-pitch.js): A pitch that exists in neither ear (headphones!) – `600 20s`
 * [zwicker-tone.js](examples/zwicker-tone.js): An after-tone lingers where the notch was – `2000 3 2 20s`
 
-### Synthesis
-
-* [subtractive-synth.js](examples/subtractive-synth.js): Sawtooth → filter sweep → ADSR
-* [additive.js](examples/additive.js): Waveforms from harmonics – `square 220 16 3s`
-* [fm-synthesis.js](examples/fm-synthesis.js): DX7 frequency modulation – `440 2 5 3s`
-* [karplus-strong.js](examples/karplus-strong.js): A string plucked from noise – `A4 4s`
-* [wavetable.js](examples/wavetable.js): Fourier wavetables, crossfaded – `organ 220 0.3 6s`
-* [granular.js](examples/granular.js): Grain cloud from a seeded buffer – `0.08 15 4 10s`
-
-### Generative
-
-[Musical models, styles, and offline listening fixtures](examples/MUSIC.md).
-
-* [sequencer.js](examples/sequencer.js): Step sequencer – precise timing
-* [serial.js](examples/serial.js): Twelve-tone rows (Webern) – `72 30s`
-* [gamelan.js](examples/gamelan.js): Balinese kotekan – two parts, one melody – `120 20s`
-* [drone.js](examples/drone.js): Tanpura, pads, or cinematic strings – `voice=strings melody=pentatonic freq=D3 -d 30s`
-* [jazz.js](examples/jazz.js): Jazz in seven styles, modal first, lead on guitar, flute, harp, or piano – `style=ambient lead=harp`
-* [euclidean.js](examples/euclidean.js): Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s`
-
-### API
-
-* [speaker.js](examples/speaker.js): Hello world
-* [lfo.js](examples/lfo.js): Tremolo via LFO
-* [spatial.js](examples/spatial.js): Sound moving through space
-* [worklet.js](examples/worklet.js): Custom AudioWorkletProcessor
-* [linked-params.js](examples/linked-params.js): One source controlling many gains
-* [fft.js](examples/fft.js): Frequency spectrum
-* [render-to-buffer.js](examples/render-to-buffer.js): Offline render → buffer
-* [process-file.js](examples/process-file.js): Audio file → EQ + compress → render
-* [pipe-stdout.js](examples/pipe-stdout.js): PCM to stdout – pipe to `aplay`, `sox`, etc.
-* [mic.js](examples/mic.js): Live microphone → speakers with RMS meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
-* [recorder.js](examples/recorder.js): Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
-* [reverb.js](examples/reverb.js): Convolver with a seeded impulse response – `2 0.35 3s`
+</details>
 
 ## Performance
 
