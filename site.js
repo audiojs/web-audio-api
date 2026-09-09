@@ -1,5 +1,7 @@
 import { byId } from './examples/catalog.js'
 import { plotsVisible } from './assets/signal.js'
+import { PreviewContext } from './assets/hero-context.js'
+import { renderAudio } from './assets/render.js'
 import { highlight, mountExample, remember } from './examples/browser.js'
 
 const dialog = document.getElementById('example-dialog')
@@ -11,49 +13,120 @@ const unlockPage = () => document.documentElement.classList.remove('modal-open')
 // while the modal is open the address is the example's own page, so the link shares as that page
 const homeURL = new URL('./', location.href)
 
-// The hero file runs here unchanged: the import map hands it the page's own Web
-// Audio, whose constructor announces each context so the button can follow it.
-// the hero plays at whatever level the panel's slider is set to, kept across sessions
+// Both engines run hero.js. The package renders in a worker; native runs live.
 const volume = document.getElementById('hero-volume')
-let heard = null
+const engine = document.getElementById('hero-engine')
+const play = document.querySelector('[data-run]')
+const playStatus = document.querySelector('.hero-play-status')
+const renderTime = document.getElementById('hero-render-time')
+let playing = null, rendering = null, runId = 0
+let nativeQueue = Promise.resolve(), nativeRun = null
+let closing = Promise.resolve()
 remember(volume, 'hero-volume')
-volume?.addEventListener('input', () => { if (heard?.level) heard.level.gain.value = Number(volume.value) / 100 })
+volume?.addEventListener('input', () => {
+  if (playing?.level) playing.level.gain.value = Number(volume.value) / 100
+})
 
-for (let button of document.querySelectorAll('[data-run]')) {
-  let playing = null, starting = false
-  button.addEventListener('click', async () => {
-    if (starting) return
-    // a context already closing rejects a second close, which is the outcome wanted anyway
-    if (playing) return playing.close().catch(() => {})
-    starting = true
-    button.dataset.state = 'running'
-    const status = document.querySelector('.hero-play-status')
-    status.textContent = ''
-    button.setAttribute('aria-busy', 'true')
-    try {
-      await import(`${button.dataset.run}?${Date.now()}`)
-      button.setAttribute('aria-label', 'Stop preview')
-    } catch {
-      await playing?.close().catch(() => {})
-      delete button.dataset.state
-      status.textContent = 'Audio could not start. Tap play to try again.'
-    } finally { starting = false; button.removeAttribute('aria-busy') }
-  })
-  addEventListener('audiocontext', ({ detail: context }) => {
-    if (!starting) return
-    playing?.close().catch(() => {})
-    playing = context
-    heard = context
-    if (context.level) context.level.gain.value = Number(volume?.value ?? 60) / 100
-    follow(context)
-    context.addEventListener('statechange', () => {
-      if (context.state !== 'closed' || playing !== context) return
-      playing = null
-      button.setAttribute('aria-label', 'Play preview')
-      delete button.dataset.state
-    })
+function attach(context, id) {
+  if (id !== runId) { closeOutput(context); return }
+  playing = context
+  context.level.gain.value = Number(volume?.value ?? 60) / 100
+  follow(context)
+  context.addEventListener('statechange', () => {
+    if (context.state !== 'closed' || playing !== context) return
+    playing = null
+    play.setAttribute('aria-label', 'Play preview')
+    delete play.dataset.state
   })
 }
+
+addEventListener('audiocontext', ({ detail: context }) => {
+  if (nativeRun !== null) attach(context, nativeRun)
+})
+
+function closeOutput(context) {
+  if (context) closing = Promise.all([closing, context.close().catch(() => {})])
+  return closing
+}
+
+function stopHero() {
+  runId++
+  rendering?.abort()
+  rendering = null
+  const context = playing
+  playing = null
+  followed = null
+  play.setAttribute('aria-label', 'Play preview')
+  play.removeAttribute('aria-busy')
+  delete play.dataset.state
+  playStatus.textContent = ''
+  return closeOutput(context)
+}
+
+async function startHero() {
+  const previousOutput = stopHero()
+  renderTime.textContent = ''
+  const id = runId
+  const controller = rendering = new AbortController()
+  const usePackage = engine.getAttribute('aria-checked') === 'true'
+  play.dataset.state = 'running'
+  play.setAttribute('aria-label', 'Stop preview')
+  play.setAttribute('aria-busy', 'true')
+  playStatus.textContent = usePackage ? 'Rendering…' : ''
+  try {
+    if (usePackage) {
+      // Open the output from the user gesture, while the worker renders off-thread.
+      const context = new PreviewContext()
+      attach(context, id)
+      const [, , { buffer, renderMs }] = await Promise.all([previousOutput, context.resume(), renderAudio('hero', {}, controller.signal)])
+      if (id !== runId) return
+      const source = context.createBufferSource()
+      source.buffer = buffer
+      source.connect(context.destination)
+      source.onended = () => closeOutput(context)
+      source.start()
+      const elapsed = renderMs < 1000 ? `${Math.round(renderMs)} ms` : `${(renderMs / 1000).toFixed(2)} s`
+      renderTime.textContent = `${buffer.duration} s rendered in ${elapsed}`
+    } else {
+      // Imports cannot be aborted. Serialize them so a late native constructor
+      // can only announce itself for the run that requested it.
+      nativeQueue = nativeQueue.catch(() => {}).then(async () => {
+        await previousOutput
+        if (id !== runId) return
+        nativeRun = id
+        try { await import(`${play.dataset.run}?run=${Date.now()}-${id}`) }
+        finally { nativeRun = null }
+      })
+      await nativeQueue
+    }
+    if (id === runId && playing) {
+      const capture = await playing.capture
+      if (id === runId) playStatus.textContent = !capture && plotsVisible()
+        ? 'Live visualization unavailable in this browser.' : ''
+    }
+  } catch (error) {
+    if (id !== runId) return
+    stopHero()
+    renderTime.textContent = ''
+    playStatus.textContent = usePackage
+      ? 'web-audio-api could not render. Try again or select Native.'
+      : 'Native audio could not start. Tap play to try again.'
+  } finally {
+    if (id === runId) {
+      rendering = null
+      play.removeAttribute('aria-busy')
+    }
+  }
+}
+
+play.addEventListener('click', () => playing || rendering ? stopHero() : startHero())
+engine.addEventListener('click', () => {
+  renderTime.textContent = ''
+  engine.setAttribute('aria-checked', String(engine.getAttribute('aria-checked') !== 'true'))
+  if (playing || rendering) startHero()
+  else playStatus.textContent = ''
+})
+addEventListener('pagehide', stopHero)
 
 // While the hero file plays, the panel beside its code follows the analyser the
 // page-side context taps its output through: a rolling envelope and the live
@@ -216,5 +289,3 @@ addEventListener('pagehide', () => dispose?.())
 
 let initialId = decodeURIComponent(location.hash.slice(1))
 if (byId.has(initialId)) openExample(initialId, false)
-
-

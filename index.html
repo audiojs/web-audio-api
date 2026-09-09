@@ -24,9 +24,8 @@
   <link rel="preload" href="./assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./assets/tokens.css">
   <link rel="stylesheet" href="./assets/site.css">
-  <!-- hero.js imports the package; in the browser that name resolves to the page's own Web Audio, tapped through
-       an analyser so the panel beside the code can follow it. Chrome collects a node no script references once its
-       source ends, cutting a ringing loop mid-sound, so whatever connects stays with its context. -->
+  <!-- Native preview imports hero.js through this output/capture adapter.
+       The package preview runs the same graph in the bundled offline worker. -->
   <script type="importmap">{ "imports": { "web-audio-api": "./assets/hero-context.js" } }</script>
   <script type="application/ld+json">
   {
@@ -88,12 +87,16 @@
       <div class="install-row">
         <p class="install-command"><span class="prompt" aria-hidden="true">&gt;</span><code id="install-code">npm install web-audio-api</code></p>
         <div class="hero-spec">
-          <span class="package-size"><a href="https://www.npmjs.com/package/web-audio-api?activeTab=code" aria-describedby="size-tip" data-pack-size="compact">165kB</a><span class="size-tip" id="size-tip" role="tooltip" data-package-details>165 kB gzip / 604 kB unpacked
+          <span class="package-size"><a href="https://www.npmjs.com/package/web-audio-api?activeTab=code" aria-describedby="size-tip" data-pack-size="compact">165kB</a><span class="size-tip" id="size-tip" role="tooltip" data-package-details>165 kB gzip / 605 kB unpacked
 Excludes dependencies.</span></span>
           <a class="wpt-seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml" aria-label="W3C WPT: 100% passing" aria-describedby="wpt-tip"><span>WPT</span><strong>100%</strong><span class="wpt-tip" id="wpt-tip" role="tooltip"><span data-wpt-count>4,317</span> / <span data-wpt-count>4,317</span> passing in Node.<br>Not W3C certification.</span></a>
         </div>
       </div>
-      <p class="hero-demo-note">A plucked string from a feedback loop.<br> Preview uses native browser audio.</p>
+      <div class="hero-demo-note">
+        <button class="hero-engine" id="hero-engine" type="button" role="switch" aria-checked="true" aria-label="Use web-audio-api for the preview">
+          <span>Native</span><span class="engine-track" aria-hidden="true"><span class="engine-thumb"></span></span><span>web-audio-api</span>
+        </button>
+      </div>
       <div class="hero-code code-stage">
         <div class="code-col">
           <!-- GENERATED:hero-code:start -->
@@ -138,7 +141,6 @@ string.connect(ctx.destination)
 pluck.start()
 setTimeout(() =&gt; ctx.close(), 6000)</code></pre>
 <!-- GENERATED:hero-code:end -->
-        <p class="hero-play-status" role="status" aria-live="polite"></p>
         <div class="demo-runbar">
           <button class="demo-action demo-run is-iconic" type="button" data-run="./hero.js" aria-label="Play hero.js in the browser">
             <svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>
@@ -146,6 +148,10 @@ setTimeout(() =&gt; ctx.close(), 6000)</code></pre>
             <span>Play hero.js</span>
           </button>
           <input class="demo-volume" type="range" id="hero-volume" min="0" max="100" value="60" aria-label="Output volume">
+          <div class="hero-play-info">
+            <p class="hero-play-status" role="status" aria-live="polite"></p>
+            <output class="hero-render-time" id="hero-render-time" title="Offline rendering only; excludes loading and playback."></output>
+          </div>
         </div>
         </div>
         <!-- hero.js rendered offline by web-audio-api in Node: peak and RMS envelopes, then its spectrum -->

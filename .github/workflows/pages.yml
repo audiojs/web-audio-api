@@ -17,6 +17,10 @@ on:
       - 'site-metrics.json'
       - 'examples/**'
       - 'scripts/build-site.mjs'
+      - 'scripts/build-browser.mjs'
+      - 'src/**'
+      - 'index.js'
+      - 'package-lock.json'
       - 'package.json'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -40,7 +44,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run site:stage
+      - run: npm run site:verify
       - run: npm run test:site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

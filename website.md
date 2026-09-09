@@ -150,7 +150,7 @@ The package is not the best answer for every low-latency native application. Dev
 
 - Full local WPT result: 4,317 passed, 0 failed. The website takes version/date/count from `site-metrics.json`; [harness scope and adaptations](test/WPT.md) accompany the result.
 - Offline comparisons use 10 warmups, 50 alternating measurements, median/p95, output validation, and raw samples in `benchmark/results.json`. These do not establish device latency.
-- Browser previews use native Web Audio, not this package’s DSP; this distinction is visible beside the hero and examples.
+- The hero defaults to this package’s DSP in a Web Worker, with a Native / web-audio-api switch above the code. Offline examples also render through the worker; live examples use native Web Audio. The browser supplies speaker output in both hero modes.
 - Unit and integration coverage includes graph rendering, automation, cycles, worklets, media streams, decoding, and generated site structure.
 - Every example has a Node CLI and a browser-safe graph module.
 - The npm downloads API reported 243,377 downloads from 2025-08-30 through 2026-08-29 and 26,554 downloads from 2026-07-31 through 2026-08-29.
@@ -271,7 +271,7 @@ The canonical example shape is:
 ```text
 examples/graphs/tone.js   atomic runtime-neutral graph: build(ctx, options)
 examples/tone.js          Node CLI adapter: parse args, open output, call build
-examples/browser.js       browser adapter: native context, controls, visualization
+examples/browser.js       browser adapter: live native audio, offline worker renders, controls, visualization
 examples/catalog.js       names, descriptions, jobs, commands
 examples/options.js       shared CLI and browser option metadata
 ```
@@ -281,8 +281,8 @@ Rules:
 - One atomic graph module per example. No monolithic private “portable” file and no helper imports between example sources.
 - Graph modules accept a context and options. They do not own process arguments, the DOM, device permission UI, or terminal controls.
 - CLI files are thin adapters and remain directly runnable.
-- The browser adapter imports the same graph module and supplies native Web Audio constructors where needed.
-- Signal plots are hidden on phone layouts, including touch-phone landscape; playback and controls remain available. Capture setup is skipped there, with visibility rechecked after asynchronous module loading. Desktop scrolling bins integer sample positions and paints equal-width pixel cells, rather than stretching cells to divide the canvas evenly. The grid fills the plot region. The hero carries the single preview-provenance note immediately above the code, right-aligned with a 1rem inset on all layouts and bottom-aligned with the install block on desktop and tablet. On tablets it is capped at 14rem over the right-hand dot grid; example source panes do not repeat it. Empty parameter forms collapse, and rendered audio has an inline download icon.
+- The browser adapter imports the same graph modules. Live examples use native Web Audio; offline rendering and file processing run in the package worker. Files are decoded by the browser before their samples are sent to the worker. `npm run site:bundle` rebuilds the codec-free worker from the current engine and unchanged `hero.js`; staging runs this step automatically.
+- Signal plots are hidden on phone layouts, including touch-phone landscape; playback and controls remain available. Capture setup is skipped there, with visibility rechecked after asynchronous module loading. Desktop scrolling bins integer sample positions and paints equal-width pixel cells, rather than stretching cells to divide the canvas evenly. The grid fills the plot region. The hero carries a two-position engine switch immediately above the code, right-aligned with a 1rem inset on all layouts and bottom-aligned with the install block on desktop and tablet. Labels sit outside a compact 3rem track, with a 44px tall click target. The playback bar reserves one inline slot for loading status and the package’s measured offline render time, so playback never changes the hero’s height. Timing excludes loading and playback; native mode renders live and has no offline timing. Switching during playback stops the current output and restarts the same graph; stopping during rendering terminates the worker. Empty parameter forms collapse, and rendered audio has an inline download icon.
 - Microphones, files, recorders, and writable streams remain explicit runtime boundaries.
 - Recording and run ownership survive audio-context closure. Late callbacks cannot replace a newer result, reset its controls, or restart it. Zero-data recordings keep the last playable result; disposal releases it.
 - Every example keeps an indexable canonical page. Homepage links open the modal on an ordinary click; modified clicks, no-JavaScript visits, and direct URLs open the full page.

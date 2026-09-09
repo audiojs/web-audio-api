@@ -585,13 +585,73 @@ h3 {
   max-width: 28rem;
   text-align: end;
 }
-.hero-play-status:empty { display: none; }
-.hero-play-status {
-  margin: 0;
-  padding: var(--space-sm) var(--space-md);
+.hero-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-muted);
+  font: 500 var(--text-xs) var(--font-body);
+  cursor: pointer;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.engine-track {
+  position: relative;
+  width: 3rem;
+  height: 1.75rem;
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-3);
+  box-shadow: inset 0 var(--rule-hair) var(--space-2xs) var(--color-shadow);
+}
+.hero-engine .engine-thumb {
+  position: absolute;
+  inset-block: var(--space-2xs);
+  inset-inline-start: var(--space-2xs);
+  width: calc(50% - var(--space-2xs));
+  border-radius: inherit;
+  background: var(--color-white);
+  box-shadow: 0 var(--rule-hair) var(--space-2xs) var(--color-shadow);
+}
+.hero-engine[aria-checked="true"] .engine-thumb { transform: translateX(100%); }
+.hero-engine[aria-checked="false"] > :first-child,
+.hero-engine[aria-checked="true"] > :last-child { color: var(--color-ink); }
+.hero-engine:hover .engine-track { border-color: var(--color-muted); }
+.hero-engine:active .engine-thumb { background: var(--color-paper); }
+.hero-engine:focus-visible { outline: var(--rule-heavy) solid var(--color-focus); outline-offset: var(--space-2xs); }
+@media (max-width: 22rem) {
+  .hero-spec .wpt-seal { padding-inline: 0.4em; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-engine .engine-thumb { transition: transform var(--dur-short) var(--ease-out); }
+}
+.hero-play-info {
+  flex: 1;
+  min-width: 0;
+  height: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: var(--color-muted-on-ink);
   font-size: var(--text-xs);
+  line-height: 1.5;
 }
+.hero-play-status,
+.hero-render-time {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.hero-play-status:empty,
+.hero-play-status:not(:empty) + .hero-render-time { display: none; }
+.hero-render-time { font-variant-numeric: tabular-nums; }
 
 .code-col {
   min-width: 0;

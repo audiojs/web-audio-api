@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { resolve, extname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium, webkit } from 'playwright'
+import { testPreview } from './preview-browser.js'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.png': 'image/png' }
@@ -24,6 +25,7 @@ try {
   for (const engine of [chromium, webkit]) {
     const browser = await engine.launch({ headless: true })
     try {
+      await testPreview(browser, url)
       const hoverPage = await browser.newPage({ viewport: { width: 1440, height: 900 } })
       try {
         await hoverPage.goto(url)
@@ -379,6 +381,7 @@ try {
           }
           addEventListener('audiocontext', event => { globalThis.__capture = event.detail.capture }, { once: true })
         })
+        await setupRace.locator('#hero-engine').click()
         await setupRace.locator('[data-run]').click()
         await setupRace.waitForFunction(() => typeof globalThis.__releaseCapture === 'function')
         await setupRace.setViewportSize({ width: 375, height: 812 })

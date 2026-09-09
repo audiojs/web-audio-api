@@ -1,9 +1,9 @@
 import { byId } from './catalog.js'
 import { observeSignal, plotsVisible } from '../assets/signal.js'
+import { renderAudio } from '../assets/render.js'
 import { controlsFor, optionsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
 import { collapseGraph, graphSVG, recordConnections, resolveGraph } from '../graph.js'
-import { init as buildProcessedBuffer } from './graphs/process-file.js'
 import { init as buildWorklet } from './graphs/worklet.js'
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
@@ -618,7 +618,7 @@ export function mountExample(root, id) {
   paintVolume()
   volume?.addEventListener('input', onVolume)
   let samples = new Float32Array(2048), recorder = null
-  let lastBuffer = null, live = false, busy = false
+  let lastBuffer = null, live = false, busy = false, rendering = null
   let levelMeter = null, latencyTracker = null
   let observer = new ResizeObserver(() => {
     if (capture || lastHistory) {
@@ -678,6 +678,8 @@ export function mountExample(root, id) {
   async function stop(message = '') {
     // Only the latest start/stop may update controls or continue a parameter reload.
     const version = ++runVersion
+    rendering?.abort()
+    rendering = null
     clearTimeout(timer)
     cancelVisual()
     lastHistory = capture?.history || lastHistory
@@ -743,16 +745,12 @@ export function mountExample(root, id) {
     let defaults = { 'linked-params': 2, fft: 1, 'render-to-buffer': 2 }
     let options = readOptions(id, form), duration = Number(options.duration || defaults[id] || 1)
     let rate = 44100
-    let offline = new OfflineAudioContext(2, Math.ceil(rate * duration), rate)
-    options.when = 0; options.duration = duration
-    let { init } = await import(`./graphs/${id}.js`)
-    if (disposed) return
-    await init(offline, options)
-    if (disposed) return
     setButtonLabel(run, 'Rendering')
     run.setAttribute('aria-busy', 'true')
-    setStatus('Rendering the graph in memory. No output device is open.', 'running')
-    let buffer = await offline.startRendering()
+    setStatus('Rendering with web-audio-api. No output device is open.', 'running')
+    rendering = new AbortController()
+    let { buffer } = await renderAudio(id, { duration, sampleRate: rate, options }, rendering.signal)
+    rendering = null
     if (disposed) return
     let data = buffer.getChannelData(0)
     lastBuffer = buffer
@@ -775,12 +773,16 @@ export function mountExample(root, id) {
     try { source = await decode.decodeAudioData(await file.arrayBuffer()) }
     finally { await decode.close() }
     if (disposed) return
-    let offline = new OfflineAudioContext(source.numberOfChannels, source.length, source.sampleRate)
-    buildProcessedBuffer(offline, source, { when: 0, ...readOptions(id, form) })
     setButtonLabel(run, 'Processing')
     run.setAttribute('aria-busy', 'true')
     setStatus(`Processing ${file.name} in memory…`, 'running')
-    let output = await offline.startRendering()
+    rendering = new AbortController()
+    let { buffer: output } = await renderAudio(id, {
+      sampleRate: source.sampleRate,
+      channels: Array.from({ length: source.numberOfChannels }, (_, ch) => source.getChannelData(ch)),
+      options: readOptions(id, form),
+    }, rendering.signal)
+    rendering = null
     if (disposed) return
     lastBuffer = output
     drawWave(canvas, output.getChannelData(0))
