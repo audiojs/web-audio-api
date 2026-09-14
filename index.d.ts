@@ -62,7 +62,6 @@ export class BaseAudioContext extends EventTarget {
   readonly state: 'suspended' | 'running' | 'closed';
   readonly audioWorklet: { addModule(setup: string | ((scope: any) => void)): Promise<void> };
   onstatechange: ((event: Event) => void) | null;
-  oncomplete: ((event: Event) => void) | null;
   createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
   decodeAudioData(audioData: ArrayBuffer | Uint8Array, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;
   createBufferSource(): AudioBufferSourceNode;
