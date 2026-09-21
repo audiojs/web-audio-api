@@ -1,6 +1,12 @@
 # <img src="assets/logo.svg" width="28" valign="middle" alt=""> web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-A pure JavaScript implementation of the [Web Audio API](https://audiojs.dev/web-audio-api/) for Node.js. Render existing audio graphs on the server, test audio processing in CI, or play sound through your speakers.
+A pure JavaScript implementation of the [Web Audio API](https://audiojs.dev/web-audio-api/) for Node.js.
+
+* Render existing audio graphs on the server.
+* Test audio in CI: Node, Deno, and Bun.
+* Decode and analyze 20+ formats outside of browser.
+* Run tone.js and web audio libs via `import 'web-audio-api/polyfill'`.
+* PCM in and out through stdio via CLI.
 
 ```
 npm install web-audio-api
