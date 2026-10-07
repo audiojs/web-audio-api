@@ -1,6 +1,7 @@
 // Web Audio API globals for Node: `import 'web-audio-api/polyfill'`
 // Also exposes `navigator.mediaDevices.getUserMedia()` backed by the optional
-// peer dep `@audio/mic` so browser mic code runs verbatim.
+// peer dep `@audio/mic`, and `enumerateDevices()` over it and `@audio/speaker`,
+// so browser mic and device code runs verbatim.
 import * as waa from './index.js'
 
 for (let [name, value] of Object.entries(waa))
@@ -33,13 +34,18 @@ async function getUserMedia(constraints = {}) {
 
   let c = constraints.audio === true ? {} : constraints.audio
   let opts = { sampleRate: pick(c.sampleRate) ?? 44100, channels: pick(c.channelCount) ?? 1, bitDepth: pick(c.sampleSize) ?? 16 }
+  let device = pick(c.deviceId)
+  if (device != null && device !== 'default') opts.device = device
   if (![8, 16, 32].includes(opts.bitDepth)) throw Object.assign(new Error(
     'getUserMedia supports 8, 16, or 32-bit integer PCM samples in Node'),
     { name: 'NotSupportedError' })
 
-  let read = mic(opts)
+  let read
+  try { read = mic(opts) }
+  catch (e) { if (e.code === 'ENODEVICE') throw Object.assign(new Error('getUserMedia: no audio input ' + device), { name: 'OverconstrainedError', constraint: 'deviceId' }); throw e }
+  let label = opts.device ? (await inputs()).find(d => d.deviceId === opts.device || d.label === opts.device)?.label ?? opts.device : 'Default audio input'
   let track = new waa.CustomMediaStreamTrack({
-    kind: 'audio', label: 'Default audio input',
+    kind: 'audio', label,
     settings: { sampleRate: opts.sampleRate, channelCount: opts.channels, sampleSize: opts.bitDepth }
   })
   let stream = new waa.MediaStream([track])
@@ -59,6 +65,16 @@ async function getUserMedia(constraints = {}) {
   }
   return stream
 }
+
+// --- navigator.mediaDevices.enumerateDevices -----------------------------
+// The inputs @audio/mic lists and the outputs @audio/speaker does: their ids open them (getUserMedia's deviceId,
+// AudioContext's sinkId)
+
+const info = kind => d => ({ deviceId: d.id, kind, label: d.name, groupId: '', toJSON() { return { deviceId: d.id, kind, label: d.name, groupId: '' } } })
+const listed = async (pkg, kind) => { try { let { devices } = await import(pkg); return devices ? (await devices()).map(info(kind)) : [] } catch { return [] } }
+const inputs = () => listed('@audio/mic', 'audioinput')
+
+globalThis.navigator.mediaDevices.enumerateDevices ??= async () => [...await inputs(), ...await listed('@audio/speaker', 'audiooutput')]
 
 const legacyGetUserMedia = typeof globalThis.navigator.getUserMedia === 'function'
   ? globalThis.navigator.getUserMedia.bind(globalThis.navigator)

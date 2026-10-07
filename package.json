@@ -1,6 +1,6 @@
 {
   "name": "web-audio-api",
-  "version": "1.5.6",
+  "version": "1.6.0",
   "description": "Pure JavaScript Web Audio API for Node, CI, and servers",
   "author": "Sébastien Piquemal <sebpiq@gmail.com>",
   "contributors": [
@@ -37,7 +37,7 @@
   ],
   "dependencies": {
     "@audio/decode": "^3.15.0",
-    "@audio/speaker": "^2.3.3",
+    "@audio/speaker": "^2.5.0",
     "audio-buffer": "^7.3.0",
     "audio-effect": "^1.0.0",
     "automation-events": "^7.1.19",
@@ -57,7 +57,7 @@
     "tst": "^9.4.0"
   },
   "peerDependencies": {
-    "@audio/mic": "^1.1.3"
+    "@audio/mic": "^1.2.0"
   },
   "peerDependenciesMeta": {
     "@audio/mic": {

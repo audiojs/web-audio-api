@@ -184,8 +184,16 @@ class AudioContext extends BaseAudioContext {
       }
       let prev = this.#sinkId
       let self = this
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         setTimeout(() => {
+          // a context already playing moves its output to the device now
+          if (prev !== sinkId && self.#speaker) {
+            let next
+            try { next = self.#openSpeaker(sinkId) }
+            catch { return reject(DOMErr('Device not found: ' + sinkId, 'NotFoundError')) }
+            self.#speaker.close()
+            self.#speaker = next
+          }
           self.#sinkId = sinkId
           if (prev !== sinkId) self.dispatchEvent(new Event('sinkchange'))
           resolve()
@@ -209,11 +217,8 @@ class AudioContext extends BaseAudioContext {
     // no hardware pop when audio actually begins (same as browsers).
     let isNone = typeof this.#sinkId === 'object' && this.#sinkId?.type === 'none'
     if (!this.#stream && !this.#speaker && !isNone) {
-      this.#speaker = await Speaker({
-        sampleRate: this.sampleRate,
-        channels: this.#numberOfChannels,
-        bitDepth: this.#bitDepth
-      })
+      try { this.#speaker = await this.#openSpeaker(this.#sinkId) }
+      catch (e) { if (e.code === 'ENODEVICE') throw DOMErr('Device not found: ' + this.#sinkId, 'NotFoundError'); throw e }
     }
     this._setState('running')
     if (!this.#loopRunning && (this.#speaker || this.#stream) && this._destination._inputs[0].sources.length) {
@@ -228,6 +233,13 @@ class AudioContext extends BaseAudioContext {
     this._setState('closed')
     this._closeOutput()
     return Promise.resolve()
+  }
+
+  // the output: @audio/speaker on the sink's device (its id or name, from navigator.mediaDevices.enumerateDevices()),
+  // the default for ''
+  #openSpeaker(sinkId) {
+    let device = typeof sinkId === 'string' && sinkId ? sinkId : undefined
+    return Speaker({ sampleRate: this.sampleRate, channels: this.#numberOfChannels, bitDepth: this.#bitDepth, ...device && { device } })
   }
 
   _closeOutput() {

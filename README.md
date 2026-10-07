@@ -55,6 +55,15 @@ stream.getAudioTracks()[0].stop()
 
 Without `@audio/mic` installed, `getUserMedia` rejects with a `NotFoundError` containing an install hint.
 
+Devices work as in a browser: `navigator.mediaDevices.enumerateDevices()` lists the inputs `@audio/mic` finds and the outputs `@audio/speaker` does (each `deviceId` the platform's own: CoreAudio's UID, WASAPI's endpoint id, the ALSA name), `getUserMedia({ audio: { deviceId } })` opens that input, and `sinkId` (the constructor's or `setSinkId()`, also while playing) that output:
+
+```js
+const devices = await navigator.mediaDevices.enumerateDevices()
+const usb = devices.find(d => d.kind === 'audioinput' && d.label.includes('USB'))
+const stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: usb.deviceId } } })
+const ctx = new AudioContext({ sinkId: devices.find(d => d.kind === 'audiooutput' && d.label.includes('Headphones')).deviceId })
+```
+
 </details>
 
 <details>

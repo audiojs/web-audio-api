@@ -321,6 +321,26 @@ class AudioWorklet {
 
   get port() { this.#wirePort(); return this.#port }
 
+  // The worklet's global scope, one for all its modules as a browser's: fixed properties and live clock getters, no
+  // inherited names, `globalThis` and `self` itself, so what one module puts there the next one sees (the WAM SDK's
+  // webAudioModules, a library's registry)
+  #globalObj = null
+  get #global() {
+    if (this.#globalObj) return this.#globalObj
+    const ctx = this.#context, scope = this.#scope
+    const g = this.#globalObj = {
+      __proto__: null,
+      get currentTime() { return ctx.currentTime },
+      get currentFrame() { return ctx._frame },
+      registerProcessor: (name, cls) => scope.registerProcessor(name, cls),
+      AudioWorkletProcessor,
+      sampleRate: ctx.sampleRate,
+      port: scope.port,
+    }
+    g.globalThis = g.self = g
+    return g
+  }
+
   async addModule(moduleOrSetup) {
     this.#wirePort()
     if (typeof moduleOrSetup === 'function') {
@@ -333,18 +353,7 @@ class AudioWorklet {
     // Repeated URLs share completion, including in-flight loads and failures.
     if (this.#loadedModules.has(moduleOrSetup)) return this.#loadedModules.get(moduleOrSetup)
     const loading = Promise.resolve().then(() => this.#readModule(moduleOrSetup)).then(code => {
-      const ctx = this.#context, scope = this.#scope
-      // Fixed properties and live clock getters, with no inherited scope names.
-      const scopeObj = {
-        __proto__: null,
-        get currentTime() { return ctx.currentTime },
-        get currentFrame() { return ctx._frame },
-        registerProcessor: (name, cls) => scope.registerProcessor(name, cls),
-        AudioWorkletProcessor,
-        sampleRate: ctx.sampleRate,
-        port: scope.port,
-      }
-      evaluateWorkletModule(code, scopeObj)
+      evaluateWorkletModule(code, this.#global)
     })
     this.#loadedModules.set(moduleOrSetup, loading)
     return loading

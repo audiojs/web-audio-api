@@ -154,6 +154,25 @@ test('AudioWorklet > addModule with data URI', async () => {
   almost(buf.getChannelData(0)[0], 0.42, 0.01, 'data URI processor runs')
 })
 
+test('AudioWorklet > modules share one global scope: what one puts on globalThis the next sees', async () => {
+  let ctx = await mkCtx()
+  // as the WAM SDK's host does: one module installs a registry on globalThis, a later one's processor reads it
+  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(`globalThis.registry = { level: 0.25 }`))
+  await ctx.audioWorklet.addModule('data:text/javascript,' + encodeURIComponent(`
+    const { registry, AudioWorkletProcessor, registerProcessor } = globalThis
+    class P extends AudioWorkletProcessor {
+      process(_, outputs) { outputs[0][0].fill(registry.level + (self === globalThis ? 0.5 : 0)); return true }
+    }; globalThis.registerProcessor('shared-scope-proc', P)
+  `))
+  ok(!('registry' in globalThis), 'not on Node\'s own global')
+  let node = new AudioWorkletNode(ctx, 'shared-scope-proc')
+  let src = new AudioNode(ctx, 0, 1)
+  src.connect(node)
+  src._tick = () => fill(new AudioBuffer(1, BLOCK_SIZE, 44100), 0)
+  ctx._state = 'running'
+  almost(node._tick().getChannelData(0)[0], 0.75, 1e-6, 'the registry and self, from the first module')
+})
+
 test('AudioWorklet > addModule with base64 data URI', async () => {
   let ctx = await mkCtx()
   let code = `class P extends AudioWorkletProcessor {
