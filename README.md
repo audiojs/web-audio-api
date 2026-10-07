@@ -1,6 +1,12 @@
 # <img src="assets/logo.svg" width="28" valign="middle" alt=""> web-audio-api [![W3C WPT](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/wpt.yml) [![platforms](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml/badge.svg)](https://github.com/audiojs/web-audio-api/actions/workflows/platforms.yml) [![npm](https://img.shields.io/npm/v/web-audio-api)](https://npmjs.org/package/web-audio-api)
 
-A pure JavaScript implementation of the [Web Audio API](https://audiojs.dev/web-audio-api/) for Node.js. Render existing audio graphs on the server, test audio processing in CI, or play sound through your speakers.
+A pure JavaScript implementation of the [Web Audio API](https://audiojs.dev/web-audio-api/) for Node.js.
+
+* Render existing audio graphs on the server.
+* Test audio in CI: Node, Deno, and Bun.
+* Decode and analyze 20+ formats outside of browser.
+* Run tone.js and web audio libs via `import 'web-audio-api/polyfill'`.
+* PCM in and out through stdio via CLI.
 
 ```
 npm install web-audio-api
@@ -184,13 +190,10 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 
 ## Examples
 
-46 runnable examples cover rendering, analysis, synthesis, and PCM streaming.
-
 `node examples/<name>.js` runs each example with its defaults.
 `node examples/<name>.js --help` for every accepted argument, option, keyboard control, and alternate invocation.
 
-<details>
-<summary id="api"><b>API</b></summary>
+### API
 
 * [speaker.js](examples/speaker.js): Hello world
 * [lfo.js](examples/lfo.js): Tremolo via LFO
@@ -205,10 +208,7 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 * [recorder.js](examples/recorder.js): Record the mic to a WAV file, with a level meter (requires [`@audio/mic`](https://github.com/audiojs/mic))
 * [reverb.js](examples/reverb.js): Convolver with a seeded impulse response – `2 0.35 3s`
 
-</details>
-
-<details>
-<summary id="test-signals"><b>Test signals</b></summary>
+### Test signals
 
 * [tone.js](examples/tone.js): Reference pitch – `sine A4 2s`
 * [sweep.js](examples/sweep.js): Hear the audible range – `20..20k exp 3s`
@@ -221,10 +221,7 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 * [latency-tester.js](examples/latency-tester.js): Round-trip latency: speakers → mic, in ms (requires [`@audio/mic`](https://github.com/audiojs/mic))
 * [level-meter.js](examples/level-meter.js): Mic RMS and peak in dBFS, fast or slow ballistics (requires [`@audio/mic`](https://github.com/audiojs/mic))
 
-</details>
-
-<details>
-<summary id="synthesis"><b>Synthesis</b></summary>
+### Synthesis
 
 * [subtractive-synth.js](examples/subtractive-synth.js): Sawtooth → filter sweep → ADSR
 * [additive.js](examples/additive.js): Waveforms from harmonics – `square 220 16 3s`
@@ -233,12 +230,7 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 * [wavetable.js](examples/wavetable.js): Fourier wavetables, crossfaded – `organ 220 0.3 6s`
 * [granular.js](examples/granular.js): Grain cloud from a seeded buffer – `0.08 15 4 10s`
 
-</details>
-
-<details>
-<summary id="generative"><b>Generative</b></summary>
-
-[Musical models, styles, and offline listening fixtures](examples/MUSIC.md).
+### Generative
 
 * [sequencer.js](examples/sequencer.js): Step sequencer – precise timing
 * [serial.js](examples/serial.js): Twelve-tone rows (Webern) – `72 30s`
@@ -247,10 +239,7 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 * [jazz.js](examples/jazz.js): Jazz in seven styles, modal first, lead on guitar, flute, harp, or piano – `style=ambient lead=harp`
 * [euclidean.js](examples/euclidean.js): Bjorklund rhythms, 2–3 voices – `120 16 3,5,7 20s`
 
-</details>
-
-<details>
-<summary id="illusions"><b>Illusions</b></summary>
+### Illusions
 
 * [shepard.js](examples/shepard.js): Pitch that rises forever – `up 15s`
 * [risset-rhythm.js](examples/risset-rhythm.js): Beat that accelerates forever – `up 120 20s`
@@ -265,7 +254,6 @@ Or with [explicit resource management](https://github.com/tc39/proposal-explicit
 * [huggins-pitch.js](examples/huggins-pitch.js): A pitch that exists in neither ear (headphones!) – `600 20s`
 * [zwicker-tone.js](examples/zwicker-tone.js): An after-tone lingers where the notch was – `2000 3 2 20s`
 
-</details>
 
 ## Performance
 
