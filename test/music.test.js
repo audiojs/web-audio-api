@@ -44,8 +44,9 @@ test('jazz forms, bass feels and lead targets follow each style across full chor
       ok(tones.includes(((n.note - c.root) % 12 + 12) % 12) || c.quality === 'sus', `${style}: downbeat bass supports the chord`)
     }
   }
-  is(scores.swing.chordLog.length, 27, '32-bar AABA with an eight-bar dominant bridge')
-  is(scores.blues.chordLog.length, 14, '12-bar jazz blues with a two-chord turnaround')
+  ok([0, 128].every(start => scores.swing.chords.some(c => c.start === start)), '32-bar AABA choruses')
+  ok(scores.blues.chords.filter(c => c.start % 48 === 0).every(c => c.root === scores.blues.chords[0].root), '12-bar blues choruses open on the tonic')
+  ok(scores.blues.chords.some(c => c.quality === 'dim7'), 'blues keeps its diminished passing chord')
   ok(scores.modal.chords.every(c => c.beats === 16), 'modal harmony changes in four-bar plateaus')
   ok(scores.ambient.chords.some(c => c.beats === 32), 'ambient harmony holds eight bars')
   ok(scores.nordic.chords.some(c => c.quality === 'm9'), 'Nordic tonic uses the darker minor vocabulary')
@@ -58,17 +59,36 @@ test('jazz forms, bass feels and lead targets follow each style across full chor
   is(JSON.stringify((await score('swing')).leadNotes), JSON.stringify(scores.swing.leadNotes), 'motivic composition is seeded')
 })
 
+test('jazz harmony never repeats a chord back to back nor copies a chorus', async () => {
+  const form = { modal: 128, ambient: 128, nordic: 64, ballad: 64, bossa: 64, swing: 128, blues: 48 } // beats per chorus
+  for (const style of Object.keys(styles)) for (const seed of [1, 2, 3, 17]) {
+    const ctx = new OfflineAudioContext(2, 128, sr)
+    ctx.startRendering = undefined
+    try {
+      const { chords } = (await jazz(ctx, { style, seed, duration: 270, when: 0 })).data
+      ok(chords.every((c, i) => !i || c.root !== chords[i - 1].root || c.quality !== chords[i - 1].quality), `${style} #${seed}: no chord twice in a row, chorus seams included`)
+      const choruses = []
+      for (const c of chords) (choruses[Math.floor(c.start / form[style])] ??= []).push(`${c.root}${c.quality}/${c.beats}`)
+      const whole = choruses.slice(0, Math.floor((chords.at(-1).start + chords.at(-1).beats) / form[style])).map(chorus => chorus.join(' '))
+      ok(whole.every((_, k) => chords.some(c => c.start === k * form[style])), `${style} #${seed}: every phrase fills its slot, so choruses stay aligned`)
+      is(new Set(whole).size, whole.length, `${style} #${seed}: ${whole.length} choruses, each reharmonized`)
+    } finally { ctx._state = 'closed' }
+  }
+})
+
 test('modal jazz has grounded swells and clocked chord names without AudioWorklet', async () => {
   const ctx = new OfflineAudioContext(2, 128, sr)
   ctx.startRendering = undefined
   Object.defineProperty(ctx, 'audioWorklet', { get() { throw Error('AudioWorklet must not be needed') } })
   try {
     const demo = await jazz(ctx, { seed: 17, style: 'modal', lead: 'flute', bpm: 120, duration: 128, when: 1 })
-    assert.deepEqual(demo.data.chordLog, ['Cm9', 'Abmaj7', 'Ebmaj7', 'Bbsus', 'Cm9', 'Fm9', 'Gsus', 'Cm9'])
+    const log = demo.data.chordLog
+    is(log.length, 16, 'sixteen four-bar plateaus in 128 seconds')
+    is(log[0], 'Cm9', 'the performance opens on the tonic')
     assert.deepEqual([0, 1, 1, 9 - 1 / sr, 9, 17, 25, 33, 41, 49, 57, 65, 129].map(time => demo.readout(time)),
-      ['', 'Cm9', 'Cm9', 'Cm9', 'Abmaj7', 'Ebmaj7', 'Bbsus', 'Cm9', 'Fm9', 'Gsus', 'Cm9', 'Cm9', ''], 'audio time selects A → A → B, including the exact chord boundary and end')
-    assert.deepEqual(demo.data.compHits.slice(0, 4).map(hit => [hit.position, hit.beats, hit.notes]),
-      [[0, 8, [48, 55, 63, 70, 74]], [8, 8, [48, 55, 63, 70, 74]], [16, 8, [44, 51, 60, 67, 70]], [24, 8, [44, 51, 60, 67, 70]]])
+      ['', log[0], log[0], log[0], ...log.slice(1, 9), ''], 'audio time selects the sounding chord, including the exact chord boundary and end')
+    assert.deepEqual(demo.data.compHits.map(hit => [hit.position, hit.beats]), demo.data.chords.map(c => [c.start, c.beats]), 'each chord swells once, for its whole plateau')
+    assert.deepEqual(demo.data.compHits[0].notes, [48, 55, 63, 70, 74])
     for (const hit of demo.data.compHits) {
       is((hit.notes[0] - hit.chord.root + 120) % 12, 0, 'root anchors the voicing')
       is(hit.notes[1] - hit.notes[0], 7, 'open fifth below the colour tones')
@@ -171,7 +191,7 @@ test('musical option boundaries reject unbounded work and use safe preset fallba
   for (const preset of ['toString', '__proto__', null]) {
     const ctx = new OfflineAudioContext(2, 128, sr)
     const j = await jazz(ctx, { style: preset, lead: preset, duration: 0.1, AudioWorkletNodeClass: AudioWorkletNode })
-    is(j.data.style, 'modal'); is(j.data.lead, 'guitar')
+    is(j.data.style, 'modal'); is(j.data.lead, 'flute')
     is(drone(ctx, { voice: preset, duration: 0.1 }).data.voice, 'tanpura')
   }
   const empty = new OfflineAudioContext(1, 128, sr)

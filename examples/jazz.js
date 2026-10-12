@@ -12,7 +12,7 @@ help({
   usage: ['', 'style=ambient lead=flute -d 3m', 'style=bossa bpm=124'],
   options: [
     ['style=<name>', 'modal (default), ambient, nordic, ballad, bossa, swing, or blues'],
-    ['lead=<name>', 'guitar (default), flute, harp, or piano'],
+    ['lead=<name>', 'flute (default), guitar, harp, or piano'],
     ['bpm=<number>', 'performance tempo (default: the middle of the style\'s range)'],
     ['-d, --duration <time>', 'target length with optional s/m/h suffix (default: 270s)'],
   ],
@@ -22,7 +22,7 @@ help({
 
 let { $ } = args()
 let style = String($('style', 'modal')).toLowerCase()
-let lead = String($('lead', 'guitar')).toLowerCase()
+let lead = String($('lead', 'flute')).toLowerCase()
 let bpm = $('bpm') ? +$('bpm') : null
 let seed = $('seed') ? +$('seed') : null
 let dur = sec($('dur', '270'))

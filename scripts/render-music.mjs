@@ -9,9 +9,9 @@ import { createInstrument, soundNames } from '../examples/graphs/metronome.js'
 const directory = 'build/music'
 mkdirSync(directory, { recursive: true })
 const rate = 44100, seed = 17, reports = []
-const preferred = { ambient: 'harp', nordic: 'flute', ballad: 'piano' }
+const preferred = { ambient: 'harp', ballad: 'piano' } // the rest take the default flute
 const fixtures = [
-  ...Object.keys(styles).map(style => ({ name: `jazz-${style}`, type: 'jazz', duration: 20, options: { style, lead: preferred[style] || 'guitar' } })),
+  ...Object.keys(styles).map(style => ({ name: `jazz-${style}`, type: 'jazz', duration: 20, options: { style, lead: preferred[style] } })),
   ...leads.map(lead => ({ name: `solo-${lead}`, type: 'jazz', solo: true, duration: 12, options: { style: 'bossa', lead, bpm: 120 } })),
   ...['tanpura', 'pad', 'shruti', 'harmonic', 'strings'].map(voice => ({ name: `drone-${voice}`, type: 'drone', duration: 12, options: { voice } })),
   { name: 'drone-strings-melody', type: 'drone', duration: 16, options: { voice: 'strings', melody: 'pentatonic' } },

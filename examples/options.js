@@ -220,7 +220,7 @@ export const exampleOptions = {
   ],
   jazz: [
     select('style', 'style=<name>', 'Style', 'modal', ['modal', 'ambient', 'nordic', 'ballad', 'bossa', 'swing', 'blues'], 'modal (default), ambient, nordic, ballad, bossa, swing, or blues'),
-    select('lead', 'lead=<name>', 'Lead', 'guitar', ['guitar', 'flute', 'harp', 'piano'], 'guitar (default), flute, harp, or piano'),
+    select('lead', 'lead=<name>', 'Lead', 'flute', ['flute', 'guitar', 'harp', 'piano'], 'flute (default), guitar, harp, or piano'),
     { ...range('bpm', 'bpm=<number>', 'Tempo', 84, 40, 200, 1, 'BPM', 'performance tempo (default: the middle of the style\'s range)'), follows: 'style', valueFor: style => jazzTempos[style] ?? 84 },
     { ...duration(270, 600), min: 30, step: 10 },
   ],

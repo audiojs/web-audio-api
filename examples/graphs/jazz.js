@@ -26,7 +26,7 @@ export const styles = {
   swing: { bpm: [138, 176], swing: 0.66, form: 'aaba', bass: 'walk', comp: 'stabs', drums: 'swing', phrase: 'bebop' },
   blues: { bpm: [100, 126], swing: 0.66, form: 'blues', bass: 'shuffle', comp: 'stabs', drums: 'shuffle', phrase: 'blues' },
 }
-export const leads = ['guitar', 'flute', 'harp', 'piano']
+export const leads = ['flute', 'guitar', 'harp', 'piano']
 
 // chord vocabulary: scale, chord tones, the colour tones a modal line likes to land on, and a
 // rootless voicing, all as semitones above the root
@@ -47,7 +47,7 @@ const grounded = { m9: [0, 7, 15, 22, 26], maj7: [0, 7, 16, 23, 26], sus: [0, 7,
 const styleNames = Object.keys(styles)
 
 export async function init(ctx, {
-  style = 'modal', lead = 'guitar', bpm = null, duration = 270, seed = null,
+  style = 'modal', lead = 'flute', bpm = null, duration = 270, seed = null,
   when = ctx.currentTime, destination = ctx.destination,
 } = {}) {
   if (!(duration > 0) || !Number.isFinite(duration)) throw new RangeError('Positive finite duration required')
@@ -57,7 +57,7 @@ export async function init(ctx, {
   if (!styleNames.includes(style)) style = 'modal'
   let plan = styles[style]
   const padComp = ['pad', 'swell'].includes(plan.comp)
-  if (!leads.includes(lead)) lead = 'guitar'
+  if (!leads.includes(lead)) lead = 'flute'
   bpm = bpm == null ? Math.round((plan.bpm[0] + plan.bpm[1]) / 2) : Number(bpm)
   if (!(bpm > 0) || !Number.isFinite(bpm)) throw new RangeError('Positive finite tempo required')
   let beat = 60 / bpm
@@ -74,38 +74,99 @@ export async function init(ctx, {
   }
   let energy = position => { let p = position / totalBeats; return (p < 0.7 ? p / 0.7 : (1 - p) / 0.3) ** 0.7 }
 
-  // --- Harmony: one chorus of the form in a random key, repeated for the duration ---
+  // --- Harmony: the style's form in a random key, reharmonized every chorus ---
+  // A form is a list of slots; a slot lists the phrases that may fill it, each written as
+  // degree, quality and beats ('IIm7/4 V7/4'). Every chorus fills each slot afresh: never with
+  // the chord just heard, phrases not yet played first, then the longest-rested likeliest, and
+  // never as an exact copy of an earlier chorus while unheard combinations remain.
   let key = 53 + pick([0, 5, 10, 3, 7, 2]) // F, Bb, Eb, Ab, C, G, as a bass root
-  let chord = (degree, quality, beats) => ({ root: key + degree, quality, beats })
+  const degrees = { I: 0, bII: 1, II: 2, bIII: 3, III: 4, IV: 5, '#IV': 6, V: 7, bVI: 8, VI: 9, bVII: 10, VII: 11 }
+  // modal styles wander a palette of colours, one plateau per slot
+  let walk = (palette, plateaus) => plateaus.map(beats => palette.map(colour => `${colour}/${beats}`))
   let forms = {
+    // A sections turn around I–vi–ii–V and its substitutes; the bridge walks dominants home.
     aaba: () => {
-      let a = [[0, 'maj7', 4], [9, 'm7', 4], [2, 'm7', 4], [7, 7, 4], [4, 'm7', 4], [9, 7, 4], [2, 'm7', 4], [7, 7, 4]]
-      let b = [[4, 7, 8], [9, 7, 8], [2, 7, 8], [7, 7, 8]]
-      let last = [[0, 'maj7', 4], [9, 'm7', 4], [2, 'm7', 4], [7, 7, 4], [0, 'maj7', 8], [2, 'm7', 4], [7, 7, 4]]
-      return [...a, ...a, ...b, ...last]
+      let head = ['Imaj7/4 VIm7/4 IIm7/4 V7/4', 'Imaj7/4 VI7/4 IIm7/4 V7/4', 'Imaj7/4 bIIdim7/4 IIm7/4 V7/4',
+        'Imaj7/4 VIm7/4 IIm7/4 bII7/4', 'Imaj7/2 VIm7/2 IIm7/2 V7/2 IIIm7/2 VI7/2 IIm7/2 V7/2']
+      let turn = ['IIIm7/4 VI7/4 IIm7/4 V7/4', 'IIIm7/4 bIII7/4 IIm7/4 bII7/4',
+        'I7/4 IVmaj7/2 #IVdim7/2 IIIm7/2 VI7/2 IIm7/2 V7/2', 'IIIm7/2 VI7/2 IIm7/2 V7/2 IIIm7/2 bIII7/2 IIm7/2 bII7/2']
+      let bridge = ['III7/8 VI7/8 II7/8 V7/8', 'VIIm7/4 III7/4 IIIm7/4 VI7/4 VIm7/4 II7/4 IIm7/4 V7/4',
+        'III7/8 bIII7/8 II7/8 bII7/8', 'Vm7/4 I7/4 IVmaj7/8 IVm7/4 bVII7/4 IIm7/4 V7/4']
+      return [head, turn, head, turn, bridge, head, turn]
     },
-    blues: () => [[0, 7, 4], [5, 7, 4], [0, 7, 4], [0, 7, 4], [5, 7, 4], [6, 'dim7', 4], [0, 7, 4], [9, 7, 4], [2, 'm7', 4], [7, 7, 4], [0, 7, 2], [9, 7, 2], [2, 'm7', 2], [7, 7, 2]],
-    ballad: () => [[0, 'maj7', 8], [5, 'm7', 4], [10, 7, 4], [0, 'maj7', 8], [4, 'm7', 4], [9, 7, 4], [2, 'm7', 8], [7, 7, 8], [0, 'maj7', 8], [2, 'm7', 4], [7, 7, 4]],
-    bossa: () => [[0, 'maj7', 8], [2, 7, 8], [2, 'm7', 8], [1, 7, 8], [0, 'maj7', 8], [2, 7, 8], [2, 'm7', 4], [7, 7, 4], [0, 'maj7', 8]],
-    // Aeolian home, a major lift, then a suspended fifth resolving back to minor.
-    // Four-bar plateaus breathe twice; the return is heard, not just another colour.
-    modal: () => [[0, 'm9', 16], [8, 'maj7', 16], [3, 'maj7', 16], [10, 'sus', 16],
-      [0, 'm9', 16], [5, 'm9', 16], [7, 'sus', 16], [0, 'm9', 16]],
-    // ambient: two or three lydian and m11 colours a fourth or a whole step apart, held long
-    ambient: () => {
-      return [[0, 'maj7#11', 32], [9, 'm11', 16], [5, 'maj7#11', 16],
-        [0, 'maj7#11', 32], [7, 'sus', 16], [0, 'maj7#11', 16]]
-    },
-    // nordic: an aeolian cycle with lydian and sus colour, eight beats each
-    nordic: () => [[0, 'm9', 8], [10, 'maj7', 8], [8, 'maj7#11', 8], [7, 'sus', 8], [0, 'm9', 8], [3, 'maj7', 8], [5, 'm9', 8], [7, 'sus', 8]],
+    // 12-bar jazz blues in three four-bar phrases, from the plain changes to Bird's
+    blues: () => [
+      ['I7/4 IV7/4 I7/4 Vm7/2 I7/2', 'I7/4 IV7/2 #IVdim7/2 I7/4 Vm7/2 I7/2',
+        'Imaj7/4 VIIm7b5/2 III7/2 VIm7/2 II7/2 Vm7/2 I7/2', 'I7/4 IV7/4 IIIm7/2 VI7/2 Vm7/2 I7/2'],
+      ['IV7/4 #IVdim7/4 I7/4 VI7/4', 'IV7/4 IVm7/2 bVII7/2 IIIm7/2 VI7/2 bIIIm7/2 bVI7/2',
+        'IV7/4 #IVdim7/4 IIIm7/2 VI7/2 bIIIm7/2 bVI7/2', 'IV7/4 IVm7/2 bVII7/2 I7/4 VI7/4'],
+      ['IIm7/4 V7/4 I7/2 VI7/2 IIm7/2 V7/2', 'IIm7/4 V7/4 IIIm7/2 VI7/2 IIm7/2 V7/2',
+        'IIm7/4 bII7/4 I7/2 bIII7/2 bVI7/2 bII7/2', 'IIm7/4 V7/4 I7/4 IIm7/2 V7/2'],
+    ],
+    // tonic, borrowed minor subdominant and backdoor dominant, then ii–V home
+    ballad: () => [
+      ['Imaj7/8 IVm7/4 bVII7/4 Imaj7/8 IIIm7/4 VI7/4', 'Imaj7/8 VIIm7b5/4 III7/4 VIm7/8 IIIm7/4 VI7/4',
+        'Imaj7/8 IVmaj7/4 IVm7/4 IIIm7/8 bIII7/8', 'Imaj7/8 IVm7/4 bVII7/4 Imaj7/8 bIIdim7/8'],
+      ['IIm7/8 V7/8 Imaj7/8 IIm7/4 V7/4', 'IIm7/8 bII7/8 Imaj7/8 IIm7/4 bII7/4',
+        'IIm7/8 V7/8 IIIm7/4 VI7/4 IIm7/4 V7/4', 'IIm7/8 IVm7/4 bVII7/4 Imaj7/8 IIm7/4 V7/4'],
+    ],
+    // tonic, secondary dominant, ii and its tritone-substitute resolution
+    bossa: () => [
+      ['Imaj7/8 II7/8 IIm7/8 bII7/8', 'Imaj7/8 II7/8 IIm7/8 V7/8', 'Imaj7/8 VIm7/8 IIm7/8 V7/8',
+        'Imaj7/8 VI7/8 IIm7/8 bII7/8', 'Imaj7/8 IVm7/4 bVII7/4 IIIm7/4 VI7/4 IIm7/4 V7/4'],
+      ['Imaj7/8 II7/8 IIm7/4 V7/4 Imaj7/4 bII7/4', 'IIIm7/8 VI7/8 IIm7/8 V7/8',
+        'IVmaj7/8 bVII7/8 IIIm7/4 VI7/4 IIm7/4 V7/4', 'IVmaj7/8 IVm7/8 IIIm7/4 bIII7/4 IIm7/4 bII7/4'],
+    ],
+    // Aeolian home, major lifts, suspended fifths: four-bar plateaus
+    modal: () => walk(['Im9', 'bVImaj7', 'bIIImaj7', 'bVIIsus', 'IVm9', 'Vsus'], [16, 16, 16, 16, 16, 16, 16, 16]),
+    // lydian and m11 colours, held long
+    ambient: () => walk(['Imaj7#11', 'VIm11', 'IVmaj7#11', 'Vsus', 'IIm11', 'IIIm11'], [32, 16, 16, 32, 16, 16]),
+    // an aeolian palette with lydian and sus colour, eight beats each
+    nordic: () => walk(['Im9', 'bVIImaj7', 'bVImaj7#11', 'Vsus', 'bIIImaj7', 'IVm9'], [8, 8, 8, 8, 8, 8, 8, 8]),
   }
-  let chorus = forms[plan.form]().map(([degree, quality, beats]) => chord(degree, quality, beats))
-  let chords = [], position = 0
-  while (position < totalBeats) for (let c of chorus) { if (position >= totalBeats) break; chords.push({ ...c, start: position }); position += c.beats }
+  const glide = ['modal', 'ambient', 'nordic'].includes(plan.form) // plateaus never slide by a bare half step
+  let slots = forms[plan.form]().map(slot => slot.map(text => ({
+    name: text.replace(/\/\d+/g, ''), // the harmony, whatever its rhythm
+    chords: text.split(' ').map(token => {
+      let [, degree, quality, beats] = token.match(/^([b#]?[IV]+)(.+)\/(\d+)$/)
+      return { root: key + degrees[degree], quality, beats: +beats }
+    }),
+  })))
+  let follows = (c, prev) => { // never the chord just heard; a plateau moves its root, not by a half step
+    if (!prev) return true
+    let move = Math.abs(c.root - prev.root)
+    return glide ? ![0, 1, 11].includes(move) : move !== 0 || c.quality !== prev.quality
+  }
+  let chords = [], position = 0, played = new Map(), turn = 0, heard = new Set()
+  let choose = (slot, prev, memory, now) => {
+    let fit = slot.filter(phrase => follows(phrase.chords[0], prev))
+    let fresh = fit.filter(phrase => !memory.has(phrase.name))
+    if (fresh.length) return pick(fresh)
+    let weights = fit.map(phrase => (now - memory.get(phrase.name)) ** 2)
+    let r = random() * weights.reduce((sum, w) => sum + w, 0)
+    return fit.find((_, i) => (r -= weights[i]) < 0) || fit[fit.length - 1]
+  }
+  while (position < totalBeats) {
+    let phrases, memory, name
+    for (let tries = 0; tries < 32; tries++) {
+      let prev = chords[chords.length - 1], now = turn
+      memory = new Map(played)
+      phrases = slots.map((slot, i) => {
+        let phrase = chords.length || i ? choose(slot, prev, memory, now) : slot[0] // the performance opens on the form as written
+        memory.set(phrase.name, now++)
+        prev = phrase.chords[phrase.chords.length - 1]
+        return phrase
+      })
+      name = phrases.map(phrase => phrase.name).join(' | ')
+      if (!heard.has(name)) break
+    }
+    heard.add(name); played = memory; turn += slots.length
+    for (let c of phrases.flatMap(phrase => phrase.chords)) { if (position >= totalBeats) break; chords.push({ ...c, start: position }); position += c.beats }
+  }
   let chordAt = position => chords.find(c => position >= c.start && position < c.start + c.beats) || chords[chords.length - 1]
   let chordAfter = c => chords[chords.indexOf(c) + 1] || c
   let chordNames = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-  let chordLog = chorus.map(c => chordNames[c.root % 12] + (c.quality === 7 ? '7' : c.quality))
+  let chordLog = chords.map(c => chordNames[c.root % 12] + c.quality)
   let toneNear = (c, near, offsets) => { // the chord's offset closest to `near`
     let best = null
     for (let octave = -3; octave <= 4; octave++) for (let offset of offsets) {
@@ -225,7 +286,7 @@ export async function init(ctx, {
   bassLines.shuffle = () => {
     for (const c of chords) for (let b = 0; b < c.beats; b++) {
       const tones = qualities[c.quality].tones
-      const intervals = c.quality === 7 ? [0, 4, 7, 9, 10, 9, 7, 4] : [0, tones[1], tones[2], tones[3], tones[2], tones[1], tones[2], 0]
+      const intervals = c.quality === '7' ? [0, 4, 7, 9, 10, 9, 7, 4] : [0, tones[1], tones[2], tones[3], tones[2], tones[1], tones[2], 0]
       const note = b === 0 ? clampBass(c.root) : b === c.beats - 1 ? clampBass(chordAfter(c).root - 1) : clampBass(c.root + intervals[(c.start + b) % 8])
       bassNotes.push({ position: c.start + b, beats: 1, note, velocity: b % 2 ? 0.72 : 0.87 })
     }
@@ -260,11 +321,7 @@ export async function init(ctx, {
   }
   let compPatterns = {
     swell: () => {
-      for (let c of chords) {
-        const notes = voicingOf(c)
-        for (let b = 0; b < c.beats; b += 8) compHits.push({ position: c.start + b, beats: Math.min(8, c.beats - b), chord: c,
-          velocity: (b ? 0.68 : 0.82) + 0.12 * energy(c.start + b), notes })
-      }
+      for (let c of chords) compHits.push({ position: c.start, beats: c.beats, chord: c, velocity: 0.82 + 0.12 * energy(c.start), notes: voicingOf(c) })
     },
     pad: () => { for (let c of chords) compHits.push({ position: c.start, beats: c.beats, chord: c, velocity: 0.8, notes: voicingOf(c) }) },
     sustain: () => {

@@ -26,13 +26,15 @@ This writes `build/music/`: all seven jazz styles, four isolated lead instrument
 
 | Style | Harmony and accompaniment | Lead vocabulary |
 | --- | --- | --- |
-| Modal | Four-bar Aeolian plateaus, major lift and suspended-fifth return; root/fifth voicings with two stronger swells per chord | Pentatonic and fourth-based shapes, held colour tones |
-| Ambient | Eight-bar Lydian holds, relative-minor and subdominant colours; sparse percussion | Long tones, short answers, spacious motifs |
-| Nordic | Minor-nine cycle with major/suspended contrasts; open bass answers and sparse cymbals | Lyrical scale phrases and ornaments |
+| Modal | Four-bar plateaus wandering Aeolian, major-lift and suspended colours; root/fifth voicings, one swell per chord | Pentatonic and fourth-based shapes, held colour tones |
+| Ambient | Eight- and four-bar Lydian and minor-eleven holds; sparse percussion | Long tones, short answers, spacious motifs |
+| Nordic | Minor-nine palette with major/suspended contrasts; open bass answers and sparse cymbals | Lyrical scale phrases and ornaments |
 | Ballad | Tonic, borrowed minor subdominant, backdoor dominant and ii–V; bass in two, rolled piano voicings | Grace notes, lyrical targets and breathing space |
 | Bossa | Major/secondary-dominant/ii–V and tritone-substitute motion; two-bar comping, anticipated bass, Brazilian rim pattern | Straight eighths, syncopation and anticipations |
 | Swing | 32-bar AABA with a dominant bridge; quarter-note walking bass and ride pattern | Enclosures, arpeggios, bebop passing notes, triplets |
 | Blues | 12-bar jazz blues, diminished passing chord and turnaround; shuffle bass riffs | Blue-note approaches, call/response, bends |
+
+Harmony is reharmonized every chorus. Each form slot lists alternative phrases (tritone substitutes, backdoor and diminished passing chords, Bird-blues changes); modal styles wander a palette of colours instead. A chord never follows itself, modal plateaus never slide by a half step, unplayed phrases come first, and no chorus copies an earlier one while unheard combinations remain.
 
 Motifs recur as questions and answers. Non-chromatic notes are adapted to the local harmony; targets land on chord tones or style-appropriate extensions. Anticipated targets follow the approaching chord. Notes are octave-folded into the instrument's range, not clipped to an unrelated boundary pitch.
 
