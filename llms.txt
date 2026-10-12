@@ -1,6 +1,6 @@
 # Web Audio API without the browser
 
-> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. The Node runner recorded 4317 passing Web Platform Tests for v1.5.6 on 2026-09-06; this is not W3C certification. Audio-device I/O uses adapters. Install: `npm install web-audio-api`. Run any example with `npx web-audio-api <name>`.
+> web-audio-api provides a pure-JavaScript Web Audio DSP engine for Node, Deno, Bun, and edge runtimes. The Node runner recorded 4322 passing Web Platform Tests for v1.6.0 on 2026-10-12; this is not W3C certification. Audio-device I/O uses adapters. Install: `npm install web-audio-api`. Run any example with `npx web-audio-api <name>`.
 
 Key facts: OfflineAudioContext renders audio in CI without an audio device. AudioContext plays through speakers via @audio/speaker. Tone.js and other browser audio libraries run in Node through `import 'web-audio-api/polyfill'`. Each example below is one dependency-free graph module taking a standard BaseAudioContext.
 
