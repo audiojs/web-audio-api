@@ -1,5 +1,5 @@
 import { byId } from './examples/catalog.js'
-import { plotsVisible } from './assets/signal.js'
+import { plotsVisible, signalTime } from './assets/signal.js'
 import { PreviewContext } from './assets/hero-context.js'
 import { renderAudio } from './assets/render.js'
 import { highlight, mountExample, remember } from './examples/browser.js'
@@ -133,6 +133,7 @@ addEventListener('pagehide', stopHero)
 // spectrum in the same bars, on absolute dBFS scales so silence draws silence.
 // When the context closes the panel keeps its last frame.
 const signal = document.querySelector('.hero-signal')
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
 let followed = null
 async function follow(context) {
   if (!signal || !plotsVisible()) return
@@ -154,28 +155,38 @@ async function follow(context) {
   const axis = signal.querySelectorAll('.art-row')[1]
   axis.firstElementChild.textContent = '−3 s'
   axis.lastElementChild.textContent = 'now'
-  let version = -1
-  const frame = () => {
+  // 100 bars over 3 s, and one more entering at the right as the oldest leaves at the left:
+  // the bars change when a cell or a capture is new, and slide on every display frame between
+  const count = 101, span = 3 * count / 100
+  let version = -1, cell = NaN, heard, painted = 0
+  const frame = now => {
     if (followed !== context || context.state === 'closed') return
-    if (!plotsVisible()) { setTimeout(frame, 160); return }
-    const history = capture.history
-    if (version !== history.version) {
-      version = history.version
-      const columns = history.columns(100, 3)
-      peakPath.setAttribute('d', columns.map((v, i) => v ? bar(i, v.peak) : '').join(''))
-      rmsPath.setAttribute('d', columns.map((v, i) => v ? bar(i, v.rms) : '').join(''))
-      const latest = history.frames.at(-1)
-      bins.fill(0)
-      if (latest) for (let bin = 1; bin < latest.spectrum.length; bin++) {
-        const frequency = bin * context.sampleRate / (latest.spectrum.length * 2)
-        const k = Math.floor(Math.log(frequency / 40) / Math.log(16000 / 40) * bins.length)
-        if (k >= 0 && k < bins.length) bins[k] = Math.max(bins[k], latest.spectrum[bin] / 255)
-      }
-      spectrumPath.setAttribute('d', Array.from(bins, (v, i) => `M${2 + i * 4} 220V${(220 - Math.max(1, v * 106)).toFixed(1)}`).join(''))
+    requestAnimationFrame(frame)
+    if (!plotsVisible() || reducedMotion.matches && now - painted < 160) return
+    painted = now
+    const history = capture.history, time = signalTime(context, history), at = history.position(count, span, time)
+    if (cell !== Math.ceil(at) || version !== history.version) {
+      cell = Math.ceil(at); version = history.version
+      const columns = history.columns(count, span, time)
+      peakPath.setAttribute('d', columns.map((v, i) => v ? bar(i - 1, v.peak) : '').join(''))
+      rmsPath.setAttribute('d', columns.map((v, i) => v ? bar(i - 1, v.rms) : '').join(''))
     }
-    setTimeout(frame, matchMedia('(prefers-reduced-motion: reduce)').matches ? 160 : 1000 / 30)
+    const slide = `translate(${((cell - at) * 4).toFixed(2)} 0)`
+    peakPath.setAttribute('transform', slide)
+    rmsPath.setAttribute('transform', slide)
+    // the spectrum of the capture now sounding, in step with the envelope
+    const latest = history.frames.findLast(block => block.end <= time)
+    if (latest === heard) return
+    heard = latest
+    bins.fill(0)
+    if (latest) for (let bin = 1; bin < latest.spectrum.length; bin++) {
+      const frequency = bin * context.sampleRate / (latest.spectrum.length * 2)
+      const k = Math.floor(Math.log(frequency / 40) / Math.log(16000 / 40) * bins.length)
+      if (k >= 0 && k < bins.length) bins[k] = Math.max(bins[k], latest.spectrum[bin] / 255)
+    }
+    spectrumPath.setAttribute('d', Array.from(bins, (v, i) => `M${2 + i * 4} 220V${(220 - Math.max(1, v * 106)).toFixed(1)}`).join(''))
   }
-  frame()
+  requestAnimationFrame(frame)
 }
 
 // Each runtime mark explains itself: its tip opens above the mark, or below when the top of the

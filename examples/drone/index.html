@@ -38,7 +38,7 @@
       <a href="../../#faq">FAQ</a>
     </nav>
     <div class="corner-links">
-      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.5.6</span></a>
+      <a class="version-link" href="https://www.npmjs.com/package/web-audio-api"><span data-version="">v1.6.0</span></a>
       <a class="icon-button" href="https://github.com/audiojs/web-audio-api" aria-label="Open web-audio-api on GitHub">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.29-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
       </a>
@@ -49,24 +49,17 @@
     <header class="detail-head"><nav class="detail-crumbs" aria-label="Breadcrumb"><a href="../">Examples</a><span>/</span><a href="../#generative">Generative</a></nav><h1>Drone</h1><p>Play a tanpura, pad, shruti, harmonic drone, or cinematic strings, with an optional slow melody.</p></header>
     <div class="detail-grid">
 
-        <div class="demo-column">
-          <section class="demo-panel" aria-label="Browser demo">
-            <div class="demo-stage">
-              <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
-              <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
-            </div>
-            <div class="demo-results" id="demo-result"></div>
-            <form class="demo-form" id="demo-form">
-              <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
+        <section class="demo-panel" aria-label="Browser demo">
+          <div class="demo-stage">
+            <div class="demo-canvas-wrap"><canvas class="demo-canvas" id="demo-canvas" width="720" height="220" role="img" aria-label="Audio waveform"></canvas></div>
+            <div class="demo-spectrogram-wrap"><canvas class="demo-spectrogram" id="demo-spectrogram" width="720" height="180" role="img" aria-label="Audio spectrogram"></canvas><select id="demo-frequency-scale" aria-label="Spectrogram frequency scale"><option value="log">Log</option><option value="mel">Mel</option><option value="linear">Linear</option></select></div>
+          </div>
+          <div class="demo-results" id="demo-result"></div>
+          <form class="demo-form" id="demo-form">
+            <div class="demo-controls" id="demo-controls"><div class="demo-fields" id="demo-fields"></div><div class="demo-extras" id="demo-actions"></div></div>
 
-            </form>
-          </section>
-          <footer class="dialog-foot">
-            <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
-            <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
-            <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
-          </footer>
-        </div>
+          </form>
+        </section>
         <section class="dialog-code code-stage" aria-label="Graph source">
           <div class="code-tabs" role="group" aria-label="Source view">
             <button class="code-tab" type="button" data-pane="graph" aria-pressed="true">Graph</button>
@@ -86,6 +79,11 @@
           <pre class="code-output" id="code-pane" hidden><code class="language-javascript" id="example-code">Loading source…</code></pre>
           <div class="graph-pane dots" id="graph-pane" hidden></div>
         </section>
+        <footer class="dialog-foot">
+          <div class="demo-meter"><div class="demo-meter-track"><div class="demo-meter-fill" id="demo-meter-fill"></div></div><span id="demo-meter-value">ready</span></div>
+          <p class="demo-help" id="demo-status" role="status" aria-live="polite"></p>
+          <div class="demo-runbar"><button class="demo-action demo-run" id="demo-run" type="button" aria-pressed="false"><svg class="play-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg><svg class="pause-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" /></svg><span>Run demo</span></button><input class="demo-volume" type="range" id="demo-volume" min="0" max="100" value="25" aria-label="Output volume"></div>
+        </footer>
       
     </div>
 

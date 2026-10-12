@@ -41,14 +41,20 @@ export class SignalHistory {
     this.version++
   }
 
-  columns(count, duration = this.duration) {
+  // Where audio time `end` falls on the grid of `count` cells per `duration`, in cells from time zero.
+  // Recover the integer sample clock first: 0.06 - 0.01 can be slightly below
+  // 0.05, which would otherwise paint the preceding cell too.
+  position(count, duration = this.duration, end = this.end) {
+    return Math.round(end * this.sampleRate) * count / (duration * this.sampleRate)
+  }
+
+  // The `count` cells up to the one holding `end`. Bin against a fixed audio-time grid:
+  // moving the bin boundaries with each delivery made old transients alternate
+  // between one and two columns wide.
+  columns(count, duration = this.duration, end = this.end) {
     const columns = Array.from({ length: count }, () => null)
-    // Bin against a fixed audio-time grid. Moving the bin boundaries with each
-    // delivery made old transients alternate between one and two columns wide.
-    // Recover the integer sample clock before binning: 0.06 - 0.01 can be
-    // slightly below 0.05, which would otherwise paint the preceding cell too.
     const span = duration * this.sampleRate
-    const first = Math.ceil(Math.round(this.end * this.sampleRate) * count / span) - count
+    const first = Math.ceil(this.position(count, duration, end)) - count
     for (const frame of this.frames) {
       let from = Math.max(0, Math.floor(Math.round(frame.start * this.sampleRate) * count / span) - first)
       let to = Math.min(count, Math.ceil(Math.round(frame.end * this.sampleRate) * count / span) - first)
@@ -60,6 +66,17 @@ export class SignalHistory {
     }
     return columns
   }
+}
+
+// The audio time to draw now: what the speakers are sounding, interpolated between
+// render callbacks so the plots scroll on every display frame, held one capture
+// block back so the newest cell has already arrived.
+export function signalTime(context, history) {
+  const latest = history.frames.at(-1)
+  if (!latest || context.state !== 'running') return history.end
+  const { contextTime, performanceTime } = context.getOutputTimestamp?.() || {}
+  const heard = performanceTime > 0 ? contextTime + (performance.now() - performanceTime) / 1000 : context.currentTime
+  return Math.min(history.end, heard - (latest.end - latest.start))
 }
 
 const modules = new WeakMap()

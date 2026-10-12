@@ -1,5 +1,5 @@
 import { byId } from './catalog.js'
-import { observeSignal, plotsVisible } from '../assets/signal.js'
+import { observeSignal, plotsVisible, signalTime } from '../assets/signal.js'
 import { renderAudio } from '../assets/render.js'
 import { controlsFor, optionsFor } from './options.js'
 import { highlightSyntax } from '../syntax.js'
@@ -273,15 +273,19 @@ function signalRaster(columns, height, sampleRate, scale) {
   return canvas
 }
 
-function drawLiveSignal(canvas, spectrogram, history, scale) {
+function drawLiveSignal(canvas, spectrogram, history, scale, time = history.end) {
   if (!plotsVisible()) return
   sizeCanvas(canvas)
   sizeCanvas(spectrogram)
   // Every time cell has the same integer pixel width. Dividing the canvas into
   // 160 unequal rounded cells made a transient expand/contract as it moved left.
   const step = Math.max(1, Math.ceil(Math.ceil(canvas.clientWidth / 160) * canvasRatio()))
-  const count = Math.ceil(canvas.width / step), offset = canvas.width - count * step
-  const columns = history.columns(count)
+  // One cell more than fits: the cells slide left by whole device pixels as audio time
+  // advances, the newest entering at the right edge as the oldest leaves at the left.
+  const count = Math.ceil(canvas.width / step) + 1, span = history.duration * count / (count - 1)
+  const at = history.position(count, span, time)
+  const offset = canvas.width - count * step + Math.round((Math.ceil(at) - at) * step)
+  const columns = history.columns(count, span, time)
   const wave = canvas.getContext('2d'), spectrum = spectrogram.getContext('2d')
   const ink = inkOf()
   wave.clearRect(0, 0, canvas.width, canvas.height)
@@ -598,11 +602,24 @@ export function mountExample(root, id) {
   let context = null, demo = null, analyser = null, stream = null, frame = 0, timer = 0, reloadTimer = 0
   let outputGain = null
   let volumeGain = () => Number(volume?.value ?? 25) / 100
-  let capture = null, lastHistory = null, lastPaint = -1, paintScale = '', paintSize = ''
+  let capture = null, lastHistory = null, shown, painted = 0, paintFrame = 0
+  // the plots follow the audio clock on the display's own frames; readouts keep their slower pace
+  let paint = now => {
+    if (!capture || !context) return
+    paintFrame = requestAnimationFrame(paint)
+    if (reducedMotion.matches && now - painted < 160) return
+    let time = signalTime(context, capture.history)
+    if (time === shown) return
+    painted = now; shown = time
+    drawLiveSignal(canvas, spectrogram, capture.history, frequencyScale.value, shown)
+  }
   let captureSignal = async () => {
     const observed = await observeSignal(context, analyser)
     if (disposed) observed?.dispose()
-    else capture = observed
+    else if ((capture = observed)) {
+      shown = undefined
+      paintFrame = requestAnimationFrame(paint)
+    }
   }
   let connectOutput = async () => {
     outputGain = context.createGain()
@@ -620,15 +637,16 @@ export function mountExample(root, id) {
   let samples = new Float32Array(2048), recorder = null
   let lastBuffer = null, live = false, busy = false, rendering = null
   let levelMeter = null, latencyTracker = null
-  let observer = new ResizeObserver(() => {
+  let redraw = () => {
     if (capture || lastHistory) {
-      drawLiveSignal(canvas, spectrogram, capture?.history || lastHistory, frequencyScale.value)
+      drawLiveSignal(canvas, spectrogram, capture?.history || lastHistory, frequencyScale.value, shown)
       return
     }
     drawWave(canvas, lastBuffer?.getChannelData(0))
     if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
     else resetSpectrogram(spectrogram)
-  })
+  }
+  let observer = new ResizeObserver(redraw)
   observer.observe(canvas)
   observer.observe(spectrogram)
 
@@ -644,14 +662,6 @@ export function mountExample(root, id) {
     if (!analyser) return
     if (samples.length !== analyser.fftSize) samples = new Float32Array(analyser.fftSize)
     analyser.getFloatTimeDomainData(samples)
-    if (capture) {
-      const history = capture.history, scale = frequencyScale.value
-      const size = `${canvas.clientWidth}/${canvas.clientHeight}/${spectrogram.clientHeight}`
-      if (lastPaint !== history.version || paintScale !== scale || paintSize !== size) {
-        drawLiveSignal(canvas, spectrogram, history, scale)
-        lastPaint = history.version; paintScale = scale; paintSize = size
-      }
-    }
     let level = rms(samples)
     meter.style.transform = `scaleX(${Math.min(1, level * 5)})`
     meterValue.textContent = dbLabel(level)
@@ -672,7 +682,8 @@ export function mountExample(root, id) {
 
   function cancelVisual() {
     clearTimeout(frame)
-    frame = 0
+    cancelAnimationFrame(paintFrame)
+    frame = paintFrame = 0
   }
 
   async function stop(message = '') {
@@ -685,7 +696,6 @@ export function mountExample(root, id) {
     lastHistory = capture?.history || lastHistory
     capture?.dispose()
     capture = null
-    lastPaint = -1
     // Retain the latest recorder's identity after stop: onstop may arrive after
     // both this recording and its replacement have closed their audio contexts.
     if (recorder?.state === 'recording') recorder.stop()
@@ -923,16 +933,10 @@ export function mountExample(root, id) {
     if (event.target?.type === 'range') scheduleReload(event)
   }
 
-  let onScaleChange = () => {
-    if (capture || lastHistory) drawLiveSignal(canvas, spectrogram, capture?.history || lastHistory, frequencyScale.value)
-    else if (lastBuffer) drawBufferSpectrogram(spectrogram, lastBuffer.getChannelData(0), lastBuffer.sampleRate, frequencyScale.value)
-    else resetSpectrogram(spectrogram)
-  }
-
   run.addEventListener('click', onRun)
   form.addEventListener('input', onControlInput)
   form.addEventListener('change', scheduleReload)
-  frequencyScale.addEventListener('change', onScaleChange)
+  frequencyScale.addEventListener('change', redraw)
 
   return async () => {
     disposed = true
@@ -943,7 +947,7 @@ export function mountExample(root, id) {
     volume?.removeEventListener('input', onVolume)
     form.removeEventListener('input', onControlInput)
     form.removeEventListener('change', scheduleReload)
-    frequencyScale.removeEventListener('change', onScaleChange)
+    frequencyScale.removeEventListener('change', redraw)
     clearAudioResult(resultContainer)
     await stop('')
   }

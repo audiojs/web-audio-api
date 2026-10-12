@@ -162,7 +162,10 @@ try {
           await target.waitForTimeout(100)
           const gaps = await target.evaluate(() => {
             const rect = selector => document.querySelector(selector).getBoundingClientRect()
-            const column = rect('.demo-column'), panel = rect('.demo-panel'), stage = rect('.demo-stage')
+            // the panel's column is the first track of the grid it stands in
+            const grid = document.querySelector('.demo-panel').parentElement, left = grid.getBoundingClientRect().left + grid.clientLeft
+            const column = { left, right: left + parseFloat(getComputedStyle(grid).gridTemplateColumns) }
+            const panel = rect('.demo-panel'), stage = rect('.demo-stage')
             const css = getComputedStyle(document.querySelector('.demo-stage'))
             const hidden = matchMedia('(max-width: 40rem), (pointer: coarse) and (max-height: 40rem)').matches
             if (hidden) return css.display === 'none' ? [] : [Infinity]
@@ -197,7 +200,7 @@ try {
         try {
           await pixels.route('**/examples/browser.js', async route => route.fulfill({ contentType: 'text/javascript', body: await readFile(resolve(root, 'examples/browser.js'), 'utf8') + '\nexport { drawLiveSignal, setAudioResult, clearAudioResult, audioBufferToWav };' }))
           await pixels.goto(url + '/examples/render-to-buffer/')
-          const footprints = await pixels.evaluate(async () => {
+          const { frames: footprints, glide } = await pixels.evaluate(async () => {
             const { drawLiveSignal } = await import('/examples/browser.js')
             const { SignalHistory } = await import('/assets/signal.js')
             const wave = document.createElement('canvas'), spectrum = document.createElement('canvas')
@@ -211,7 +214,7 @@ try {
               }
               const rgba = []
               for (let y = top; y <= bottom; y++) rgba.push(...data.slice((y * width + left) * 4, (y * width + right + 1) * 4))
-              return { left, width: right - left + 1, height: bottom - top + 1, rgba }
+              return { left, width: right - left + 1, height: bottom - top + 1, rgba, entering: right === width - 1 }
             }
             for (let n = 0; n < 40; n++) {
               history.push(new Float32Array(1024).fill(n ? 0 : 0.5), 0.09 + n * 1024 / 48000)
@@ -219,17 +222,32 @@ try {
               drawLiveSignal(wave, spectrum, history, 'log')
               frames.push({ wave: footprint(wave, true), spectrum: footprint(spectrum, false) })
             }
-            return frames
+            // display frames between captures: the audio clock moves on while history does not
+            const glide = []
+            for (let time = history.end - 0.2; time <= history.end; time += 0.002) {
+              drawLiveSignal(wave, spectrum, history, 'log', time)
+              glide.push({ wave: footprint(wave, true), spectrum: footprint(spectrum, false) })
+            }
+            return { frames, glide }
           })
           for (const kind of ['wave', 'spectrum']) {
-            const first = footprints[0][kind]
+            // the newest cell slides in past the right edge; once whole, it only translates
+            assert.ok(footprints[0][kind].entering, `${kind}: the cell still filling enters from the right edge`)
+            const settled = footprints.filter(frame => !frame[kind].entering), first = settled[0][kind]
             assert.ok(first.width > 0 && first.height > 0)
-            for (const frame of footprints) {
+            assert.ok(settled.length > 30, `${kind}: the transient settles within a cell`)
+            for (const frame of settled) {
               assert.equal(frame[kind].width, first.width, `${kind}: moving left cannot widen a completed transient`)
               assert.equal(frame[kind].height, first.height, `${kind}: moving left cannot shorten a completed transient`)
               assert.deepEqual(frame[kind].rgba, first.rgba, `${kind}: translated pixels are identical, not just nonempty`)
             }
             assert.ok(footprints.at(-1)[kind].left < first.left, `${kind}: the test actually scrolls`)
+            for (let i = 1; i < glide.length; i++) {
+              const shift = glide[i - 1][kind].left - glide[i][kind].left
+              assert.ok(shift === 0 || shift === 1, `${kind}: 2 ms of audio clock moves the plot by at most one device pixel, not a cell (${shift})`)
+              assert.deepEqual(glide[i][kind].rgba, first.rgba, `${kind}: between captures the plot glides without redrawing its cells`)
+            }
+            assert.ok(glide[0][kind].left - glide.at(-1)[kind].left > 2, `${kind}: the glide covers several pixels`)
           }
           const playback = await pixels.evaluate(async () => {
             const { setAudioResult, clearAudioResult, audioBufferToWav } = await import('/examples/browser.js')

@@ -279,9 +279,9 @@ main > *,
 
 .art-end { margin-inline-start: auto; }
 
-/* playback pins to the foot of the code column, its rule running that column's full width */
-.code-col .demo-runbar {
-  margin-block-start: auto;
+/* playback closes the panel under the code and its render, its rule running the panel's full width */
+.hero-code > .demo-runbar {
+  grid-column: 1 / -1;
   padding-block: var(--space-sm);
   padding-inline: var(--space-xl) var(--space-sm);
   justify-content: flex-start;
@@ -653,13 +653,6 @@ h3 {
 .hero-play-status:not(:empty) + .hero-render-time { display: none; }
 .hero-render-time { font-variant-numeric: tabular-nums; }
 
-.code-col {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
 pre {
   margin: 0;
   overflow: auto;
@@ -671,6 +664,7 @@ pre {
 }
 
 .hero-code pre {
+  min-width: 0;
   padding: var(--space-xl);
   overflow-x: auto;
   display: grid;
@@ -1310,8 +1304,6 @@ tbody th { color: var(--color-ink); }
 }
 
 .demo-panel {
-  flex: 1;
-  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -1408,20 +1400,12 @@ tbody th { color: var(--color-ink); }
 .dialog-shell,
 .example-detail { --toolbar: 3.5rem; }
 
-.demo-column {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.demo-column > .dialog-foot {
-  margin-block-start: auto;
+/* the playback closes the stage under the demo and the source, riding the screen's foot until the stage ends */
+.dialog-foot {
+  grid-column: 1 / -1;
   position: sticky;
   inset-block-end: 0;
   z-index: var(--z-raised);
-}
-
-.dialog-foot {
   min-height: var(--toolbar);
   /* play sits by the bar's own edge, the reading and status keeping the measure at the other */
   padding-block: var(--space-2xs);
@@ -1867,6 +1851,7 @@ tbody th { color: var(--color-ink); }
   .dialog-body,
   .detail-grid {
     grid-template-columns: minmax(22rem, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     align-items: stretch;
     background: var(--color-ink);
   }

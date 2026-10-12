@@ -1,7 +1,7 @@
 import test, { is, ok } from 'tst'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
-import { SignalHistory, observeSignal } from '../assets/signal.js'
+import { SignalHistory, observeSignal, signalTime } from '../assets/signal.js'
 import assert from 'node:assert/strict'
 
 const rate = 48000
@@ -36,6 +36,38 @@ test('scrolling translates completed signal columns without changing their width
     assert.deepEqual(history.columns(160).flatMap((frame, i) => frame === event ? [i] : []), indices, 'A → A paints the same footprint')
     is(event.rms, 0.5)
   }
+})
+
+test('a display time between grid steps keeps each cell on its absolute audio-time slot', () => {
+  const history = new SignalHistory(rate)
+  for (let n = 0; n < 40; n++) history.push(new Float32Array(block).fill(n === 10 ? 0.5 : 0), (n + 1) * block / rate)
+  const event = history.frames[10], count = 161, span = 4 * count / 160
+  let previous = Infinity
+  for (let time = 0.5; time < history.end; time += 0.001) {
+    const at = history.position(count, span, time), first = Math.ceil(at) - count
+    const columns = history.columns(count, span, time)
+    const cells = columns.flatMap((frame, i) => frame === event ? [first + i] : [])
+    assert.deepEqual(cells, [Math.floor(event.start / 0.025), Math.floor(event.start / 0.025) + 1], 'the transient stays on its own two cells at every display time')
+    ok(Math.ceil(at) - at >= 0 && Math.ceil(at) - at < 1, 'the slide stays within one cell')
+    ok(columns.every(frame => !frame || frame.start < time), 'nothing after the display time is drawn')
+    const left = (Math.ceil(at) - count) - (Math.ceil(at) - at), x = cells[0] - left - count
+    ok(x < previous, 'the transient moves left continuously as time advances')
+    previous = x
+  }
+  is(history.columns(160).map(c => c?.peak).join(), history.columns(160, 4, history.end).map(c => c?.peak).join(), 'the default display time is the capture end')
+})
+
+test('display time follows the sounding audio clock, one capture block behind, never past the capture', () => {
+  const history = new SignalHistory(rate)
+  const running = (contextTime, performanceTime) => ({ state: 'running', currentTime: 9, getOutputTimestamp: () => ({ contextTime, performanceTime }) })
+  is(signalTime(running(1, performance.now()), history), 0, 'no capture yet holds at the start')
+  for (let n = 0; n < 100; n++) history.push(new Float32Array(block), (n + 1) * block / rate)
+  const lag = block / rate
+  ok(Math.abs(signalTime(running(1, performance.now() - 100), history) - (1.1 - lag)) < 0.005, 'interpolates from the output timestamp')
+  is(signalTime(running(5, performance.now()), history), history.end, 'never ahead of the captured samples')
+  ok(Math.abs(signalTime({ state: 'running', currentTime: 1 }, history) - (1 - lag)) < 1e-9, 'without output timestamps, the context clock')
+  ok(Math.abs(signalTime({ ...running(5, 0), currentTime: 1 }, history) - (1 - lag)) < 1e-9, 'an output not yet started reads the context clock')
+  is(signalTime({ ...running(1, performance.now()), state: 'closed' }, history), history.end, 'a closed context shows everything captured')
 })
 
 test('fixed-time columns respect exact sample boundaries without phantom overlap', () => {
